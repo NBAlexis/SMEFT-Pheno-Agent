@@ -109,11 +109,18 @@ Ask for missing parameters **one at a time** in free-text conversation. After th
 5. `energy` — "What is the center-of-mass energy in TeV? (Single value or list, e.g. `[10, 14, 30]` )"
 6. `luminosity` — "What is the integrated luminosity in fb⁻¹? (Single value or list matching energy length)"
 7. `cutexperiment_path` — "Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
-8. **Delphes card selection** — After `madgraph_path`, `process`, and `energy` are known, scan `{madgraph_path}/Delphes/cards/` for all `.tcl` detector cards. Automatically recommend the best match based on initial state and energy. Present to the user:
-   > "Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other available options: {card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
+8. **Delphes card selection** — After `madgraph_path`, `process`, and `energy` are known:
+   1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
+   2. **Filter out non-detector cards** — exclude `converter_card.tcl`, `gen_card.tcl`, `validation_card.tcl`, `delphes_card_llptest.tcl`, and any file whose name starts with `trackResolution`, `trkCounting`, or `gen_`
+   3. Infer the collider type from the initial state of `process`
+   4. Score each remaining card by matching its filename against the collider type
+   5. Recommend the highest-scoring card
+   6. Present to the user (only showing cards that scored > 0):
+      > "Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
    - `delphes_card`: the selected `.tcl` card file name (e.g., `delphes_card_CEPC.tcl`)
    - If the user presses Enter or provides no answer, use the recommended card
    - If the user types a card name, validate that it exists in `{mg5path}/Delphes/cards/`
+   - **If no cards match the collider type** (all scores = 0), show: "No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one:"
 
 **After all required inputs are collected, also ask**:
 
@@ -133,7 +140,12 @@ Ask for missing parameters **one at a time** in free-text conversation. After th
 
 When the user does not specify a `delphes_card`, automatically select one using the following rules:
 
-1. **List available cards**: Scan `{mg5path}/Delphes/cards/` for all files matching `delphes_card_*.tcl`. Exclude `converter_card.tcl` and any non-`.tcl` files.
+1. **List available cards**: Scan `{mg5path}/Delphes/cards/` for all `*.tcl` files. Exclude obvious non-detector cards:
+   - `converter_card.tcl`
+   - `gen_card.tcl`, `gen_*.tcl`
+   - `validation_card.tcl`
+   - `delphes_card_llptest.tcl`
+   - Any file starting with `trackResolution` or `trkCounting`
 
 2. **Extract initial state** from `process_name` (particles left of `>`):
    - `e+ e-` / `e- e+` → electron-positron collider
@@ -151,7 +163,7 @@ When the user does not specify a `delphes_card`, automatically select one using 
 
 4. **Select the highest-scoring card** as the recommendation. If multiple cards tie, prefer the one whose name appears first alphabetically.
 
-5. **If no card scores above zero** (no recognizable match), default to the first available card alphabetically rather than aborting. If the directory is empty, report the error and abort.
+5. **Filtering for user display**: When presenting options to the user, only show cards with score > 0 (i.e., cards that match the inferred collider type). If no card scores above zero, show all remaining filtered cards and ask the user to specify one. If the directory is empty after filtering, report the error and abort.
 
 ### Step 3: Wait for User Response
 
