@@ -134,10 +134,27 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
             f"Check log: {log_path}"
         )
 
-    # If LHCO is tiny but ROOT is large, root2lhco failed silently
-    if lhco_size < 1024 and root_size > 1024 * 1024:
+    # Check LHCO has actual event data (not just header)
+    with open(lhco_file) as f:
+        lines = f.readlines()
+    if len(lines) <= 1:
         with open(log_path) as f:
             log_content = f.read()
+        raise RuntimeError(
+            f"LHCO file has no events (only {len(lines)} line(s)).\n"
+            f"Log: {log_path}\n{log_content[:2000]}"
+        )
+
+    # Check root2lhco log for errors
+    with open(log_path) as f:
+        log_content = f.read()
+    if "0 events" in log_content or "Error" in log_content or "Cannot find tree" in log_content:
+        raise RuntimeError(
+            f"root2lhco log indicates failure:\n{log_content[:2000]}"
+        )
+
+    # If LHCO is tiny but ROOT is large, root2lhco failed silently
+    if lhco_size < 1024 and root_size > 1024 * 1024:
         raise RuntimeError(
             f"LHCO file suspiciously small ({lhco_size} B) while ROOT is large "
             f"({root_size / 1024 / 1024:.1f} MB). root2lhco likely failed.\n"
