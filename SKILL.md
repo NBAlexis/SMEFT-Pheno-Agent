@@ -83,6 +83,8 @@ This is the **highest-level norm** of this skill. Violating this rule is a **cri
 
 **This is Step 1 of the workflow. Do NOT skip. Do NOT proceed to Phase 0 until completed.**
 
+**CRITICAL: Phase -1 is the ONLY interactive stage of the entire workflow. Once Step 5 completes, ALL subsequent phases (0–9) execute FULLY AUTOMATICALLY without any user interaction. Do NOT stop, do NOT ask for confirmation, do NOT present options mid-execution.**
+
 When this skill is invoked, immediately execute the following steps in order. No exceptions.
 
 ### Step 1: Check Required Inputs
@@ -95,6 +97,13 @@ Verify the following are present:
 - `luminosity`
 
 **DO NOT** check file systems, do NOT create directories, do NOT run any commands before this step completes.
+
+**CRITICAL — Parameter Source Restriction:**
+- ALL parameters MUST come from the **current user conversation**
+- **NEVER** read parameters from existing files, code, scripts, logs, or previous runs
+- **NEVER** infer parameters from filesystem state (e.g., scanning `mg5path/models/` to guess `model`)
+- **NEVER** reuse parameters from earlier conversations, example scripts, or cached configs
+- If parameters are not explicitly provided in the current conversation, they are **MISSING** — proceed to Step 2
 
 ### Step 2: If Any Input Is Missing, Ask the User
 
@@ -194,7 +203,18 @@ After asking for missing inputs, **STOP**. Do nothing else. Wait for the user to
 
 If validation fails, report the specific failure and re-ask for that input.
 
-### Step 5: Build Run Configuration List
+### Step 5: Confirm Phase -1 Completion
+
+Before proceeding to Phase 0, confirm:
+- [ ] All 5 required parameters were explicitly provided by the user **in this conversation**
+- [ ] No parameter was sourced from files, code, logs, or historical context
+- [ ] Input validation passed (Step 4)
+
+**Phase -1 is complete ONLY when the user has explicitly confirmed or provided every parameter through dialogue.**
+
+**After Step 5 passes, the interactive portion of the workflow is OVER. From this point forward, the workflow is FULLY AUTOMATED. Do NOT wait for user confirmation. Do NOT ask "是否继续？" / "Shall I proceed?". Immediately execute Phase 0, then sequentially execute Phases 1–9 without stopping.**
+
+### Step 6: Build Run Configuration List
 
 Convert inputs into a list of run configurations. Each configuration is one `(energy, luminosity)` pair.
 
@@ -262,7 +282,7 @@ All cross-sections from MG5 banners are in **pb**. All luminosities in formulas 
 
 ## Execution Workflow
 
-**CRITICAL: Once Phase -1 is complete, Phases 0–9 execute automatically and sequentially without stopping. Do NOT pause to ask the user whether to continue, whether to use debug mode, or to present options. Report progress at natural phase boundaries, then immediately proceed to the next phase. The only valid stop conditions are errors, red flags, or explicit user interrupt.**
+**CRITICAL: Phase -1 is the ONLY interactive stage. Once Phase -1 Step 5 completes, Phases 0–9 execute FULLY AUTOMATICALLY and sequentially without stopping. Do NOT pause to ask the user whether to continue, whether to use debug mode, or to present options. Report progress at natural phase boundaries, then immediately proceed to the next phase. The only valid stop conditions are errors, red flags, or explicit user interrupt.**
 
 ### Multi-Run Mode
 
@@ -286,7 +306,8 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 ### Critical Cross-Cutting Rules
 
 1. **Phase -1 is Step 1**: The Input Collection steps above are the FIRST action when this skill is invoked. Never create files, run commands, or check system state before Phase -1 completes.
-2. **MG5 return code**: Every `subprocess.run` invoking MG5 MUST check `returncode != 0`. Never silently ignore failures.
+2. **Parameter source is the user ONLY**: Never read inputs from existing files, scripts, logs, or historical context. If a parameter is not explicitly stated in the current conversation, it is missing — ask for it.
+3. **MG5 return code**: Every `subprocess.run` invoking MG5 MUST check `returncode != 0`. Never silently ignore failures.
 3. **No `runs[-11:]`**: Use set-difference (`new_runs = all_runs - existing_runs`) to track exactly which runs MG5 created. See [`reference/phase4-scan.md`](reference/phase4-scan.md).
 4. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If the entire process directory must be re-run, remove large temps (`*.root`, `*.lhe.gz`, `*.hepmc.gz`) and rename the **process directory** (not individual runs). See [`reference/phase4-scan.md`](reference/phase4-scan.md).
 5. **Explicit o1**: Use `ref_op = "o1"` for threshold optimization. Do NOT use `nonzero_ops[0]`.
