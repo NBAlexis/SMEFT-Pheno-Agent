@@ -37,8 +37,21 @@ MG5 is invoked via a text-based "order file" rather than interactive commands.
 
 ### Process Name Normalization
 
-Before constructing folder names, normalize `process_name` by replacing special characters:
+**Use the script** (do not reimplement):
 
+```bash
+python scripts/normalize_process_name.py "e+ e- > a a"
+# Output: ep_em_to_a_a
+```
+
+Or import in Python:
+```python
+from scripts.normalize_process_name import normalize_process_name
+
+folder_base = normalize_process_name(process_name)
+```
+
+Rules:
 | Character | Replacement |
 |-----------|-------------|
 | Space ` ` | `_` |
@@ -112,22 +125,24 @@ output ep_em_to_a_a_p1_20260525_01_SM
 
 ## Running MadGraph
 
-### Primary Command
+**Use the script** (do not reimplement):
 
 ```bash
-cd {mg5path} && ./bin/mg5_aMC {order_filename}
+python scripts/run_mg5.py {mg5path} {order_filename}
 ```
 
-### Fallback Command
+The script:
+1. Tries `./bin/mg5_aMC` first, falls back to `./bin/mg5`
+2. Checks return code; on failure prints stdout/stderr and exits with error
 
-If the primary command fails (e.g., `mg5_aMC` does not exist in older MG5 versions), try:
+Or import in Python:
+```python
+from scripts.run_mg5 import run_mg5
 
-```bash
-cd {mg5path} && ./bin/mg5 {order_filename}
+result = run_mg5(mg5path, order_filename)  # raises RuntimeError on failure
 ```
 
-### Execution Logic
-
+**Execution Logic:**
 ```
 1. Write order file to {mg5path}/{order_filename}
 2. Attempt: cd {mg5path} && ./bin/mg5_aMC {order_filename}
@@ -144,26 +159,23 @@ After the process directory is created (`output` step completed), the following 
 
 The Delphes detector card is selected during **Phase -1** (see [`SKILL.md`](../SKILL.md) Delphes Card Auto-Recommendation). By the time this phase runs, `delphes_card` is already determined — either user-specified or auto-recommended.
 
-**(1.1) Locate and copy the `.tcl` card:**
+**(1.1) Use the script:**
 
-Copy the selected card from:
-```
-{mg5path}/Delphes/cards/{delphes_card}
-```
-
-To the process directory:
-```
-{mg5path}/{folder_name}/Cards/delphes_card.dat
+```bash
+python scripts/setup_delphes_card.py {mg5path} {delphes_card} {folder_name}
 ```
 
-**(1.2) Resolve card dependencies:**
+The script:
+1. Copies `{mg5path}/Delphes/cards/{delphes_card}` → `{mg5path}/{folder_name}/Cards/delphes_card.dat`
+2. Reads the `.tcl` file to find `source` / `include` dependencies
+3. Locates dependency folders under `{mg5path}/Delphes/cards/` and copies them into `Cards/`
 
-Read the `.tcl` file content to identify any `source` or `include` statements that reference external directories. Locate those dependency **folders** under `{mg5path}/Delphes/cards/` and copy the **entire folder** into:
-```
-{mg5path}/{folder_name}/Cards/
-```
+Or import in Python:
+```python
+from scripts.setup_delphes_card import setup_delphes_card
 
-This ensures the Delphes card and all its dependencies are self-contained within the process directory.
+card_path = setup_delphes_card(mg5path, delphes_card, folder_name)
+```
 
 **Fallback:** If `delphes_card` was not set in Phase -1 (legacy path), use the auto-recommendation logic from [`SKILL.md`](../SKILL.md) to select a card on-the-fly.
 
@@ -174,14 +186,27 @@ Read the parameter card:
 {mg5path}/{folder_name}/Cards/param_card.dat
 ```
 
-Locate the block:
-```
-Block anoinputs
+**Use the script** (do not reimplement):
+
+```bash
+python scripts/parse_param_card.py {param_card_path}
 ```
 
-Record **every variable name and its default value** in this block. For SMEFT models, these are the Wilson coefficients (operator coefficients) that will be scanned or constrained in later Phases.
+Output: JSON dict mapping LHA index → coefficient value, e.g. `{"1": 1.0e-12, "2": 0.0}`.
 
-Save this mapping for downstream use (e.g., as `operator_coefficients.json`).
+Or import in Python:
+```python
+from scripts.parse_param_card import parse_anoinputs
+
+coefficients = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+```
+
+The script handles all edge cases:
+- Case-insensitive `Block` matching (`Block`, `BLOCK` — MG5 may rewrite in uppercase)
+- `scan:[v1,v2,...]` syntax retained after MG5 scan
+- Block boundary detection (prevents leaking into `Block mass`, etc.)
+
+Save the mapping for downstream use (e.g., as `operator_coefficients.json`).
 
 ## Event Generation Order
 
@@ -221,7 +246,7 @@ set nevents = {event_number}
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |
 |---------------|----------|----------|------------|
 | Symmetric (ee, pp, mu-mu) | `ebeam_value` | `ebeam_value` | `ebeam_value = energy * 1000 / 2` |
-| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is an extra user input |
+| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is collected in **Phase -1** (see [`SKILL.md`](../SKILL.md)) |
 
 **Note:** The center-of-mass energy is `2 * ebeam_value` for symmetric colliders.
 
@@ -233,24 +258,30 @@ At most **one** coefficient may be non-zero in any given run. All other coeffici
 - If `fi` is the **target operator**: set to `fi_default` (or `1.0` if `fi_default == 0`)
 - If `fi` is **not** the target operator: set to `0.0`
 
-**Example:**
-
-Coefficients: `f1`, `f2`, `f3`, `f4`. Target operator is `f2`, with `f2_default = 1.0e-12`.
+**Critical:** In MG5 `launch` mode, parameter values must be set via `set {block} {lha_code} {value}`. The bare `set {number} = {value}` syntax is silently ignored. For SMEFT models, use:
 
 ```
-set f1 = 0.0
-set f2 = 1.0e-12
-set f3 = 0.0
-set f4 = 0.0
+set anoinputs {idx} {value}
+```
+
+**Example:**
+
+Coefficients in `Block anoinputs`: `f1` (LHA code 1), `f2` (LHA code 2), `f3` (3), `f4` (4). Target operator is `f2`, with `f2_default = 1.0e-12`.
+
+```
+set anoinputs 1 0.0
+set anoinputs 2 1.0e-12
+set anoinputs 3 0.0
+set anoinputs 4 0.0
 ```
 
 **Example with zero default:**
 
-If `f2_default = 0.0`, set `f2 = 1.0` instead.
+If `f2_default = 0.0`, set `anoinputs 2 1.0` instead.
 
 ### Polarization (Optional)
 
-If the user requests beam polarization, append after `set ebeam2`:
+If the user requested beam polarization in **Phase -1** (see [`SKILL.md`](../SKILL.md) Optional Inputs), append after `set ebeam2`:
 
 ```
 set polbeam1 = {polbeam1_value}
@@ -266,77 +297,40 @@ After event generation completes, MadGraph produces output under:
 {mg5path}/{folder_name}/Events/
 ```
 
-Each generation run creates a subfolder named `run_01`, `run_02`, etc. This section describes how to convert the Delphes ROOT output into `.lhco` format and clean up temporary large files.
+Each generation run creates a subfolder named `run_01`, `run_02`, etc.
 
 ### Determine Target Run Folder
 
-After event generation, identify the latest run folder under:
-```
-{mg5path}/{folder_name}/Events/
-```
-
 **Rule:** Select the run folder with the **largest numeric suffix** (e.g., if `run_01` and `run_02` both exist, use `run_02`).
-
-The following steps assume the target folder is `run_02`. Replace with the actual detected folder name.
 
 **Note:** `tag_1` in the filename `tag_1_delphes_events.root` is fixed when using the order template in this workflow.
 
-### Step 1: Detect Jet Branch Name
+### Convert ROOT to LHCO (Use the Script)
 
-Read the Delphes card:
-```
-{mg5path}/{folder_name}/Cards/delphes_card.dat
-```
+**Use the script** (do not reimplement):
 
-Search for lines matching the pattern:
-```
-add Branch {finder}/jets {branch_name} Jet
-```
-
-Examples:
-```
-add Branch UniqueObjectFinder/jets Jet Jet
-add Branch GenJetFinder/jets GenJet Jet
-add Branch FatJetFinder/jets FatJet Jet
-```
-
-For each matching line, look at the substring **after the first `/`**, then split by spaces. The **second string** in that split is the branch name.
-
-- `UniqueObjectFinder/jets Jet Jet` → after `/` → `jets Jet Jet` → second string = `Jet`
-- `GenJetFinder/jets GenJet Jet` → after `/` → `jets GenJet Jet` → second string = `GenJet`
-- `FatJetFinder/jets FatJet Jet` → after `/` → `jets FatJet Jet` → second string = `FatJet`
-
-Determine which case applies:
-
-| Case | Condition | Command |
-|------|-----------|---------|
-| Jet branch exists | Any branch name equals `Jet` (not `GenJet` or `FatJet`) | Standard `root2lhco` |
-| GenJet only | No branch name equals `Jet`, but `GenJet` exists | `root2lhco --jet-branch=GenJet` |
-
-### Step 2: Convert ROOT to LHCO
-
-Change to the Delphes directory and run the converter.
-
-**Case A: Jet branch exists**
 ```bash
-cd {mg5path}/Delphes
-./root2lhco ../{folder_name}/Events/{run_folder}/tag_1_delphes_events.root ../{folder_name}/Events/{run_folder}/{run_folder}.lhco
+python scripts/convert_root_to_lhco.py {mg5path} {folder_name} {run_folder}
 ```
 
-**Case B: Only GenJet exists**
-```bash
-cd {mg5path}/Delphes
-./root2lhco --jet-branch=GenJet ../{folder_name}/Events/{run_folder}/tag_1_delphes_events.root ../{folder_name}/Events/{run_folder}/{run_folder}.lhco
+The script:
+1. Auto-detects the jet branch (`Jet`, `GenJet`, `FatJet`) from `delphes_card.dat`
+2. Invokes `root2lhco` with the correct `--jet-branch=` flag
+3. Captures stdout/stderr to `run_XX/root2lhco.log`
+4. Validates output: aborts if `.lhco` is empty or suspiciously small compared to `.root`
+5. Reports the specific error from the log on failure
+
+Or import in Python:
+```python
+from scripts.convert_root_to_lhco import convert_root_to_lhco
+
+lhco_path = convert_root_to_lhco(mg5path, folder_name, run_folder)
 ```
 
-### Step 3: Validate LHCO Output
-
-Before cleaning up large files, verify the conversion succeeded:
-
-1. Check that `{run_folder}.lhco` exists in `{mg5path}/{folder_name}/Events/{run_folder}/`
-2. Check that the file is non-empty (size > 0)
-
-**If either check fails:** Abort the entire workflow and report the `root2lhco` failure reason. Do NOT proceed to cleanup.
+**Validation rules:**
+- `.lhco` must exist and be non-empty
+- If `.lhco` < 1 KB but `.root` > 1 MB → `root2lhco` failed silently; **check the log**
+- Do NOT proceed to cleanup if `.lhco` is invalid
 
 ### Step 4: Retain and Clean Files
 
@@ -363,34 +357,26 @@ The cross-section is recorded in the banner text file produced after each MadGra
 {mg5path}/{folder_name}/Events/{run_folder}/{run_folder}_tag_1_banner.txt
 ```
 
-**Canonical extraction function** (use this in every phase that reads a banner):
+**Use the script** (do not reimplement):
+
+```bash
+python scripts/extract_cross_section.py {banner_path}
+```
+
+Or import in Python:
 
 ```python
-import re
+from scripts.extract_cross_section import extract_cross_section
 
-def extract_cross_section(banner_path):
-    """Extract cross-section in pb from an MG5 banner file.
-
-    Supports both MG5_aMC v3.x and older banner formats.
-    Raises ValueError if no cross-section line is found.
-    """
-    with open(banner_path) as f:
-        for line in f:
-            # Primary: MG5_aMC v3.x format
-            m = re.search(r"Integrated weight \(pb\)\s*:\s*([\d.eE+-]+)", line)
-            if m:
-                return float(m.group(1))
-            # Fallback: older format with uncertainty
-            m = re.search(r"([\d.eE+-]+)\s*\+/-\s*([\d.eE+-]+)\s*pb", line)
-            if m:
-                return float(m.group(1))
-    raise ValueError(f"No cross-section found in {banner_path}")
+cs = extract_cross_section(banner_path)  # returns float in pb
 ```
+
+The script supports both MG5_aMC v3.x (`Integrated weight (pb) : X.XXXX`) and older (`X +/- Y pb`) formats. Raises `ValueError` on parse failure.
 
 **Critical rules:**
 - Any positive value — even `1e-10 pb` — is a valid cross-section. Only `0.0` (or parse failure) is invalid.
 - Do NOT silently return `0.0` on parse failure. Raise an error so the failure is visible.
-- All phases that read banner cross-sections must use this function (or an equivalent).
+- All phases that read banner cross-sections must use the script (or an equivalent).
 
 ## Validation Checklist
 

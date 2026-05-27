@@ -23,37 +23,31 @@ Run and check return code. Abort on any MG5 error.
 
 Read `Block anoinputs` from `{mg5path}/{folder_base}_p1_NP/Cards/param_card.dat`.
 
-**Critical: parser must handle Block boundaries.**
+**Use the script** (do not reimplement):
 
-```python
-def parse_anoinputs(param_card_path):
-    coefficients = {}
-    in_block = False
-    with open(param_card_path) as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped.startswith("Block"):
-                in_block = stripped.lower().startswith("block anoinputs")
-                continue
-            if not in_block or not stripped or stripped.startswith("#"):
-                continue
-            parts = stripped.split()
-            if len(parts) >= 2:
-                idx, val = parts[0], parts[1]
-                coefficients[idx] = float(val)
-    return coefficients
+```bash
+python scripts/parse_param_card.py {param_card_path}
 ```
 
-**Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. The state machine failed to exit on the next `Block` header.
+Or import in Python:
+```python
+from scripts.parse_param_card import parse_anoinputs
+
+coefficients = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+```
+
+The script handles case-insensitive Block matching, scan syntax retention, and Block boundary detection.
+
+**Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. Report this as a parser bug.
 
 ## Step 1.3: Scan Each Coefficient
 
 For each coefficient `fi`:
 1. Determine `c0`: default from param_card, or `1.0` if default is `0.0`
-2. Write launch order with `fi = c0`, all others = 0.0, `nevents = {nev_phase1}`
+2. Write launch order with `set anoinputs {idx} {c0}` for `fi`, `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
-5. Extract `sigma_i` from banner using the canonical parser in [`madgraph-reference.md`](madgraph-reference.md). **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` (or parse failure) should exclude an operator.
+5. Extract `sigma_i` from the run banner using the canonical `extract_cross_section()` function defined in [`madgraph-reference.md`](madgraph-reference.md). **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` (or parse failure) should exclude an operator.
 6. Mark operator as non-zero if `sigma_i > 0`.
 
 ## Output

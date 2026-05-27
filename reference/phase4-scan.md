@@ -9,7 +9,11 @@ Generate 11 scan points per operator across the coefficient range `[-c1, c1]`.
 
 - **NEVER** delete files from an existing `run_XX` and re-launch
 - **NEVER** run `launch` on a process directory with partially processed runs
-- If restart is needed, delete the **entire process directory** and recreate cleanly
+- **If the entire process directory must be re-run** (e.g., scan corrupted, too many bad runs):
+  1. Remove large temporary files across all runs to free disk: `find Events/run_*/ -name "*.root" -o -name "*.lhe.gz" -o -name "*.hepmc.gz" | xargs rm -f`
+  2. Rename the process directory: `mv {folder_name} {folder_name}_broken`
+  3. Create a fresh process directory and re-run from scratch
+- Do **NOT** rename individual `run_XX` folders — this breaks run-number tracking
 - If `tag_2` appears, you violated this rule
 
 ## Step 4.1: Create Scan Process Directory
@@ -35,8 +39,8 @@ launch {folder_base}_p4
 detector = Delphes
 analysis = OFF
 0
-set oi = scan:[{comma-separated values}]
-set other_coeffs = 0.0
+set anoinputs {idx} scan:[{comma-separated values}]
+set anoinputs {other_idx} 0.0
 ...
 set ebeam1 = {ebeam_value}
 set ebeam2 = {ebeam_value}
@@ -45,7 +49,8 @@ set nevents = {nev_scan}
 ```
 
 - `ebeam_value = energy * 1000 / 2` (GeV). See [`madgraph-reference.md`](madgraph-reference.md) Energy Assignment.
-- The scan syntax `scan:[v1, v2, ...]` tells MG5 to generate one run per value.
+- Use `set anoinputs {lha_code} scan:[v1, v2, ...]` (not bare `set {number} = scan:[...]`, which MG5 silently ignores).
+- The scan syntax tells MG5 to generate one run per value.
 - The trailing `0` confirms run card settings and starts generation.
 
 ### Run Tracking (Critical)
@@ -66,11 +71,38 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 
 ## Step 4.3: Rename Output Files
 
-Map each new run to `np_oi_f{index}`:
+Map each new run to `np_oi_c{value}` using the **actual coefficient value** read from the run banner (NOT the enumerate index):
+
+```python
+from scripts.extract_banner_coefficient import extract_banner_coefficient
+
+for run in new_runs:
+    banner_path = os.path.join(events_dir, run, f"{run}_tag_1_banner.txt")
+    # Parse the banner BLOCK ANOINPUTS section to find the coefficient value
+    # (MG5 records parameter values in LHA block format within the banner)
+    # Name files with the coefficient value, not an index
+    # Format: c{value} where negative signs become 'm' prefix (e.g., -2.18e-11 → cm2.18e-11)
+    coeff_str = f"{coeff_val:.2e}".replace(".", "p").replace("-", "m").replace("+", "")
+    run_lhco = os.path.join(events_dir, run, f"{run}.lhco")
+    dest_banner = f"np_oi_c{coeff_str}_banner.txt"
+    dest_lhco   = f"np_oi_c{coeff_str}.lhco"
 ```
-run_XX → np_oi_f0_banner.txt,  np_oi_f0.lhco   (coefficient = -c1)
-run_YY → np_oi_f1_banner.txt,  np_oi_f1.lhco   (coefficient = -c1 + 0.2*c1)
+
+Or via CLI:
+```bash
+python scripts/extract_banner_coefficient.py {banner_path} {idx}
+# Output: 2.184408e-11
+```
+
+**Why value-based naming is critical:** Some models (e.g., gQGC_UFO with NP>0) have zero cross-section when the scanned coefficient equals exactly `0.0`. MG5 silently skips that scan point, producing fewer than 11 runs. If you use index-based naming (`f0`, `f1`, ...), all positive-coefficient runs shift by one position and map to wrong values. Value-based naming is immune to skipped points.
+
+**Example with c=0 skipped (10 runs instead of 11):**
+```
+run_01 → np_o1_cm2.18e-11_banner.txt  (c = -c1)
+run_02 → np_o1_cm1.75e-11_banner.txt  (c = -0.8*c1)
 ...
+# run for c=0 is MISSING — MG5 skipped it
+run_10 → np_o1_c2.18e-11_banner.txt   (c = +c1)
 ```
 
 ## Output
@@ -79,11 +111,11 @@ run_YY → np_oi_f1_banner.txt,  np_oi_f1.lhco   (coefficient = -c1 + 0.2*c1)
 
 ```
 results/data/phase4/
-  np_o1_f0_banner.txt    np_o1_f0.lhco
-  np_o1_f1_banner.txt    np_o1_f1.lhco
+  np_o1_cm2.18e-11_banner.txt    np_o1_cm2.18e-11.lhco
+  np_o1_cm1.75e-11_banner.txt    np_o1_cm1.75e-11.lhco
   ...
-  np_o1_f10_banner.txt   np_o1_f10.lhco
-  np_o2_f0_banner.txt    np_o2_f0.lhco
+  np_o1_c2.18e-11_banner.txt     np_o1_c2.18e-11.lhco
+  np_o2_cm2.18e-11_banner.txt    np_o2_cm2.18e-11.lhco
   ...
 ```
 
@@ -92,6 +124,7 @@ results/data/phase4/
 | Mistake | Fix |
 |---------|-----|
 | `runs[-11:]` heuristic | Use set-difference to identify new runs |
-| Re-launching on existing runs | Delete entire process directory and restart |
+| Re-launching on existing runs | Remove large temps, rename the **process directory** (not individual runs), create fresh |
+
 | tag_2 ROOT files | Only happens if existing runs were modified and re-launched |
 | Hardcoding `tag_1` in root2lhco call | Check which tag actually exists |

@@ -102,22 +102,30 @@ Ask for missing parameters **one at a time** in free-text conversation. After th
 
 **Question order:**
 
-1. `madgraph_path` — "What is the absolute path to your MadGraph5 installation?"
-2. `workdir` — "Where should results be saved? (Press Enter to use the current directory)"
-3. `process` — "What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
-4. `model` — "What SMEFT model name should be used?"
-5. `energy` — "What is the center-of-mass energy in TeV? (Single value or list, e.g. `[10, 14, 30]` )"
-6. `luminosity` — "What is the integrated luminosity in fb⁻¹? (Single value or list matching energy length)"
-7. `cutexperiment_path` — "Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
-8. **Delphes card selection** — After `madgraph_path`, `process`, and `energy` are known:
-   1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
-   2. **Filter out non-detector cards** — exclude `converter_card.tcl`, `gen_card.tcl`, `validation_card.tcl`, `delphes_card_llptest.tcl`, and any file whose name starts with `trackResolution`, `trkCounting`, or `gen_`
-   3. Infer the collider type from the initial state of `process`
-   4. Score each remaining card by matching its filename against the collider type
-   5. Recommend the highest-scoring card
-   6. Present to the user (only showing cards that scored > 0):
-      > "Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
-   - `delphes_card`: the selected `.tcl` card file name (e.g., `delphes_card_CEPC.tcl`)
+Each question must include a progress indicator (e.g., `[1/8]`) so the user knows how many inputs remain:
+
+1. `[1/8] madgraph_path` — "[1/8] What is the absolute path to your MadGraph5 installation?"
+2. `[2/8] workdir` — "[2/8] Where should results be saved? (Press Enter to use the current directory)"
+3. `[3/8] process` — "[3/8] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
+   - After the user provides `process`, **immediately inspect the initial state** (particles left of `>`)
+   - If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~` (electron-proton collider), **insert an extra required question before continuing**:
+     > "[追加] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
+   - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
+4. `[4/8] model` — "[4/8] What SMEFT model name should be used?"
+5. `[5/8] energy` — "[5/8] What is the center-of-mass energy in TeV? (Single value or list, e.g. `[10, 14, 30]` )"
+6. `[6/8] luminosity` — "[6/8] What is the integrated luminosity in fb⁻¹? (Single value or list matching energy length)"
+7. `[7/8] cutexperiment_path` — "[7/8] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
+8. `[8/8] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
+   - **If the user provided `custom_card`** (absolute path to a `.tcl` file outside `{mg5path}/Delphes/cards/`): skip the scan and use the custom card directly. Validate that the file exists.
+   - **Otherwise**, run the auto-recommendation:
+     1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
+     2. **Filter out non-detector cards** — exclude `converter_card.tcl`, `gen_card.tcl`, `validation_card.tcl`, `delphes_card_llptest.tcl`, and any file whose name starts with `trackResolution`, `trkCounting`, or `gen_`
+     3. Infer the collider type from the initial state of `process`
+     4. Score each remaining card by matching its filename against the collider type
+     5. Recommend the highest-scoring card
+     6. Present to the user (only showing cards that scored > 0):
+        > "Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
+   - `delphes_card`: the selected `.tcl` card file name (e.g., `delphes_card_CEPC.tcl`) or absolute path (for `custom_card`)
    - If the user presses Enter or provides no answer, use the recommended card
    - If the user types a card name, validate that it exists in `{mg5path}/Delphes/cards/`
    - **If no cards match the collider type** (all scores = 0), show: "No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one:"
@@ -127,6 +135,8 @@ Ask for missing parameters **one at a time** in free-text conversation. After th
 > "Are there any other requirements or preferences? Optional settings you can specify:
 > - `debug=true` — divide all event counts by 10 for faster testing (default: false)
 > - `algorithms` — specify which ML algorithms to compare (default: automatically select and test multiple algorithms)
+> - `polarization` — beam polarization as `polbeam1,polbeam2` in range [-1, 1] (default: no polarization)
+> - `custom_card` — absolute path to a custom Delphes card outside `{mg5path}/Delphes/cards/`
 > - Specific operators to focus on, report format preferences, or additional analysis"
 
 **Defaults:**
@@ -176,7 +186,10 @@ After asking for missing inputs, **STOP**. Do nothing else. Wait for the user to
 - `process`: verify it does not contain `NP=`, `QED=`, or `QCD=` suffixes (strip them if present)
 - `energy`: all values > 0
 - `luminosity`: all values > 0
-- `delphes_card` (if user-specified): verify the file exists under `{madgraph_path}/Delphes/cards/`
+- `ebeam_proton` (if process is ep collider): verify > 0
+- `delphes_card` (if user-specified as a filename): verify the file exists under `{madgraph_path}/Delphes/cards/`
+- `custom_card` (if user-specified as an absolute path): verify the file exists at the given path
+- `polarization` (if provided): verify format is two comma-separated floats in [-1, 1]
 - **List validation**: If `energy` and `luminosity` are both lists, they MUST have the same length. If lengths differ, report the mismatch and ask the user to correct.
 
 If validation fails, report the specific failure and re-ask for that input.
@@ -220,6 +233,9 @@ The following are **immutable** and must NEVER be modified for any reason, inclu
 |-----------|-------------|---------|
 | `debug` | Divide all event counts by 10. **This is the ONLY permitted modification.** | `false` |
 | `delphes_card` | Delphes detector card `.tcl` file name (e.g., `delphes_card_CEPC.tcl`). Auto-selected if not specified. | Auto-recommended from `{mg5path}/Delphes/cards/` |
+| `ebeam_proton` | Proton beam energy in GeV. **Required** for `e- p` / `e+ p` colliders. | None (must ask for ep) |
+| `polarization` | Beam polarization as `polbeam1,polbeam2` in range [-1, 1] | No polarization |
+| `custom_card` | Absolute path to a custom Delphes `.tcl` card outside `{mg5path}/Delphes/cards/` | None |
 
 ### Event Count Scaling
 
@@ -272,14 +288,56 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 1. **Phase -1 is Step 1**: The Input Collection steps above are the FIRST action when this skill is invoked. Never create files, run commands, or check system state before Phase -1 completes.
 2. **MG5 return code**: Every `subprocess.run` invoking MG5 MUST check `returncode != 0`. Never silently ignore failures.
 3. **No `runs[-11:]`**: Use set-difference (`new_runs = all_runs - existing_runs`) to track exactly which runs MG5 created. See [`reference/phase4-scan.md`](reference/phase4-scan.md).
-4. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If corruption occurs, delete the **entire process directory** and recreate cleanly.
+4. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If the entire process directory must be re-run, remove large temps (`*.root`, `*.lhe.gz`, `*.hepmc.gz`) and rename the **process directory** (not individual runs). See [`reference/phase4-scan.md`](reference/phase4-scan.md).
 5. **Explicit o1**: Use `ref_op = "o1"` for threshold optimization. Do NOT use `nonzero_ops[0]`.
 6. **Pass `nev_scan`**: Read `n_scan` from `sm_baseline.json`. Do NOT hardcode in Phase 6.
-7. **param_card parser**: Reset `in_block = False` on every new `Block` header. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
+7. **param_card parser**: Match `Block` case-insensitively; handle `scan:[...]` syntax; reset `in_block` on every new `Block` header. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
 8. **Cleanup after Phase 8**: Move all MG5 process directories from `mg5path` to `results/mg5_processes/` using `mv` (not `cp`). This prevents `mg5path` from accumulating unmanaged folders across runs. See [`reference/cleanup.md`](reference/cleanup.md).
-9. **MadGraph conventions**: All MG5 process creation, event generation, Delphes card setup, and ROOT→LHCO conversion follow [`reference/madgraph-reference.md`](reference/madgraph-reference.md).
+9. **MadGraph conventions**: All MG5 process creation, event generation, Delphes card setup, and ROOT→LHCO conversion follow [`reference/madgraph-reference.md`](reference/madgraph-reference.md). **Reusable scripts** are provided in `scripts/` — use them instead of reimplementing (see [Scripts](#scripts)).
 10. **Feature extraction**: LHCO→CSV conversion follows [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) and adapts to the actual final-state particles in `process`.
 11. **Run directory prefix (multi-run mode)**: Before Phase 0, compute `RUN_DIR = f"E{energy}_L{luminosity}"` (dots replaced by underscores). ALL file paths in ALL phases MUST prefix `results/` with `RUN_DIR/`. Single-run mode uses `results/` directly. This is NOT optional — verify by checking `results/E{e}_L{l}/` exists before writing any data. See [Output Structure](#output-structure) for examples.
+
+## Scripts
+
+The skill provides reusable Python scripts in the `scripts/` directory. **Always use the script** instead of reimplementing the logic inline. Each script is a standalone CLI tool that can also be imported as a Python module.
+
+| Script | Purpose | Used By |
+|--------|---------|---------|
+| `extract_cross_section.py` | Parse MG5 banner → cross-section (pb) | Phases 1, 2, 4, 6 |
+| `parse_param_card.py` | Parse `Block anoinputs` from `param_card.dat` | Phase 1, restart |
+| `extract_banner_coefficient.py` | Extract scanned coefficient value from banner | Phase 4 |
+| `setup_delphes_card.py` | Copy Delphes card + dependencies to process dir | Phases 1–4 |
+| `convert_root_to_lhco.py` | Auto-detect jet branch, run `root2lhco`, validate | Phases 1–4 |
+| `run_mg5.py` | Run MG5 order file with return-code checking | Phases 1–4 |
+| `normalize_process_name.py` | Normalize `e+ e- > a a` → `ep_em_to_a_a` | All phases |
+
+### CLI Usage
+
+```bash
+python scripts/extract_cross_section.py path/to/run_01_tag_1_banner.txt
+# Output: 0.0004231
+
+python scripts/parse_param_card.py path/to/param_card.dat
+# Output: {"1": 1e-12, "2": 0.0, ...}
+
+python scripts/run_mg5.py /opt/MG5_aMC_v3_5_6 order_p1_20260525_01.txt
+```
+
+### Python Import
+
+```python
+from scripts.extract_cross_section import extract_cross_section
+from scripts.parse_param_card import parse_anoinputs
+from scripts.run_mg5 import run_mg5
+from scripts.convert_root_to_lhco import convert_root_to_lhco
+# etc.
+```
+
+### Script Guarantees
+
+- Each script handles its own error cases and raises descriptive exceptions
+- Scripts are tested against MG5_aMC v3.x banner formats
+- Scripts auto-detect jet branches and MG5 binary names (mg5_aMC / mg5)
 
 ## Output Structure
 
@@ -330,10 +388,14 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 |---------|-------|-----|
 | **Inferring defaults from history/environment** | -1 | **CRITICAL ERROR**. example1/example2 parameters are NOT defaults. Always ask. |
 | **Modifying physical parameters for speed** | All | **CRITICAL ERROR**. Never modify without explicit user instruction |
+| **Wrong MG5 coefficient syntax** | 1, 3, 4 | Bare `set 1 = 0.0` is **silently ignored** in MG5 launch mode. Always use `set anoinputs {idx} {value}`. See [`reference/madgraph-reference.md`](reference/madgraph-reference.md) |
 | **Forgetting luminosity conversion** | 6, 7 | `L = luminosity * 1000` (fb⁻¹ → pb⁻¹). Phase 2 uses `L' = n_scan / cs_sm` |
 | **Default coefficient = 0** | 1, 3, 4 | Use `c0 = 1.0` if default is `0.0` |
 | **Ignoring MG5 return code** | 1-4 | Always check `result.returncode != 0` |
 | **Using `runs[-11:]` heuristic** | 4 | Use set-difference. See [`reference/phase4-scan.md`](reference/phase4-scan.md) |
+| **Index-based naming for scan runs** | 4 | When c=0 is skipped, `f0`/`f1` mapping shifts. Use **value-based naming** (`c{coeff_val}`). See [`reference/phase4-scan.md`](reference/phase4-scan.md) |
+| **param_card case sensitivity** | 1 | MG5 rewrites `Block` as `BLOCK`. Match case-insensitively. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |
+| **param_card scan syntax** | 1, restart | After MG5 scan, param_card retains `scan:[...]` for the scanned coefficient. Detect and skip. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |
 | **Hardcoding `nev_scan` in Phase 6** | 6 | Read from `sm_baseline.json` |
 | **Using `nonzero_ops[0]` for ref** | 6 | Use `ref_op = "o1"` |
 | **Confusing `N_sig` with `N_all`** | 7 | `N_sig` excludes SM; `N_all` includes it |

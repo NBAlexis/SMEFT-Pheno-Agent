@@ -7,9 +7,13 @@ Determine the scan range `[-c1, c1]` for each non-zero operator.
 
 ## Step 2.1: Generate SM Baseline
 
-Create SM process (`NP=0`), launch with all coefficients = 0.0, `nevents = {nev_phase2}`.
+Create SM process (`NP=0`), launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_phase2}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 
-Extract `cs_sm` from `run_XX_tag_1_banner.txt` using the canonical banner parser in [`madgraph-reference.md`](madgraph-reference.md).
+Extract `cs_sm` from `run_XX_tag_1_banner.txt` using the script:
+
+```bash
+python scripts/extract_cross_section.py {banner_path}
+```
 
 ## Step 2.2: Compute Expected Event Counts
 
@@ -39,6 +43,8 @@ N_NP^2 - 4*N_NP - 4*n_scan = 0
 N_NP = 2 + 2*sqrt(1 + n_scan)
 c1 = c0 * sqrt(N_NP * cs_sm / (n_scan * cs_np))
 ```
+
+**Critical:** The formula includes `c0` (the coefficient value used in Phase 1). Do NOT omit it — if `c0 = 1.0e-12` (typical gQGC_UFO default), omitting it produces `c1` values ~1e12× too large and unphysical cross-sections (up to 1e+19 pb).
 
 **Edge case:** If `cs_sm = 0`, abort. Verify process definition and energy.
 
