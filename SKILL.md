@@ -99,11 +99,10 @@ Verify the following are present:
 **DO NOT** check file systems, do NOT create directories, do NOT run any commands before this step completes.
 
 **CRITICAL — Parameter Source Restriction:**
-- ALL parameters MUST come from the **current user conversation**
-- **NEVER** read parameters from existing files, code, scripts, logs, or previous runs
-- **NEVER** infer parameters from filesystem state (e.g., scanning `mg5path/models/` to guess `model`)
-- **NEVER** reuse parameters from earlier conversations, example scripts, or cached configs
-- If parameters are not explicitly provided in the current conversation, they are **MISSING** — proceed to Step 2
+- `process`, `model`, `energy`, `luminosity` — **MUST be explicitly provided by the user in the current conversation**. No defaults, no inference from files or history.
+- `madgraph_path`, `cutexperiment_path` — **May use defaults** from historical conversation context, environment variables, or common install paths (e.g., `~/MG5_aMC_v*`, `~/CutExperiment`). However, the user **MUST still be asked to confirm or override** the default. Never silently accept a default without user confirmation.
+- **NEVER** infer `process`, `model`, `energy`, or `luminosity` from filesystem state, existing files, code, or cached configs.
+- If any of the 5 required parameters are not explicitly provided in the current conversation, they are **MISSING** — proceed to Step 2
 
 ### Step 2: If Any Input Is Missing, Ask the User
 
@@ -113,7 +112,7 @@ Ask for missing parameters **one at a time** in free-text conversation. After th
 
 Each question must include a progress indicator (e.g., `[1/8]`) so the user knows how many inputs remain:
 
-1. `[1/8] madgraph_path` — "[1/8] What is the absolute path to your MadGraph5 installation?"
+1. `[1/8] madgraph_path` — If a default exists from context (e.g., previous conversation, `~/MG5_aMC_v*`), ask: "[1/8] What is the absolute path to your MadGraph5 installation? (Press Enter to use `{default_path}`)". If no default exists: "[1/8] What is the absolute path to your MadGraph5 installation?"
 2. `[2/8] workdir` — "[2/8] Where should results be saved? (Press Enter to use the current directory)"
 3. `[3/8] process` — "[3/8] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
    - After the user provides `process`, **immediately inspect the initial state** (particles left of `>`)
@@ -123,7 +122,7 @@ Each question must include a progress indicator (e.g., `[1/8]`) so the user know
 4. `[4/8] model` — "[4/8] What SMEFT model name should be used?"
 5. `[5/8] energy` — "[5/8] What is the center-of-mass energy in TeV? (Single value or list, e.g. `[10, 14, 30]` )"
 6. `[6/8] luminosity` — "[6/8] What is the integrated luminosity in fb⁻¹? (Single value or list matching energy length)"
-7. `[7/8] cutexperiment_path` — "[7/8] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
+7. `[7/8] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask: "[7/8] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`.". If no default exists: "[7/8] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
 8. `[8/8] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
    - **If the user provided `custom_card`** (absolute path to a `.tcl` file outside `{mg5path}/Delphes/cards/`): skip the scan and use the custom card directly. Validate that the file exists.
    - **Otherwise**, run the auto-recommendation:

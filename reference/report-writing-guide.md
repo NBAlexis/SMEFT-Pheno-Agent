@@ -104,6 +104,18 @@ All papers follow this order. Do not deviate:
 - Must cite Pythia (if proton initial state or hadronization): T. Sjöstrand et al., Comput. Phys. Commun. 191, 159 (2015), arXiv:1410.3012
 - Must cite LHAPDF (if proton initial state): A. Buckley et al., Eur. Phys. J. C 75, 132 (2015), arXiv:1412.7420
 
+### 4.1a Feynman Diagrams
+
+Include representative Feynman diagrams from both the SM (`NP=0`) and NP (`NP>0`) process directories. These diagrams illustrate the underlying physics and the EFT vertices introduced by the model.
+
+**Required:**
+- 2–4 SM diagrams showing the process without EFT contributions
+- 2–4 NP diagrams showing the same process with EFT vertices
+- Each diagram set labeled clearly: "SM (NP=0)" and "NP (NP>0)"
+- Brief caption explaining the difference (e.g., "The NP diagrams include additional vertices from the `{model}` dimension-6/8 operators")
+
+**Source:** MG5 generates diagrams in `SubProcesses/P*/diagrams.html` and `matrix*.jpg`/`matrix*.png`/`matrix*.eps`.
+
 ### 4.2 Dataset Composition (Must Be Explicit)
 
 Every paper explicitly states what each dataset contains. Follow this standard:

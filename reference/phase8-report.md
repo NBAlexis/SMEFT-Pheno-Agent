@@ -33,6 +33,7 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
 2. **Introduction**: motivation, process, collider at `energy` TeV, `luminosity` fb⁻¹, model
 3. **Theoretical Framework**: effective Lagrangian, operator definitions, unitarity bounds
 4. **Event Generation & Data Preparation**: MC setup, dataset composition, event counts, scan points, feature list
+   - Include **Feynman diagrams** (see Step 8.6 below)
 5. **Machine Learning Methodology**: algorithms, score functions, training setup, AUC comparison, score distributions
 6. **Event Selection Optimization**: per-algorithm threshold optimization, fit plots, threshold comparison
 7. **Numerical Results & Expected Constraints**: cross-section fitting, significance formula, final constraint table (best algorithm only), algorithm comparison band plot
@@ -95,6 +96,50 @@ $$
 $$
 \sigma(f) = \sigma_{\mathrm{SM}} + f \cdot \sigma_{\mathrm{int}} + f^{2} \cdot \sigma_{\mathrm{NP}}
 $$
+
+## Step 8.6: Feynman Diagrams (Required)
+
+Include representative Feynman diagrams from both the SM (`NP=0`) and NP (`NP>0`) process directories to illustrate the physics process.
+
+### Collecting Diagrams
+
+MG5 stores Feynman diagrams in each process directory under `SubProcesses/`:
+
+| Process Type | Location | Files |
+|--------------|----------|-------|
+| SM baseline | `{mg5path}/{folder_base}_p2_SM/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
+| NP (EFT) | `{mg5path}/{folder_base}_p1_NP/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
+
+The `diagrams.html` file in each `SubProcesses/P*/` directory is an index that lists all diagrams with their process labels (e.g., `e+ e- > a u u~ NP=0 @1`).
+
+### Selection Criteria
+
+Select **2–4 representative diagrams per channel** (SM and NP):
+
+1. Open `diagrams.html` in the SM process directory to see the list of subprocesses
+2. Pick one subprocess (e.g., `e+ e- > a u u~`) and copy its first 2–3 `matrix*.jpg` files
+3. Repeat for the NP process directory — pick the same or a similar subprocess
+4. Convert to PDF if needed for LaTeX reports: `convert matrix11.jpg matrix11.pdf` or embed JPG directly in HTML
+
+### Report Placement
+
+Place the diagrams in **Section 4 (Event Generation & Data Preparation)** of the report:
+
+- Label SM diagrams as "SM process: $e^+ e^- \\to \\gamma j j$ (NP=0)"
+- Label NP diagrams as "NP process: $e^+ e^- \\to \\gamma j j$ (NP>0)"
+- Include a brief caption explaining that the NP diagrams include the EFT vertices from the `{model_name}` model
+
+### File Collection
+
+Copy selected diagrams to the results directory for archival:
+
+```
+results/data/feynman_diagrams/
+  sm_matrix11.jpg      # SM diagram 1
+  sm_matrix12.jpg      # SM diagram 2
+  np_matrix11.jpg      # NP diagram 1
+  np_matrix12.jpg      # NP diagram 2
+```
 
 ## Output
 
