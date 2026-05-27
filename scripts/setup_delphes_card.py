@@ -58,9 +58,11 @@ def setup_delphes_card(mg5path, delphes_card, process_folder):
                 # Dependency may be relative to cards/ directory
                 dep_full = os.path.normpath(os.path.join(cards_root, dep_path))
                 if os.path.exists(dep_full):
-                    dep_name = os.path.basename(dep_full)
-                    dst_dep = os.path.join(cards_dir, dep_name)
+                    # Preserve relative directory structure under Cards/
+                    rel_path = os.path.relpath(dep_full, cards_root)
+                    dst_dep = os.path.join(cards_dir, rel_path)
                     if dep_full not in copied_deps:
+                        os.makedirs(os.path.dirname(dst_dep), exist_ok=True)
                         if os.path.isdir(dep_full):
                             if os.path.exists(dst_dep):
                                 shutil.rmtree(dst_dep)
