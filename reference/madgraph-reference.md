@@ -134,12 +134,16 @@ python scripts/run_mg5.py {mg5path} {order_filename}
 The script:
 1. Tries `./bin/mg5_aMC` first, falls back to `./bin/mg5`
 2. Checks return code; on failure prints stdout/stderr and exits with error
+3. **Parses MG5 stdout in real time** to detect stage transitions (MadGraph → Pythia8 → Delphes) and records internal step timings
 
 Or import in Python:
 ```python
 from scripts.run_mg5 import run_mg5
+from scripts.timing_tracker import TimingTracker
 
-result = run_mg5(mg5path, order_filename)  # raises RuntimeError on failure
+tracker = TimingTracker()
+result = run_mg5(mg5path, order_filename, timing_tracker=tracker)
+# result["mg5_steps"] contains timing for madgraph, pythia8, delphes
 ```
 
 **Execution Logic:**

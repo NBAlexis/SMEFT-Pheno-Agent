@@ -308,8 +308,9 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 | `extract_banner_coefficient.py` | Extract scanned coefficient value from banner | Phase 4 |
 | `setup_delphes_card.py` | Copy Delphes card + dependencies to process dir | Phases 1–4 |
 | `convert_root_to_lhco.py` | Auto-detect jet branch, run `root2lhco`, validate | Phases 1–4 |
-| `run_mg5.py` | Run MG5 order file with return-code checking | Phases 1–4 |
+| `run_mg5.py` | Run MG5 order file with return-code checking and stage timing | Phases 1–4 |
 | `normalize_process_name.py` | Normalize `e+ e- > a a` → `ep_em_to_a_a` | All phases |
+| `timing_tracker.py` | Track phase-level and MG5 sub-step timings | All phases |
 
 ### CLI Usage
 
@@ -330,7 +331,26 @@ from scripts.extract_cross_section import extract_cross_section
 from scripts.parse_param_card import parse_anoinputs
 from scripts.run_mg5 import run_mg5
 from scripts.convert_root_to_lhco import convert_root_to_lhco
+from scripts.timing_tracker import TimingTracker, phase_timer
 # etc.
+```
+
+### Timing Tracking
+
+The skill tracks timing at two levels:
+
+1. **Phase-level**: Use `timing_tracker.phase_timer("Phase X: Name")` as a context manager around each phase. This prints a progress banner showing elapsed time and completed phases.
+2. **MG5 sub-step**: `run_mg5()` automatically detects and times MadGraph, Pythia8, and Delphes stages by parsing MG5 stdout in real time. Pass a `TimingTracker` instance to integrate:
+
+```python
+from scripts.timing_tracker import TimingTracker
+from scripts.run_mg5 import run_mg5
+
+tracker = TimingTracker()
+with tracker.phase_timer("Phase 4: Coefficient Scan"):
+    result = run_mg5(mg5path, order_filename, timing_tracker=tracker)
+tracker.print_report()
+tracker.save_log("results/timing_log.json")
 ```
 
 ### Script Guarantees
