@@ -1,0 +1,117 @@
+# Phase 8: Generate Publication-Quality Report
+
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+
+## Purpose
+Compile all results into a self-contained report.
+
+## Step 8.1: Output Format Selection
+
+```bash
+which pdflatex
+```
+
+| Condition | Format |
+|-----------|--------|
+| `pdflatex` exists | LaTeX → PDF |
+| Not available | HTML (self-contained, MathJax + base64 images) |
+
+### HTML Fallback
+
+If LaTeX is unavailable, generate a self-contained HTML file:
+- Use MathJax CDN for formula rendering: `<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>`
+- Embed all figures as base64-encoded PDFs (or regenerate as PNG for HTML): `<img src="data:image/png;base64,...">`
+- Include all tables inline
+- Structure with `<h1>`–`<h3>` matching the section numbering in Step 8.2
+- CSS: minimal, readable, print-friendly
+
+## Step 8.2: Report Structure
+
+Follow the structure in [`reference/report-writing-guide.md`](reference/report-writing-guide.md):
+
+1. **Abstract**: one-paragraph summary
+2. **Introduction**: motivation, process, collider at `energy` TeV, `luminosity` fb⁻¹, model
+3. **Theoretical Framework**: effective Lagrangian, operator definitions, unitarity bounds
+4. **Event Generation & Data Preparation**: MC setup, dataset composition, event counts, scan points, feature list
+5. **Machine Learning Methodology**: algorithms, score functions, training setup, AUC comparison, score distributions
+6. **Event Selection Optimization**: per-algorithm threshold optimization, fit plots, threshold comparison
+7. **Numerical Results & Expected Constraints**: cross-section fitting, significance formula, final constraint table (best algorithm only), algorithm comparison band plot
+8. **Conclusions**: summary, physical interpretation, outlook
+9. **References**: mandatory toolchain citations with DOI and arXiv
+
+## Step 8.3: Required Figures (PDF Vector Format)
+
+**All figures must be generated as PDF for vector quality.** Use `plt.savefig(..., format='pdf')`.
+
+| Figure | Source |
+|--------|--------|
+| ROC curves | `results/plots/roc_o*.pdf` |
+| Score distributions | `results/plots/score_dist_o*_*alg*.pdf` (all algorithms) |
+| Threshold optimization comparison | `results/plots/threshold_comparison.pdf` |
+| Cross-section fits | `results/plots/csfit_plot_o*_*alg*.pdf` (all algorithms) |
+| Algorithm comparison | `results/plots/algorithm_comparison.pdf` |
+
+## Step 8.4: Algorithm Comparison Section (Required)
+
+### AUC Comparison Table (Top 3 Only)
+
+**The report presents only the best 3 algorithms** (ranked by narrowest constraint width at S=2). The full pool and expansion history are recorded in `algorithm_comparison.json` but not shown in the report.
+
+| Algorithm | o1 AUC | o2 AUC | ... |
+|-----------|--------|--------|-----|
+| Algorithm 1 | 0.987 | 0.965 | ... |
+| Algorithm 2 | 0.954 | 0.943 | ... |
+| Algorithm 3 | 0.912 | 0.901 | ... |
+
+### Best Algorithm Selection
+
+| Operator | Best Algorithm | Selection Criterion | S=2 Width |
+|----------|---------------|---------------------|-----------|
+| o1 | Algorithm 1 | Narrowest constraint width | 0.045 |
+| o2 | Algorithm 2 | Narrowest constraint width | 0.078 |
+
+**Important**: The best algorithm is selected by **narrowest constraint width at S=2**, NOT highest AUC. Report when these differ.
+
+### Algorithm Comparison Plot (Top 3 Only)
+
+**Band plot** showing the constraint intervals $[f_{\min}, f_{\max}]$ for the top 3 algorithms side-by-side. For each algorithm, draw a horizontal band from $f_{\min}$ to $f_{\max}$. The best algorithm (narrowest band) should be highlighted.
+
+## Step 8.5: Required Formulas (LaTeX)
+
+All formulas must be rendered in LaTeX. `L` denotes physics luminosity in pb⁻¹.
+
+$$
+N_{\mathrm{SM}} = L \cdot cs_{\mathrm{sm}}
+$$
+
+$$
+N_{\mathrm{NP}}(c) = \frac{c^2}{c_0^2} \cdot L \cdot cs_{\mathrm{np}}
+$$
+
+$$
+S_{\mathrm{stat}} = \sqrt{2 \left[ (N_{\mathrm{bg}} + N_{\mathrm{sig}}) \ln\left(1 + \frac{N_{\mathrm{sig}}}{N_{\mathrm{bg}}}\right) - N_{\mathrm{sig}} \right]}
+$$
+
+$$
+\sigma(f) = \sigma_{\mathrm{SM}} + f \cdot \sigma_{\mathrm{int}} + f^{2} \cdot \sigma_{\mathrm{NP}}
+$$
+
+## Output
+
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/report.pdf`). See [`SKILL.md`](../SKILL.md) Rule 11.
+
+```
+results/report.pdf   # if pdflatex available
+results/report.html  # otherwise
+```
+
+Each report covers only its own `(energy, luminosity)` combination.
+
+## Validation
+
+- Report event counts must match actual debug-adjusted counts
+- Report constraint table must match Phase 7 `constraint_table.json`
+- Algorithm comparison data must match Phase 7 `algorithm_selection.json`
+- All algorithms trained in Phase 5 must appear in the comparison section
+- All figures in report must be PDF vector format
+- All formulas must be LaTeX-rendered
