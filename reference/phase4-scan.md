@@ -74,7 +74,7 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 Map each new run to `np_oi_f{index}` by run order (sorted by run number):
 
 ```
-run_XX → np_oi_f0_banner.txt,  np_oi_f0.lhco   (coefficient = -c1)
+run_XX → np_o1_f0_banner.txt,  np_o1_f0.lhco   (coefficient = -c1)
 run_YY → np_o1_f1_banner.txt,  np_o1_f1.lhco   (coefficient = -c1 + 0.2*c1)
 run_ZZ → np_o1_f2_banner.txt,  np_o1_f2.lhco   (coefficient = -c1 + 0.4*c1)
 ...
