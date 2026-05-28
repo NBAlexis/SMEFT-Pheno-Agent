@@ -7,7 +7,12 @@ Generate high-statistics pure samples for ML training.
 
 ## Step 3.1: Pure SM Sample
 
-1. Create SM process directory (`NP=0`)
+1. **Create SM process directory:**
+   ```
+   import model {model_name}
+   generate {process_name} NP=0
+   output {folder_base}_p3_SM
+   ```
 2. Copy Delphes card and dependencies
 3. Launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_sm}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 4. Post-process (ROOT→LHCO, validate, clean large files)
@@ -22,7 +27,12 @@ results/data/phase3/sm.lhco
 ## Step 3.2: Pure NP Samples
 
 For each non-zero operator `oi`:
-1. Create NP process directory (`NP>0`)
+1. **Create NP process directory:**
+   ```
+   import model {model_name}
+   generate {process_name} NP>0
+   output {folder_base}_p3_NP
+   ```
 2. Launch with `set anoinputs {idx} {c1}` for `oi` (from Phase 2), `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_np}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 3. Post-process
 4. Copy to results:

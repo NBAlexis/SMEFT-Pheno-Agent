@@ -283,6 +283,23 @@ All cross-sections from MG5 banners are in **pb**. All luminosities in formulas 
 
 **CRITICAL: Phase -1 is the ONLY interactive stage. Once Phase -1 Step 5 completes, Phases 0–9 execute FULLY AUTOMATICALLY and sequentially without stopping. Do NOT pause to ask the user whether to continue, whether to use debug mode, or to present options. Report progress at natural phase boundaries, then immediately proceed to the next phase. The only valid stop conditions are errors, red flags, or explicit user interrupt.**
 
+### Phase Workflow Reference
+
+The following table summarizes the MG5 invocation for every phase that runs MadGraph. This is the canonical reference — all details in per-phase documents must match this table.
+
+| Phase | `generate` line | Output folder suffix | Coefficient setting | `nevents` | Output files |
+|-------|-----------------|----------------------|---------------------|-----------|--------------|
+| 1 | `generate {process} NP>0` | `_p1_NP` | One at a time: target = `c0`, all others = `0.0` | `nev_phase1` | `operators.json`, `cross_sections.json` |
+| 2 | `generate {process} NP=0` | `_p2_SM` | All `set anoinputs {idx} 0.0` | `nev_phase2` | `sm_baseline.json`, `coefficient_ranges.json` |
+| 3 SM | `generate {process} NP=0` | `_p3_SM` | All `set anoinputs {idx} 0.0` | `nev_sm` | `sm_banner.txt`, `sm.lhco` |
+| 3 NP | `generate {process} NP>0` | `_p3_NP` | One at a time: target = `c1` (from Phase 2), others = `0.0` | `nev_np` | `np_oi_banner.txt`, `np_oi.lhco` |
+| 4 | `generate {process}` | `_p4` | One operator: `set anoinputs {idx} scan:[v0,v1,...]`; all others = `0.0` | `nev_scan` | `np_oi_f0_banner.txt` … `np_oi_f10_banner.txt` and `.lhco` |
+
+**Key rules:**
+- Each phase uses a **separate process directory** (independent `output` step). Never reuse a directory from another phase.
+- `scan:[...]` syntax is **only used in Phase 4**. Phases 1 and 3 NP test one coefficient at a time with individual `launch` commands.
+- Phase 4 output uses **index-based naming** (`f0` … `f10`) mapped by sorted run number, not coefficient value.
+
 ### Multi-Run Mode
 
 If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(energy, luminosity)` pair**. Each run is independent and uses its own output subdirectory.
@@ -325,7 +342,6 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 |--------|---------|---------|
 | `extract_cross_section.py` | Parse MG5 banner → cross-section (pb) | Phases 1, 2, 4, 6 |
 | `parse_param_card.py` | Parse `Block anoinputs` from `param_card.dat` | Phase 1, restart |
-| `extract_banner_coefficient.py` | Extract scanned coefficient value from banner | Phase 4 |
 | `setup_delphes_card.py` | Copy Delphes card + dependencies to process dir | Phases 1–4 |
 | `convert_root_to_lhco.py` | Auto-detect jet branch, run `root2lhco`, validate | Phases 1–4 |
 | `run_mg5.py` | Run MG5 order file with return-code checking and stage timing | Phases 1–4 |
@@ -433,7 +449,6 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | **Default coefficient = 0** | 1, 3, 4 | Use `c0 = 1.0` if default is `0.0` |
 | **Ignoring MG5 return code** | 1-4 | Always check `result.returncode != 0` |
 | **Using `runs[-11:]` heuristic** | 4 | Use set-difference. See [`reference/phase4-scan.md`](reference/phase4-scan.md) |
-| **Index-based naming for scan runs** | 4 | When c=0 is skipped, `f0`/`f1` mapping shifts. Use **value-based naming** (`c{coeff_val}`). See [`reference/phase4-scan.md`](reference/phase4-scan.md) |
 | **param_card case sensitivity** | 1 | MG5 rewrites `Block` as `BLOCK`. Match case-insensitively. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |
 | **param_card scan syntax** | 1, restart | After MG5 scan, param_card retains `scan:[...]` for the scanned coefficient. Detect and skip. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |
 | **Hardcoding `nev_scan` in Phase 6** | 6 | Read from `sm_baseline.json` |

@@ -40,7 +40,7 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 
 **Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. Report this as a parser bug.
 
-## Step 1.3: Scan Each Coefficient
+## Step 1.3: Test Each Coefficient Individually
 
 For each coefficient `fi`:
 1. Determine `c0`: default from param_card, or `1.0` if default is `0.0`

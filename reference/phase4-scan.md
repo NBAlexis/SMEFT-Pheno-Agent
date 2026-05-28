@@ -71,38 +71,25 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 
 ## Step 4.3: Rename Output Files
 
-Map each new run to `np_oi_c{value}` using the **actual coefficient value** read from the run banner (NOT the enumerate index):
+Map each new run to `np_oi_f{index}` by run order (sorted by run number):
+
+```
+run_XX → np_oi_f0_banner.txt,  np_oi_f0.lhco   (coefficient = -c1)
+run_YY → np_o1_f1_banner.txt,  np_o1_f1.lhco   (coefficient = -c1 + 0.2*c1)
+run_ZZ → np_o1_f2_banner.txt,  np_o1_f2.lhco   (coefficient = -c1 + 0.4*c1)
+...
+```
+
+Use set-difference to identify `new_runs`, then sort by run number:
 
 ```python
-from scripts.extract_banner_coefficient import extract_banner_coefficient
-
-for run in new_runs:
+new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
+for i, run in enumerate(new_runs):
     banner_path = os.path.join(events_dir, run, f"{run}_tag_1_banner.txt")
-    # Parse the banner BLOCK ANOINPUTS section to find the coefficient value
-    # (MG5 records parameter values in LHA block format within the banner)
-    # Name files with the coefficient value, not an index
-    # Format: c{value} where negative signs become 'm' prefix (e.g., -2.18e-11 → cm2.18e-11)
-    coeff_str = f"{coeff_val:.2e}".replace(".", "p").replace("-", "m").replace("+", "")
     run_lhco = os.path.join(events_dir, run, f"{run}.lhco")
-    dest_banner = f"np_oi_c{coeff_str}_banner.txt"
-    dest_lhco   = f"np_oi_c{coeff_str}.lhco"
-```
-
-Or via CLI:
-```bash
-python scripts/extract_banner_coefficient.py {banner_path} {idx}
-# Output: 2.184408e-11
-```
-
-**Why value-based naming is critical:** Some models (e.g., gQGC_UFO with NP>0) have zero cross-section when the scanned coefficient equals exactly `0.0`. MG5 silently skips that scan point, producing fewer than 11 runs. If you use index-based naming (`f0`, `f1`, ...), all positive-coefficient runs shift by one position and map to wrong values. Value-based naming is immune to skipped points.
-
-**Example with c=0 skipped (10 runs instead of 11):**
-```
-run_01 → np_o1_cm2.18e-11_banner.txt  (c = -c1)
-run_02 → np_o1_cm1.75e-11_banner.txt  (c = -0.8*c1)
-...
-# run for c=0 is MISSING — MG5 skipped it
-run_10 → np_o1_c2.18e-11_banner.txt   (c = +c1)
+    dest_banner = f"np_oi_f{i}_banner.txt"
+    dest_lhco   = f"np_oi_f{i}.lhco"
+    # Copy banner and lhco to results/data/phase4/
 ```
 
 ## Output
@@ -111,11 +98,15 @@ run_10 → np_o1_c2.18e-11_banner.txt   (c = +c1)
 
 ```
 results/data/phase4/
-  np_o1_cm2.18e-11_banner.txt    np_o1_cm2.18e-11.lhco
-  np_o1_cm1.75e-11_banner.txt    np_o1_cm1.75e-11.lhco
+  np_o1_f0_banner.txt    np_o1_f0.lhco
+  np_o1_f1_banner.txt    np_o1_f1.lhco
+  np_o1_f2_banner.txt    np_o1_f2.lhco
   ...
-  np_o1_c2.18e-11_banner.txt     np_o1_c2.18e-11.lhco
-  np_o2_cm2.18e-11_banner.txt    np_o2_cm2.18e-11.lhco
+  np_o1_f10_banner.txt   np_o1_f10.lhco
+  np_o2_f0_banner.txt    np_o2_f0.lhco
+  np_o2_f1_banner.txt    np_o2_f1.lhco
+  ...
+  np_o2_f10_banner.txt   np_o2_f10.lhco
   ...
 ```
 

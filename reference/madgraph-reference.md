@@ -97,16 +97,23 @@ The output folder is also placed under `mg5path/`:
 
 Depending on the Phase task, there are **three generation modes**. The `generate` line in the order file and the folder naming differ:
 
-| Mode | Order file `generate` line | Folder suffix |
-|------|---------------------------|---------------|
-| Default | `generate {process_name}` | (none) |
-| Pure SM (NP off) | `generate {process_name} NP=0` | `_SM` |
-| New Physics on | `generate {process_name} NP>0` | `_NP` |
+| Mode | Order file `generate` line | Folder suffix | Used by |
+|------|---------------------------|---------------|---------|
+| Default | `generate {process_name}` | (none) | Phase 4 scan |
+| Pure SM (NP off) | `generate {process_name} NP=0` | `_SM` | Phase 2 baseline, Phase 3 SM |
+| New Physics on | `generate {process_name} NP>0` | `_NP` | Phase 1 validation, Phase 3 NP |
 
 **Folder naming rule:**
 - Default: `{folder_base}_{phase}_{timestamp}_{suffix}`
 - SM mode: `{folder_base}_{phase}_{timestamp}_{suffix}_SM`
 - NP mode: `{folder_base}_{phase}_{timestamp}_{suffix}_NP`
+
+**Phase directory examples:**
+- Phase 1: `ep_em_to_a_a_p1_20260525_01_NP`
+- Phase 2: `ep_em_to_a_a_p2_20260525_01_SM`
+- Phase 3 SM: `ep_em_to_a_a_p3_20260525_01_SM`
+- Phase 3 NP: `ep_em_to_a_a_p3_20260525_01_NP`
+- Phase 4: `ep_em_to_a_a_p4_20260525_01`
 
 ### Minimum Order File for Process Creation
 
