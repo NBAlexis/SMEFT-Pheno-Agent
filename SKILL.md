@@ -11,6 +11,17 @@ Automated end-to-end workflow for studying Standard Model Effective Field Theory
 
 ---
 
+## Directory Layout
+
+| Directory | Meaning | Writable |
+|-----------|---------|----------|
+| **Working Directory** | The shell's current working directory where the user initiated the workflow (`pwd`) | Yes |
+| **Skill Directory** | Where the skill files (`SKILL.md`, `scripts/`, `reference/`) are installed | **No** |
+
+All work data (`results/`, `plots/`, `algorithms/`, MG5 process copies) MUST be written to the **Working Directory**, NEVER to the Skill Directory. The Skill Directory is a read-only tool template.
+
+---
+
 ## SUPREME RULE — Execution Continuity (MANDATORY)
 
 > **严禁在能继续推进时擅自暂停或者停止。**
@@ -148,7 +159,7 @@ Each question must include a progress indicator (e.g., `[1/8]`) so the user know
 > - Specific operators to focus on, report format preferences, or additional analysis"
 
 **Defaults:**
-- `workdir`: current directory if user presses Enter or provides no answer
+- `workdir`: the **Working Directory** (shell `pwd`) if user presses Enter or provides no answer
 - `cutexperiment_path`: clone from Gitee if user says no or provides no path
 - `delphes_card`: auto-recommended based on process initial state and energy (see below)
 - `debug`: false
@@ -190,7 +201,7 @@ After asking for missing inputs, **STOP**. Do nothing else. Wait for the user to
 ### Step 4: Validate Received Inputs
 
 - `madgraph_path`: verify the directory exists and contains `bin/mg5_aMC`
-- `workdir`: if provided, verify the directory exists (create automatically if missing); default to current directory
+- `workdir`: if provided, verify the directory exists (create automatically if missing); default to the Working Directory (shell `pwd`). **Verify `workdir` is NOT inside the Skill Directory** (where `SKILL.md` is located). If it is, use the Skill Directory's parent instead.
 - `process`: verify it does not contain `NP=`, `QED=`, or `QCD=` suffixes (strip them if present)
 - `energy`: all values > 0
 - `luminosity`: all values > 0

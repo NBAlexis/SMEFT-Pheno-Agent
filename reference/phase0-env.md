@@ -28,12 +28,15 @@ if missing:
 
 7. **Delphes card**: If `delphes_card` was user-specified, verify it exists at `{madgraph_path}/Delphes/cards/{delphes_card}`. If it was auto-selected in Phase -1, verify the file exists. If neither, run the auto-recommendation logic from [`SKILL.md`](../SKILL.md) and verify the resulting card exists.
 
-8. **Run directory setup (multi-run mode)**: For each `(energy, luminosity)` pair, compute `RUN_DIR = f"E{energy}_L{luminosity}"` with dots replaced by underscores. Create `results/{RUN_DIR}/` with subdirectories `data/`, `plots/`, `algorithms/`, `mg5_processes/`, `orders/`. ALL subsequent phases MUST write to this directory, NEVER to bare `results/`.
+8. **Working Directory guard**: Verify `workdir` is NOT inside the Skill Directory (where `SKILL.md` is located). If it is, use the Skill Directory's parent instead and report: "Work directory adjusted to `{parent}` to avoid writing into the skill installation."
+
+9. **Run directory setup**: All `results/` paths are relative to `{workdir}`. For each `(energy, luminosity)` pair, compute `RUN_DIR = f"E{energy}_L{luminosity}"` with dots replaced by underscores. Create `{workdir}/results/{RUN_DIR}/` with subdirectories `data/`, `plots/`, `algorithms/`, `mg5_processes/`, `orders/`. ALL subsequent phases MUST write to this directory, NEVER to bare `results/`. In single-run mode, use `{workdir}/results/` directly.
 
 ## Critical Rules
 
 - Do NOT hardcode paths to external virtual environments (e.g., `../example1/venv`)
 - Create a local venv if needed, or install packages system-wide
+- **All file paths MUST be resolved relative to `{workdir}`**. Never assume the current working directory is correct; always use `os.path.join(workdir, "results", ...)` or `os.chdir(workdir)` before file operations.
 
 ## MG5 Return Code Checking
 
