@@ -115,6 +115,10 @@ Verify the following are present:
 - **NEVER** infer `process`, `model`, `energy`, or `luminosity` from filesystem state, existing files, code, or cached configs.
 - If any of the 5 required parameters are not explicitly provided in the current conversation, they are **MISSING** — proceed to Step 2
 
+**Restart handling — CRITICAL:**
+- If the user explicitly requests a restart or re-test (e.g., says "重新测试", "restart", "start over", "重新来", "重来", or any phrase clearly indicating they want to begin from scratch), **treat ALL parameters as MISSING** regardless of prior conversation context. Proceed to Step 2 and re-ask every parameter.
+- This rule **OVERRIDES** the "present in current conversation" check above. User intent to restart takes absolute precedence.
+
 ### Step 2: If Any Input Is Missing, Ask the User
 
 **ALWAYS ask exactly ONE parameter per message.** After the user answers, move to the next. Never present a list or table of parameters to fill. Never ask "please provide all of the above" or "confirm previous parameters" — even if the user says "start now", "重新测试", or "use the same as before". The user must be able to type paths, process strings, and numeric values directly, one per message. Violating this rule breaks the standardized input collection and leads to workflow failures.
