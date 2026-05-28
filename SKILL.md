@@ -121,20 +121,20 @@ Verify the following are present:
 
 **Question order:**
 
-Each question must include a progress indicator (e.g., `[1/8]`) so the user knows how many inputs remain:
+Each question must include a progress indicator (e.g., `[1/9]`) so the user knows how many inputs remain:
 
-1. `[1/8] madgraph_path` — If a default exists from context (e.g., previous conversation, `~/MG5_aMC_v*`), ask: "[1/8] What is the absolute path to your MadGraph5 installation? (Press Enter to use `{default_path}`)". If no default exists: "[1/8] What is the absolute path to your MadGraph5 installation?"
-2. `[2/8] workdir` — "[2/8] Where should results be saved? (Press Enter to use the current directory)"
-3. `[3/8] process` — "[3/8] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
+1. `[1/9] madgraph_path` — If a default exists from context (e.g., previous conversation, `~/MG5_aMC_v*`), ask: "[1/9] What is the absolute path to your MadGraph5 installation? (Press Enter to use `{default_path}`)". If no default exists: "[1/9] What is the absolute path to your MadGraph5 installation?"
+2. `[2/9] workdir` — "[2/9] Where should results be saved? (Press Enter to use the current directory)"
+3. `[3/9] process` — "[3/9] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
    - After the user provides `process`, **immediately inspect the initial state** (particles left of `>`)
    - If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~` (electron-proton collider), **insert an extra required question before continuing**:
      > "[追加] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
    - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
-4. `[4/8] model` — "[4/8] What SMEFT model name should be used?"
-5. `[5/8] energy` — "[5/8] What is the center-of-mass energy in TeV? (Single value or list, e.g. `[10, 14, 30]` )"
-6. `[6/8] luminosity` — "[6/8] What is the integrated luminosity in fb⁻¹? (Single value or list matching energy length)"
-7. `[7/8] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask: "[7/8] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`.". If no default exists: "[7/8] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
-8. `[8/8] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
+4. `[4/9] model` — "[4/9] What SMEFT model name should be used?"
+5. `[5/9] energy` — "[5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, e.g. `10` or `[10, 14, 30]`."
+6. `[6/9] luminosity` — "[6/9] What is the integrated luminosity in fb⁻¹? Provide a single value or a list matching the energy length, e.g. `3000` or `[1000, 3000, 10000]`."
+7. `[7/9] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask: "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`.". If no default exists: "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
+8. `[8/9] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
    - **If the user provided `custom_card`** (absolute path to a `.tcl` file outside `{mg5path}/Delphes/cards/`): skip the scan and use the custom card directly. Validate that the file exists.
    - **Otherwise**, run the auto-recommendation:
      1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
@@ -149,14 +149,16 @@ Each question must include a progress indicator (e.g., `[1/8]`) so the user know
    - If the user types a card name, validate that it exists in `{mg5path}/Delphes/cards/`
    - **If no cards match the collider type** (all scores = 0), show: "No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one:"
 
-**After all required inputs are collected, also ask**:
+9. `[9/9]` — **After all required inputs are collected, also ask**:
+   > "Are there any other requirements or preferences? Optional settings you can specify:
+   > - `debug=true` — divide all event counts by 10 for faster testing (default: false)
+   > - `algorithms` — specify which ML algorithms to compare (default: automatically select and test multiple algorithms)
+   > - `polarization` — beam polarization as `polbeam1,polbeam2` in range [-1, 1] (default: no polarization)
+   > - `custom_card` — absolute path to a custom Delphes card outside `{mg5path}/Delphes/cards/`
+   > - Specific operators to focus on, report format preferences, or additional analysis
+   > Press Enter to skip and use all defaults."
 
-> "Are there any other requirements or preferences? Optional settings you can specify:
-> - `debug=true` — divide all event counts by 10 for faster testing (default: false)
-> - `algorithms` — specify which ML algorithms to compare (default: automatically select and test multiple algorithms)
-> - `polarization` — beam polarization as `polbeam1,polbeam2` in range [-1, 1] (default: no polarization)
-> - `custom_card` — absolute path to a custom Delphes card outside `{mg5path}/Delphes/cards/`
-> - Specific operators to focus on, report format preferences, or additional analysis"
+   This is **NOT optional** — it MUST be asked even if the user is in a hurry. The user can always press Enter to accept defaults, but the question itself must be presented.
 
 **Defaults:**
 - `workdir`: the **Working Directory** (shell `pwd`) if user presses Enter or provides no answer
