@@ -385,6 +385,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 9. **MadGraph conventions**: All MG5 process creation, event generation, Delphes card setup, and ROOT→LHCO conversion follow [`reference/madgraph-reference.md`](reference/madgraph-reference.md). **Reusable scripts** are provided in `scripts/` — use them instead of reimplementing (see [Scripts](#scripts)).
 10. **Feature extraction**: LHCO→CSV conversion follows [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) and adapts to the actual final-state particles in `process`.
 11. **Run directory prefix (multi-run mode)**: Before Phase 0, compute `RUN_DIR = f"E{energy}_L{luminosity}"` (dots replaced by underscores). ALL file paths in ALL phases MUST prefix `results/` with `RUN_DIR/`. Single-run mode uses `results/` directly. This is NOT optional — verify by checking `results/E{e}_L{l}/` exists before writing any data. See [Output Structure](#output-structure) for examples.
+12. **No concurrent MG5 processes**: MadGraph5 internally uses multi-threading (OpenMP) and will saturate all CPU cores. Launching multiple MG5 processes in parallel causes CPU contention and is **slower** than sequential execution. Run MG5 invocations **one at a time** — never parallelize across operators, scan points, or phases.
 
 ## Scripts
 

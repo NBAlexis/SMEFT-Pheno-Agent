@@ -76,6 +76,36 @@ def collect_dependencies(tcl_file, cards_root, collected):
     return collected
 
 
+def _sanitize_execution_path(card_path):
+    """Remove comment lines inside Tcl { } blocks in ExecutionPath.
+
+    Delphes cards sometimes contain commented-out modules inside
+    `set ExecutionPath { ... }` using `# ModuleName`. In Tcl brace
+    quoting, `#` is literal text, not a comment, so Delphes tries to
+    load a module named `#` and fails.
+    """
+    with open(card_path) as f:
+        lines = f.readlines()
+
+    in_execution_path = False
+    fixed = []
+    removed = 0
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("set ExecutionPath"):
+            in_execution_path = True
+        if in_execution_path and stripped == "}":
+            in_execution_path = False
+        if in_execution_path and stripped.startswith("#"):
+            removed += 1
+            continue
+        fixed.append(line)
+
+    if removed:
+        with open(card_path, "w") as f:
+            f.writelines(fixed)
+
+
 def setup_delphes_card(mg5path, delphes_card, process_folder):
     """Copy Delphes card and dependencies into process directory.
 
@@ -97,6 +127,11 @@ def setup_delphes_card(mg5path, delphes_card, process_folder):
 
     dst_card = os.path.join(cards_dir, "delphes_card.dat")
     shutil.copy2(src_card, dst_card)
+
+    # Sanitize ExecutionPath: remove comment lines inside { } blocks
+    # Tcl treats '#' as literal text inside braces, causing Delphes to
+    # error with "module '#' is specified in ExecutionPath but not configured"
+    _sanitize_execution_path(dst_card)
 
     # Recursively resolve all dependencies
     cards_root = os.path.join(mg5path, "Delphes", "cards")
