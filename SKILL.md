@@ -106,7 +106,7 @@ Verify the following are present:
 
 ### Step 2: If Any Input Is Missing, Ask the User
 
-Ask for missing parameters **one at a time** in free-text conversation. After the user answers each question, move to the next parameter. Do not ask multiple parameters in one message. The user must be able to type paths, process strings, and numeric values directly.
+**ALWAYS ask exactly ONE parameter per message.** After the user answers, move to the next. Never present a list or table of parameters to fill. Never ask "please provide all of the above" or "confirm previous parameters" — even if the user says "start now", "重新测试", or "use the same as before". The user must be able to type paths, process strings, and numeric values directly, one per message. Violating this rule breaks the standardized input collection and leads to workflow failures.
 
 **Question order:**
 
@@ -230,6 +230,7 @@ Example: `energy = [10, 14, 30]`, `luminosity = [1000, 3000, 10000]` → 3 runs:
 
 | Prohibited Behavior | Why |
 |---------------------|-----|
+| **Asking multiple parameters in one message** | **VIOLATION of Step 2.** One parameter per message, no tables, no "provide all above". |
 | Inferring defaults from example1/example2/history | Each run is independent; historical parameters are NOT defaults |
 | Using "start now" / "直接开始" as override | User urgency does NOT bypass input collection |
 | Proceeding to Phase 0 with missing inputs | Phase -1 must be fully completed first |
@@ -442,6 +443,7 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 
 | Mistake | Phase | Fix |
 |---------|-------|-----|
+| **Asking multiple parameters in one message** | -1 | **VIOLATION**. Always ask exactly ONE parameter per message. Never present a fill-in table. |
 | **Inferring defaults from history/environment** | -1 | **CRITICAL ERROR**. example1/example2 parameters are NOT defaults. Always ask. |
 | **Modifying physical parameters for speed** | All | **CRITICAL ERROR**. Never modify without explicit user instruction |
 | **Wrong MG5 coefficient syntax** | 1, 3, 4 | Bare `set 1 = 0.0` is **silently ignored** in MG5 launch mode. Always use `set anoinputs {idx} {value}`. See [`reference/madgraph-reference.md`](reference/madgraph-reference.md) |
