@@ -148,7 +148,7 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
     # Check root2lhco log for errors
     with open(log_path) as f:
         log_content = f.read()
-    if "0 events" in log_content or "Error" in log_content or "Cannot find tree" in log_content:
+    if "contains 0 events" in log_content or "Error" in log_content or "Cannot find tree" in log_content:
         raise RuntimeError(
             f"root2lhco log indicates failure:\n{log_content[:2000]}"
         )
