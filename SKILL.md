@@ -54,7 +54,7 @@ This is the **highest-level norm** of this skill. Violating this rule is a **cri
 ### The ONLY Valid Stop Conditions
 
 1. **Unrecoverable error** (MG5 crash, disk full, file corruption)
-2. **Red flag** from Phase 9 audit (constraint width increases with S, zero non-zero operators, etc.)
+2. **Red flag after phase completion** — Some red flags are checked immediately after their phase finishes (e.g., zero non-zero operators after Phase 1, cs_sm = 0 after Phase 2). Others are deferred to Phase 9 audit. See Red Flags table for per-phase timing.
 3. **User explicitly sends a stop command** (e.g., "停！", "stop", Ctrl+C)
 
 **Everything else — continue.**
@@ -66,7 +66,7 @@ The following situations are **NOT errors** and **do NOT justify stopping**. The
 | Situation | Classification | Required Action |
 |-----------|---------------|-----------------|
 | Single operator has σ = 0 | **Valid result** | Record it, continue testing remaining operators |
-| All operators have σ = 0 | **Red flag** (after Phase 1 completes) | Report in Phase 9 audit, do NOT stop mid-phase |
+| All operators have σ = 0 | **Red flag** (after Phase 1 completes) | STOP after Phase 1 finishes. No operators are sensitive — there is nothing to study. |
 | A scan point times out or fails | **Recoverable issue** | Retry or skip the point, continue remaining points |
 | ML AUC ≤ 0.5 | **Red flag** (after Phase 5 completes) | Report in Phase 9 audit |
 | Quadratic fit fails | **Red flag** (after Phase 6 completes) | Report in Phase 9 audit |
@@ -333,7 +333,7 @@ All cross-sections from MG5 banners are in **pb**. All luminosities in formulas 
 | Phase 4: first scan point has issues | **Continue** processing ALL 11 scan points. Complete Phase 4 fully. | Stop after partial scan |
 | Phase 5: first algorithm performs poorly | **Continue** testing ALL configured algorithms. Complete Phase 5 fully. | Skip remaining algorithms |
 
-**Red flags are checked AFTER the phase completes, NEVER during execution.** A zero cross-section for an individual operator is a valid Phase 1 result, not a reason to abort. The red flag "Zero non-zero operators after Phase 1" means **ALL operators tested returned σ = 0 after the entire phase finished** — not that you can stop early because the first few were zero.
+**Red flags are checked AFTER the phase completes, NEVER during execution.** A zero cross-section for an individual operator is a valid Phase 1 result, not a reason to abort. The red flag "Zero non-zero operators after Phase 1" means **ALL operators tested returned σ = 0 after the entire phase finished** — at that point the workflow STOPS because there is no sensitive operator to study. But you MUST NOT stop early because the first few were zero.
 
 ### Phase Workflow Reference
 
