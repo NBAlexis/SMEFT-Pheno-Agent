@@ -301,6 +301,18 @@ All cross-sections from MG5 banners are in **pb**. All luminosities in formulas 
 
 **CRITICAL: Phase -1 is the ONLY interactive stage. Once Phase -1 Step 5 completes, Phases 0–9 execute FULLY AUTOMATICALLY and sequentially without stopping. Do NOT pause to ask the user whether to continue, whether to use debug mode, or to present options. Report progress at natural phase boundaries, then immediately proceed to the next phase. The only valid stop conditions are errors, red flags, or explicit user interrupt.**
 
+### Phase Completion Rule (MANDATORY)
+
+**Every phase MUST run to completion before any red flag check is applied.**
+
+| Situation | Correct Behavior | Wrong Behavior |
+|-----------|------------------|----------------|
+| Phase 1: first few operators have σ = 0 | **Continue** testing ALL remaining operators. Complete Phase 1 fully. | Stop mid-phase and declare red flag |
+| Phase 4: first scan point has issues | **Continue** processing ALL 11 scan points. Complete Phase 4 fully. | Stop after partial scan |
+| Phase 5: first algorithm performs poorly | **Continue** testing ALL configured algorithms. Complete Phase 5 fully. | Skip remaining algorithms |
+
+**Red flags are checked AFTER the phase completes, NEVER during execution.** A zero cross-section for an individual operator is a valid Phase 1 result, not a reason to abort. The red flag "Zero non-zero operators after Phase 1" means **ALL operators tested returned σ = 0 after the entire phase finished** — not that you can stop early because the first few were zero.
+
 ### Phase Workflow Reference
 
 The following table summarizes the MG5 invocation for every phase that runs MadGraph. This is the canonical reference — all details in per-phase documents must match this table.
