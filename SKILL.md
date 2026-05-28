@@ -59,6 +59,28 @@ This is the **highest-level norm** of this skill. Violating this rule is a **cri
 
 **Everything else — continue.**
 
+### Error vs. Valid Result vs. Red Flag
+
+The following situations are **NOT errors** and **do NOT justify stopping**. They are valid (if unexpected) physical results that must be recorded and the workflow must continue:
+
+| Situation | Classification | Required Action |
+|-----------|---------------|-----------------|
+| Single operator has σ = 0 | **Valid result** | Record it, continue testing remaining operators |
+| All operators have σ = 0 | **Red flag** (after Phase 1 completes) | Report in Phase 9 audit, do NOT stop mid-phase |
+| A scan point times out or fails | **Recoverable issue** | Retry or skip the point, continue remaining points |
+| ML AUC ≤ 0.5 | **Red flag** (after Phase 5 completes) | Report in Phase 9 audit |
+| Quadratic fit fails | **Red flag** (after Phase 6 completes) | Report in Phase 9 audit |
+| MG5 returns warning (not crash) | **Valid execution** | Log the warning, continue |
+
+**True errors** (unrecoverable, may stop):
+- MG5 segfault / process killed / out of memory
+- Disk full
+- Required model file missing or corrupted
+- Python dependency import failure
+- Network failure preventing required clone/download
+
+**If in doubt whether something is an error: assume it is NOT an error and continue.** Only stop when the system physically cannot proceed.
+
 ---
 
 ## When to Use
