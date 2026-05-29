@@ -9,7 +9,9 @@ Verify all dependencies exist before starting the workflow.
 
 1. **Required inputs**: Verify all required inputs are present (`madgraph_path`, `process`, `model`, `energy`, `luminosity`). `cutexperiment_path` is optional. If any required inputs are missing, STOP and ask the user (see `SKILL.md` "Missing Input Handling").
 2. **MadGraph5**:
-   - If `madgraph_path` was **auto-installed** in Phase -1 (see [`madgraph-installation.md`](madgraph-installation.md)): verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+   - If `madgraph_path` was **auto-installed** in Phase -1 (see [`madgraph-installation.md`](madgraph-installation.md)):
+     - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+     - The installer script prints an environment report at the end showing current `PATH` / `LD_LIBRARY_PATH` and recommended exports. The script does **not** modify any environment variable. The LLM/skill should inspect the report and the user's `~/.bashrc`, then decide whether to set the exports for the current session and/or append them to `~/.bashrc` (with `# MG5_auto_install` markers).
    - Otherwise: verify `madgraph_path` exists and contains `bin/mg5_aMC`
 3. **CutExperiment**:
    - If `cutexperiment_path` is provided: verify it exists

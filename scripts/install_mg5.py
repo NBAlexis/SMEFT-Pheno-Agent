@@ -2,12 +2,19 @@
 """
 Automatically install MadGraph5_aMC@NLO with Pythia8, LHAPDF6, and Delphes.
 
+The download URL and extracted directory name must be provided by the caller
+(typically the LLM/skill after parsing https://launchpad.net/mg5amcnlo).
+This script does NOT scrape launchpad — it only handles download, extraction,
+compilation, verification, and environment setup.
+
 Usage:
-    python install_mg5.py <install_dir> [version]
+    python install_mg5.py <install_dir> --url <download_url> --name <extracted_dir_name>
 
 Arguments:
-    install_dir  Directory where MG5 will be extracted (created if missing)
-    version      'lts' (default) or 'latest'
+    install_dir        Directory where MG5 will be extracted (created if missing)
+    --url              Direct download URL for the MG5 tarball
+    --name             Name of the top-level directory inside the tarball
+                       (e.g. MG5_aMC_v3_5_15)
 
 Exit codes:
     0  success
@@ -17,12 +24,13 @@ Exit codes:
     4  verification failed
 
 Example:
-    python install_mg5.py ~/HEP_Tools lts
+    python install_mg5.py ~/HEP_Tools \
+        --url "https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/LTS_MG5aMC_v3.5.15.tgz" \
+        --name MG5_aMC_v3_5_15
     # Result: ~/HEP_Tools/MG5_aMC_v3_5_15/
 """
 import argparse
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -30,62 +38,12 @@ import tarfile
 import tempfile
 
 
-LAUNCHPAD_URL = "https://launchpad.net/mg5amcnlo"
-
 SYSTEM_DEPS = [
     ("gcc", "build-essential"),
     ("gfortran", "gfortran"),
     ("python3", "python3"),
     ("curl", "curl"),
 ]
-
-
-def fetch_latest_info(version_type):
-    """Scrape launchpad.net for the latest MG5 download URL and version.
-
-    Args:
-        version_type: "lts" or "latest"
-
-    Returns:
-        dict: {"url": str, "version": str, "extracted_name": str}
-
-    Raises:
-        SystemExit: if parsing fails
-    """
-    print(f"Fetching latest {version_type.upper()} info from {LAUNCHPAD_URL} ...")
-    result = subprocess.run(
-        ["curl", "-sL", LAUNCHPAD_URL],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"ERROR: Failed to fetch {LAUNCHPAD_URL}", file=sys.stderr)
-        sys.exit(2)
-
-    html = result.stdout
-    if version_type == "lts":
-        pattern = r'href="(https://launchpad\.net/mg5amcnlo/[^"]*/\+download/LTS_MG5aMC_v[0-9]+\.[0-9]+\.[0-9]+\.tgz)"'
-    else:
-        pattern = r'href="(https://launchpad\.net/mg5amcnlo/[^"]*/\+download/MG5_aMC_v[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz)"'
-
-    match = re.search(pattern, html)
-    if not match:
-        print(f"ERROR: Could not find {version_type} download URL on {LAUNCHPAD_URL}", file=sys.stderr)
-        sys.exit(2)
-
-    url = match.group(1)
-    filename = url.split("/")[-1]
-    ver_match = re.search(r'v([0-9]+\.[0-9]+\.[0-9]+)', filename)
-    if not ver_match:
-        print(f"ERROR: Could not parse version from {filename}", file=sys.stderr)
-        sys.exit(2)
-
-    version = ver_match.group(1)
-    extracted_name = "MG5_aMC_v" + version.replace(".", "_")
-
-    print(f"  Found {version_type.upper()}: {version}")
-    print(f"  URL: {url}")
-    return {"url": url, "version": version, "extracted_name": extracted_name}
 
 
 def check_system_deps():
@@ -193,50 +151,52 @@ def verify_installation(mg5path):
     print("All components verified.")
 
 
-def setup_ld_library_path(mg5path):
-    """Append HEPTools/lib to LD_LIBRARY_PATH in ~/.bashrc if not already present."""
+def print_env_info(mg5path):
+    """Print current environment variables and recommended export commands.
+
+    The script does NOT modify any environment variable — neither the current
+    Python process (os.environ) nor ~/.bashrc. The LLM/skill inspects the
+    output and decides what action to take.
+    """
+    bin_dir = os.path.join(mg5path, "HEPTools", "bin")
     lib_dir = os.path.join(mg5path, "HEPTools", "lib")
-    bashrc = os.path.expanduser("~/.bashrc")
 
-    marker = "# MG5_auto_install_LD_LIBRARY_PATH"
-    export_line = f'export LD_LIBRARY_PATH="{lib_dir}:$LD_LIBRARY_PATH"  {marker}'
+    current_path = os.environ.get("PATH", "")
+    current_ld = os.environ.get("LD_LIBRARY_PATH", "")
 
-    if os.path.exists(bashrc):
-        with open(bashrc) as f:
-            content = f.read()
-        if marker in content:
-            print("LD_LIBRARY_PATH already configured in ~/.bashrc")
-            return
-
-    with open(bashrc, "a") as f:
-        f.write(f"\n{export_line}\n")
-    print(f"Added LD_LIBRARY_PATH to ~/.bashrc: {lib_dir}")
+    print("\n--- Environment Report (script did NOT modify anything) ---")
+    print(f"Current PATH:\n  {current_path}")
+    print(f"Current LD_LIBRARY_PATH:\n  {current_ld}")
+    print(f"\nRecommended additions (if not already present):")
+    print(f'  export PATH="{bin_dir}:$PATH"  # MG5_auto_install_PATH')
+    print(f'  export LD_LIBRARY_PATH="{lib_dir}:$LD_LIBRARY_PATH"  # MG5_auto_install_LD_LIBRARY_PATH')
+    print("\nThe LLM/skill should inspect the current values and decide:")
+    print("  1. Whether to set them for the current session")
+    print("  2. Whether to append them to ~/.bashrc for persistence")
+    print("-----------------------------------------------------------")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Install MG5 with Pythia8, LHAPDF6, and Delphes")
     parser.add_argument("install_dir", help="Directory where MG5 will be extracted")
-    parser.add_argument("version", nargs="?", default="lts", choices=["lts", "latest"],
-                        help="MG5 version to install (default: lts)")
+    parser.add_argument("--url", required=True, help="Direct download URL for the MG5 tarball")
+    parser.add_argument("--name", required=True,
+                        help="Name of the top-level directory inside the tarball (e.g. MG5_aMC_v3_5_15)")
     args = parser.parse_args()
 
     install_dir = os.path.abspath(args.install_dir)
-    version = args.version
+    url = args.url
+    extracted_name = args.name
+    mg5path = os.path.join(install_dir, extracted_name)
 
     # 1. Check system deps
     check_system_deps()
-
-    # 2. Fetch latest version info from launchpad
-    info = fetch_latest_info(version)
-    url = info["url"]
-    extracted_name = info["extracted_name"]
-    mg5path = os.path.join(install_dir, extracted_name)
 
     # 2. Skip if already installed
     if os.path.exists(os.path.join(mg5path, "bin", "mg5_aMC")):
         print(f"MG5 already exists at {mg5path}")
         verify_installation(mg5path)
-        setup_ld_library_path(mg5path)
+        print_env_info(mg5path)
         print(f"\nMadGraph5 path: {mg5path}")
         return
 
@@ -255,13 +215,11 @@ def main():
     # 6. Verify
     verify_installation(mg5path)
 
-    # 7. Environment
-    setup_ld_library_path(mg5path)
+    # 7. Print environment info for LLM inspection (script does NOT modify anything)
+    print_env_info(mg5path)
 
     print(f"\nInstallation complete.")
     print(f"MadGraph5 path: {mg5path}")
-    print(f"To use in this session, run:")
-    print(f"  export LD_LIBRARY_PATH={mg5path}/HEPTools/lib:$LD_LIBRARY_PATH")
 
 
 if __name__ == "__main__":

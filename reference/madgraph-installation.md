@@ -34,7 +34,7 @@ sudo apt-get install -y build-essential gfortran libboost-all-dev python3 curl
 
 ## MG5 Download Sources
 
-The installer **dynamically fetches** the latest version from `https://launchpad.net/mg5amcnlo` at runtime. It does not hardcode version numbers.
+The **LLM/skill** fetches `https://launchpad.net/mg5amcnlo` at runtime, parses the HTML, and extracts the latest download URL and directory name. The script itself does **not** scrape launchpad.
 
 As of this writing, the available versions are:
 
@@ -49,7 +49,15 @@ The LTS version is preferred for reproducibility. Launchpad redirects to `launch
 
 ## Installation Steps
 
-### Step 1: Download and Extract
+### Step 1: LLM Parses Launchpad
+
+The skill fetches `https://launchpad.net/mg5amcnlo` and parses the HTML to find:
+- The **download URL** for the selected version (LTS or latest stable)
+- The **extracted directory name** (e.g. `MG5_aMC_v3_5_15`)
+
+> **Rationale:** Launchpad page structure and naming conventions change over time. The LLM adapts to whatever structure is present, rather than relying on brittle regexes in a script.
+
+### Step 2: Download and Extract
 
 ```bash
 curl -L -o /tmp/LTS_MG5aMC_v3.5.15.tgz \
@@ -60,7 +68,7 @@ tar -xzf /tmp/LTS_MG5aMC_v3.5.15.tgz -C {install_dir}
 
 Result: `{install_dir}/MG5_aMC_v3_5_15/` with `bin/mg5_aMC` inside.
 
-### Step 2: Install MG5 Internal Dependencies
+### Step 3: Install MG5 Internal Dependencies
 
 Run MG5 with an order file containing the `install` commands:
 
@@ -77,7 +85,7 @@ MG5 will:
 
 **Critical:** These installs are CPU-intensive (compilation of C++ code). Each takes 5–20 minutes depending on the machine.
 
-### Step 3: Verify Installation
+### Step 4: Verify Installation
 
 After all installs complete, verify:
 
@@ -88,15 +96,28 @@ ls {mg5path}/HEPTools/lhapdf6_py3/bin/lhapdf-config
 ls {mg5path}/Delphes/cards/delphes_card_default.dat
 ```
 
-### Step 4: Environment Variables
+### Step 5: Environment Variables
 
-MG5 writes paths to `{mg5path}/input/mg5_configuration.txt` during install. However, **runtime** requires `LD_LIBRARY_PATH` to include `HEPTools/lib`:
+MG5 writes paths to `{mg5path}/input/mg5_configuration.txt` during install. However, **runtime** requires two environment variables:
+
+| Variable | Path | Purpose |
+|----------|------|---------|
+| `PATH` | `{mg5path}/HEPTools/bin` | Find `lhapdf-config` and other HEPTools binaries |
+| `LD_LIBRARY_PATH` | `{mg5path}/HEPTools/lib` | Load `libpythia8.so` and other shared libraries |
 
 ```bash
+export PATH={mg5path}/HEPTools/bin:$PATH
 export LD_LIBRARY_PATH={mg5path}/HEPTools/lib:$LD_LIBRARY_PATH
 ```
 
-This must be set **before** any MG5 subprocess that invokes Delphes or Pythia8. The installer script appends this to `~/.bashrc` (with a comment marker) so it persists across sessions.
+**The script does NOT modify any environment variable.** It prints a report at the end showing:
+- The current `PATH` and `LD_LIBRARY_PATH` values
+- The recommended `export` commands
+
+The **LLM/skill inspects this report** and decides:
+1. Whether the current session already has the required paths
+2. Whether to run the export commands for the current session
+3. Whether to append them to `~/.bashrc` for persistence (with comment markers `# MG5_auto_install_PATH` / `# MG5_auto_install_LD_LIBRARY_PATH`)
 
 ---
 
@@ -105,27 +126,30 @@ This must be set **before** any MG5 subprocess that invokes Delphes or Pythia8. 
 **Use the script** (do not reimplement):
 
 ```bash
-python scripts/install_mg5.py {install_dir} [version]
+python scripts/install_mg5.py {install_dir} --url {download_url} --name {extracted_name}
 ```
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `install_dir` | Directory where MG5 will be extracted | required |
-| `version` | `lts` or `latest` | `lts` |
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `install_dir` | Directory where MG5 will be extracted | yes |
+| `--url` | Direct download URL for the MG5 tarball | yes |
+| `--name` | Name of the top-level directory inside the tarball (e.g. `MG5_aMC_v3_5_15`) | yes |
 
 **Example:**
 ```bash
-python scripts/install_mg5.py ~/HEP_Tools lts
+python scripts/install_mg5.py ~/HEP_Tools \
+  --url "https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/LTS_MG5aMC_v3.5.15.tgz" \
+  --name MG5_aMC_v3_5_15
 # Result: ~/HEP_Tools/MG5_aMC_v3_5_15/
 ```
 
 **What the script does:**
 1. Checks system dependencies (gcc, gfortran, libboost, python3, curl)
-2. Downloads the selected MG5 tarball (follows redirects)
+2. Downloads the MG5 tarball from the provided URL (follows redirects)
 3. Extracts it
 4. Runs MG5 `install pythia8`, `install lhapdf6`, `install delphes`
 5. Verifies all components exist
-6. Appends `LD_LIBRARY_PATH` export to `~/.bashrc` with a `# MG5_auto_install` marker
+6. Prints an environment report (current PATH / LD_LIBRARY_PATH + recommended exports) for the LLM to inspect and decide on
 7. Returns the absolute path to `mg5_aMC`
 
 **Exit codes:**
@@ -141,14 +165,16 @@ python scripts/install_mg5.py ~/HEP_Tools lts
 
 ### Phase -1: Input Collection
 
-If the user does **not** provide `madgraph_path` (or presses Enter without a path), and no default exists from context, the skill should ask:
+If the user does **not** provide `madgraph_path` (or presses Enter without a path), and no default exists from context, the skill should:
 
-> "[1/9] MadGraph5 not found. Do you want me to automatically install it? (This will download ~31 MB, compile Pythia8, LHAPDF6, and Delphes — may take 20–40 minutes). Type `yes` to install, or provide an existing path:"
+1. **Ask the user:**
+   > "[1/9] MadGraph5 not found. Do you want me to automatically install it? (This will download ~31 MB, compile Pythia8, LHAPDF6, and Delphes — may take 20–40 minutes). Type `yes` to install, or provide an existing path:"
 
-If the user answers `yes`:
-1. Ask for install directory (default: `~/HEP_Tools`)
-2. Run `scripts/install_mg5.py {dir} lts`
-3. Use the returned path as `madgraph_path`
+2. If the user answers `yes`:
+   - Ask for install directory (default: `~/HEP_Tools`)
+   - Fetch `https://launchpad.net/mg5amcnlo` and parse the HTML to find the LTS download URL and extracted directory name
+   - Run `scripts/install_mg5.py {dir} --url {url} --name {name}`
+   - Use the returned path as `madgraph_path`
 
 ### Phase 0: Environment Validation
 
@@ -156,9 +182,13 @@ If `madgraph_path` was auto-installed in Phase -1, Phase 0 skips the existence c
 - `HEPTools/pythia8/` exists
 - `HEPTools/lhapdf6_py3/` exists
 - `Delphes/cards/` exists
-- `LD_LIBRARY_PATH` includes `HEPTools/lib`
 
-If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+If any of these are missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+
+**Environment decision:** The script does **not** modify any environment variable. It prints a report showing the current `PATH` / `LD_LIBRARY_PATH` and the recommended exports. The LLM/skill should:
+1. Inspect the printed report to see whether the MG5 paths are already in the current session
+2. Inspect `~/.bashrc` to see whether the exports are already persisted there
+3. Decide whether to set them for the current session and/or append them to `~/.bashrc` (with `# MG5_auto_install` markers)
 
 ---
 
@@ -169,6 +199,7 @@ If any component is missing, report: "MG5 auto-install incomplete — {component
 | `gfortran: command not found` | Missing Fortran compiler | `sudo apt-get install gfortran` |
 | `boost/...: No such file` | Missing Boost headers | `sudo apt-get install libboost-all-dev` |
 | `libpythia8.so: cannot open` | `LD_LIBRARY_PATH` not set | `export LD_LIBRARY_PATH={mg5path}/HEPTools/lib:$LD_LIBRARY_PATH` |
+| `lhapdf-config: command not found` | `PATH` not set | `export PATH={mg5path}/HEPTools/bin:$PATH` |
 | Pythia8 install hangs | Network timeout | Retry; check internet connection |
 | Delphes install fails | ROOT not found | Delphes does not require full ROOT; MG5 bundles minimal ROOT libraries |
 
