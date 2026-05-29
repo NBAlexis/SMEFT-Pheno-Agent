@@ -166,6 +166,16 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
      > "[追加] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
    - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
 4. `[4/9] model` — "[4/9] What SMEFT model name should be used?"
+   - After the user provides `model`:
+     1. Check if `{madgraph_path}/models/{model}` exists
+     2. If it exists: proceed
+     3. If it does **not** exist:
+        - Scan the skill's `dependency/` directory (same directory as `SKILL.md`) for available UFO models. Do **not** hardcode a list — query the directory at runtime.
+        - If `{skill_dir}/dependency/{model}` exists:
+          > "[4/9] Model `{model}` was not found in `{madgraph_path}/models/`. The skill has this model in its dependency folder. Copy it to `{mg5path}/models/`? (Type `yes` to copy, or provide an alternative model name:)"
+        - If the user answers `yes`: copy `{skill_dir}/dependency/{model}` to `{mg5path}/models/{model}`
+        - If the user provides a different model name: repeat the check
+        - If the model is not in `dependency/` either: report "Model `{model}` not found in MG5 and not available in skill dependencies. Please provide a valid model name or install it manually."
 5. `[5/9] energy` — "[5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, e.g. `10` or `[10, 14, 30]`."
 6. `[6/9] luminosity` — "[6/9] What is the integrated luminosity in fb⁻¹? Provide a single value or a list matching the energy length, e.g. `3000` or `[1000, 3000, 10000]`."
 7. `[7/9] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask: "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`.". If no default exists: "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
