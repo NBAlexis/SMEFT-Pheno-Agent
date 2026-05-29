@@ -150,6 +150,14 @@ Verify the following are present:
 Each question must include a progress indicator (e.g., `[1/9]`) so the user knows how many inputs remain:
 
 1. `[1/9] madgraph_path` — If a default exists from context (e.g., previous conversation, `~/MG5_aMC_v*`), ask: "[1/9] What is the absolute path to your MadGraph5 installation? (Press Enter to use `{default_path}`)". If no default exists: "[1/9] What is the absolute path to your MadGraph5 installation?"
+   - If the user provides a path: validate that `bin/mg5_aMC` exists under it
+   - If the path is invalid **or** the user presses Enter without a path and no default exists:
+     > "[1/9] MadGraph5 not found. Do you want me to automatically install it? This will download ~31 MB, then compile Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes. Type `yes` to install, or provide an existing path:"
+   - If the user answers `yes`:
+     1. Ask for install directory: "[1/9] Where should MG5 be installed? (Press Enter to use `~/HEP_Tools`)"
+     2. Run: `python scripts/install_mg5.py {dir} lts`
+     3. Use the returned path as `madgraph_path`
+     4. Record `auto_installed_mg5 = true` for Phase 0 verification
 2. `[2/9] workdir` — "[2/9] Where should results be saved? (Press Enter to use the current directory)"
 3. `[3/9] process` — "[3/9] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
    - After the user provides `process`, **immediately inspect the initial state** (particles left of `>`)

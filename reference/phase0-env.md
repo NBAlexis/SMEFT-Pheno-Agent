@@ -8,7 +8,9 @@ Verify all dependencies exist before starting the workflow.
 ## Steps
 
 1. **Required inputs**: Verify all required inputs are present (`madgraph_path`, `process`, `model`, `energy`, `luminosity`). `cutexperiment_path` is optional. If any required inputs are missing, STOP and ask the user (see `SKILL.md` "Missing Input Handling").
-2. **MadGraph5**: Verify `madgraph_path` exists and contains `bin/mg5_aMC`
+2. **MadGraph5**:
+   - If `madgraph_path` was **auto-installed** in Phase -1 (see [`madgraph-installation.md`](madgraph-installation.md)): verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+   - Otherwise: verify `madgraph_path` exists and contains `bin/mg5_aMC`
 3. **CutExperiment**:
    - If `cutexperiment_path` is provided: verify it exists
    - If not provided: ask the user if they have CutExperiment installed
