@@ -165,13 +165,14 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    - If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~` (electron-proton collider), **insert an extra required question before continuing**:
      > "[追加] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
    - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
-4. `[4/9] model` — "[4/9] What SMEFT model name should be used?"
+4. `[4/9] model` — Before asking, scan the skill's `dependency/` directory (same directory as `SKILL.md`) at runtime for available UFO models. Do **not** hardcode a list. Present the question as:
+   > "[4/9] What SMEFT model name should be used? Models available in the skill dependency folder: {dependency_models}. You may also use any model already installed in `{madgraph_path}/models/`."
    - After the user provides `model`:
      1. Check if `{madgraph_path}/models/{model}` exists
      2. If it exists: proceed
      3. If it does **not** exist:
-        - Scan the skill's `dependency/` directory (same directory as `SKILL.md`) for available UFO models. Do **not** hardcode a list — query the directory at runtime.
-        - If `{skill_dir}/dependency/{model}` exists:
+        - Check if `{skill_dir}/dependency/{model}` exists (re-scan at runtime, do not reuse the earlier list)
+        - If it exists:
           > "[4/9] Model `{model}` was not found in `{madgraph_path}/models/`. The skill has this model in its dependency folder. Copy it to `{mg5path}/models/`? (Type `yes` to copy, or provide an alternative model name:)"
         - If the user answers `yes`: copy `{skill_dir}/dependency/{model}` to `{mg5path}/models/{model}`
         - If the user provides a different model name: repeat the check
