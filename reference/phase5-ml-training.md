@@ -149,7 +149,7 @@ def compute_scores(clf, X):
     return (raw - min_val) / (max_val - min_val + 1e-10)
 ```
 
-### 5.2.4 Train and Evaluate
+### 5.2.4 Train
 
 Train on the **anchor operator's** SM and NP samples:
 
@@ -158,24 +158,10 @@ Train on the **anchor operator's** SM and NP samples:
 3. Stack: `X = np.vstack([sm[:n], np_data[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
-6. Compute AUC for each (use the `compute_scores` function from Step 5.2.3)
+6. **Compute and record AUC for each** using the `compute_scores` function from Step 5.2.3 — **this is for report plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-### 5.2.5 Dynamic Expansion (If Needed)
-
-If **all 3 initial algorithms have AUC < 0.7**, randomly select additional algorithms from the pool (excluding already-tested ones) and repeat training.
-
-**Stop conditions for expansion:**
-- At least one algorithm achieves AUC >= 0.7
-- **OR** 10 algorithms have been tested (maximum)
-
-**Expansion example:**
-```python
-if all(auc < 0.7 for auc in aucs.values()) and len(tested) < 10:
-    remaining = [a for a in pool if a not in tested]
-    additional = rng.sample(remaining, min(3, len(remaining)))
-    # train additional algorithms...
-```
+> **Algorithm selection is deferred to Phase 6.** Phase 5 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. The best algorithm is determined by the narrowest `S_stat = 2` constraint width in Phase 6.
 
 ## Step 5.3: Score Distribution Histograms
 

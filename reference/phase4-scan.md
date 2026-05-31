@@ -49,10 +49,12 @@ For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
 
 1. Look up its source model and anoinput index from `operator_claims.json`
 2. Use the process directory `{folder_base}_{model_name}_p4`
-3. Generate 11 scan points:
+3. Generate 11 scan points programmatically — **do not hand-compute the values**:
 
 ```python
-coefficient_list = [-c_{n_{scan}} + 0.2*c_{n_{scan}}*n for n in range(0, 11)]
+c_scan = coefficient_ranges["global"][1]  # positive bound from Phase 2
+coefficient_list = [-c_scan + 0.2 * c_scan * n for n in range(11)]
+scan_values = ",".join(str(v) for v in coefficient_list)
 ```
 
 Launch order (follows [`madgraph-reference.md`](madgraph-reference.md) Event Generation Order template):
@@ -62,7 +64,7 @@ launch {folder_base}_{model_name}_p4
 detector = Delphes
 analysis = OFF
 0
-set {block_name} {anoinput_idx} scan:[{comma-separated values}]
+set {block_name} {anoinput_idx} scan:[{scan_values}]
 set {block_name} {other_idx} 0.0
 ...
 set ebeam1 = {ebeam_value}
@@ -91,6 +93,36 @@ all_runs = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
 new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 # new_runs contains exactly the runs from this launch
 ```
+
+### Failure Recovery — Infinite Retry
+
+If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operator scan:
+
+1. **Log the failure** with the operator name and error reason.
+2. **Clean temporary files** in the process directory:
+   ```bash
+   find {mg5path}/{folder_base}_{model_name}_p4/Events/run_*/ \
+       \( -name "*.root" -o -name "*.lhe.gz" -o -name "*.hepmc.gz" \) -delete
+   ```
+3. **Rename the process directory** to a broken suffix (preserve it for debugging):
+   ```python
+   import time
+   broken_name = f"{folder_base}_{model_name}_p4_broken_{int(time.time())}"
+   os.rename(f"{mg5path}/{folder_base}_{model_name}_p4",
+             f"{mg5path}/{broken_name}")
+   ```
+4. **Report to the user** (but do NOT stop):
+   > "Scan generation failed for operator `{name}` (model `{model_name}`). Error: `{reason}`. Retrying with a fresh process directory. Reply `stop` to abort the entire workflow."
+5. **Recreate the process directory** from scratch:
+   ```
+   import model {model_name}
+   generate {process_name}
+   output {folder_base}_{model_name}_p4
+   ```
+6. **Re-run the scan launch** for the same operator.
+7. **Repeat from step 1 until success.** Only a user message containing `stop` aborts the retry loop.
+
+> **Critical**: This retry applies per-operator. An earlier operator's success does NOT protect a later operator from needing its own retry. Each operator scan is an independent retry scope.
 
 ## Step 4.3: Convert ROOT to LHCO
 

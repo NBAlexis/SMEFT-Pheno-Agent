@@ -16,9 +16,30 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 All steps below reference fields from `config` (e.g., `config.madgraph_path`, `config.models`).
 
+## Resume / Checkpoint Behaviour
+
+Before starting any work, check whether a previous workflow run was interrupted:
+
+```python
+from scripts.workflow_logger import WorkflowLogger
+
+logger = WorkflowLogger(config.workdir)
+resume_phase = logger.get_resume_phase()
+```
+
+| `resume_phase` | Action |
+|----------------|--------|
+| `None` | No prior log — start normally from Phase 0 |
+| `"0"` | Phase -1 completed, Phase 0 not started — start Phase 0 |
+| `"1"` to `"8"` | Last completed phase was N‑1 — skip to phase `resume_phase` |
+| `"9"` or `"10"` | Workflow already finished — run Phase 9 audit only |
+
+When resuming, **still run Step 1–9** (environment validation must pass every time), but skip phase execution bodies for already-completed phases. Log a `started` + `completed` pair for each skipped phase so the log remains continuous.
+
 ## Steps
 
 1. **Validate `run_config.json`**: Verify the file exists and `load_run_config` returns without error. If missing or invalid, STOP and report: "run_config.json not found or invalid. Phase -1 must complete successfully before Phase 0."
+   - Also check `workflow.log` for resume info (see Resume section above).
 2. **MadGraph5**:
    - If `config.auto_installed_mg5` is true (see [`madgraph-installation.md`](madgraph-installation.md)):
      - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist under `config.madgraph_path`. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."

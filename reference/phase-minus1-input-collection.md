@@ -37,19 +37,48 @@ Verify the following are present:
 
 Each question must include a progress indicator (e.g., `[1/9]`) so the user knows how many inputs remain:
 
-1. `[1/9] madgraph_path` — Ask:
-   > "[1/9] What is the absolute path to your MadGraph5 installation? Suggested default: `{default_path}`. Type `yes` to use the default, or provide a different path. If you don't have one installed, type `install` and I'll install it automatically — this downloads ~31 MB and compiles Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes."
-   > "请提供 MadGraph5 的绝对路径（建议默认：`{default_path}`）。输入 `yes` 使用默认路径，或提供其他路径。如果尚未安装，输入 `install` 我可以自动安装——需下载约 31 MB，编译 Pythia8、LHAPDF6 和 Delphes（用于 PDF 系统误差）。预计耗时 20–40 分钟。"
-   - If the user provides a path: use `os.path.expanduser()` and `os.path.abspath()` to resolve it, then validate that `bin/mg5_aMC` exists under it
-   - If the user answers `yes`:
-     1. Ask for install directory:
-        > "[1/9] Where should MG5 be installed? Suggested default: `~/HEP_Tools`. Type `yes` to use it, or provide a different directory:"
-        > "MG5 应该安装到哪个目录？建议默认：`~/HEP_Tools`。输入 `yes` 使用默认目录，或提供其他目录："
-     2. Fetch `https://launchpad.net/mg5amcnlo` and parse the HTML to find the LTS download URL and the extracted directory name (e.g. `MG5_aMC_v3_5_15`)
-     3. Run: `python scripts/install_mg5.py {dir} --url {download_url} --name {extracted_name}`
-     4. Use the returned path as `madgraph_path`
-     5. Record `auto_installed_mg5 = true` for Phase 0 verification
-   - If the user types `install` or provides no path and no default exists: treat as auto-install
+1. `[1/9] madgraph_path` — Determine whether a suggested default exists from historical context. Present the appropriate prompt:
+   - **With a known default**:
+     > "[1/9] What is the absolute path to your MadGraph5 installation? Suggested default: `{default_path}`. Type `yes` to use it, provide a different path, or type `install` to auto-install — this downloads ~31 MB and compiles Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes."
+     > "请提供 MadGraph5 的绝对路径（建议默认：`{default_path}`）。输入 `yes` 使用默认路径，提供其他路径，或输入 `install` 自动安装——需下载约 31 MB，编译 Pythia8、LHAPDF6 和 Delphes（用于 PDF 系统误差）。预计耗时 20–40 分钟。"
+   - **Without a default**:
+     > "[1/9] What is the absolute path to your MadGraph5 installation? Provide the path, or type `install` to auto-install — this downloads ~31 MB and compiles Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes."
+     > "请提供 MadGraph5 的绝对路径，或输入 `install` 自动安装——需下载约 31 MB，编译 Pythia8、LHAPDF6 和 Delphes（用于 PDF 系统误差）。预计耗时 20–40 分钟。"
+
+   **Response handling:**
+   - **Path provided**: resolve with `os.path.expanduser()` + `os.path.abspath()`, validate `bin/mg5_aMC` exists. If valid → use it. If invalid → report error and re-ask.
+   - **`yes` (only when a default was offered)**: validate `default_path`. If valid → use it. If invalid → report and re-ask.
+   - **`install` or no valid input**: proceed to **auto-install flow** below.
+
+   **Auto-install flow:**
+   1. Ask for install directory:
+      > "[1/9] Where should MG5 be installed? Suggested default: `~/HEP_Tools`. Type `yes` to use it, or provide a different directory:"
+      > "MG5 应该安装到哪个目录？建议默认：`~/HEP_Tools`。输入 `yes` 使用默认目录，或提供其他目录："
+   2. **Pre-flight system dependency check** (before invoking install_mg5.py):
+      ```python
+      import shutil, subprocess
+      missing = []
+      for binary, pkg in [("gcc", "build-essential"), ("gfortran", "gfortran"),
+                          ("python3", "python3"), ("curl", "curl")]:
+          if shutil.which(binary) is None:
+              missing.append(pkg)
+      boost_ok = subprocess.run("dpkg -l | grep -q libboost-all-dev",
+                                shell=True, capture_output=True).returncode == 0
+      if not boost_ok:
+          missing.append("libboost-all-dev")
+      ```
+      If any missing:
+      > "[1/9] MG5 compilation requires the following system dependencies: {missing}. Please run:\n> `sudo apt-get update && sudo apt-get install -y {packages}`\n> Then reply `continue` and I will proceed with the installation."
+      > "MG5 编译需要以下系统依赖：{missing}。请运行：\n> `sudo apt-get update && sudo apt-get install -y {packages}`\n> 完成后回复 `continue`，我将继续安装。"
+      **Wait for the user to reply `continue`**, then re-run the dependency check and proceed.
+   3. Fetch `https://launchpad.net/mg5amcnlo` and parse the HTML to find the LTS download URL and the extracted directory name (e.g. `MG5_aMC_v3_5_15`).
+   4. Run: `python scripts/install_mg5.py {dir} --url {download_url} --name {extracted_name}`
+      - If exit code 1 (missing system deps): extract missing packages from stderr, present the same apt-get message as step 2, wait for `continue`, then retry.
+      - If exit code 2 (download failed): retry download up to 3 times with exponential backoff.
+      - If exit code 3 (install command failed): report the specific component (Pythia8/LHAPDF6/Delphes) and the log path. This is unrecoverable — abort Phase -1.
+      - If exit code 4 (verification failed): report missing components. Abort Phase -1.
+   5. Use the returned path as `madgraph_path`.
+   6. Record `auto_installed_mg5 = true` for Phase 0 verification.
 2. `[2/9] workdir` —
    > "[2/9] Where should results be saved? Suggested default: the current directory. Type `yes` to use it, or provide a different path:"
    > "结果保存到哪个目录？建议默认：当前目录。输入 `yes` 使用默认目录，或提供其他路径："
