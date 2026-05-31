@@ -30,11 +30,13 @@ with open("results/data/phase5/algorithm_comparison.json") as f:
 for alg_name, alg_info in alg_data["anchor"].items():
     clf = joblib.load(alg_info["algorithm_path"])
     # ... load features X from CSV ...
-    from scripts.compute_ml_scores import compute_scores
+    import sys
+    sys.path.insert(0, os.path.join(config.workdir, "results", "algorithms"))
+    from compute_scores import compute_scores
     scores = compute_scores(clf, X)  # normalized [0, 1], higher = more NP-like
 ```
 
-Compute scores for all events in each scan point. The `compute_scores` script handles normalization automatically for all algorithm types.
+Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 5 (Step 5.2.3) and handles normalization automatically for all algorithm types.
 
 ## Step 6.3: Optimize Threshold Per Algorithm (using anchor operator)
 

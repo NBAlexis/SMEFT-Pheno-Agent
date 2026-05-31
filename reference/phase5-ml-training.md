@@ -80,22 +80,39 @@ np_anchor.lhco → np_anchor.csv
 
 Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scikit-learn and compatible libraries):
 
-| # | Algorithm | Type |
-|---|-----------|------|
-| 1 | GradientBoostingClassifier | Ensemble |
-| 2 | RandomForestClassifier | Ensemble |
-| 3 | XGBClassifier (xgboost) | Ensemble |
-| 4 | LGBMClassifier (lightgbm) | Ensemble |
-| 5 | SVC (RBF kernel) | Kernel |
-| 6 | SVC (poly kernel) | Kernel |
-| 7 | LogisticRegression | Linear |
-| 8 | MLPClassifier | Neural Network |
-| 9 | IsolationForest | Anomaly Detection |
-| 10 | ExtraTreesClassifier | Ensemble |
-| 11 | AdaBoostClassifier | Ensemble |
-| 12 | KNeighborsClassifier | Distance-based |
+| # | Algorithm | Type | Extra Dependency |
+|---|-----------|------|------------------|
+| 1 | GradientBoostingClassifier | Ensemble | — |
+| 2 | RandomForestClassifier | Ensemble | — |
+| 3 | XGBClassifier | Ensemble | `xgboost` |
+| 4 | LGBMClassifier | Ensemble | `lightgbm` |
+| 5 | SVC (RBF kernel) | Kernel | — |
+| 6 | SVC (poly kernel) | Kernel | — |
+| 7 | LogisticRegression | Linear | — |
+| 8 | MLPClassifier | Neural Network | — |
+| 9 | IsolationForest | Anomaly Detection | — |
+| 10 | ExtraTreesClassifier | Ensemble | — |
+| 11 | AdaBoostClassifier | Ensemble | — |
+| 12 | KNeighborsClassifier | Distance-based | — |
+| 13 | PyTorch NN (custom) | Neural Network | `torch` |
 
 If `config.algorithms` is set in `run_config.json`, use those instead of the pool.
+
+**On-demand dependency installation:**
+If a selected algorithm requires a package not yet installed (e.g., `xgboost`, `lightgbm`, or `torch`), install it into the **same venv** created in Phase 0:
+
+```python
+import os, subprocess
+
+venv_python = os.path.join(config.workdir, "venv", "bin", "python")
+
+# Example: selected algorithm needs xgboost
+try:
+    from xgboost import XGBClassifier
+except ImportError:
+    subprocess.check_call([venv_python, "-m", "pip", "install", "xgboost"])
+    from xgboost import XGBClassifier
+```
 
 ### 5.2.2 Random Initial Selection
 
@@ -107,7 +124,32 @@ rng = random.Random(hash(process_name + anchor_model + anchor_name) % (2**32))
 selected = rng.sample(algorithm_pool, 3)
 ```
 
-### 5.2.3 Train and Evaluate
+### 5.2.3 Write `compute_scores` Function
+
+Before training, write a unified score-computation function. This function is used in Phase 5 (ROC/AUC) and Phase 6 (threshold optimization). Save it to `{workdir}/results/algorithms/compute_scores.py`:
+
+```python
+import numpy as np
+
+def compute_scores(clf, X):
+    """Compute normalized scores in [0, 1] for any fitted model.
+    Higher = more NP-like."""
+    if hasattr(clf, "predict_proba"):
+        return clf.predict_proba(X)[:, 1]
+    if hasattr(clf, "decision_function"):
+        raw = clf.decision_function(X)
+        return 1.0 / (1.0 + np.exp(-raw))
+    if hasattr(clf, "score_samples"):
+        raw = -clf.score_samples(X)
+    else:
+        raise ValueError(f"No score method on {type(clf).__name__}")
+    min_val, max_val = raw.min(), raw.max()
+    if max_val - min_val < 1e-12:
+        return np.ones_like(raw) * 0.5
+    return (raw - min_val) / (max_val - min_val + 1e-10)
+```
+
+### 5.2.4 Train and Evaluate
 
 Train on the **anchor operator's** SM and NP samples:
 
@@ -116,20 +158,10 @@ Train on the **anchor operator's** SM and NP samples:
 3. Stack: `X = np.vstack([sm[:n], np[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
-6. Compute AUC for each
+6. Compute AUC for each (use the `compute_scores` function from Step 5.2.3)
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-**Score computation:**
-Use the script to compute normalized scores for any algorithm:
-```python
-from scripts.compute_ml_scores import compute_scores
-
-scores = compute_scores(clf, X)  # always returns [0, 1], higher = more NP-like
-```
-
-The script handles classifiers (`predict_proba`), kernel methods (`decision_function`), and anomaly detectors (`score_samples`) with automatic normalization.
-
-### 5.2.4 Dynamic Expansion (If Needed)
+### 5.2.5 Dynamic Expansion (If Needed)
 
 If **all 3 initial algorithms have AUC < 0.7**, randomly select additional algorithms from the pool (excluding already-tested ones) and repeat training.
 

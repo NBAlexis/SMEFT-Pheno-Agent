@@ -285,7 +285,6 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 | `run_mg5.py` | Run MG5 order file with return-code checking and stage timing | Phases 1–4 |
 | `normalize_process_name.py` | Normalize `e+ e- > a a` → `ep_em_to_a_a` | All phases |
 | `install_mg5.py` | Auto-install MG5 with Pythia8, LHAPDF6, and Delphes | Phase -1 |
-| `compute_ml_scores.py` | Compute normalized ML scores (handles classifiers + anomaly detectors) | Phases 5–6 |
 | `timing_tracker.py` | Track phase-level and MG5 sub-step timings | All phases |
 
 For detailed CLI and Python usage, run each script with `--help` or read its docstring. Examples:
