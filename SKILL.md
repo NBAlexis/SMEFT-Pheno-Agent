@@ -151,22 +151,31 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
 
 1. `[1/9] madgraph_path` — Ask:
    > "[1/9] What is the absolute path to your MadGraph5 installation? (Press Enter to use `{default_path}`). If you don't have one, type `yes` and I'll install it automatically — this downloads ~31 MB and compiles Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes."
+   > "请提供 MadGraph5 的绝对路径（按 Enter 使用 `{default_path}`）。如果没有安装，输入 `yes` 我可以自动安装——需下载约 31 MB，编译 Pythia8、LHAPDF6 和 Delphes（用于 PDF 系统误差）。预计耗时 20–40 分钟。"
    - If the user provides a path: use `os.path.expanduser()` and `os.path.abspath()` to resolve it, then validate that `bin/mg5_aMC` exists under it
    - If the user answers `yes`:
-     1. Ask for install directory: "[1/9] Where should MG5 be installed? (Press Enter to use `~/HEP_Tools`)"
+     1. Ask for install directory:
+        > "[1/9] Where should MG5 be installed? (Press Enter to use `~/HEP_Tools`)"
+        > "MG5 应该安装到哪个目录？（按 Enter 使用 `~/HEP_Tools`）"
      2. Fetch `https://launchpad.net/mg5amcnlo` and parse the HTML to find the LTS download URL and the extracted directory name (e.g. `MG5_aMC_v3_5_15`)
      3. Run: `python scripts/install_mg5.py {dir} --url {download_url} --name {extracted_name}`
      4. Use the returned path as `madgraph_path`
      5. Record `auto_installed_mg5 = true` for Phase 0 verification
    - If the user presses Enter without a path and no default exists: treat as `yes` (auto-install)
-2. `[2/9] workdir` — "[2/9] Where should results be saved? (Press Enter to use the current directory)"
-3. `[3/9] process` — "[3/9] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
+2. `[2/9] workdir` —
+   > "[2/9] Where should results be saved? (Press Enter to use the current directory)"
+   > "结果保存到哪个目录？（按 Enter 使用当前目录）"
+3. `[3/9] process` —
+   > "[3/9] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
+   > "要研究什么对撞过程？（仅提供物理过程，不要加 NP=/QED=/QCD= 等后缀）"
    - After the user provides `process`, **immediately inspect the initial state** (particles left of `>`)
    - If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~` (electron-proton collider), **insert an extra required question before continuing**:
      > "[追加] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
+     > "您的过程涉及电子-质子对撞机。质子束流能量是多少 GeV（`ebeam_proton`）？"
    - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
 4. `[4/9] model` — Before asking, scan the skill's `dependency/` directory (same directory as `SKILL.md`) at runtime for available UFO models. Do **not** hardcode a list. Present the question as:
    > "[4/9] What SMEFT model name should be used? Models available in the skill dependency folder: {dependency_models}. You may also use any model already installed in `{madgraph_path}/models/`."
+   > "使用哪个 SMEFT 模型？skill 依赖文件夹中可用的模型：{dependency_models}。也可以使用已安装在 `{madgraph_path}/models/` 中的任何模型。"
    - After the user provides `model`:
      1. Resolve the path: `mg5_models = os.path.join(os.path.expanduser(madgraph_path), "models", model)`
      2. Check if `mg5_models` exists
@@ -175,12 +184,22 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
         - Check if `{skill_dir}/dependency/{model}` exists (re-scan at runtime, do not reuse the earlier list)
         - If it exists:
           > "[4/9] Model `{model}` was not found in `{madgraph_path}/models/`. The skill has this model in its dependency folder. Copy it to `{madgraph_path}/models/`? (Type `yes` to copy, or provide an alternative model name:)"
+          > "在 `{madgraph_path}/models/` 中未找到模型 `{model}`。skill 依赖文件夹中有此模型。是否复制到 `{madgraph_path}/models/`？（输入 `yes` 复制，或提供其他模型名称：）"
         - If the user answers `yes`: copy `{skill_dir}/dependency/{model}` to `{madgraph_path}/models/{model}`
         - If the user provides a different model name: repeat the check
         - If the model is not in `dependency/` either: report "Model `{model}` not found in MG5 and not available in skill dependencies. Please provide a valid model name or install it manually."
-5. `[5/9] energy` — "[5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, e.g. `10` or `[10, 14, 30]`."
-6. `[6/9] luminosity` — "[6/9] What is the integrated luminosity in fb⁻¹? Provide a single value or a list matching the energy length, e.g. `3000` or `[1000, 3000, 10000]`."
-7. `[7/9] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask: "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`.". If no default exists: "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
+5. `[5/9] energy` —
+   > "[5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, e.g. `10` or `[10, 14, 30]`."
+   > "质心能量是多少 TeV？提供单个值或列表，例如 `10` 或 `[10, 14, 30]`。"
+6. `[6/9] luminosity` —
+   > "[6/9] What is the integrated luminosity in fb⁻¹? Provide a single value or a list matching the energy length, e.g. `3000` or `[1000, 3000, 10000]`."
+   > "积分亮度是多少 fb⁻¹？提供单个值或与能量长度匹配的列表，例如 `3000` 或 `[1000, 3000, 10000]`。"
+7. `[7/9] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask:
+   > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`."
+   > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，按 Enter 从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆到 `{default_path}`。"
+   If no default exists:
+   > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
+   > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，我将从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。"
 8. `[8/9] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
    - **If the user provided `custom_card`** (absolute path to a `.tcl` file outside `{mg5path}/Delphes/cards/`): skip the scan and use the custom card directly. Validate that the file exists.
    - **Otherwise**, run the auto-recommendation:
@@ -190,20 +209,30 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
      4. Score each remaining card by matching its filename against the collider type
      5. Recommend the highest-scoring card
      6. Present to the user (only showing cards that scored > 0):
-        > "Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
+        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
+        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配选项：{matched_card_list}\n> 按 Enter 使用推荐的卡片，或输入其他卡片名称覆盖。"
    - `delphes_card`: the selected `.tcl` card file name (e.g., `delphes_card_CEPC.tcl`) or absolute path (for `custom_card`)
    - If the user presses Enter or provides no answer, use the recommended card
    - If the user types a card name, validate that it exists in `{mg5path}/Delphes/cards/`
-   - **If no cards match the collider type** (all scores = 0), show: "No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one:"
+   - **If no cards match the collider type** (all scores = 0), show:
+     > "[8/9] No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one:"
+     > "没有探测器卡片匹配您的对撞机类型。可用卡片：{all_filtered_cards}。请指定一个："
 
 9. `[9/9]` — **After all required inputs are collected, also ask**:
-   > "Are there any other requirements or preferences? Optional settings you can specify:
+   > "[9/9] Are there any other requirements or preferences? Optional settings you can specify:
    > - `debug=true` — divide all event counts by 10 for faster testing (default: false)
    > - `algorithms` — specify which ML algorithms to compare (default: automatically select and test multiple algorithms)
    > - `polarization` — beam polarization as `polbeam1,polbeam2` in range [-1, 1] (default: no polarization)
    > - `custom_card` — absolute path to a custom Delphes card outside `{mg5path}/Delphes/cards/`
    > - Specific operators to focus on, report format preferences, or additional analysis
    > Press Enter to skip and use all defaults."
+   > "还有其他要求或偏好吗？可选设置：
+   > - `debug=true` — 所有事件数除以 10 以加快测试（默认：false）
+   > - `algorithms` — 指定要比较的 ML 算法（默认：自动选择并测试多种算法）
+   > - `polarization` — 束流极化，格式为 `polbeam1,polbeam2`，范围 [-1, 1]（默认：无偏振）
+   > - `custom_card` — 自定义 Delphes 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）
+   > - 要重点关注的特定算符、报告格式偏好或其他分析需求
+   > 按 Enter 跳过并使用所有默认值。"
 
    This is **NOT optional** — it MUST be asked even if the user is in a hurry. The user can always press Enter to accept defaults, but the question itself must be presented.
 
