@@ -203,13 +203,15 @@ Read the parameter card:
 python scripts/parse_param_card.py {param_card_path}
 ```
 
-Output: JSON dict mapping LHA index → coefficient value, e.g. `{"1": 1.0e-12, "2": 0.0}`.
+Output: `{"block_name": "anoinputs", "coefficients": {"1": 1.0e-12, "2": 0.0}}`. The `block_name` field tells you which coefficient block the model uses (e.g. `anoinputs`, `dim8`, `dim6`).
 
 Or import in Python:
 ```python
 from scripts.parse_param_card import parse_anoinputs
 
-coefficients = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+result = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+block_name = result["block_name"]       # e.g. "anoinputs" or "dim8"
+coefficients = result["coefficients"]   # {"1": 1.0e-12, "2": 0.0, ...}
 ```
 
 The script handles all edge cases:
@@ -263,21 +265,21 @@ set nevents = {event_number}
 
 ### Coefficient Block
 
-At most **one** coefficient may be non-zero in any given run. All other coefficients in `Block anoinputs` must be explicitly set to `0.0`.
+At most **one** coefficient may be non-zero in any given run. All other coefficients in the coefficient block must be explicitly set to `0.0`.
 
 **Rule:** For each coefficient `fi` with default value `fi_default` (read from `param_card.dat`):
 - If `fi` is the **target operator**: set to `fi_default` (or `1.0` if `fi_default == 0`)
 - If `fi` is **not** the target operator: set to `0.0`
 
-**Critical:** In MG5 `launch` mode, parameter values must be set via `set {block} {lha_code} {value}`. The bare `set {number} = {value}` syntax is silently ignored. For SMEFT models, use:
+**Critical:** In MG5 `launch` mode, parameter values must be set via `set {block_name} {lha_code} {value}`. The bare `set {number} = {value}` syntax is silently ignored. The `{block_name}` (e.g. `anoinputs`, `dim8`) is obtained from `parse_param_card.py` output. Use:
 
 ```
-set anoinputs {idx} {value}
+set {block_name} {idx} {value}
 ```
 
 **Example:**
 
-Coefficients in `Block anoinputs`: `f1` (LHA code 1), `f2` (LHA code 2), `f3` (3), `f4` (4). Target operator is `f2`, with `f2_default = 1.0e-12`.
+Assume the model uses `Block anoinputs` (`block_name = "anoinputs"`). Coefficients: `f1` (LHA code 1), `f2` (LHA code 2), `f3` (3), `f4` (4). Target operator is `f2`, with `f2_default = 1.0e-12`.
 
 ```
 set anoinputs 1 0.0
@@ -404,7 +406,7 @@ After process creation (`output` step), before event generation:
 - [ ] For ep collisions: `ebeam_proton` is provided
 - [ ] Delphes `.tcl` card is copied to `Cards/delphes_card.dat`
 - [ ] All `.tcl` dependency folders are copied to `Cards/`
-- [ ] `Block anoinputs` is found in `param_card.dat` and coefficients are recorded
+- [ ] A coefficient block is found in `param_card.dat` (e.g. `anoinputs`, `dim8`) and coefficients are recorded
 - [ ] If polarization requested: `polbeam1` and `polbeam2` are in [-1, 1]
 
 After event generation, before cleanup:

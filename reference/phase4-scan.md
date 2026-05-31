@@ -52,8 +52,8 @@ launch {folder_base}_{model_name}_p4
 detector = Delphes
 analysis = OFF
 0
-set anoinputs {anoinput_idx} scan:[{comma-separated values}]
-set anoinputs {other_idx} 0.0
+set {block_name} {anoinput_idx} scan:[{comma-separated values}]
+set {block_name} {other_idx} 0.0
 ...
 set ebeam1 = {ebeam_value}
 set ebeam2 = {ebeam_value}
@@ -62,7 +62,7 @@ set nevents = {nev_scan}
 ```
 
 - `ebeam_value = energy * 1000 / 2` (GeV). See [`madgraph-reference.md`](madgraph-reference.md) Energy Assignment.
-- Use `set anoinputs {lha_code} scan:[v1, v2, ...]` (not bare `set {number} = scan:[...]`, which MG5 silently ignores).
+- Use `set {block_name} {lha_code} scan:[v1, v2, ...]` (not bare `set {number} = scan:[...]`, which MG5 silently ignores). The `{block_name}` is obtained from `parse_param_card.py` output.
 - The scan syntax tells MG5 to generate one run per value.
 - The trailing `0` confirms run card settings and starts generation.
 

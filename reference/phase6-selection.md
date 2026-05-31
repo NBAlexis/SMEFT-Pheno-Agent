@@ -47,7 +47,7 @@ Read `nev_scan` from `sm_baseline.json` (field `n_scan`). **Do NOT hardcode.**
 ### Threshold Scan Per Algorithm
 
 For **each algorithm**, for each threshold in 51 points on [0, 1]:
-1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (typically 10-11 points depending on whether c=0 is skipped)
+1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (11 points from -c1 to +c1, including c=0)
 2. Compute cut cross-section:
    ```
    cs_cut_x = cs_x * m_x / nev_scan

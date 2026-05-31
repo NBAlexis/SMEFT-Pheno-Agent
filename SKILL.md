@@ -321,7 +321,7 @@ Convert inputs into a list of run configurations. Each configuration is one `(en
 
 Example: `energy = [10, 14, 30]`, `luminosity = [1000, 3000, 10000]` → 3 runs: `(10, 1000)`, `(14, 3000)`, `(30, 10000)`
 
-### Step 6: Prohibited Behaviors (Will Cause Failure)
+### Prohibited Behaviors During Phase -1 (Will Cause Failure)
 
 | Prohibited Behavior | Why |
 |---------------------|-----|
@@ -400,10 +400,10 @@ The following table summarizes the MG5 invocation for every phase that runs MadG
 | Phase | `generate` line | Output folder suffix | Coefficient setting | `nevents` | Output files |
 |-------|-----------------|----------------------|---------------------|-----------|--------------|
 | 1 | `generate {process} NP>0` | `_{model}_p1_NP` | One at a time: target = `c0`, all others = `0.0` | `nev_phase1` | `operator_claims.json`, `cross_sections.json`, `anchor.json` |
-| 2 | `generate {process} NP=0` | `_{anchor_model}_p2_SM` | All `set anoinputs {idx} 0.0` | `nev_phase2` | `sm_baseline.json`, `coefficient_ranges.json` |
-| 3 SM | `generate {process} NP=0` | `_{anchor_model}_p3_SM` | All `set anoinputs {idx} 0.0` | `nev_sm` | `sm_banner.txt`, `sm.lhco` |
+| 2 | `generate {process} NP=0` | `_{anchor_model}_p2_SM` | All `{block_name} {idx} = 0.0` | `nev_phase2` | `sm_baseline.json`, `coefficient_ranges.json` |
+| 3 SM | `generate {process} NP=0` | `_{anchor_model}_p3_SM` | All `{block_name} {idx} = 0.0` | `nev_sm` | `sm_banner.txt`, `sm.lhco` |
 | 3 NP | `generate {process} NP>0` | `_{anchor_model}_p3_NP` | Target = `c1` (anchor operator), others = `0.0` | `nev_np` | `np_anchor_banner.txt`, `np_anchor.lhco` |
-| 4 | `generate {process}` | `_{model}_p4` | One operator: `set anoinputs {idx} scan:[v0,v1,...]`; all others = `0.0` | `nev_scan` | `np_o_{g_idx}_f0_banner.txt` … `np_o_{g_idx}_f10_banner.txt` and `.lhco` |
+| 4 | `generate {process}` | `_{model}_p4` | One operator: `{block_name} {idx} scan:[v0,v1,...]`; all others = `0.0` | `nev_scan` | `np_o_{g_idx}_f0_banner.txt` … `np_o_{g_idx}_f10_banner.txt` and `.lhco` |
 
 **Key rules:**
 - Each phase uses a **separate process directory** (independent `output` step). Never reuse a directory from another phase.
@@ -454,17 +454,17 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 1. **Phase -1 is Step 1**: The Input Collection steps above are the FIRST action when this skill is invoked. Never create files, run commands, or check system state before Phase -1 completes.
 2. **Parameter source is the user ONLY**: Never read inputs from existing files, scripts, logs, or historical context. If a parameter is not explicitly stated in the current conversation, it is missing — ask for it.
 3. **MG5 return code**: Every `subprocess.run` invoking MG5 MUST check `returncode != 0`. Never silently ignore failures.
-3. **No `runs[-11:]`**: Use set-difference (`new_runs = all_runs - existing_runs`) to track exactly which runs MG5 created. See [`reference/phase4-scan.md`](reference/phase4-scan.md).
-4. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If the entire process directory must be re-run, remove large temps (`*.root`, `*.lhe.gz`, `*.hepmc.gz`) and rename the **process directory** (not individual runs). See [`reference/phase4-scan.md`](reference/phase4-scan.md).
-5. **Anchor operator**: Threshold optimization (Phase 6) uses the anchor operator's scan data. The anchor is the first non-zero operator found across all models, recorded in `anchor.json`. Do NOT use `nonzero_ops[0]`.
-6. **Pass `nev_scan`**: Read `n_scan` from `sm_baseline.json`. Do NOT hardcode in Phase 6.
-7. **param_card parser**: Match `Block` case-insensitively; handle `scan:[...]` syntax; reset `in_block` on every new `Block` header. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
-8. **Cleanup after Phase 8**: Move all MG5 process directories from `mg5path` to `results/mg5_processes/` using `mv` (not `cp`). This prevents `mg5path` from accumulating unmanaged folders across runs. See [`reference/cleanup.md`](reference/cleanup.md).
-9. **MadGraph conventions**: All MG5 process creation, event generation, Delphes card setup, and ROOT→LHCO conversion follow [`reference/madgraph-reference.md`](reference/madgraph-reference.md). **Reusable scripts** are provided in `scripts/` — use them instead of reimplementing (see [Scripts](#scripts)).
-10. **Feature extraction**: LHCO→CSV conversion follows [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) and adapts to the actual final-state particles in `process`.
-11. **Run directory prefix (multi-run mode)**: Before Phase 0, compute `RUN_DIR = f"E{energy}_L{luminosity}"` (dots replaced by underscores). ALL file paths in ALL phases MUST prefix `results/` with `RUN_DIR/`. Single-run mode uses `results/` directly. This is NOT optional — verify by checking `results/E{e}_L{l}/` exists before writing any data. See [Output Structure](#output-structure) for examples.
-12. **No concurrent MG5 processes**: MadGraph5 internally uses multi-threading (OpenMP) and will saturate all CPU cores. Launching multiple MG5 processes in parallel causes CPU contention and is **slower** than sequential execution. Run MG5 invocations **one at a time** — never parallelize across operators, scan points, or phases.
-13. **Phase 1 execution lock — NEVER stop mid-loop**: Testing individual operators in Phase 1 is a single uninterrupted loop over ALL coefficients in ALL models. A zero cross-section for any individual operator is a valid physical result. You MUST NOT: test SM baseline mid-phase, skip remaining coefficients, switch models early, report red flags, or ask the user. The loop completes when the last coefficient of the last model is tested — only then may red flags be evaluated. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
+4. **No `runs[-11:]`**: Use set-difference (`new_runs = all_runs - existing_runs`) to track exactly which runs MG5 created. See [`reference/phase4-scan.md`](reference/phase4-scan.md).
+5. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If the entire process directory must be re-run, remove large temps (`*.root`, `*.lhe.gz`, `*.hepmc.gz`) and rename the **process directory** (not individual runs). See [`reference/phase4-scan.md`](reference/phase4-scan.md).
+6. **Anchor operator**: Threshold optimization (Phase 6) uses the anchor operator's scan data. The anchor is the first non-zero operator found across all models, recorded in `anchor.json`. Do NOT use `nonzero_ops[0]`.
+7. **Pass `nev_scan`**: Read `n_scan` from `sm_baseline.json`. Do NOT hardcode in Phase 6.
+8. **param_card parser**: Match `Block` case-insensitively; handle `scan:[...]` syntax; reset `in_block` on every new `Block` header. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
+9. **Cleanup after Phase 8**: Move all MG5 process directories from `mg5path` to `results/mg5_processes/` using `mv` (not `cp`). This prevents `mg5path` from accumulating unmanaged folders across runs. See [`reference/cleanup.md`](reference/cleanup.md).
+10. **MadGraph conventions**: All MG5 process creation, event generation, Delphes card setup, and ROOT→LHCO conversion follow [`reference/madgraph-reference.md`](reference/madgraph-reference.md). **Reusable scripts** are provided in `scripts/` — use them instead of reimplementing (see [Scripts](#scripts)).
+11. **Feature extraction**: LHCO→CSV conversion follows [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) and adapts to the actual final-state particles in `process`.
+12. **Run directory prefix (multi-run mode)**: Before Phase 0, compute `RUN_DIR = f"E{energy}_L{luminosity}"` (dots replaced by underscores). ALL file paths in ALL phases MUST prefix `results/` with `RUN_DIR/`. Single-run mode uses `results/` directly. This is NOT optional — verify by checking `results/E{e}_L{l}/` exists before writing any data. See [Output Structure](#output-structure) for examples.
+13. **No concurrent MG5 processes**: MadGraph5 internally uses multi-threading (OpenMP) and will saturate all CPU cores. Launching multiple MG5 processes in parallel causes CPU contention and is **slower** than sequential execution. Run MG5 invocations **one at a time** — never parallelize across operators, scan points, or phases.
+14. **Phase 1 execution lock — NEVER stop mid-loop**: Testing individual operators in Phase 1 is a single uninterrupted loop over ALL coefficients in ALL models. A zero cross-section for any individual operator is a valid physical result. You MUST NOT: test SM baseline mid-phase, skip remaining coefficients, switch models early, report red flags, or ask the user. The loop completes when the last coefficient of the last model is tested — only then may red flags be evaluated. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
 
 ## Scripts
 
@@ -473,7 +473,7 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 | Script | Purpose | Used By |
 |--------|---------|---------|
 | `extract_cross_section.py` | Parse MG5 banner → cross-section (pb) | Phases 1, 2, 4, 6 |
-| `parse_param_card.py` | Parse `Block anoinputs` from `param_card.dat` | Phase 1, restart |
+| `parse_param_card.py` | Parse coefficient block (auto-detects anoinputs, dim8, etc.) from `param_card.dat` | Phases 1–4 |
 | `setup_delphes_card.py` | Copy Delphes card + dependencies to process dir | Phases 1–4 |
 | `convert_root_to_lhco.py` | Auto-detect jet branch, run `root2lhco`, validate | Phases 1–4 |
 | `run_mg5.py` | Run MG5 order file with return-code checking and stage timing | Phases 1–4 |
@@ -487,7 +487,7 @@ python scripts/extract_cross_section.py path/to/run_01_tag_1_banner.txt
 # Output: 0.0004231
 
 python scripts/parse_param_card.py path/to/param_card.dat
-# Output: {"1": 1e-12, "2": 0.0, ...}
+# Output: {"block_name": "anoinputs", "coefficients": {"1": 1e-12, "2": 0.0, ...}}
 
 python scripts/run_mg5.py /opt/MG5_aMC_v3_5_6 order_p1_20260525_01.txt
 ```
@@ -501,6 +501,11 @@ from scripts.run_mg5 import run_mg5
 from scripts.convert_root_to_lhco import convert_root_to_lhco
 from scripts.timing_tracker import TimingTracker, phase_timer
 # etc.
+
+# parse_anoinputs returns {"block_name": str, "coefficients": dict}
+result = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+block_name = result["block_name"]           # e.g. "anoinputs" or "dim8"
+coefficients = result["coefficients"]       # {"1": 1e-12, "2": 0.0, ...}
 ```
 
 ### Timing Tracking
@@ -577,7 +582,7 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | **Asking multiple parameters in one message** | -1 | **VIOLATION**. Always ask exactly ONE parameter per message. Never present a fill-in table. |
 | **Inferring defaults from history/environment** | -1 | **CRITICAL ERROR**. example1/example2 parameters are NOT defaults. Always ask. |
 | **Modifying physical parameters for speed** | All | **CRITICAL ERROR**. Never modify without explicit user instruction |
-| **Wrong MG5 coefficient syntax** | 1, 3, 4 | Bare `set 1 = 0.0` is **silently ignored** in MG5 launch mode. Always use `set anoinputs {idx} {value}`. See [`reference/madgraph-reference.md`](reference/madgraph-reference.md) |
+| **Wrong MG5 coefficient syntax** | 1, 3, 4 | Bare `set 1 = 0.0` is **silently ignored** in MG5 launch mode. Always use `set {block_name} {idx} {value}`. The `{block_name}` comes from `parse_param_card.py` output (e.g. `anoinputs`, `dim8`). See [`reference/madgraph-reference.md`](reference/madgraph-reference.md) |
 | **Forgetting luminosity conversion** | 6, 7 | `L = luminosity * 1000` (fb⁻¹ → pb⁻¹). Phase 2 uses `L' = n_scan / cs_sm` |
 | **Default coefficient = 0** | 1, 3, 4 | Use `c0 = 1.0` if default is `0.0` |
 | **Ignoring MG5 return code** | 1-4 | Always check `result.returncode != 0` |

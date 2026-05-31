@@ -17,7 +17,7 @@ Read `anchor.json` from Phase 1 to determine the anchor model and anchor operato
    output {folder_base}_{anchor_model}_p3_SM
    ```
 2. Copy Delphes card and dependencies
-3. Launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_sm}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+3. Launch with `set {block_name} {idx} 0.0` for all coefficients, `nevents = {nev_sm}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 4. Post-process (ROOT→LHCO, validate, clean large files)
 5. Copy to results:
 ```
@@ -37,7 +37,7 @@ Generate the NP sample **only for the anchor operator**:
    generate {process_name} NP>0
    output {folder_base}_{anchor_model}_p3_NP
    ```
-2. Launch with `set anoinputs {anchor_anoinput_idx} {c1}` for the anchor operator (from Phase 2 range), `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_np}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+2. Launch with `set {block_name} {anchor_anoinput_idx} {c1}` for the anchor operator (from Phase 2 range), `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_np}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 3. Post-process
 4. Copy to results:
 ```

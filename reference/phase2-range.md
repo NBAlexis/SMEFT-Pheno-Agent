@@ -22,7 +22,7 @@ generate {process_name} NP=0
 output {folder_base}_{anchor_model}_p2_SM
 ```
 
-Launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_phase2}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+Launch with `set {block_name} {idx} 0.0` for all coefficients, `nevents = {nev_phase2}`. The `{block_name}` is obtained from `parse_param_card.py` output (e.g. `anoinputs`, `dim8`). See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 
 Extract `cs_sm` from `run_XX_tag_1_banner.txt` using the script:
 

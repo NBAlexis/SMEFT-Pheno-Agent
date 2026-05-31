@@ -12,7 +12,7 @@ Usage:
     python parse_param_card.py <param_card_path> [--block BLOCK_NAME]
 
 Output (JSON):
-    {"1": 1.0e-12, "2": 0.0, "3": 0.0, ...}
+    {"block_name": "anoinputs", "coefficients": {"1": 1.0e-12, "2": 0.0, ...}}
 
 Exit codes:
     0  success

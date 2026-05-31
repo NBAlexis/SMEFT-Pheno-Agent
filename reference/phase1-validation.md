@@ -69,7 +69,7 @@ Run and check return code. Abort on any MG5 error.
 
 ### 1.1.2 Extract Coefficients from param_card.dat
 
-Read `Block anoinputs` from `{mg5path}/{folder_base}_{model_name}_p1_NP/Cards/param_card.dat`.
+Read the coefficient block from `{mg5path}/{folder_base}_{model_name}_p1_NP/Cards/param_card.dat`.
 
 **Use the script** (do not reimplement):
 
@@ -81,7 +81,9 @@ Or import in Python:
 ```python
 from scripts.parse_param_card import parse_anoinputs
 
-coefficients = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+result = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+block_name = result["block_name"]       # e.g. "anoinputs" or "dim8"
+coefficients = result["coefficients"]   # {"1": 1.0e-12, "2": 0.0, ...}
 ```
 
 The script handles case-insensitive Block matching, scan syntax retention, and Block boundary detection.

@@ -36,16 +36,19 @@ During **Phase -1** (Input Collection), after the user provides the model name:
 - **Copy, do not move.** Always use `cp -r` (or `shutil.copytree`) to copy from `dependency/` to `mg5path/models/`. Never modify the source files in `dependency/`.
 - **Model name matching.** The subdirectory name in `dependency/` must exactly match the model name the user provides (e.g. `AQGCm_UFO`).
 
-## Current Contents
+## Runtime Scan
 
-> **Note:** This list is for reference only. The skill must scan `dependency/` at runtime rather than relying on this list.
+At workflow start, scan the `dependency/` directory to discover available models:
 
-| Model | Description |
-|-------|-------------|
-| `AQGCm_UFO` | Anomalous Quartic Gauge Couplings (muon-specific) |
-| `AQGCs_UFO` | Anomalous Quartic Gauge Couplings (s-channel) |
-| `AQGCt_UFO` | Anomalous Quartic Gauge Couplings (t-channel) |
-| `gQGC_UFO`  | General Quartic Gauge Couplings |
+```python
+import os
+skill_dir = os.path.dirname(os.path.abspath(__file__))
+dependency_dir = os.path.join(skill_dir, "dependency")
+available_models = [d for d in os.listdir(dependency_dir)
+                    if os.path.isdir(os.path.join(dependency_dir, d))]
+```
+
+**Never hardcode a model list.** The `dependency/` folder is updated independently of the skill code.
 
 ## Adding New Models
 

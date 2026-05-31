@@ -126,27 +126,27 @@ Every paper explicitly states what each dataset contains. Follow this standard:
 - Events after cuts: [count]
 - Composition: **SM only** (no NP, no interference)
 
-**NP Samples (Pure New Physics)**
+**NP Sample (Training Signal)**
 - Purpose: training signal distribution / computing discrimination power
-- For each operator: NP=2 at $c = c_0$
-- Events generated per operator: [actual count]
+- Generated with `generate {process} NP>0`, anchor operator set to $c = c_1$, all other operators = $0$
+- Events generated: [actual count]
 - Events after cuts: [count]
-- Composition: **NP only** (SM contributions set to zero via NP=2)
+- Composition: **SM + NP contributions** (the full cross-section at $c = c_1$, including SM, interference, and quadratic NP terms)
 
 **Scan Samples (SM + NP + Interference)**
 - Purpose: fitting cross-section vs coefficient and computing constraints
 - Number of scan points: 11 (including $c = 0$)
 - Scan coefficient values: explicitly list (e.g., $f = 0, \pm 0.1c_1, \pm 0.2c_1, \dots, \pm c_1$)
 - Events generated per scan point: [actual count]
-- Composition: **SM + NP + interference** (generated with NP=2 and rescaled)
+- Composition: **SM + NP + interference** (generated with default mode, all contributions included at each scan point)
 
 **Example dataset table:**
 
 | Dataset | Purpose | Events Generated | Events After Cuts | Composition |
 |---------|---------|------------------|-------------------|-------------|
-| SM | Training background / baseline | 1,000,000 | 832,056 | SM only |
-| NP (o1) | Training signal | 300,000 | 245,000 | NP only |
-| Scan (o1) | Cross-section fit | 100,000 × 11 | 83,000 × 11 | SM + NP + int. |
+| SM | Training background / baseline | 500,000 | [actual count] | SM only |
+| NP (anchor) | Training signal | 100,000 | [actual count] | SM + NP (full cross-section at $c = c_1$) |
+| Scan (o1) | Cross-section fit | 1,000,000 × 11 | [actual count] × 11 | SM + NP + int. |
 
 **Dataset definition requirements (must appear in report):**
 
@@ -256,11 +256,11 @@ where $c(n) = 2H(n-1) - 2(n-1)/n$ is the average path length of unsuccessful sea
 - Present ROC curves for all algorithms (combined plot or individual)
 - Table of AUC values:
 
-| Algorithm | o1 AUC | o2 AUC | ... |
-|-----------|--------|--------|-----|
-| Algorithm 1 | 0.987 | 0.965 | ... |
-| Algorithm 2 | 0.954 | 0.943 | ... |
-| Algorithm 3 | 0.912 | 0.901 | ... |
+| Algorithm | Anchor AUC |
+|-----------|-----------|
+| Algorithm 1 | 0.987 |
+| Algorithm 2 | 0.954 |
+| Algorithm 3 | 0.912 |
 
 ### 5.5 Score Distributions
 - Show score distributions for **all algorithms** (SM vs NP)
