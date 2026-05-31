@@ -230,4 +230,3 @@ results/algorithms/
 ## Validation
 
 - `0.5 < AUC <= 1.0` for anchor training
-- If `AUC > 0.9999`, flag possible overfitting

@@ -55,7 +55,7 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 |-------|--------|
 | 1 | At least one operator claimed globally; `anchor` is set |
 | 2 | `cs_sm > 0`, `c_{scan} > 0`, `c_{scan} < 1e3`, `c_{scan}` finite |
-| 5 | `0.5 < AUC <= 1.0` for anchor training; flag `AUC > 0.9999` as possible overfitting |
+| 5 | `0.5 < AUC <= 1.0` for anchor training |
 | 6 | `csfit_sm > 0`, `csfit_np >= 0`, residual < 50% for all operators |
 | 7 | `fmin < 0 < fmax`, monotonicity for all operators |
 

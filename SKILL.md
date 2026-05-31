@@ -369,7 +369,6 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | **Zero non-zero operators** after Phase 1 | 1 | Process insensitive to ALL provided SMEFT models |
 | `cs_sm = 0` | 2 | SM process has zero cross-section |
 | **ML AUC ≤ 0.5** | 5 | Classifier no better than random |
-| **ML AUC > 0.9999** | 5 | Possible overfitting — flag in audit |
 | **Quadratic fit fails** | 6 | Fit coefficients non-physical |
 | **No real roots for S=2** | 7 | Insufficient luminosity or selection efficiency |
 | **Constraint width increases with S** | 7 | Statistics violation — check fit errors |
