@@ -174,7 +174,7 @@ For **every trained algorithm**, plot training-set score distributions:
 
 ## Step 5.4: Save All Algorithms
 
-Save **every fitted model** (including those from expansion rounds):
+Save **every fitted model**:
 ```python
 for alg_name, clf in fitted_clfs.items():
     model_path = os.path.join(config.workdir, "results", "algorithms", f"anchor_{alg_name}.pkl")
@@ -187,11 +187,9 @@ Record all AUCs in `algorithm_comparison.json`:
   "anchor": {
     "{alg1}": {"auc": 0.9876, "algorithm_path": "..."},
     "{alg2}": {"auc": 0.9654, "algorithm_path": "..."},
-    "{alg3}": {"auc": 0.9432, "algorithm_path": "..."},
-    "{alg4}": {"auc": 0.6543, "algorithm_path": "..."}
+    "{alg3}": {"auc": 0.9432, "algorithm_path": "..."}
   },
-  "algorithm_pool": ["{alg1}", "{alg2}", "{alg3}", "{alg4}", "..."],
-  "tested_count": 6,
+  "algorithm_pool": ["{alg1}", "{alg2}", "{alg3}", "..."],
   "initial_random_seed": 12345,
   "anchor_operator": "fS0",
   "anchor_model": "AQGCm_UFO"

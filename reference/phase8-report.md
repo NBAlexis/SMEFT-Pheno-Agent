@@ -75,7 +75,7 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
 
 ### AUC Comparison Table (All Trained Algorithms)
 
-**The report presents all trained algorithms.** In Phase 5, 3 algorithms are randomly selected from the pool (with dynamic expansion if needed). The full pool and expansion history are recorded in `algorithm_comparison.json`. Since training is done on the anchor operator only, there is a single AUC value per algorithm:
+**The report presents all trained algorithms.** In Phase 5, exactly 3 algorithms are randomly selected from the pool (or user-specified algorithms if `config.algorithms` is set). The full pool is recorded in `algorithm_comparison.json`. Since training is done on the anchor operator only, there is a single AUC value per algorithm:
 
 | Algorithm | Anchor AUC |
 |-----------|-----------|

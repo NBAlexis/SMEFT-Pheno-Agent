@@ -24,10 +24,10 @@ Exit codes:
     4  verification failed
 
 Example:
-    python install_mg5.py ~/HEP_Tools \
+    python install_mg5.py ~/MG5_aMC \
         --url "https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/LTS_MG5aMC_v3.5.15.tgz" \
         --name MG5_aMC_v3_5_15
-    # Result: ~/HEP_Tools/MG5_aMC_v3_5_15/
+    # Result: ~/MG5_aMC/MG5_aMC_v3_5_15/
 """
 import argparse
 import os

@@ -52,8 +52,8 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
 
    **Auto-install flow:**
    1. Ask for install directory:
-      > "[1/9] Where should MG5 be installed? Suggested default: `~/HEP_Tools`. Type `yes` to use it, or provide a different directory:"
-      > "MG5 应该安装到哪个目录？建议默认：`~/HEP_Tools`。输入 `yes` 使用默认目录，或提供其他目录："
+      > "[1/9] Where should MG5 be installed? Suggested default: `~/MG5_aMC`. Type `yes` to use it, or provide a different directory:"
+      > "MG5 应该安装到哪个目录？建议默认：`~/MG5_aMC`。输入 `yes` 使用默认目录，或提供其他目录："
    2. **Pre-flight system dependency check** (before invoking install_mg5.py):
       ```python
       import shutil, subprocess

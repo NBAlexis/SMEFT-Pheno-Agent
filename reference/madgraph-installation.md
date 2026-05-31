@@ -137,10 +137,10 @@ python scripts/install_mg5.py {install_dir} --url {download_url} --name {extract
 
 **Example:**
 ```bash
-python scripts/install_mg5.py ~/HEP_Tools \
+python scripts/install_mg5.py ~/MG5_aMC \
   --url "https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/LTS_MG5aMC_v3.5.15.tgz" \
   --name MG5_aMC_v3_5_15
-# Result: ~/HEP_Tools/MG5_aMC_v3_5_15/
+# Result: ~/MG5_aMC/MG5_aMC_v3_5_15/
 ```
 
 **What the script does:**
@@ -171,7 +171,7 @@ If the user does **not** provide `madgraph_path` (or presses Enter without a pat
    > "[1/9] MadGraph5 not found. Do you want me to automatically install it? (This will download ~31 MB, compile Pythia8, LHAPDF6, and Delphes — may take 20–40 minutes). Type `yes` to install, or provide an existing path:"
 
 2. If the user answers `yes`:
-   - Ask for install directory (default: `~/HEP_Tools`)
+   - Ask for install directory (default: `~/MG5_aMC`)
    - Fetch `https://launchpad.net/mg5amcnlo` and parse the HTML to find the LTS download URL and extracted directory name
    - Run `scripts/install_mg5.py {dir} --url {url} --name {name}`
    - Use the returned path as `madgraph_path`

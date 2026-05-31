@@ -24,8 +24,9 @@ Convert all Phase 4 `.lhco` files to `.csv` using same feature extraction as Pha
 Load algorithms from `algorithm_comparison.json` under the `"anchor"` key:
 
 ```python
-with open("results/data/phase5/algorithm_comparison.json") as f:
-    alg_data = json.load(f)
+from scripts.read_results import read_algorithm_comparison
+
+alg_data = read_algorithm_comparison(config.workdir)
 
 for alg_name, alg_info in alg_data["anchor"].items():
     clf = joblib.load(alg_info["algorithm_path"])
@@ -54,6 +55,12 @@ Load the anchor operator's scan data: `np_o_1_f0.lhco` through `np_o_1_f10.lhco`
 ### Event Count
 
 Read `nev_scan` from `sm_baseline.json` (field `n_scan`). **Do NOT hardcode.**
+
+```python
+from scripts.read_results import read_sm_baseline
+baseline = read_sm_baseline(config.workdir)
+nev_scan = baseline["n_scan"]
+```
 
 ### Threshold Scan Per Algorithm
 
