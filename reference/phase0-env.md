@@ -7,7 +7,7 @@ Verify all dependencies exist before starting the workflow.
 
 ## Steps
 
-1. **Required inputs**: Verify all required inputs are present (`madgraph_path`, `process`, `model`, `energy`, `luminosity`). `cutexperiment_path` is optional. If any required inputs are missing, STOP and ask the user (see `SKILL.md` "Missing Input Handling").
+1. **Required inputs**: Verify all required inputs are present (`madgraph_path`, `process`, `model`, `energy`, `luminosity`). `cutexperiment_path` is optional. If any required inputs are missing, STOP and ask the user (see [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md)).
 2. **MadGraph5**:
    - If `madgraph_path` was **auto-installed** in Phase -1 (see [`madgraph-installation.md`](madgraph-installation.md)):
      - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
@@ -34,7 +34,7 @@ if missing:
     raise ImportError(f"Missing packages: {missing}. Run: pip install {' '.join(pip_names)}")
 ```
 
-7. **Delphes card**: If `delphes_card` was user-specified, verify it exists at `{madgraph_path}/Delphes/cards/{delphes_card}`. If it was auto-selected in Phase -1, verify the file exists. If neither, run the auto-recommendation logic from [`SKILL.md`](../SKILL.md) and verify the resulting card exists.
+7. **Delphes card**: If `delphes_card` was user-specified, verify it exists at `{madgraph_path}/Delphes/cards/{delphes_card}`. If it was auto-selected in Phase -1, verify the file exists. If neither, run the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) and verify the resulting card exists.
 
 8. **Working Directory guard**: Verify `workdir` is NOT inside the Skill Directory (where `SKILL.md` is located). If it is, use the Skill Directory's parent instead and report: "Work directory adjusted to `{parent}` to avoid writing into the skill installation."
 

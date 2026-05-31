@@ -65,7 +65,7 @@ sm.lhco → sm.csv
 np_anchor.lhco → np_anchor.csv
 ```
 
-**Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) for the full pipeline.
+**Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for the full pipeline.
 
 ## Step 5.2: Algorithm Pool and Selection Strategy
 

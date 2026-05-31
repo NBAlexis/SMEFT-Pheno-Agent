@@ -390,8 +390,8 @@ $$
 
 | Figure | Description | Source |
 |--------|-------------|--------|
-| 1 | ROC curves (all algorithms, per operator) | `results/plots/roc_o*.pdf` |
-| 2 | ML score distributions (all algorithms, SM vs NP) | `results/plots/score_dist_o*_*alg*.pdf` |
+| 1 | ROC curves (all algorithms, anchor operator) | `results/plots/roc_anchor.pdf` |
+| 2 | ML score distributions (all algorithms, SM vs NP) | `results/plots/score_dist_anchor_*alg*.pdf` |
 | 3 | Threshold optimization comparison (all algorithms) | `results/plots/threshold_comparison.pdf` |
 | 4 | Cross-section fit plots (all algorithms, per operator) | `results/plots/csfit_plot_o*_*alg*.pdf` |
 | 5 | Algorithm comparison **band plot** ($[f_{\min}, f_{\max}]$ intervals side-by-side) | Generate from Phase 7 `algorithm_selection.json` |

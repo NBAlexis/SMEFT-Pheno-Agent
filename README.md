@@ -69,20 +69,23 @@ automated-smeft-ml-pheno/
 ├── SKILL.md                          # Main skill definition
 ├── README.md                         # This file
 └── reference/                        # Phase-by-phase implementation references
-    ├── phase0-env.md                 # Environment validation
-    ├── phase1-validation.md          # Operator identification
-    ├── phase2-range.md               # Coefficient range estimation
-    ├── phase3-pure-samples.md        # SM/NP sample generation
-    ├── phase4-scan.md                # Scan sample generation
-    ├── phase5-ml-training.md         # ML training and comparison
-    ├── phase6-selection.md           # Threshold optimization
-    ├── phase7-constraints.md         # Constraint computation
-    ├── phase8-report.md              # Report generation
-    ├── phase9-audit.md               # Self-consistency audit
-    ├── cleanup.md                    # MG5 process cleanup
-    ├── madgraph-reference.md         # MG5 invocation conventions
-    ├── cutexperiment-reference.md    # LHCO-to-CSV pipeline
-    └── report-writing-guide.md       # Report content guidelines
+    ├── phase-minus1-input-collection.md  # Interactive input collection
+    ├── phase0-env.md                     # Environment validation
+    ├── phase1-validation.md              # Operator identification
+    ├── phase2-range.md                   # Coefficient range estimation
+    ├── phase3-pure-samples.md            # SM/NP sample generation
+    ├── phase4-scan.md                    # Scan sample generation
+    ├── phase5-ml-training.md             # ML training and comparison
+    ├── phase6-selection.md               # Threshold optimization
+    ├── phase7-constraints.md             # Constraint computation
+    ├── phase8-report.md                  # Report generation
+    ├── phase9-audit.md                   # Self-consistency audit
+    ├── cleanup.md                        # MG5 process cleanup
+    ├── madgraph-reference.md             # MG5 invocation conventions
+    ├── madgraph-installation.md          # MG5 auto-installation
+    ├── cutexperiment-reference.md        # LHCO-to-CSV pipeline
+    ├── model-dependencies.md             # UFO model dependency handling
+    └── report-writing-guide.md           # Report content guidelines
 ```
 
 ---

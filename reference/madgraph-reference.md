@@ -108,12 +108,17 @@ Depending on the Phase task, there are **three generation modes**. The `generate
 - SM mode: `{folder_base}_{phase}_{timestamp}_{suffix}_SM`
 - NP mode: `{folder_base}_{phase}_{timestamp}_{suffix}_NP`
 
-**Phase directory examples:**
+**Phase directory examples (single-model mode):**
 - Phase 1: `ep_em_to_a_a_p1_20260525_01_NP`
 - Phase 2: `ep_em_to_a_a_p2_20260525_01_SM`
 - Phase 3 SM: `ep_em_to_a_a_p3_20260525_01_SM`
 - Phase 3 NP: `ep_em_to_a_a_p3_20260525_01_NP`
 - Phase 4: `ep_em_to_a_a_p4_20260525_01`
+
+**Multi-model mode:** When multiple models are used, insert the model name to avoid collisions. The timestamp suffix is omitted because model names provide uniqueness:
+- Phase 1: `ep_em_to_a_a_AQGCm_UFO_p1_NP`
+- Phase 2 SM: `ep_em_to_a_a_AQGCm_UFO_p2_SM`
+- Phase 4: `ep_em_to_a_a_AQGCm_UFO_p4`
 
 ### Minimum Order File for Process Creation
 
@@ -168,7 +173,7 @@ After the process directory is created (`output` step completed), the following 
 
 ### Step 1: Prepare Delphes Card
 
-The Delphes detector card is selected during **Phase -1** (see [`SKILL.md`](../SKILL.md) Delphes Card Auto-Recommendation). By the time this phase runs, `delphes_card` is already determined — either user-specified or auto-recommended.
+The Delphes detector card is selected during **Phase -1** (see [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) Delphes Card Auto-Recommendation). By the time this phase runs, `delphes_card` is already determined — either user-specified or auto-recommended.
 
 **(1.1) Use the script:**
 
@@ -188,7 +193,7 @@ from scripts.setup_delphes_card import setup_delphes_card
 card_path = setup_delphes_card(mg5path, delphes_card, folder_name)
 ```
 
-**Fallback:** If `delphes_card` was not set in Phase -1 (legacy path), use the auto-recommendation logic from [`SKILL.md`](../SKILL.md) to select a card on-the-fly.
+**Fallback:** If `delphes_card` was not set in Phase -1 (legacy path), use the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) to select a card on-the-fly.
 
 ### Step 3: Extract SMEFT Operator Coefficients
 
@@ -259,7 +264,7 @@ set nevents = {event_number}
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |
 |---------------|----------|----------|------------|
 | Symmetric (ee, pp, mu-mu) | `ebeam_value` | `ebeam_value` | `ebeam_value = energy * 1000 / 2` |
-| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is collected in **Phase -1** (see [`SKILL.md`](../SKILL.md)) |
+| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is collected in **Phase -1** (see [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md)) |
 
 **Note:** The center-of-mass energy is `2 * ebeam_value` for symmetric colliders.
 
