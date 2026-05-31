@@ -9,7 +9,7 @@ Systematic validation of all preceding phases before declaring completion.
 
 **Cleanup MUST be completed before Phase 9.** See [`cleanup.md`](cleanup.md). All MG5 process directories must have been moved from `mg5path` to `results/mg5_processes/`.
 
-**Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase1/operators.json`). Phase 9 runs independently for each `(energy, luminosity)` pair.
+**Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase1/operator_claims.json`). Phase 9 runs independently for each `(energy, luminosity)` pair.
 
 ## Step 9.1: File Existence Check
 
@@ -17,12 +17,15 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 
 | File | Phase | Action if Missing |
 |------|-------|-------------------|
-| `results/data/phase1/operators.json` | 1 | Abort |
+| `results/data/phase1/operator_claims.json` | 1 | Abort |
 | `results/data/phase1/cross_sections.json` | 1 | Abort |
+| `results/data/phase1/anchor.json` | 1 | Abort |
 | `results/data/phase2/coefficient_ranges.json` | 2 | Abort |
 | `results/data/phase2/sm_baseline.json` | 2 | Abort |
 | `results/data/phase3/sm.lhco` | 3 | Abort |
+| `results/data/phase3/np_anchor.lhco` | 3 | Abort |
 | `results/data/phase5/sm.csv` | 5 | Abort |
+| `results/data/phase5/np_anchor.csv` | 5 | Abort |
 | `results/data/phase5/algorithm_comparison.json` | 5 | Abort |
 | `results/data/phase7/constraint_table.json` | 7 | Abort |
 | `results/data/phase7/algorithm_selection.json` | 7 | Warn: cannot generate comparison plot |
@@ -31,25 +34,28 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 | `results/mg5_processes/` (non-empty) | Cleanup | Warn: process directories not collected |
 | `results/orders/` (non-empty or missing) | Cleanup | Warn: order files not collected |
 
+**Phase 4 spot-check**: Verify at least one scan file exists per claimed operator (e.g., `np_o_1_f0.lhco`). If any operator has zero scan files, warn.
+
 ## Step 9.2: Numerical Sanity
 
 | Phase | Checks |
 |-------|--------|
-| 1 | `sigma_i > 0` for at least one operator |
+| 1 | At least one operator claimed globally; `anchor` is set |
 | 2 | `cs_sm > 0`, `c1 > 0`, `c1 < 1e3`, `c1` finite |
-| 5 | `0.5 < AUC <= 1.0` |
-| 6 | `csfit_sm > 0`, `csfit_np >= 0`, residual < 50% |
-| 7 | `fmin < 0 < fmax`, monotonicity |
+| 5 | `0.5 < AUC <= 1.0` for anchor training |
+| 6 | `csfit_sm > 0`, `csfit_np >= 0`, residual < 50% for all operators |
+| 7 | `fmin < 0 < fmax`, monotonicity for all operators |
 
 ## Step 9.3: Cross-Phase Consistency
 
 | Check | Expected | Action |
 |-------|----------|--------|
-| P1 ops == P2 ops | Same list | Abort |
-| P5 ops == P6 ops == P7 ops | Same list | Abort |
-| P6 `csfit_sm` ≈ P7 `csfit_sm` (per algorithm) | Identical per alg | Warn |
+| P1 claimed ops == P4 scanned ops == P6 fitted ops == P7 constrained ops | Same global operator list | Abort |
+| P5 algorithms == P6 algorithms | Same set of trained algorithms | Abort |
+| P6 `csfit_sm` ≈ P7 `csfit_sm` (per algorithm, per operator) | Identical per alg/op | Warn |
 | Actual events == `{nev_scan}` | Match | Abort if modified outside debug |
 | Report table == P7 table | Match | Abort |
+| `anchor.json` model matches P2/P3 SM model | Same model | Abort |
 
 ## Step 9.4: Audit Log
 

@@ -15,15 +15,23 @@ Use **`mv`** (move), not `cp` (copy). The process directories are large and no l
 
 ## Process Directories to Collect
 
-Identify all process directories created during this workflow. Per `madgraph-reference.md`, directory names include a timestamp suffix for collision avoidance. Use glob patterns to match:
+Identify all process directories created during this workflow.
+
+**Single-model mode:** Directory names follow the pattern `{folder_base}_p{phase}_{timestamp}_*{suffix}` (per `madgraph-reference.md` convention).
+
+**Multi-model mode:** Directory names include the model name: `{folder_base}_{model}_p{phase}` (no timestamp needed since model names prevent collisions).
+
+Use glob patterns to match both conventions:
 
 | Phase | Process Directory Pattern |
 |-------|---------------------------|
-| 1 | `{folder_base}_p1_*_NP` |
-| 2 | `{folder_base}_p2_*_SM` |
-| 3 SM | `{folder_base}_p3_*_SM` (if created) |
-| 3 NP | `{folder_base}_p3_*_NP` per operator |
-| 4 | `{folder_base}_p4_*` |
+| 1 | `{folder_base}_p1_*_NP` or `{folder_base}_*_p1_NP` |
+| 2 | `{folder_base}_p2_*_SM` or `{folder_base}_*_p2_SM` |
+| 3 SM | `{folder_base}_p3_*_SM` or `{folder_base}_*_p3_SM` |
+| 3 NP | `{folder_base}_p3_*_NP` or `{folder_base}_*_p3_NP` |
+| 4 | `{folder_base}_p4_*` or `{folder_base}_*_p4` |
+
+> **Note**: The glob patterns use `*` to match either the timestamp suffix (single-model) or the model name (multi-model).
 
 ## Order Files to Collect
 
@@ -57,13 +65,18 @@ Examples: `order_p1_20260525_01.txt`, `order_p2_20260525_01.txt`, etc.
    os.makedirs(mg5_processes_dir, exist_ok=True)
    os.makedirs(orders_dir, exist_ok=True)
 
-   # Use glob to match timestamp-suffixed directories (madgraph-reference.md convention)
+   # Use glob to match both single-model (timestamped) and multi-model (model-named) directories
    process_dir_patterns = [
-       f"{folder_base}_p1_*_NP",      # Phase 1 NP
-       f"{folder_base}_p2_*_SM",      # Phase 2 SM
-       f"{folder_base}_p4_*",         # Phase 4 scan
-       f"{folder_base}_p3_*_SM",      # Phase 3 SM (if created)
-       f"{folder_base}_p3_*_NP",      # Phase 3 NP (per operator)
+       f"{folder_base}_p1_*_NP",      # Phase 1 NP (single-model timestamped)
+       f"{folder_base}_*_p1_NP",      # Phase 1 NP (multi-model)
+       f"{folder_base}_p2_*_SM",      # Phase 2 SM (single-model)
+       f"{folder_base}_*_p2_SM",      # Phase 2 SM (multi-model)
+       f"{folder_base}_p4_*",         # Phase 4 scan (single-model)
+       f"{folder_base}_*_p4",         # Phase 4 scan (multi-model)
+       f"{folder_base}_p3_*_SM",      # Phase 3 SM (single-model)
+       f"{folder_base}_*_p3_SM",      # Phase 3 SM (multi-model)
+       f"{folder_base}_p3_*_NP",      # Phase 3 NP (single-model)
+       f"{folder_base}_*_p3_NP",      # Phase 3 NP (multi-model)
    ]
 
    moved_dirs = []
@@ -97,7 +110,7 @@ Examples: `order_p1_20260525_01.txt`, `order_p2_20260525_01.txt`, etc.
      "source": "/home/user/MG5_aMC_v3_5_6",
      "destination_processes": "/home/user/work/results/E10_L1000/mg5_processes",
      "destination_orders": "/home/user/work/results/E10_L1000/orders",
-     "moved_directories": ["mup_mum_to_ll_vlvl_p1_20260525_01_NP", "mup_mum_to_ll_vlvl_p2_20260525_01_SM", ...],
+     "moved_directories": ["mup_mum_to_ll_vlvl_p1_20260525_01_NP", "mup_mum_to_ll_vlvl_AQGCm_UFO_p1_NP", ...],
      "moved_order_files": ["order_p1_20260525_01.txt", "order_p2_20260525_01.txt", ...],
      "total_moved_dirs": 5,
      "total_moved_orders": 8

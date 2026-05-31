@@ -8,6 +8,8 @@ Generate 11 scan points per **globally claimed operator** across the coefficient
 ## Prerequisite
 Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
 
+From `coefficient_ranges.json`, read the unified range: `c1 = coefficient_ranges["global"][1]` (the positive bound). The same `[-c1, c1]` applies to all operators.
+
 ## Critical Rules — Prevent tag_2 Corruption
 
 - **NEVER** delete files from an existing `run_XX` and re-launch

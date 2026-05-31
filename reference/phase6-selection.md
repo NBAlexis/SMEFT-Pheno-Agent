@@ -14,10 +14,15 @@ Convert all Phase 4 `.lhco` files to `.csv` using same feature extraction as Pha
 
 ## Step 6.2: Score All Scan Points (Per Algorithm)
 
-For each algorithm in `algorithm_comparison.json`:
+Load algorithms from `algorithm_comparison.json` under the `"anchor"` key:
 
 ```python
-clf = joblib.load(alg_info["algorithm_path"])
+with open("results/data/phase5/algorithm_comparison.json") as f:
+    alg_data = json.load(f)
+
+for alg_name, alg_info in alg_data["anchor"].items():
+    clf = joblib.load(alg_info["algorithm_path"])
+    # ... score events ...
 ```
 
 Compute scores for all events in each scan point.
