@@ -5,6 +5,17 @@
 ## Purpose
 After all event generation is complete and results have been extracted to `results/data/`, move the MG5 process directories from `mg5path` to the working directory to prevent `mg5path` from accumulating unmanaged folders across multiple runs.
 
+## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+
+from scripts.normalize_process_name import normalize_process_name
+folder_base = normalize_process_name(config.process)
+```
+
 ## When to Run
 
 Execute **after Phase 8 (report generation)** and **before Phase 9 (audit)**. At this point, all required files (banners, LHCO, CSV, plots, report) have already been copied to `results/`.

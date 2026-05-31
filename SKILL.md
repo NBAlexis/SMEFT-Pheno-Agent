@@ -204,11 +204,11 @@ The following table summarizes the MG5 invocation for every phase that runs MadG
 
 | Phase | `generate` line | Output folder suffix | Coefficient setting | `nevents` | Output files |
 |-------|-----------------|----------------------|---------------------|-----------|--------------|
-| 1 | `generate {process} NP>0` | `_{model}_p1_NP` | One at a time: target = `c0`, all others = `0.0` | `nev_phase1` | `operator_claims.json`, `cross_sections.json`, `anchor.json` |
+| 1 | `generate {process} NP>0` | `_{model}_p1_NP` | One at a time: target = `c_{n_{default}}`, all others = `0.0` | `nev_phase1` | `operator_claims.json`, `cross_sections.json`, `anchor.json` |
 | 2 | `generate {process} NP=0` | `_{anchor_model}_p2_SM` | All `{block_name} {idx} = 0.0` | `nev_phase2` | `sm_baseline.json`, `coefficient_ranges.json` |
 | 3 SM | `generate {process} NP=0` | `_{anchor_model}_p3_SM` | All `{block_name} {idx} = 0.0` | `nev_sm` | `sm_banner.txt`, `sm.lhco` |
-| 3 NP | `generate {process} NP>0` | `_{anchor_model}_p3_NP` | Target = `c1` (anchor operator), others = `0.0` | `nev_np` | `np_anchor_banner.txt`, `np_anchor.lhco` |
-| 4 | `generate {process}` | `_{model}_p4` | One operator: `{block_name} {idx} scan:[v0,v1,...]`; all others = `0.0` | `nev_scan` | `np_o_{g_idx}_f0_banner.txt` … `np_o_{g_idx}_f10_banner.txt` and `.lhco` |
+| 3 NP | `generate {process} NP>0` | `_{anchor_model}_p3_NP` | Target = `c_{n_{scan}}` (anchor operator), others = `0.0` | `nev_np` | `np_anchor_banner.txt`, `np_anchor.lhco` |
+| 4 | `generate {process}` | `_{model}_p4` | One operator: `{block_name} {idx} scan:[v0,v1,...]` on `[-c_{n_{scan}}, c_{n_{scan}}]`; all others = `0.0` | `nev_scan` | `np_o_{g_idx}_f0_banner.txt` … `np_o_{g_idx}_f10_banner.txt` and `.lhco` |
 
 **Key rules:**
 - Each phase uses a **separate process directory** (independent `output` step). Never reuse a directory from another phase.
@@ -244,7 +244,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 | **-1** | **Input Collection** — verify all required inputs; ask user if any missing | [`reference/phase-minus1-input-collection.md`](reference/phase-minus1-input-collection.md) |
 | 0 | Environment validation | [`reference/phase0-env.md`](reference/phase0-env.md) |
 | 1 | Identify non-zero operators across all models | [`reference/phase1-validation.md`](reference/phase1-validation.md) |
-| 2 | Estimate coefficient ranges `[-c1, c1]` | [`reference/phase2-range.md`](reference/phase2-range.md) |
+| 2 | Estimate coefficient ranges `[-c_{scan}, c_{scan}]` | [`reference/phase2-range.md`](reference/phase2-range.md) |
 | 3 | Generate pure SM and NP samples | [`reference/phase3-pure-samples.md`](reference/phase3-pure-samples.md) |
 | 4 | Generate 11-point coefficient scans | [`reference/phase4-scan.md`](reference/phase4-scan.md) |
 | 5 | Train and compare ML algorithms | [`reference/phase5-ml-training.md`](reference/phase5-ml-training.md) |
@@ -257,7 +257,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 ### Critical Cross-Cutting Rules
 
 1. **Phase -1 is Step 1**: The Input Collection steps above are the FIRST action when this skill is invoked. Never create files, run commands, or check system state before Phase -1 completes.
-2. **Parameter source is the user ONLY**: Never read inputs from existing files, scripts, logs, or historical context. If a parameter is not explicitly stated in the current conversation, it is missing — ask for it.
+2. **Parameter source is the user ONLY**: `process`, `model`, `energy`, and `luminosity` must NEVER be inferred from files, logs, or historical context — they are missing unless explicitly stated in the current conversation. For `madgraph_path` and `cutexperiment_path`, you may show a suggested default in the prompt, but the user must actively confirm (press Enter) or override it. Never silently accept any default without asking.
 3. **MG5 return code**: Every `subprocess.run` invoking MG5 MUST check `returncode != 0`. Never silently ignore failures.
 4. **No `runs[-11:]`**: Use set-difference (`new_runs = all_runs - existing_runs`) to track exactly which runs MG5 created. See [`reference/phase4-scan.md`](reference/phase4-scan.md).
 5. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If the entire process directory must be re-run, remove large temps (`*.root`, `*.lhe.gz`, `*.hepmc.gz`) and rename the **process directory** (not individual runs). See [`reference/phase4-scan.md`](reference/phase4-scan.md).
@@ -285,6 +285,7 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 | `run_mg5.py` | Run MG5 order file with return-code checking and stage timing | Phases 1–4 |
 | `normalize_process_name.py` | Normalize `e+ e- > a a` → `ep_em_to_a_a` | All phases |
 | `install_mg5.py` | Auto-install MG5 with Pythia8, LHAPDF6, and Delphes | Phase -1 |
+| `compute_ml_scores.py` | Compute normalized ML scores (handles classifiers + anomaly detectors) | Phases 5–6 |
 | `timing_tracker.py` | Track phase-level and MG5 sub-step timings | All phases |
 
 For detailed CLI and Python usage, run each script with `--help` or read its docstring. Examples:
@@ -348,7 +349,7 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | **Modifying physical parameters for speed** | All | **CRITICAL ERROR**. Never modify without explicit user instruction |
 | **Wrong MG5 coefficient syntax** | 1, 3, 4 | Bare `set 1 = 0.0` is **silently ignored** in MG5 launch mode. Always use `set {block_name} {idx} {value}`. The `{block_name}` comes from `parse_param_card.py` output (e.g. `anoinputs`, `dim8`). See [`reference/madgraph-reference.md`](reference/madgraph-reference.md) |
 | **Forgetting luminosity conversion** | 6, 7 | `L = luminosity * 1000` (fb⁻¹ → pb⁻¹). Phase 2 uses `L' = n_scan / cs_sm` |
-| **Default coefficient = 0** | 1, 3, 4 | Use `c0 = 1.0` if default is `0.0` |
+| **Default coefficient = 0** | 1, 3, 4 | Use `c_{n_{default}} = 1.0` if param_card default is `0.0` |
 | **Ignoring MG5 return code** | 1-4 | Always check `result.returncode != 0` |
 | **Using `runs[-11:]` heuristic** | 4 | Use set-difference. See [`reference/phase4-scan.md`](reference/phase4-scan.md) |
 | **param_card case sensitivity** | 1 | MG5 rewrites `Block` as `BLOCK`. Match case-insensitively. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |

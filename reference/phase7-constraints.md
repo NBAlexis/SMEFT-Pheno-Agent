@@ -6,11 +6,18 @@
 Compute the final expected Wilson coefficient constraints at significance levels S = 2, 3, 5 using the **best algorithm** per operator. Constraints are computed for **ALL globally claimed operators** (`o_1` through `o_N`) from all models. Also generate comparison data to justify algorithm selection.
 
 ## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+```
+
 Read `operator_claims.json` from Phase 1 to know the total number of global operators.
 
 ## Formula
 
-For each operator `o_{g_idx}`, solve $S_{\mathrm{stat}} = s$ for $s \in \{2, 3, 5\}$.
+For each operator `o_n` (where `n` is the global index), solve $S_{\mathrm{stat}} = s$ for $s \in \{2, 3, 5\}$.
 
 **Preferred (Asimov formula, used in published papers):**
 
@@ -49,9 +56,10 @@ Using **only the best algorithm's** fit results, compute constraints for **all g
 
 ## Root Selection
 
-For each $s$:
-- $f_{\max}(s)$ = smallest positive real root
-- $f_{\min}(s)$ = largest negative real root (closest to 0)
+For each operator `o_n` and each significance $s$:
+- The constraint interval is $[-c_{n_{s}}, c_{n_{s}}]$
+- $c_{n_{s}}$ = smallest positive real root (upper bound)
+- $-c_{n_{s}}$ = largest negative real root (lower bound, closest to 0)
 
 ## Output
 
@@ -70,9 +78,9 @@ Final constraint table format:
 
 | Operator | Source Model | $S=2$ | $S=3$ | $S=5$ |
 |----------|-------------|-------|-------|-------|
-| o_1 | AQGCm_UFO | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
-| o_2 | AQGCm_UFO | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
-| o_3 | AQGCs_UFO | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
+| o_1 | AQGCm_UFO | $[-c_{1_{s=2}}, c_{1_{s=2}}]$ | $[-c_{1_{s=3}}, c_{1_{s=3}}]$ | $[-c_{1_{s=5}}, c_{1_{s=5}}]$ |
+| o_2 | AQGCm_UFO | $[-c_{2_{s=2}}, c_{2_{s=2}}]$ | $[-c_{2_{s=3}}, c_{2_{s=3}}]$ | $[-c_{2_{s=5}}, c_{2_{s=5}}]$ |
+| o_3 | AQGCs_UFO | $[-c_{3_{s=2}}, c_{3_{s=2}}]$ | $[-c_{3_{s=3}}, c_{3_{s=3}}]$ | $[-c_{3_{s=5}}, c_{3_{s=5}}]$ |
 | ... | ... | ... | ... | ... |
 
 Algorithm selection record (must contain **full intervals**, not just widths):
@@ -97,8 +105,7 @@ Algorithm selection record (must contain **full intervals**, not just widths):
 
 ## Validation
 
-- $f_{\min}(s) < 0 < f_{\max}(s)$ for all operators and all $s$
-- $|f_{\min}(5)| > |f_{\min}(3)| > |f_{\min}(2)|$
-- $|f_{\max}(5)| < |f_{\max}(3)| < |f_{\max}(2)|$
+- $c_{n_{s}} > 0$ for all operators and all $s$ (upper bound must be positive)
+- $c_{n_{s=5}} < c_{n_{s=3}} < c_{n_{s=2}}}$ (constraints tighten with higher significance)
 
 If monotonicity is violated, flag as constraint error.

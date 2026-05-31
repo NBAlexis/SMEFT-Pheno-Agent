@@ -5,7 +5,13 @@
 ## Purpose
 Systematic validation of all preceding phases before declaring completion.
 
-## Prerequisites
+## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+```
 
 **Cleanup MUST be completed before Phase 9.** See [`cleanup.md`](cleanup.md). All MG5 process directories must have been moved from `mg5path` to `results/mg5_processes/`.
 
@@ -41,7 +47,7 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 | Phase | Checks |
 |-------|--------|
 | 1 | At least one operator claimed globally; `anchor` is set |
-| 2 | `cs_sm > 0`, `c1 > 0`, `c1 < 1e3`, `c1` finite |
+| 2 | `cs_sm > 0`, `c_{scan} > 0`, `c_{scan} < 1e3`, `c_{scan}` finite |
 | 5 | `0.5 < AUC <= 1.0` for anchor training |
 | 6 | `csfit_sm > 0`, `csfit_np >= 0`, residual < 50% for all operators |
 | 7 | `fmin < 0 < fmax`, monotonicity for all operators |
@@ -53,6 +59,7 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 | P1 claimed ops == P4 scanned ops == P6 fitted ops == P7 constrained ops | Same global operator list | Abort |
 | P5 algorithms == P6 algorithms | Same set of trained algorithms | Abort |
 | P6 `csfit_sm` ≈ P7 `csfit_sm` (per algorithm, per operator) | Identical per alg/op | Warn |
+| P6 constraint interval ≈ P7 constraint interval (per alg/op at S=2) | `[-c_{n_{s=2}}, c_{n_{s=2}}]` match | Warn |
 | Actual events == `{nev_scan}` | Match | Abort if modified outside debug |
 | Report table == P7 table | Match | Abort |
 | `anchor.json` model matches P2/P3 SM model | Same model | Abort |

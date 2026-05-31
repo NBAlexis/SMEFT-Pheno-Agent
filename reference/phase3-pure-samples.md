@@ -6,6 +6,16 @@
 Generate high-statistics pure samples for ML training. In multi-model mode, ML training is performed **once** using the **anchor operator only**. Therefore, only the anchor model's SM sample and the anchor operator's NP sample are needed.
 
 ## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+
+from scripts.normalize_process_name import normalize_process_name
+folder_base = normalize_process_name(config.process)
+```
+
 Read `anchor.json` from Phase 1 to determine the anchor model and anchor operator.
 
 ## Step 3.1: Pure SM Sample
@@ -37,7 +47,7 @@ Generate the NP sample **only for the anchor operator**:
    generate {process_name} NP>0
    output {folder_base}_{anchor_model}_p3_NP
    ```
-2. Launch with `set {block_name} {anchor_anoinput_idx} {c1}` for the anchor operator (from Phase 2 range), `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_np}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+2. Launch with `set {block_name} {anchor_anoinput_idx} {c_{n_{scan}}}` for the anchor operator (from Phase 2 range `c_{scan}`), `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_np}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 3. Post-process
 4. Copy to results:
 ```

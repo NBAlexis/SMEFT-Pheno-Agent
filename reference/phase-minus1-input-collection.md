@@ -2,7 +2,7 @@
 
 > **This is Step 1 of the workflow.** Do NOT skip. Do NOT proceed to Phase 0 until completed.
 >
-> **CRITICAL: Phase -1 is the ONLY interactive stage.** Once Step 5 completes, ALL subsequent phases (0–9) execute FULLY AUTOMATICALLY without any user interaction. Do NOT stop, do NOT ask for confirmation, do NOT present options mid-execution.
+> **CRITICAL: Phase -1 is the ONLY interactive stage.** Once all steps complete, ALL subsequent phases (0–9) execute FULLY AUTOMATICALLY without any user interaction. Do NOT stop, do NOT ask for confirmation, do NOT present options mid-execution.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ Verify the following are present:
 
 **CRITICAL — Parameter Source Restriction:**
 - `process`, `model`, `energy`, `luminosity` — **MUST be explicitly provided by the user in the current conversation**. No defaults, no inference from files or history.
-- `madgraph_path`, `cutexperiment_path` — **May use defaults** from historical conversation context, environment variables, or common install paths (e.g., `~/MG5_aMC_v*`, `~/CutExperiment`). However, the user **MUST still be asked to confirm or override** the default. Never silently accept a default without user confirmation.
+- `madgraph_path`, `cutexperiment_path` — The user **MUST be asked** for these. You may show a suggested default in the prompt (e.g., a path from historical context or common install location), but the user must actively confirm it (press Enter) or provide a different value. **Never silently accept a default without asking.**
 - **NEVER** infer `process`, `model`, `energy`, or `luminosity` from filesystem state, existing files, code, or cached configs.
 - If any of the 5 required parameters are not explicitly provided in the current conversation, they are **MISSING** — proceed to Step 2
 
@@ -94,22 +94,21 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
    > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，我将从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。"
 8. `[8/9] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
-   - **If the user provided `custom_card`** (absolute path to a `.tcl` file outside `{mg5path}/Delphes/cards/`): skip the scan and use the custom card directly. Validate that the file exists.
-   - **Otherwise**, run the auto-recommendation:
+   - Run the auto-recommendation:
      1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
      2. **Filter out non-detector cards** — exclude `converter_card.tcl`, `gen_card.tcl`, `validation_card.tcl`, `delphes_card_llptest.tcl`, and any file whose name starts with `trackResolution`, `trkCounting`, or `gen_`
      3. Infer the collider type from the initial state of `process`
      4. Score each remaining card by matching its filename against the collider type
      5. Recommend the highest-scoring card
      6. Present to the user (only showing cards that scored > 0):
-        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, or type a different card name to override."
-        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配选项：{matched_card_list}\n> 按 Enter 使用推荐的卡片，或输入其他卡片名称覆盖。"
-   - `delphes_card`: the selected `.tcl` card file name (e.g., `delphes_card_CEPC.tcl`) or absolute path (for `custom_card`)
-   - If the user presses Enter or provides no answer, use the recommended card
-   - If the user types a card name, validate that it exists in `{mg5path}/Delphes/cards/`
+        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, type a different card name to override, or provide an absolute path to a custom `.tcl` card outside `{mg5path}/Delphes/cards/`."
+        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配选项：{matched_card_list}\n> 按 Enter 使用推荐的卡片，输入其他卡片名称覆盖，或提供自定义 `.tcl` 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）。"
+   - **If the user provides an absolute path** (starts with `/` or `~`): treat as `custom_card`. Validate the file exists and record the absolute path as `delphes_card`.
+   - **If the user types a card name** (not an absolute path): validate it exists in `{mg5path}/Delphes/cards/` and use it as `delphes_card`.
+   - **If the user presses Enter**: use the recommended card as `delphes_card`.
    - **If no cards match the collider type** (all scores = 0), show:
-     > "[8/9] No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one:"
-     > "没有探测器卡片匹配您的对撞机类型。可用卡片：{all_filtered_cards}。请指定一个："
+     > "[8/9] No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one (card name or absolute path to custom card):"
+     > "没有探测器卡片匹配您的对撞机类型。可用卡片：{all_filtered_cards}。请指定一个（卡片名称或自定义卡片的绝对路径）："
 
 9. `[9/9]` — **After all required inputs are collected, also ask**:
    > "[9/9] Are there any other requirements or preferences? Optional settings you can specify:
@@ -175,13 +174,13 @@ After asking for missing inputs, **STOP**. Do nothing else. Wait for the user to
 - `workdir`: if provided, verify the directory exists (create automatically if missing); default to the Working Directory (shell `pwd`). **Verify `workdir` is NOT inside the Skill Directory** (where `SKILL.md` is located). If it is, use the Skill Directory's parent instead.
 - `process`: verify it does not contain `NP=`, `QED=`, or `QCD=` suffixes (strip them if present)
 - `model`: verify it is a non-empty string or a non-empty list of strings. If list, each element must be a valid model name.
-- `energy`: all values > 0
-- `luminosity`: all values > 0
+- `energy`: must be a non-empty list; all values > 0
+- `luminosity`: must be a non-empty list; all values > 0
 - `ebeam_proton` (if process is ep collider): verify > 0
-- `delphes_card` (if user-specified as a filename): verify the file exists under `{madgraph_path}/Delphes/cards/`
-- `custom_card` (if user-specified as an absolute path): verify the file exists at the given path
+- `delphes_card`: verify the file exists (either under `{madgraph_path}/Delphes/cards/` or at the absolute path if custom)
 - `polarization` (if provided): verify format is two comma-separated floats in [-1, 1]
-- **List validation**: If `energy` and `luminosity` are both lists, they MUST have the same length. If lengths differ, report the mismatch and ask the user to correct.
+- **List validation**: `energy` and `luminosity` MUST have the same length. If lengths differ, report the mismatch and ask the user to correct.
+- **Non-empty validation**: `models`, `energy`, `luminosity`, and `run_configurations` must all be non-empty. Phase -1 must guarantee valid inputs before writing `run_config.json`; Phase 0 assumes these are already validated.
 
 If validation fails, report the specific failure and re-ask for that input.
 
@@ -248,7 +247,7 @@ This file is the **single source of truth** for all subsequent phases. No phase 
 | `polarization` | [float, float] \| null | no | `polbeam1, polbeam2` in [-1, 1] |
 | `debug` | bool | yes | `true` divides all event counts by 10 |
 | `algorithms` | list[string] \| null | no | User-specified ML algorithm names |
-| `cutexperiment_path` | string \| null | no | Absolute path to CutExperiment |
+| `cutexperiment_path` | string | no | Absolute path to CutExperiment (always set — either user-provided or auto-cloned) |
 | `run_configurations` | list[dict] | yes | One entry per `(energy, luminosity)` pair |
 | `auto_installed_mg5` | bool | yes | `true` if MG5 was auto-installed in this run |
 

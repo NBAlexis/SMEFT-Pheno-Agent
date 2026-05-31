@@ -3,12 +3,22 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Generate 11 scan points per **globally claimed operator** across the coefficient range `[-c1, c1]`. Each operator is scanned in its **source model** (the model that claimed it). Output filenames use **global numbering** (`o_1`, `o_2`, ...) to maintain consistency across all phases.
+Generate 11 scan points per **globally claimed operator** across the coefficient range `[-c_{n_{scan}}, c_{n_{scan}}]`. Each operator is scanned in its **source model** (the model that claimed it). Output filenames use **global numbering** (`o_1`, `o_2`, ...) to maintain consistency across all phases.
 
 ## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+
+from scripts.normalize_process_name import normalize_process_name
+folder_base = normalize_process_name(config.process)
+```
+
 Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
 
-From `coefficient_ranges.json`, read the unified range: `c1 = coefficient_ranges["global"][1]` (the positive bound). The same `[-c1, c1]` applies to all operators.
+From `coefficient_ranges.json`, read the unified range: `c_{scan} = coefficient_ranges["global"][1]` (the positive bound). The same `c_{n_{scan}} = c_{scan}` applies to all operators.
 
 ## Critical Rules — Prevent tag_2 Corruption
 
@@ -42,7 +52,7 @@ For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
 3. Generate 11 scan points:
 
 ```python
-coefficient_list = [-c1 + 0.2*c1*n for n in range(0, 11)]
+coefficient_list = [-c_{n_{scan}} + 0.2*c_{n_{scan}}*n for n in range(0, 11)]
 ```
 
 Launch order (follows [`madgraph-reference.md`](madgraph-reference.md) Event Generation Order template):
@@ -82,14 +92,34 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 # new_runs contains exactly the runs from this launch
 ```
 
-## Step 4.3: Rename Output Files (Global Numbering)
+## Step 4.3: Convert ROOT to LHCO
+
+For each new run, convert the Delphes ROOT output to LHCO format:
+
+**Use the script** (do not reimplement):
+```bash
+python scripts/convert_root_to_lhco.py {mg5path}/{folder_base}_{model_name}_p4/Events/{run}/ {run}.root
+```
+
+Or in Python:
+```python
+from scripts.convert_root_to_lhco import convert_root_to_lhco
+
+for run in new_runs:
+    root_file = os.path.join(events_dir, run, f"{run}_tag_1_delphes_events.root")
+    convert_root_to_lhco(root_file)
+```
+
+This produces `{run}.lhco` in the same Events directory. See [`madgraph-reference.md`](madgraph-reference.md) ROOT→LHCO Conversion for details.
+
+## Step 4.4: Rename Output Files (Global Numbering)
 
 Map each new run to `np_o_{g_idx}_f{index}` by run order (sorted by run number):
 
 ```
-run_XX → np_o_1_f0_banner.txt,  np_o_1_f0.lhco   (coefficient = -c1)
-run_YY → np_o_1_f1_banner.txt,  np_o_1_f1.lhco   (coefficient = -c1 + 0.2*c1)
-run_ZZ → np_o_1_f2_banner.txt,  np_o_1_f2.lhco   (coefficient = -c1 + 0.4*c1)
+run_XX → np_o_1_f0_banner.txt,  np_o_1_f0.lhco   (coefficient = -c_{n_{scan}})
+run_YY → np_o_1_f1_banner.txt,  np_o_1_f1.lhco   (coefficient = -c_{n_{scan}} + 0.2*c_{n_{scan}})
+run_ZZ → np_o_1_f2_banner.txt,  np_o_1_f2.lhco   (coefficient = -c_{n_{scan}} + 0.4*c_{n_{scan}})
 ...
 ```
 

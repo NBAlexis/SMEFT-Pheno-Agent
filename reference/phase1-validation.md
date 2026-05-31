@@ -5,6 +5,20 @@
 ## Purpose
 Identify which SMEFT operators across **all specified models** actually affect the chosen process. Operators are globally deduplicated and continuously numbered. The first non-zero operator found across all models becomes the **anchor** for ML training and threshold optimization.
 
+## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+
+# Derive process directory base name
+from scripts.normalize_process_name import normalize_process_name
+folder_base = normalize_process_name(config.process)
+```
+
+All variables (`config.process`, `config.models`, `config.madgraph_path`, `config.energy`, etc.) are read from `config`.
+
 ## Global Operator Deduplication Rules
 
 1. **Iterate models in the order provided by the user** (e.g., `[model_A, model_B, ...]`)
@@ -99,8 +113,8 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 > **如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。**
 
 For each coefficient `fi` in this model:
-1. Determine `c0`: default from param_card, or `1.0` if default is `0.0`
-2. Write launch order with `set {block_name} {idx} {c0}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
+1. Determine `c_{n_{default}}`: default from param_card, or `1.0` if default is `0.0`
+2. Write launch order with `set {block_name} {idx} {c_{n_{default}}}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
    - `block_name` is obtained from `parse_param_card.py` output (`block_name` field), e.g., `anoinputs` or `dim8`.
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
@@ -110,7 +124,7 @@ For each coefficient `fi` in this model:
      - Assign next global index `g_idx`
      - `claimed[fi] = model_name`
      - `operator_claims[g_idx] = {"model": model_name, "anoinput_idx": idx, "name": fi}`
-     - Record cross-section: `cross_sections[fi] = {"sigma": sigma_i, "c0": c0, "model": model_name, "global_idx": g_idx}`
+     - Record cross-section: `cross_sections[fi] = {"sigma": sigma_i, "c_default": c_{n_{default}}, "model": model_name, "global_idx": g_idx}`
      - If this is the **first** non-zero operator across all models, set it as `anchor`
    - If `sigma_i > 0` and `fi` IS in `claimed`:
      - Log: "Operator `{fi}` already claimed by `{claimed[fi]}`. Skipping duplicate from `{model_name}`."
@@ -141,7 +155,7 @@ After all models have been processed:
 ```
 results/data/phase1/
   operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
-  cross_sections.json        # {fi: {sigma, c0, model, global_idx}} for all tested
+  cross_sections.json        # {fi: {sigma, c_default, model, global_idx}} for all tested
   anchor.json                # {global_idx, model, anoinput_idx, name}
 ```
 

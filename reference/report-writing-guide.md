@@ -101,6 +101,7 @@ All papers follow this order. Do not deviate:
 - Must cite UFO: C. Degrande et al., Comput. Phys. Commun. 183, 1201 (2012), arXiv:1108.2040
 - Must cite Delphes (if used): J. de Favereau et al., JHEP 02, 057 (2014), arXiv:1307.6346
 - Must cite MLAnalysis: Y.-C. Guo et al., Comput. Phys. Commun. 294, 108957 (2024), arXiv:2305.00964
+  - **Note:** The analysis framework used in this workflow is CutExperiment (development branch of MLAnalysis, available at `https://gitee.com/NBAlexis/CutExperiment`). CutExperiment and MLAnalysis share the same core codebase and citation.
 - Must cite Pythia (if proton initial state or hadronization): T. Sjöstrand et al., Comput. Phys. Commun. 191, 159 (2015), arXiv:1410.3012
 - Must cite LHAPDF (if proton initial state): A. Buckley et al., Eur. Phys. J. C 75, 132 (2015), arXiv:1412.7420
 
@@ -128,10 +129,10 @@ Every paper explicitly states what each dataset contains. Follow this standard:
 
 **NP Sample (Training Signal)**
 - Purpose: training signal distribution / computing discrimination power
-- Generated with `generate {process} NP>0`, anchor operator set to $c = c_1$, all other operators = $0$
+- Generated with `generate {process} NP>0`, anchor operator set to $c = c_{n_{\mathrm{scan}}}}$, all other operators = $0$
 - Events generated: [actual count]
 - Events after cuts: [count]
-- Composition: **SM + NP contributions** (the full cross-section at $c = c_1$, including SM, interference, and quadratic NP terms)
+- Composition: **SM + NP contributions** (the full cross-section at $c = c_{n_{\mathrm{scan}}}}$, including SM, interference, and quadratic NP terms)
 
 **Scan Samples (SM + NP + Interference)**
 - Purpose: fitting cross-section vs coefficient and computing constraints
@@ -175,11 +176,11 @@ Present the scan points in a table:
 
 | Point | Coefficient Value |
 |-------|-------------------|
-| 0 | $f = 0$ |
-| 1 | $f = -c_1$ |
-| 2 | $f = -0.8c_1$ |
+| 0 | $c_n = 0$ |
+| 1 | $c_n = -c_{n_{\mathrm{scan}}}}$ |
+| 2 | $c_n = -0.8c_{n_{\mathrm{scan}}}}$ |
 | ... | ... |
-| 10 | $f = +c_1$ |
+| 10 | $c_n = +c_{n_{\mathrm{scan}}}}$ |
 
 ### 4.4 Feature Extraction
 - List all kinematic observables used as ML features
@@ -347,8 +348,8 @@ $$
 
 | Operator | $S = 2$ | $S = 3$ | $S = 5$ |
 |----------|---------|---------|---------|
-| o1 | $[f^{-}, f^{+}]$ | $[f^{-}, f^{+}]$ | $[f^{-}, f^{+}]$ |
-| o2 | $[f^{-}, f^{+}]$ | $[f^{-}, f^{+}]$ | $[f^{-}, f^{+}]$ |
+| o1 | $[-c_{1_{s=2}}, c_{1_{s=2}}]$ | $[-c_{1_{s=3}}, c_{1_{s=3}}]$ | $[-c_{1_{s=5}}, c_{1_{s=5}}]$ |
+| o2 | $[-c_{2_{s=2}}, c_{2_{s=2}}]$ | $[-c_{2_{s=3}}, c_{2_{s=3}}]$ | $[-c_{2_{s=5}}, c_{2_{s=5}}]$ |
 
 **Algorithm comparison table** (main text — justifies algorithm selection):
 
@@ -357,7 +358,7 @@ $$
 | o1 | 2 | $[-0.045, 0.048]$ | $[-0.062, 0.065]$ | $[-0.089, 0.092]$ | Algorithm 1 |
 | o1 | 3 | $[-0.032, 0.034]$ | $[-0.044, 0.046]$ | $[-0.063, 0.066]$ | Algorithm 1 |
 
-- Monotonicity must hold: $|f(5)| < |f(3)| < |f(2)|$
+- Monotonicity must hold: $c_{n_{s=5}} < c_{n_{s=3}} < c_{n_{s=2}}}$ (constraints tighten with higher significance)
 - Include unitarity bounds for comparison
 
 ### 7.4 Algorithm Comparison (Key Section)
@@ -367,7 +368,7 @@ $$
 **Important**: When the algorithm with best AUC differs from the algorithm with best constraints, explain why. For example:
 > "Although {alg1} achieves the highest AUC (0.987), {alg2} produces slightly tighter constraints for operator o2 because [reason if known]."
 
-**Comparison plot (Band Plot)**: For each algorithm, draw a horizontal band from $f_{\min}$ to $f_{\max}$. The best algorithm has the narrowest band. This is a **constraint interval comparison**, not a bar chart of widths.
+**Comparison plot (Band Plot)**: For each algorithm, draw a horizontal band from $-c_{n_{s=2}}$ to $c_{n_{s=2}}$. The best algorithm has the narrowest band. This is a **constraint interval comparison**, not a bar chart of widths.
 
 ---
 
@@ -432,7 +433,7 @@ These references MUST appear in the bibliography. Do not omit.
 | FeynRules | N. D. Christensen and C. Duhr, "FeynRules — Feynman rules made easy", Comput. Phys. Commun. **180**, 1614 (2009) | 10.1016/j.cpc.2009.02.018 | 0806.4194 |
 | UFO | C. Degrande et al., "UFO — The universal FeynRules output", Comput. Phys. Commun. **183**, 1201 (2012) | 10.1016/j.cpc.2012.01.022 | 1108.2040 |
 | Delphes | J. de Favereau et al., "DELPHES 3: A modular framework for fast simulation of a generic collider experiment", J. High Energy Phys. **02**, 057 (2014) | 10.1007/JHEP02(2014)057 | 1307.6346 |
-| MLAnalysis | Y.-C. Guo et al., "MLAnalysis: An open-source program for high energy physics analyses", Comput. Phys. Commun. **294**, 108957 (2024) | 10.1016/j.cpc.2023.108957 | 2305.00964 |
+| MLAnalysis / CutExperiment | Y.-C. Guo et al., "MLAnalysis: An open-source program for high energy physics analyses", Comput. Phys. Commun. **294**, 108957 (2024). *Note: CutExperiment (`https://gitee.com/NBAlexis/CutExperiment`) is the development branch of MLAnalysis and shares this citation.* | 10.1016/j.cpc.2023.108957 | 2305.00964 |
 | Pythia | [If proton initial state or hadronization] T. Sjöstrand et al., "An introduction to PYTHIA 8.2", Comput. Phys. Commun. **191**, 159 (2015) | 10.1016/j.cpc.2015.01.024 | 1410.3012 |
 | LHAPDF | [If proton initial state] A. Buckley et al., "LHAPDF6: parton density access in the LHC precision era", Eur. Phys. J. C **75**, 132 (2015) | 10.1140/epjc/s10052-015-3318-8 | 1412.7420 |
 
@@ -454,8 +455,8 @@ Before declaring a report complete, verify:
 - [ ] Each algorithm has its score formula defined mathematically
 - [ ] Event counts match actual generated counts (debug-adjusted if applicable)
 - [ ] Final constraint table matches Phase 7 `constraint_table.json` exactly
-- [ ] Algorithm comparison data contains full intervals $[f_{\min}, f_{\max}]$
-- [ ] Algorithm comparison plot is a **band plot**, not a bar chart
+- [ ] Algorithm comparison data contains full intervals $[-c_{n_{s=2}}, c_{n_{s=2}}]$
+- [ ] Algorithm comparison plot is a **band plot** showing $[-c_{n_{s=2}}, c_{n_{s=2}}]$, not a bar chart
 - [ ] All algorithms trained in Phase 5 appear in the comparison section
 - [ ] Best algorithm is selected by constraint width, not AUC
 - [ ] All operator names are consistent across all sections
@@ -475,7 +476,7 @@ Before declaring a report complete, verify:
 | Plain text formulas | Unprofessional presentation | Convert to LaTeX |
 | Missing MadGraph/FeynRules/UFO/Delphes/MLAnalysis citation | Incomplete methodology | Add mandatory citations |
 | No score function definition | Algorithm not reproducible | Add mathematical definition |
-| Algorithm comparison is a bar chart of widths | Wrong visualization type | Use band plot showing $[f_{\min}, f_{\max}]$ |
+| Algorithm comparison is a bar chart of widths | Wrong visualization type | Use band plot showing $[-c_{n_{s=2}}, c_{n_{s=2}}]$ |
 | Algorithm selection data only has widths | Cannot draw band plot | Re-run Phase 7 with full intervals |
 | Missing dataset composition table | Incomplete methodology | Add SM/NP/Scan dataset details |
 | Missing scan coefficient list | Results not reproducible | Add table of 11 scan points |

@@ -6,6 +6,13 @@
 For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold. In multi-model mode, threshold optimization uses the **anchor operator's** scan data only. The optimal threshold is then applied to ALL globally claimed operators.
 
 ## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+```
+
 Read `anchor.json` from Phase 1. The anchor operator (`o_1` by convention) provides the scan data for threshold optimization.
 
 ## Step 6.1: Convert Scan LHCO to CSV
@@ -22,10 +29,12 @@ with open("results/data/phase5/algorithm_comparison.json") as f:
 
 for alg_name, alg_info in alg_data["anchor"].items():
     clf = joblib.load(alg_info["algorithm_path"])
-    # ... score events ...
+    # ... load features X from CSV ...
+    from scripts.compute_ml_scores import compute_scores
+    scores = compute_scores(clf, X)  # normalized [0, 1], higher = more NP-like
 ```
 
-Compute scores for all events in each scan point.
+Compute scores for all events in each scan point. The `compute_scores` script handles normalization automatically for all algorithm types.
 
 ## Step 6.3: Optimize Threshold Per Algorithm (using anchor operator)
 
@@ -47,7 +56,7 @@ Read `nev_scan` from `sm_baseline.json` (field `n_scan`). **Do NOT hardcode.**
 ### Threshold Scan Per Algorithm
 
 For **each algorithm**, for each threshold in 51 points on [0, 1]:
-1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (11 points from -c1 to +c1, including c=0)
+1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (11 points from `-c_{n_{scan}}` to `+c_{n_{scan}}`, including c=0)
 2. Compute cut cross-section:
    ```
    cs_cut_x = cs_x * m_x / nev_scan
@@ -55,9 +64,18 @@ For **each algorithm**, for each threshold in 51 points on [0, 1]:
    where `cs_x` from banner (use canonical parser in [`madgraph-reference.md`](madgraph-reference.md)) and `nev_scan` from configuration.
 3. Fit quadratic: `csfit(f) = csfit_sm + f*csfit_int + f^2*csfit_np`
 4. Solve `S_stat = 2` with physics luminosity `L = luminosity * 1000`
-5. Record `fmax - fmin`
 
-Select the threshold that **minimizes `fmax - fmin`** for each algorithm individually.
+   **Significance formula (Asimov, preferred):**
+   ```
+   N_bg = L * csfit_sm
+   N_sig = L * (f * csfit_int + f^2 * csfit_np)
+   S_stat = sqrt(2 * [(N_bg + N_sig) * ln(1 + N_sig/N_bg) - N_sig])
+   ```
+
+   Solve `S_stat(f) = 2` for `f`. The constraint interval is `[-c_{n_{s=2}}, c_{n_{s=2}}]` where `c_{n_{s=2}}` is the positive bound.
+5. Record constraint width: `2 * c_{n_{s=2}}` (full interval width)
+
+Select the threshold that **minimizes the constraint width `2 * c_{n_{s=2}}`** for each algorithm individually.
 
 Record per algorithm:
 ```json

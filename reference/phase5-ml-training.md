@@ -6,6 +6,13 @@
 Train and compare ML algorithms to distinguish SM from NP events. In multi-model mode, training is performed **once** using the **anchor operator's** SM and NP samples. The trained algorithms are then applied to ALL globally claimed operators in later phases.
 
 ## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+```
+
 Read `anchor.json` from Phase 1. The anchor operator defines the SM vs NP discrimination task.
 
 ## Step 5.1: Convert LHCO to CSV
@@ -16,7 +23,7 @@ Use CutExperiment to load `.lhco` files and extract feature vectors:
 from Interfaces.LHCOlympics import LoadLHCOlympics
 from DataStructure.Particles import ParticleType
 
-def lhco_to_features(lhco_path, process_name):
+def lhco_to_features(lhco_path, process_name=config.process):
     """Extract features dynamically based on the final-state particles in process_name.
 
     Follows the CutExperiment pipeline (see reference/cutexperiment-reference.md):
@@ -110,14 +117,17 @@ Train on the **anchor operator's** SM and NP samples:
 4. Train/test split: 80/20
 5. Train the selected algorithms
 6. Compute AUC for each
-7. Plot ROC curves (SM vs NP score distributions) and save to `results/plots/roc_anchor.pdf`
+7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-**Anomaly-detection score normalization:**
-For algorithms that output raw anomaly scores, normalize to [0, 1]:
+**Score computation:**
+Use the script to compute normalized scores for any algorithm:
 ```python
-scores = -clf.decision_function(X)
-scores = (scores - scores.min()) / (scores.max() - scores.min() + 1e-10)
+from scripts.compute_ml_scores import compute_scores
+
+scores = compute_scores(clf, X)  # always returns [0, 1], higher = more NP-like
 ```
+
+The script handles classifiers (`predict_proba`), kernel methods (`decision_function`), and anomaly detectors (`score_samples`) with automatic normalization.
 
 ### 5.2.4 Dynamic Expansion (If Needed)
 

@@ -5,6 +5,17 @@
 ## Purpose
 Compile all results into a single consolidated report covering **all globally claimed operators** from **all models**.
 
+## Prerequisite
+
+Load the configuration:
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+
+from scripts.normalize_process_name import normalize_process_name
+folder_base = normalize_process_name(config.process)
+```
+
 ## Step 8.1: Output Format Selection
 
 ```bash
@@ -62,11 +73,9 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
 
 ## Step 8.4: Algorithm Comparison Section (Required)
 
-### AUC Comparison Table (Top 3 Only)
+### AUC Comparison Table (All Trained Algorithms)
 
-**The report presents only the best 3 algorithms** (ranked by narrowest constraint width at S=2). The full pool and expansion history are recorded in `algorithm_comparison.json` but not shown in the report.
-
-Since training is done on the anchor operator only, there is a single AUC value per algorithm:
+**The report presents all trained algorithms.** In Phase 5, 3 algorithms are randomly selected from the pool (with dynamic expansion if needed). The full pool and expansion history are recorded in `algorithm_comparison.json`. Since training is done on the anchor operator only, there is a single AUC value per algorithm:
 
 | Algorithm | Anchor AUC |
 |-----------|-----------|
@@ -85,9 +94,9 @@ Since training is done on the anchor operator only, there is a single AUC value 
 
 **Important**: The best algorithm is selected by **narrowest constraint width at S=2**, NOT highest AUC. Report when these differ.
 
-### Algorithm Comparison Plot (Top 3 Only)
+### Algorithm Comparison Plot (All Trained Algorithms)
 
-**Band plot** showing the constraint intervals $[f_{\min}, f_{\max}]$ for the top 3 algorithms side-by-side. For each algorithm, draw a horizontal band from $f_{\min}$ to $f_{\max}$. The best algorithm (narrowest band) should be highlighted.
+**Band plot** showing the constraint intervals $[-c_{n_{s=2}}, c_{n_{s=2}}]$ for all trained algorithms side-by-side. For each algorithm, draw a horizontal band from $-c_{n_{s=2}}$ to $c_{n_{s=2}}$. The best algorithm (narrowest band) should be highlighted.
 
 One plot per operator, or a combined plot showing all operators.
 
@@ -100,7 +109,7 @@ N_{\mathrm{SM}} = L \cdot cs_{\mathrm{sm}}
 $$
 
 $$
-N_{\mathrm{NP}}(c) = \frac{c^2}{c_0^2} \cdot L \cdot cs_{\mathrm{np}}
+N_{\mathrm{NP}}(c) = \frac{c^2}{c_{n_{\mathrm{default}}}^2} \cdot L \cdot cs_{\mathrm{np}}
 $$
 
 $$
