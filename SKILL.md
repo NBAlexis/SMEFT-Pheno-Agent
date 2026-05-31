@@ -99,7 +99,7 @@ The following situations are **NOT errors** and **do NOT justify stopping**. The
 |-----------|-------------|---------|
 | `madgraph_path` | Absolute path to MadGraph5 installation | `/opt/MG5_aMC_v3_5_4` |
 | `process` | Physics process only (no `NP=`, `QED=`, `QCD=` suffixes) | `p p > l+ l- j j` |
-| `model` | SMEFT model name | `SMEFTsim_U35_MwScheme_UFO` |
+| `model` | SMEFT model name(s). Single model or list of models | `SMEFTsim_U35_MwScheme_UFO` or `["AQGCm_UFO", "AQGCs_UFO"]` |
 | `energy` | Center-of-mass energy in TeV (single value or list) | `13.6` or `[10, 14, 30]` |
 | `luminosity` | Integrated luminosity in fb⁻¹ (single value or list) | `3000` or `[1000, 3000, 10000]` |
 
@@ -174,20 +174,25 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
      > "您的过程涉及电子-质子对撞机。质子束流能量是多少 GeV（`ebeam_proton`）？"
    - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
 4. `[4/9] model` — Before asking, scan the skill's `dependency/` directory (same directory as `SKILL.md`) at runtime for available UFO models. Do **not** hardcode a list. Present the question as:
-   > "[4/9] What SMEFT model name should be used? Models available in the skill dependency folder: {dependency_models}. You may also use any model already installed in `{madgraph_path}/models/`."
-   > "使用哪个 SMEFT 模型？skill 依赖文件夹中可用的模型：{dependency_models}。也可以使用已安装在 `{madgraph_path}/models/` 中的任何模型。"
-   - After the user provides `model`:
+   > "[4/9] What SMEFT model name(s) should be used? Provide a single model or a list, e.g. `AQGCm_UFO` or `[AQGCm_UFO, AQGCs_UFO]`. Models available in the skill dependency folder: {dependency_models}. You may also use any model already installed in `{madgraph_path}/models/`."
+   > "使用哪个 SMEFT 模型？提供单个模型或列表，例如 `AQGCm_UFO` 或 `[AQGCm_UFO, AQGCs_UFO]`。skill 依赖文件夹中可用的模型：{dependency_models}。也可以使用已安装在 `{madgraph_path}/models/` 中的任何模型。"
+   - Parse the user's response:
+     - If a single string (no brackets): treat as `[model]`
+     - If a list format (e.g., `[AQGCm_UFO, AQGCs_UFO]` or comma-separated): parse into a list
+     - **Do NOT accept `"all"`** — user must explicitly list models
+   - For **each** model in the parsed list:
      1. Resolve the path: `mg5_models = os.path.join(os.path.expanduser(madgraph_path), "models", model)`
      2. Check if `mg5_models` exists
-     3. If it exists: proceed
+     3. If it exists: proceed to next model
      4. If it does **not** exist:
         - Check if `{skill_dir}/dependency/{model}` exists (re-scan at runtime, do not reuse the earlier list)
         - If it exists:
           > "[4/9] Model `{model}` was not found in `{madgraph_path}/models/`. The skill has this model in its dependency folder. Copy it to `{madgraph_path}/models/`? (Type `yes` to copy, or provide an alternative model name:)"
           > "在 `{madgraph_path}/models/` 中未找到模型 `{model}`。skill 依赖文件夹中有此模型。是否复制到 `{madgraph_path}/models/`？（输入 `yes` 复制，或提供其他模型名称：）"
         - If the user answers `yes`: copy `{skill_dir}/dependency/{model}` to `{madgraph_path}/models/{model}`
-        - If the user provides a different model name: repeat the check
+        - If the user provides a different model name: replace this model in the list and repeat the check
         - If the model is not in `dependency/` either: report "Model `{model}` not found in MG5 and not available in skill dependencies. Please provide a valid model name or install it manually."
+   - Preserve the user-provided order — operators are claimed in this order during Phase 1
 5. `[5/9] energy` —
    > "[5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, e.g. `10` or `[10, 14, 30]`."
    > "质心能量是多少 TeV？提供单个值或列表，例如 `10` 或 `[10, 14, 30]`。"
@@ -281,6 +286,7 @@ After asking for missing inputs, **STOP**. Do nothing else. Wait for the user to
 - `madgraph_path`: verify the directory exists and contains `bin/mg5_aMC`
 - `workdir`: if provided, verify the directory exists (create automatically if missing); default to the Working Directory (shell `pwd`). **Verify `workdir` is NOT inside the Skill Directory** (where `SKILL.md` is located). If it is, use the Skill Directory's parent instead.
 - `process`: verify it does not contain `NP=`, `QED=`, or `QCD=` suffixes (strip them if present)
+- `model`: verify it is a non-empty string or a non-empty list of strings. If list, each element must be a valid model name.
 - `energy`: all values > 0
 - `luminosity`: all values > 0
 - `ebeam_proton` (if process is ep collider): verify > 0
@@ -391,16 +397,36 @@ The following table summarizes the MG5 invocation for every phase that runs MadG
 
 | Phase | `generate` line | Output folder suffix | Coefficient setting | `nevents` | Output files |
 |-------|-----------------|----------------------|---------------------|-----------|--------------|
-| 1 | `generate {process} NP>0` | `_p1_NP` | One at a time: target = `c0`, all others = `0.0` | `nev_phase1` | `operators.json`, `cross_sections.json` |
-| 2 | `generate {process} NP=0` | `_p2_SM` | All `set anoinputs {idx} 0.0` | `nev_phase2` | `sm_baseline.json`, `coefficient_ranges.json` |
-| 3 SM | `generate {process} NP=0` | `_p3_SM` | All `set anoinputs {idx} 0.0` | `nev_sm` | `sm_banner.txt`, `sm.lhco` |
-| 3 NP | `generate {process} NP>0` | `_p3_NP` | One at a time: target = `c1` (from Phase 2), others = `0.0` | `nev_np` | `np_oi_banner.txt`, `np_oi.lhco` |
-| 4 | `generate {process}` | `_p4` | One operator: `set anoinputs {idx} scan:[v0,v1,...]`; all others = `0.0` | `nev_scan` | `np_oi_f0_banner.txt` … `np_oi_f10_banner.txt` and `.lhco` |
+| 1 | `generate {process} NP>0` | `_{model}_p1_NP` | One at a time: target = `c0`, all others = `0.0` | `nev_phase1` | `operator_claims.json`, `cross_sections.json`, `anchor.json` |
+| 2 | `generate {process} NP=0` | `_{anchor_model}_p2_SM` | All `set anoinputs {idx} 0.0` | `nev_phase2` | `sm_baseline.json`, `coefficient_ranges.json` |
+| 3 SM | `generate {process} NP=0` | `_{anchor_model}_p3_SM` | All `set anoinputs {idx} 0.0` | `nev_sm` | `sm_banner.txt`, `sm.lhco` |
+| 3 NP | `generate {process} NP>0` | `_{anchor_model}_p3_NP` | Target = `c1` (anchor operator), others = `0.0` | `nev_np` | `np_anchor_banner.txt`, `np_anchor.lhco` |
+| 4 | `generate {process}` | `_{model}_p4` | One operator: `set anoinputs {idx} scan:[v0,v1,...]`; all others = `0.0` | `nev_scan` | `np_o_{g_idx}_f0_banner.txt` … `np_o_{g_idx}_f10_banner.txt` and `.lhco` |
 
 **Key rules:**
 - Each phase uses a **separate process directory** (independent `output` step). Never reuse a directory from another phase.
+- In multi-model mode, process directory names include the **model name** to avoid collisions (e.g., `ee_a_jj_AQGCm_UFO_p1_NP`).
 - `scan:[...]` syntax is **only used in Phase 4**. Phases 1 and 3 NP test one coefficient at a time with individual `launch` commands.
-- Phase 4 output uses **index-based naming** (`f0` … `f10`) mapped by sorted run number, not coefficient value.
+- Phase 4 output uses **global index-based naming** (`o_{g_idx}`) mapped by sorted run number, not coefficient value.
+- ML training (Phase 5) uses the **anchor operator only**; the trained algorithms are applied to ALL globally claimed operators.
+
+### Multi-Model Mode
+
+If `model` is a list of model names, the workflow operates in **multi-model mode**:
+
+1. **Phase 1**: Iterate all models in user-provided order. Test each operator. Claim operators globally with continuous numbering (`o_1, o_2, ..., o_N`). Skip duplicates (same operator name from a later model). The first non-zero operator becomes the **anchor**.
+2. **Phase 2**: Compute coefficient range using the anchor operator only. The same range applies to ALL operators.
+3. **Phase 3**: Generate SM and NP samples using the **anchor model** only. NP sample is for the anchor operator only.
+4. **Phase 4**: Scan ALL globally claimed operators. Each operator is scanned in its source model. Output uses global numbering (`np_o_{g_idx}_f{i}.lhco`).
+5. **Phase 5**: Train ML algorithms ONCE on anchor operator's SM/NP samples.
+6. **Phase 6**: Optimize threshold using anchor operator's scan data. Apply each algorithm's optimal threshold to ALL operators.
+7. **Phase 7**: Compute constraints for ALL globally claimed operators.
+8. **Phase 8**: Single consolidated report showing all operators with their source models.
+
+**Key data structures:**
+- `claimed`: dict mapping operator name → source model
+- `operator_claims.json`: maps global index → `{model, anoinput_idx, name}`
+- `anchor.json`: `{global_idx, model, anoinput_idx, name}`
 
 ### Multi-Run Mode
 
@@ -410,7 +436,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 |-------|---------|-----------|
 | **-1** | **Input Collection** — verify all required inputs; ask user if any missing (see below) | **MANDATORY — see Operation Steps** |
 | 0 | Environment validation | [`reference/phase0-env.md`](reference/phase0-env.md) |
-| 1 | Identify non-zero operators | [`reference/phase1-validation.md`](reference/phase1-validation.md) |
+| 1 | Identify non-zero operators across all models | [`reference/phase1-validation.md`](reference/phase1-validation.md) |
 | 2 | Estimate coefficient ranges `[-c1, c1]` | [`reference/phase2-range.md`](reference/phase2-range.md) |
 | 3 | Generate pure SM and NP samples | [`reference/phase3-pure-samples.md`](reference/phase3-pure-samples.md) |
 | 4 | Generate 11-point coefficient scans | [`reference/phase4-scan.md`](reference/phase4-scan.md) |
@@ -428,7 +454,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 3. **MG5 return code**: Every `subprocess.run` invoking MG5 MUST check `returncode != 0`. Never silently ignore failures.
 3. **No `runs[-11:]`**: Use set-difference (`new_runs = all_runs - existing_runs`) to track exactly which runs MG5 created. See [`reference/phase4-scan.md`](reference/phase4-scan.md).
 4. **No tag_2**: Never delete files from an existing `run_XX` and re-launch. If the entire process directory must be re-run, remove large temps (`*.root`, `*.lhe.gz`, `*.hepmc.gz`) and rename the **process directory** (not individual runs). See [`reference/phase4-scan.md`](reference/phase4-scan.md).
-5. **Explicit o1**: Use `ref_op = "o1"` for threshold optimization. Do NOT use `nonzero_ops[0]`.
+5. **Anchor operator**: Threshold optimization (Phase 6) uses the anchor operator's scan data. The anchor is the first non-zero operator found across all models, recorded in `anchor.json`. Do NOT use `nonzero_ops[0]`.
 6. **Pass `nev_scan`**: Read `n_scan` from `sm_baseline.json`. Do NOT hardcode in Phase 6.
 7. **param_card parser**: Match `Block` case-insensitively; handle `scan:[...]` syntax; reset `in_block` on every new `Block` header. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
 8. **Cleanup after Phase 8**: Move all MG5 process directories from `mg5path` to `results/mg5_processes/` using `mv` (not `cp`). This prevents `mg5path` from accumulating unmanaged folders across runs. See [`reference/cleanup.md`](reference/cleanup.md).
@@ -556,8 +582,10 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | **param_card case sensitivity** | 1 | MG5 rewrites `Block` as `BLOCK`. Match case-insensitively. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |
 | **param_card scan syntax** | 1, restart | After MG5 scan, param_card retains `scan:[...]` for the scanned coefficient. Detect and skip. See [`reference/phase1-validation.md`](reference/phase1-validation.md) |
 | **Hardcoding `nev_scan` in Phase 6** | 6 | Read from `sm_baseline.json` |
-| **Using `nonzero_ops[0]` for ref** | 6 | Use `ref_op = "o1"` |
+| **Using `nonzero_ops[0]` for ref** | 6 | Use the anchor operator from `anchor.json` |
 | **Confusing `N_sig` with `N_all`** | 7 | `N_sig` excludes SM; `N_all` includes it |
+| **Forgetting model prefix in process dirs** | 1, 3, 4 | Always include model name: `{folder_base}_{model}_p1_NP` |
+| **Training per-operator instead of anchor-only** | 5 | Train ONCE on anchor operator; apply to ALL operators |
 | **Writing to bare `results/` in multi-run mode** | All | Compute `RUN_DIR = f"E{e}_L{l}"` in Phase 0. ALL paths must use `results/{RUN_DIR}/` |
 
 ## Red Flags — Stop and Report
@@ -565,7 +593,7 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | Condition | Phase | Meaning |
 |-----------|-------|---------|
 | `generate` fails with MG5 error | 1 | Invalid process or model mismatch |
-| **Zero non-zero operators** after Phase 1 | 1 | Process insensitive to this SMEFT model |
+| **Zero non-zero operators** after Phase 1 | 1 | Process insensitive to ALL provided SMEFT models |
 | `cs_sm = 0` | 2 | SM process has zero cross-section |
 | **ML AUC ≤ 0.5** | 5 | Classifier no better than random |
 | **Quadratic fit fails** | 6 | Fit coefficients non-physical |

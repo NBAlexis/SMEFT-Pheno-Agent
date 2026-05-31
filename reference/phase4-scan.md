@@ -3,7 +3,10 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Generate 11 scan points per operator across the coefficient range `[-c1, c1]`.
+Generate 11 scan points per **globally claimed operator** across the coefficient range `[-c1, c1]`. Each operator is scanned in its **source model** (the model that claimed it). Output filenames use **global numbering** (`o_1`, `o_2`, ...) to maintain consistency across all phases.
+
+## Prerequisite
+Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
 
 ## Critical Rules — Prevent tag_2 Corruption
 
@@ -16,17 +19,25 @@ Generate 11 scan points per operator across the coefficient range `[-c1, c1]`.
 - Do **NOT** rename individual `run_XX` folders — this breaks run-number tracking
 - If `tag_2` appears, you violated this rule
 
-## Step 4.1: Create Scan Process Directory
+## Step 4.1: Create Scan Process Directories
+
+For each **unique model** that has at least one claimed operator, create ONE scan process directory:
 
 ```
 import model {model_name}
 generate {process_name}
-output {folder_base}_p4
+output {folder_base}_{model_name}_p4
 ```
 
-## Step 4.2: Generate Scan Points
+> **Process directory naming**: `{folder_base}_{model_name}_p4` ensures each model has its own directory. Multiple operators from the same model share one directory.
 
-For each operator `oi` with range `[-c1, c1]`:
+## Step 4.2: Generate Scan Points Per Operator
+
+For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
+
+1. Look up its source model and anoinput index from `operator_claims.json`
+2. Use the process directory `{folder_base}_{model_name}_p4`
+3. Generate 11 scan points:
 
 ```python
 coefficient_list = [-c1 + 0.2*c1*n for n in range(0, 11)]
@@ -35,11 +46,11 @@ coefficient_list = [-c1 + 0.2*c1*n for n in range(0, 11)]
 Launch order (follows [`madgraph-reference.md`](madgraph-reference.md) Event Generation Order template):
 
 ```
-launch {folder_base}_p4
+launch {folder_base}_{model_name}_p4
 detector = Delphes
 analysis = OFF
 0
-set anoinputs {idx} scan:[{comma-separated values}]
+set anoinputs {anoinput_idx} scan:[{comma-separated values}]
 set anoinputs {other_idx} 0.0
 ...
 set ebeam1 = {ebeam_value}
@@ -69,14 +80,14 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 # new_runs contains exactly the runs from this launch
 ```
 
-## Step 4.3: Rename Output Files
+## Step 4.3: Rename Output Files (Global Numbering)
 
-Map each new run to `np_oi_f{index}` by run order (sorted by run number):
+Map each new run to `np_o_{g_idx}_f{index}` by run order (sorted by run number):
 
 ```
-run_XX → np_o1_f0_banner.txt,  np_o1_f0.lhco   (coefficient = -c1)
-run_YY → np_o1_f1_banner.txt,  np_o1_f1.lhco   (coefficient = -c1 + 0.2*c1)
-run_ZZ → np_o1_f2_banner.txt,  np_o1_f2.lhco   (coefficient = -c1 + 0.4*c1)
+run_XX → np_o_1_f0_banner.txt,  np_o_1_f0.lhco   (coefficient = -c1)
+run_YY → np_o_1_f1_banner.txt,  np_o_1_f1.lhco   (coefficient = -c1 + 0.2*c1)
+run_ZZ → np_o_1_f2_banner.txt,  np_o_1_f2.lhco   (coefficient = -c1 + 0.4*c1)
 ...
 ```
 
@@ -87,10 +98,12 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 for i, run in enumerate(new_runs):
     banner_path = os.path.join(events_dir, run, f"{run}_tag_1_banner.txt")
     run_lhco = os.path.join(events_dir, run, f"{run}.lhco")
-    dest_banner = f"np_oi_f{i}_banner.txt"
-    dest_lhco   = f"np_oi_f{i}.lhco"
+    dest_banner = f"np_o_{g_idx}_f{i}_banner.txt"
+    dest_lhco   = f"np_o_{g_idx}_f{i}.lhco"
     # Copy banner and lhco to results/data/phase4/
 ```
+
+> **Important**: The output uses **global operator index** (`o_{g_idx}`), NOT the model-internal anoinput index. This ensures all downstream phases reference operators consistently.
 
 ## Output
 
@@ -98,16 +111,19 @@ for i, run in enumerate(new_runs):
 
 ```
 results/data/phase4/
-  np_o1_f0_banner.txt    np_o1_f0.lhco
-  np_o1_f1_banner.txt    np_o1_f1.lhco
-  np_o1_f2_banner.txt    np_o1_f2.lhco
+  np_o_1_f0_banner.txt    np_o_1_f0.lhco
+  np_o_1_f1_banner.txt    np_o_1_f1.lhco
+  np_o_1_f2_banner.txt    np_o_1_f2.lhco
   ...
-  np_o1_f10_banner.txt   np_o1_f10.lhco
-  np_o2_f0_banner.txt    np_o2_f0.lhco
-  np_o2_f1_banner.txt    np_o2_f1.lhco
+  np_o_1_f10_banner.txt   np_o_1_f10.lhco
+  np_o_2_f0_banner.txt    np_o_2_f0.lhco
+  np_o_2_f1_banner.txt    np_o_2_f1.lhco
   ...
-  np_o2_f10_banner.txt   np_o2_f10.lhco
+  np_o_2_f10_banner.txt   np_o_2_f10.lhco
   ...
+  np_o_N_f0_banner.txt    np_o_N_f0.lhco
+  ...
+  np_o_N_f10_banner.txt   np_o_N_f10.lhco
 ```
 
 ## Common Mistakes for This Phase
@@ -116,6 +132,7 @@ results/data/phase4/
 |---------|-----|
 | `runs[-11:]` heuristic | Use set-difference to identify new runs |
 | Re-launching on existing runs | Remove large temps, rename the **process directory** (not individual runs), create fresh |
-
+| Using model-internal index in filename | Always use global index `o_{g_idx}` |
+| Creating one process dir per operator | Create one per **model** (operators from the same model share a directory) |
 | tag_2 ROOT files | Only happens if existing runs were modified and re-launched |
 | Hardcoding `tag_1` in root2lhco call | Check which tag actually exists |

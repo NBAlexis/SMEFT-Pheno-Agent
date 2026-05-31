@@ -3,11 +3,14 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Compute the final expected Wilson coefficient constraints at significance levels S = 2, 3, 5 using the **best algorithm** per operator. Also generate comparison data to justify algorithm selection.
+Compute the final expected Wilson coefficient constraints at significance levels S = 2, 3, 5 using the **best algorithm** per operator. Constraints are computed for **ALL globally claimed operators** (`o_1` through `o_N`) from all models. Also generate comparison data to justify algorithm selection.
+
+## Prerequisite
+Read `operator_claims.json` from Phase 1 to know the total number of global operators.
 
 ## Formula
 
-For each operator `oi`, solve $S_{\mathrm{stat}} = s$ for $s \in \{2, 3, 5\}$.
+For each operator `o_{g_idx}`, solve $S_{\mathrm{stat}} = s$ for $s \in \{2, 3, 5\}$.
 
 **Preferred (Asimov formula, used in published papers):**
 
@@ -42,7 +45,7 @@ Before computing final constraints, select the best algorithm per operator:
 
 ## Final Constraint Computation
 
-Using **only the best algorithm's** fit results, compute constraints for all operators at $S = 2, 3, 5$.
+Using **only the best algorithm's** fit results, compute constraints for **all globally claimed operators** at $S = 2, 3, 5$.
 
 ## Root Selection
 
@@ -58,22 +61,25 @@ Final constraint table (best algorithm only):
 
 ```
 results/data/phase7/
-  constraint_table.json          # best algorithm constraints (physical result)
+  constraint_table.json          # best algorithm constraints for ALL operators
   constraint_table.csv
   algorithm_selection.json       # full intervals for all algorithms (for comparison plot)
 ```
 
 Final constraint table format:
 
-| Operator | $S=2$ | $S=3$ | $S=5$ |
-|----------|-------|-------|-------|
-| o1 | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
+| Operator | Source Model | $S=2$ | $S=3$ | $S=5$ |
+|----------|-------------|-------|-------|-------|
+| o_1 | AQGCm_UFO | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
+| o_2 | AQGCm_UFO | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
+| o_3 | AQGCs_UFO | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ | $[f_{\min}, f_{\max}]$ |
+| ... | ... | ... | ... | ... |
 
 Algorithm selection record (must contain **full intervals**, not just widths):
 
 ```json
 {
-  "o1": {
+  "o_1": {
     "best_algorithm": "{alg_best}",
     "selection_criterion": "narrowest_constraint_width_S2",
     "intervals_by_algorithm": {
@@ -81,11 +87,13 @@ Algorithm selection record (must contain **full intervals**, not just widths):
       "{alg2}": {"S2": [-0.062, 0.065]},
       "{alg3}": {"S2": [-0.089, 0.092]}
     }
-  }
+  },
+  "o_2": { ... },
+  "o_3": { ... }
 }
 ```
 
-**Note**: Only the best algorithm stores S3 and S5 intervals. Non-best algorithms store S2 only (used for the comparison plot). The `constraint_table.json` contains the final physical result (best algorithm at all significance levels).
+**Note**: Only the best algorithm stores S3 and S5 intervals. Non-best algorithms store S2 only (used for the comparison plot). The `constraint_table.json` contains the final physical result (best algorithm at all significance levels for all operators).
 
 ## Validation
 

@@ -1,27 +1,75 @@
-# Phase 1: Validate New Physics Impact
+# Phase 1: Validate New Physics Impact (Multi-Model)
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Identify which SMEFT operators in the model actually affect the chosen process.
+Identify which SMEFT operators across **all specified models** actually affect the chosen process. Operators are globally deduplicated and continuously numbered. The first non-zero operator found across all models becomes the **anchor** for ML training and threshold optimization.
 
-## Prerequisite
-Process directory must be created with `NP>0`.
+## Global Operator Deduplication Rules
 
-## Step 1.1: Create NP Process Directory
+1. **Iterate models in the order provided by the user** (e.g., `[model_A, model_B, ...]`)
+2. **For each model**, test all anoinput coefficients individually
+3. **Claim an operator** (assign it a global index) **only if**:
+   - Its cross-section `sigma > 0` (it affects the process)
+   - Its name has **not** been claimed by an earlier model
+4. **Skip an operator** if its name was already claimed by an earlier model (same operator name in a later model is considered a duplicate)
+5. **Global continuous numbering**: claimed operators are numbered `o_1, o_2, ..., o_N` in the order they are first encountered
+
+## Data Structures
+
+### `claimed` dictionary
+Maps operator name → source model name:
+```python
+claimed = {
+    "fS0": "AQGCm_UFO",
+    "fS1": "AQGCm_UFO",
+    "fM0": "AQGCs_UFO",
+    ...
+}
+```
+
+### `operator_claims.json`
+Maps global index → operator metadata:
+```json
+{
+  "1": {"model": "AQGCm_UFO", "anoinput_idx": 1, "name": "fS0"},
+  "2": {"model": "AQGCm_UFO", "anoinput_idx": 2, "name": "fS1"},
+  "3": {"model": "AQGCs_UFO", "anoinput_idx": 1, "name": "fM0"},
+  ...
+}
+```
+
+### `anchor`
+The first non-zero operator encountered when iterating all models in order:
+```python
+anchor = {
+    "global_idx": 1,
+    "model": "AQGCm_UFO",
+    "anoinput_idx": 1,
+    "name": "fS0"
+}
+```
+
+## Step 1.1: Iterate All Models
+
+For each `model_name` in the user-provided model list (in order):
+
+### 1.1.1 Create NP Process Directory
 
 Order file:
 ```
 import model {model_name}
 generate {process_name} NP>0
-output {folder_base}_p1_NP
+output {folder_base}_{model_name}_p1_NP
 ```
+
+> **Process directory naming**: Include the model name to avoid conflicts when multiple models define the same process. Example: `ee_a_jj_AQGCm_UFO_p1_NP`.
 
 Run and check return code. Abort on any MG5 error.
 
-## Step 1.2: Extract Coefficients from param_card.dat
+### 1.1.2 Extract Coefficients from param_card.dat
 
-Read `Block anoinputs` from `{mg5path}/{folder_base}_p1_NP/Cards/param_card.dat`.
+Read `Block anoinputs` from `{mg5path}/{folder_base}_{model_name}_p1_NP/Cards/param_card.dat`.
 
 **Use the script** (do not reimplement):
 
@@ -40,15 +88,41 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 
 **Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. Report this as a parser bug.
 
-## Step 1.3: Test Each Coefficient Individually
+### 1.1.3 Test Each Coefficient Individually
 
-For each coefficient `fi`:
+For each coefficient `fi` in this model:
 1. Determine `c0`: default from param_card, or `1.0` if default is `0.0`
 2. Write launch order with `set anoinputs {idx} {c0}` for `fi`, `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
 5. Extract `sigma_i` from the run banner using the canonical `extract_cross_section()` function defined in [`madgraph-reference.md`](madgraph-reference.md). **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` (or parse failure) should exclude an operator.
-6. Mark operator as non-zero if `sigma_i > 0`.
+6. **Deduplication check**:
+   - If `sigma_i > 0` and `fi` NOT in `claimed`: 
+     - Assign next global index `g_idx`
+     - `claimed[fi] = model_name`
+     - `operator_claims[g_idx] = {"model": model_name, "anoinput_idx": idx, "name": fi}`
+     - Record cross-section: `cross_sections[fi] = {"sigma": sigma_i, "c0": c0, "model": model_name, "global_idx": g_idx}`
+     - If this is the **first** non-zero operator across all models, set it as `anchor`
+   - If `sigma_i > 0` and `fi` IS in `claimed`:
+     - Log: "Operator `{fi}` already claimed by `{claimed[fi]}`. Skipping duplicate from `{model_name}`."
+     - Do NOT assign a global index
+   - If `sigma_i == 0`: exclude (no claim)
+
+## Step 1.2: Write Global Metadata
+
+After all models have been processed:
+
+1. Write `operator_claims.json`
+2. Write `cross_sections.json` (includes all tested operators, not just claimed ones)
+3. Write `anchor.json`:
+```json
+{
+  "global_idx": 1,
+  "model": "AQGCm_UFO",
+  "anoinput_idx": 1,
+  "name": "fS0"
+}
+```
 
 ## Output
 
@@ -56,13 +130,24 @@ For each coefficient `fi`:
 
 ```
 results/data/phase1/
-  operators.json           # List of non-zero operators
-  cross_sections.json      # {fi: {sigma, c0}} for all operators
+  operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
+  cross_sections.json        # {fi: {sigma, c0, model, global_idx}} for all tested
+  anchor.json                # {global_idx, model, anoinput_idx, name}
 ```
 
 ## Validation
 
 | Check | Action on Failure |
 |-------|-------------------|
-| `generate` succeeds | Abort and report MG5 error |
-| At least one `sigma_i > 0` | Abort: process insensitive to model |
+| `generate` succeeds for every model | Abort and report MG5 error |
+| At least one operator claimed globally | Abort: process insensitive to all provided models |
+| `anchor` is set | Abort: no non-zero operators found |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Testing models in wrong order | Use user-provided order exactly |
+| Claiming duplicate operators | Check `claimed` dict before assigning global index |
+| Forgetting to include model in process dir name | Always prefix/suffix with model name to avoid collisions |
+| Not setting anchor if first model has all-zero operators | Continue to next model; anchor is first non-zero across ALL models |

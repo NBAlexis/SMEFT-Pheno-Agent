@@ -17,7 +17,11 @@ Verify all dependencies exist before starting the workflow.
    - If `cutexperiment_path` is provided: verify it exists
    - If not provided: ask the user if they have CutExperiment installed
    - If user does not have it: clone from `https://gitee.com/NBAlexis/CutExperiment.git` into the working directory and use `./CutExperiment` as the path
-4. **Model**: Check `{madgraph_path}/models/{model}` exists. If not, check the skill's `dependency/` directory (same directory as `SKILL.md`). If the model exists there, offer to copy it to `{madgraph_path}/models/` (see [`SKILL.md`](../SKILL.md) Phase -1 Step 4). If the model is missing in both locations, STOP and ask the user.
+4. **Model(s)**: `model` may be a single model name or a list of model names.
+   - For **each** model in the list:
+     - Check `{madgraph_path}/models/{model}` exists
+     - If not, check the skill's `dependency/` directory (same directory as `SKILL.md`). If the model exists there, offer to copy it to `{madgraph_path}/models/` (see [`SKILL.md`](../SKILL.md) Phase -1 Step 4). If the model is missing in both locations, STOP and ask the user.
+   - If any model fails validation, STOP and report the missing model.
 5. **Physics inputs**: Validate `energy > 0` and `luminosity > 0`
 6. **Python packages**: Verify `numpy`, `scipy`, `sklearn`, `joblib`, `matplotlib` are importable
 

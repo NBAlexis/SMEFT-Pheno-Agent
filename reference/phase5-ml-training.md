@@ -3,7 +3,10 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Train and compare ML algorithms to distinguish SM from NP events.
+Train and compare ML algorithms to distinguish SM from NP events. In multi-model mode, training is performed **once** using the **anchor operator's** SM and NP samples. The trained algorithms are then applied to ALL globally claimed operators in later phases.
+
+## Prerequisite
+Read `anchor.json` from Phase 1. The anchor operator defines the SM vs NP discrimination task.
 
 ## Step 5.1: Convert LHCO to CSV
 
@@ -59,7 +62,7 @@ def lhco_to_features(lhco_path, process_name):
 Save as `.csv`:
 ```
 sm.lhco → sm.csv
-np_oi.lhco → np_oi.csv
+np_anchor.lhco → np_anchor.csv
 ```
 
 **Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) for the full pipeline.
@@ -89,24 +92,25 @@ If the user specified `algorithms` in Phase -1, use those instead of the pool.
 
 ### 5.2.2 Random Initial Selection
 
-Use a random seed (e.g., hash of `process_name + op`) to randomly select **3 algorithms** from the pool.
+Use a random seed (e.g., hash of `process_name + anchor_model + anchor_name`) to randomly select **3 algorithms** from the pool.
 
 ```python
 import random
-rng = random.Random(hash(process_name + op) % (2**32))
+rng = random.Random(hash(process_name + anchor_model + anchor_name) % (2**32))
 selected = rng.sample(algorithm_pool, 3)
 ```
 
 ### 5.2.3 Train and Evaluate
 
-For each operator `oi`:
-1. Load `sm.csv` and `np_oi.csv`
+Train on the **anchor operator's** SM and NP samples:
+
+1. Load `sm.csv` and `np_anchor.csv`
 2. Balance: `n = min(len(sm), len(np))`
 3. Stack: `X = np.vstack([sm[:n], np[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
 6. Compute AUC for each
-7. Plot ROC curves (SM vs NP score distributions) and save to `results/plots/roc_{op}.pdf`
+7. Plot ROC curves (SM vs NP score distributions) and save to `results/plots/roc_anchor.pdf`
 
 **Anomaly-detection score normalization:**
 For algorithms that output raw anomaly scores, normalize to [0, 1]:
@@ -138,21 +142,21 @@ For **every trained algorithm**, plot training-set score distributions:
 - Colors: SM=blue, NP=red
 - Bins: 31 equal-width on [0, 1]
 - y-axis: log scale if peak counts differ by >10x
-- Filename: `score_dist_{op}_{alg}.pdf`
+- Filename: `score_dist_anchor_{alg}.pdf`
 
 ## Step 5.4: Save All Algorithms
 
 Save **every fitted model** (including those from expansion rounds):
 ```python
 for alg_name, clf in fitted_clfs.items():
-    model_path = os.path.join(ALGORITHMS, f"{op}_{alg_name}.pkl")
+    model_path = os.path.join(ALGORITHMS, f"anchor_{alg_name}.pkl")
     joblib.dump(clf, model_path)
 ```
 
 Record all AUCs in `algorithm_comparison.json`:
 ```json
 {
-  "oi": {
+  "anchor": {
     "{alg1}": {"auc": 0.9876, "algorithm_path": "..."},
     "{alg2}": {"auc": 0.9654, "algorithm_path": "..."},
     "{alg3}": {"auc": 0.9432, "algorithm_path": "..."},
@@ -160,7 +164,9 @@ Record all AUCs in `algorithm_comparison.json`:
   },
   "algorithm_pool": ["{alg1}", "{alg2}", "{alg3}", "{alg4}", "..."],
   "tested_count": 6,
-  "initial_random_seed": 12345
+  "initial_random_seed": 12345,
+  "anchor_operator": "fS0",
+  "anchor_model": "AQGCm_UFO"
 }
 ```
 
@@ -170,16 +176,16 @@ Record all AUCs in `algorithm_comparison.json`:
 
 ```
 results/data/phase5/
-  sm.csv, np_o1.csv, np_o2.csv, ...
+  sm.csv, np_anchor.csv
   algorithm_comparison.json
 results/plots/
-  roc_o1.pdf, roc_o2.pdf, ...
-  score_dist_o1_{alg1}.pdf, score_dist_o1_{alg2}.pdf, ...
+  roc_anchor.pdf
+  score_dist_anchor_{alg1}.pdf, score_dist_anchor_{alg2}.pdf, ...
 results/algorithms/
-  o1_{alg1}.pkl, o1_{alg2}.pkl, o1_{alg3}.pkl, ...
+  anchor_{alg1}.pkl, anchor_{alg2}.pkl, anchor_{alg3}.pkl, ...
 ```
 
 ## Validation
 
-- `0.5 < AUC <= 1.0` for all operators
+- `0.5 < AUC <= 1.0` for anchor training
 - If `AUC > 0.9999`, flag possible overfitting

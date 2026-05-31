@@ -3,11 +3,26 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Determine the scan range `[-c1, c1]` for each non-zero operator.
+Determine the scan range `[-c1, c1]` for all operators. The range is computed **once** using the **anchor operator** (from `anchor.json`), and the same `c1` applies to ALL globally claimed operators.
+
+## Rationale
+
+The coefficient range depends on the SM baseline cross-section and the NP cross-section at the test point. Using the anchor operator (the first sensitive operator found) provides a representative estimate. The same range is applied to all operators because:
+- The scan range is primarily determined by the SM statistics (`cs_sm` and `nev_scan`)
+- Using different ranges per operator would fragment the workflow
+- A single unified range simplifies Phase 4 scanning and Phase 7 constraint computation
 
 ## Step 2.1: Generate SM Baseline
 
-Create SM process (`NP=0`), launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_phase2}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+Create SM process using the **anchor model** (from `anchor.json`):
+
+```
+import model {anchor_model}
+generate {process_name} NP=0
+output {folder_base}_{anchor_model}_p2_SM
+```
+
+Launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_phase2}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 
 Extract `cs_sm` from `run_XX_tag_1_banner.txt` using the script:
 
@@ -17,9 +32,9 @@ python scripts/extract_cross_section.py {banner_path}
 
 ## Step 2.2: Compute Expected Event Counts
 
-Known values from Phase 1:
+Known values from Phase 1 (anchor operator):
 - `cs_np` = cross-section at `c0` (pb)
-- `c0` = coefficient value used in Phase 1
+- `c0` = coefficient value used in Phase 1 for the anchor operator
 - `n_scan` = `{nev_scan}`
 
 Effective luminosity:
@@ -44,13 +59,11 @@ N_NP = 2 + 2*sqrt(1 + n_scan)
 c1 = c0 * sqrt(N_NP * cs_sm / (n_scan * cs_np))
 ```
 
-**Critical:** The formula includes `c0` (the coefficient value used in Phase 1). Do NOT omit it — if `c0 = 1.0e-12` (typical gQGC_UFO default), omitting it produces `c1` values ~1e12× too large and unphysical cross-sections (up to 1e+19 pb).
+**Critical:** The formula includes `c0` (the coefficient value used in Phase 1 for the anchor). Do NOT omit it — if `c0 = 1.0e-12` (typical gQGC_UFO default), omitting it produces `c1` values ~1e12× too large and unphysical cross-sections (up to 1e+19 pb).
 
 **Edge case:** If `cs_sm = 0`, abort. Verify process definition and energy.
 
-Scan range: `[-c1, c1]`
-
-Repeat for every non-zero operator.
+Scan range: `[-c1, c1]` — applies to **all** globally claimed operators.
 
 ## Output
 
@@ -58,8 +71,8 @@ Repeat for every non-zero operator.
 
 ```
 results/data/phase2/
-  coefficient_ranges.json    # {fi: [-c1, c1]} for each operator
-  sm_baseline.json           # {cs_sm, n_scan, L_prime}
+  coefficient_ranges.json    # { "global": [-c1, c1] }  (single range for all operators)
+  sm_baseline.json           # {cs_sm, n_scan, L_prime, anchor_model}
 ```
 
 ## Validation

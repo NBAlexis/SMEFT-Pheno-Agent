@@ -3,7 +3,10 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold.
+For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold. In multi-model mode, threshold optimization uses the **anchor operator's** scan data only. The optimal threshold is then applied to ALL globally claimed operators.
+
+## Prerequisite
+Read `anchor.json` from Phase 1. The anchor operator (`o_1` by convention) provides the scan data for threshold optimization.
 
 ## Step 6.1: Convert Scan LHCO to CSV
 
@@ -19,18 +22,18 @@ clf = joblib.load(alg_info["algorithm_path"])
 
 Compute scores for all events in each scan point.
 
-## Step 6.3: Optimize Threshold Per Algorithm (using o1)
+## Step 6.3: Optimize Threshold Per Algorithm (using anchor operator)
 
 ### Reference Operator Selection
 
-**Explicitly use `o1`:**
+**Explicitly use the anchor operator** (from `anchor.json`, which is `o_1` by convention):
+
 ```python
-ref_op = "o1"
-if ref_op not in nonzero_ops:
-    ref_op = nonzero_ops[0]  # Fallback only
+# The anchor is always the first claimed operator
+ref_op = "o_1"
 ```
 
-**Do NOT use `nonzero_ops[0]`** — dictionary order is unreliable.
+Load the anchor operator's scan data: `np_o_1_f0.lhco` through `np_o_1_f10.lhco`.
 
 ### Event Count
 
@@ -75,13 +78,18 @@ def fit_and_solve(scan_coeffs, scan_features, scan_cs, clf_alg, threshold, op, L
 
 ## Step 6.4: Apply Each Algorithm's Optimal Threshold to All Operators
 
-For **each algorithm**, using **its own** optimal threshold from Step 6.3, repeat the quadratic fit for **every operator**.
+For **each algorithm**, using **its own** optimal threshold from Step 6.3, repeat the quadratic fit for **EVERY globally claimed operator** (`o_1` through `o_N`).
+
+For each operator `o_{g_idx}`:
+- Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
+- Apply the algorithm's threshold
+- Fit quadratic and record coefficients
 
 ## Step 6.5: Plot
 
 For each algorithm and each operator: scatter `cs_cut_x` points + fitted curve `csfit(f)`.
 
-Also plot **algorithm comparison**: for a representative operator, show constraint width vs threshold for all algorithms on the same plot.
+Also plot **algorithm comparison**: for the anchor operator, show constraint width vs threshold for all algorithms on the same plot.
 
 ## Output
 
@@ -89,11 +97,17 @@ Also plot **algorithm comparison**: for a representative operator, show constrai
 
 ```
 results/data/phase6/
-  threshold_optimization.json    # per-algorithm optimal thresholds
-  csfit_o1_{alg1}.json, csfit_o1_{alg2}.json, ...
+  threshold_optimization.json    # per-algorithm optimal thresholds (from anchor)
+  csfit_o_1_{alg1}.json, csfit_o_1_{alg2}.json, ...
+  csfit_o_2_{alg1}.json, csfit_o_2_{alg2}.json, ...
+  ...
+  csfit_o_N_{alg1}.json, csfit_o_N_{alg2}.json, ...
 results/plots/
-  csfit_plot_o1_{alg1}.pdf, csfit_plot_o1_{alg2}.pdf, ...
-  threshold_comparison.pdf       # all algorithms on one plot
+  csfit_plot_o_1_{alg1}.pdf, csfit_plot_o_1_{alg2}.pdf, ...
+  csfit_plot_o_2_{alg1}.pdf, csfit_plot_o_2_{alg2}.pdf, ...
+  ...
+  csfit_plot_o_N_{alg1}.pdf, csfit_plot_o_N_{alg2}.pdf, ...
+  threshold_comparison.pdf       # all algorithms on one plot (anchor operator)
 ```
 
 ## Validation

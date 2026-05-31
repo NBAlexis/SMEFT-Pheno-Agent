@@ -3,15 +3,18 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Generate high-statistics pure samples for ML training.
+Generate high-statistics pure samples for ML training. In multi-model mode, ML training is performed **once** using the **anchor operator only**. Therefore, only the anchor model's SM sample and the anchor operator's NP sample are needed.
+
+## Prerequisite
+Read `anchor.json` from Phase 1 to determine the anchor model and anchor operator.
 
 ## Step 3.1: Pure SM Sample
 
-1. **Create SM process directory:**
+1. **Create SM process directory using the anchor model:**
    ```
-   import model {model_name}
+   import model {anchor_model}
    generate {process_name} NP=0
-   output {folder_base}_p3_SM
+   output {folder_base}_{anchor_model}_p3_SM
    ```
 2. Copy Delphes card and dependencies
 3. Launch with `set anoinputs {idx} 0.0` for all coefficients, `nevents = {nev_sm}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
@@ -24,26 +27,29 @@ results/data/phase3/sm.lhco
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase3/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
-## Step 3.2: Pure NP Samples
+## Step 3.2: Pure NP Sample (Anchor Operator Only)
 
-For each non-zero operator `oi`:
-1. **Create NP process directory:**
+Generate the NP sample **only for the anchor operator**:
+
+1. **Create NP process directory using the anchor model:**
    ```
-   import model {model_name}
+   import model {anchor_model}
    generate {process_name} NP>0
-   output {folder_base}_p3_NP
+   output {folder_base}_{anchor_model}_p3_NP
    ```
-2. Launch with `set anoinputs {idx} {c1}` for `oi` (from Phase 2), `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_np}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+2. Launch with `set anoinputs {anchor_anoinput_idx} {c1}` for the anchor operator (from Phase 2 range), `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_np}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 3. Post-process
 4. Copy to results:
 ```
-results/data/phase3/np_oi_banner.txt
-results/data/phase3/np_oi.lhco
+results/data/phase3/np_anchor_banner.txt
+results/data/phase3/np_anchor.lhco
 ```
+
+> **Note**: The NP sample is named `np_anchor` (not `np_o1`) to make it clear this is the anchor-specific training sample. The ML algorithms trained on this sample will be applied to ALL operators in later phases.
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase3/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ## Validation
 
 - `sm.lhco` must exist and be non-empty (abort if missing)
-- Each `np_oi.lhco` should exist (warn per operator if missing)
+- `np_anchor.lhco` must exist and be non-empty (abort if missing)
