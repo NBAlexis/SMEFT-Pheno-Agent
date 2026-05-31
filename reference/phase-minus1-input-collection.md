@@ -130,8 +130,8 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
      4. Score each remaining card by matching its filename against the collider type
      5. Recommend the highest-scoring card
      6. Present to the user (only showing cards that scored > 0):
-        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Type `yes` to use the recommended card, type a different card name to override, or provide an absolute path to a custom `.tcl` card outside `{mg5path}/Delphes/cards/`."
-        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配选项：{matched_card_list}\n> 输入 `yes` 使用推荐的卡片，输入其他卡片名称覆盖，或提供自定义 `.tcl` 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）。"
+        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching cards: {matched_card_list}\n> Type `yes` to use the recommended card, type a different card name to override, or provide an absolute path to a custom `.tcl` card outside `{mg5path}/Delphes/cards/`."
+        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配卡片：{matched_card_list}\n> 输入 `yes` 使用推荐的卡片，输入其他卡片名称覆盖，或提供自定义 `.tcl` 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）。"
    - **If the user provides an absolute path** (starts with `/` or `~`): treat as `custom_card`. Validate the file exists and record the absolute path as `delphes_card`.
    - **If the user types a card name** (not an absolute path): validate it exists in `{mg5path}/Delphes/cards/` and use it as `delphes_card`.
    - **If the user types `yes`**: use the recommended card as `delphes_card`.
@@ -191,7 +191,7 @@ When the user does not specify a `delphes_card`, automatically select one using 
 
 4. **Select the highest-scoring card** as the recommendation. If multiple cards tie, prefer the one whose name appears first alphabetically.
 
-5. **Filtering for user display**: When presenting options to the user, only show cards with score > 0 (i.e., cards that match the inferred collider type). If no card scores above zero, show all remaining filtered cards and ask the user to specify one. If the directory is empty after filtering, report the error and abort.
+5. **Filtering for user display**: When listing matching cards for the user, only show cards with score > 0 (i.e., cards that match the inferred collider type). If no card scores above zero, show all remaining filtered cards and ask the user to specify one. If the directory is empty after filtering, report the error and abort.
 
 ## Step 3: Wait for User Response
 
