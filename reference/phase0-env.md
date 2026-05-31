@@ -3,26 +3,36 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Verify all dependencies exist before starting the workflow.
+Verify all dependencies exist before starting the workflow. Phase 0 reads the workflow configuration from **`run_config.json`** (produced by Phase -1). No parameter should be sourced from conversation history or user interaction.
+
+## Prerequisite
+
+Load the configuration:
+
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("{workdir}/results/run_config.json")
+```
+
+All steps below reference fields from `config` (e.g., `config.madgraph_path`, `config.models`).
 
 ## Steps
 
-1. **Required inputs**: Verify all required inputs are present (`madgraph_path`, `process`, `model`, `energy`, `luminosity`). `cutexperiment_path` is optional. If any required inputs are missing, STOP and ask the user (see [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md)).
+1. **Validate `run_config.json`**: Verify the file exists and `load_run_config` returns without error. If missing or invalid, STOP and report: "run_config.json not found or invalid. Phase -1 must complete successfully before Phase 0."
 2. **MadGraph5**:
-   - If `madgraph_path` was **auto-installed** in Phase -1 (see [`madgraph-installation.md`](madgraph-installation.md)):
-     - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+   - If `config.auto_installed_mg5` is true (see [`madgraph-installation.md`](madgraph-installation.md)):
+     - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist under `config.madgraph_path`. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
      - The installer script prints an environment report at the end showing current `PATH` / `LD_LIBRARY_PATH` and recommended exports. The script does **not** modify any environment variable. The LLM/skill should inspect the report and the user's `~/.bashrc`, then decide whether to set the exports for the current session and/or append them to `~/.bashrc` (with `# MG5_auto_install` markers).
-   - Otherwise: verify `madgraph_path` exists and contains `bin/mg5_aMC`
+   - Otherwise: verify `config.madgraph_path` exists and contains `bin/mg5_aMC`
 3. **CutExperiment**:
-   - If `cutexperiment_path` is provided: verify it exists
-   - If not provided: ask the user if they have CutExperiment installed
-   - If user does not have it: clone from `https://gitee.com/NBAlexis/CutExperiment.git` into the working directory and use `./CutExperiment` as the path
-4. **Model(s)**: `model` may be a single model name or a list of model names.
+   - If `config.cutexperiment_path` is set: verify it exists
+   - If not set: clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{config.workdir}/CutExperiment`, update `config.cutexperiment_path` in memory, and write the updated path back to `run_config.json`
+4. **Model(s)**: `config.models` is a list of model names.
    - For **each** model in the list:
-     - Check `{madgraph_path}/models/{model}` exists
-     - If not, check the skill's `dependency/` directory (same directory as `SKILL.md`). If the model exists there, offer to copy it to `{madgraph_path}/models/` (see [`SKILL.md`](../SKILL.md) Phase -1 Step 4). If the model is missing in both locations, STOP and ask the user.
+     - Check `{config.madgraph_path}/models/{model}` exists
+     - If not, check the skill's `dependency/` directory. If the model exists there, copy it to `{config.madgraph_path}/models/{model}`. If the model is missing in both locations, STOP and report the missing model.
    - If any model fails validation, STOP and report the missing model.
-5. **Physics inputs**: Validate `energy > 0` and `luminosity > 0`
+5. **Physics inputs**: Validate all values in `config.energy` > 0 and all values in `config.luminosity` > 0
 6. **Python packages**: Verify `numpy`, `scipy`, `sklearn`, `joblib`, `matplotlib` are importable
 
 ```python
@@ -34,11 +44,19 @@ if missing:
     raise ImportError(f"Missing packages: {missing}. Run: pip install {' '.join(pip_names)}")
 ```
 
-7. **Delphes card**: If `delphes_card` was user-specified, verify it exists at `{madgraph_path}/Delphes/cards/{delphes_card}`. If it was auto-selected in Phase -1, verify the file exists. If neither, run the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) and verify the resulting card exists.
+7. **Delphes card**: Verify `config.delphes_card` exists at `{config.madgraph_path}/Delphes/cards/{config.delphes_card}`. If `config.custom_card` is set, verify it exists at the given absolute path. If neither exists, this is a validation error — `run_config.json` was not properly validated in Phase -1.
 
-8. **Working Directory guard**: Verify `workdir` is NOT inside the Skill Directory (where `SKILL.md` is located). If it is, use the Skill Directory's parent instead and report: "Work directory adjusted to `{parent}` to avoid writing into the skill installation."
+8. **Working Directory guard**: Verify `config.workdir` is NOT inside the Skill Directory (where `SKILL.md` is located). If it is, update `config.workdir` to the Skill Directory's parent, write the updated value back to `run_config.json`, and report: "Work directory adjusted to `{parent}` to avoid writing into the skill installation."
 
-9. **Run directory setup**: All `results/` paths are relative to `{workdir}`. For each `(energy, luminosity)` pair, compute `RUN_DIR = f"E{energy}_L{luminosity}"` with dots replaced by underscores. Create `{workdir}/results/{RUN_DIR}/` with subdirectories `data/`, `plots/`, `algorithms/`, `mg5_processes/`, `orders/`. ALL subsequent phases MUST write to this directory, NEVER to bare `results/`. In single-run mode, use `{workdir}/results/` directly.
+9. **Run directory setup**: All `results/` paths are relative to `config.workdir`. For each entry in `config.run_configurations`, create `{config.workdir}/results/{run_dir}/` with subdirectories `data/`, `plots/`, `algorithms/`, `mg5_processes/`, `orders/`. ALL subsequent phases MUST write to these directories, NEVER to bare `results/`.
+
+```python
+import os
+for run in config.run_configurations:
+    run_dir = os.path.join(config.workdir, "results", run.run_dir)
+    for sub in ["data", "plots", "algorithms", "mg5_processes", "orders"]:
+        os.makedirs(os.path.join(run_dir, sub), exist_ok=True)
+```
 
 ## Critical Rules
 

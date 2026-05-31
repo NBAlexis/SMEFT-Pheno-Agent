@@ -173,7 +173,7 @@ After the process directory is created (`output` step completed), the following 
 
 ### Step 1: Prepare Delphes Card
 
-The Delphes detector card is selected during **Phase -1** (see [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) Delphes Card Auto-Recommendation). By the time this phase runs, `delphes_card` is already determined — either user-specified or auto-recommended.
+The Delphes detector card is read from **`run_config.json`** (field `delphes_card`), which was determined during Phase -1 — either user-specified or auto-recommended. See [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) for the selection logic.
 
 **(1.1) Use the script:**
 
@@ -193,7 +193,7 @@ from scripts.setup_delphes_card import setup_delphes_card
 card_path = setup_delphes_card(mg5path, delphes_card, folder_name)
 ```
 
-**Fallback:** If `delphes_card` was not set in Phase -1 (legacy path), use the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) to select a card on-the-fly.
+**Fallback:** If `delphes_card` is missing from `run_config.json` (legacy path), use the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) to select a card on-the-fly, then write it back to `run_config.json`.
 
 ### Step 3: Extract SMEFT Operator Coefficients
 
@@ -264,7 +264,7 @@ set nevents = {event_number}
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |
 |---------------|----------|----------|------------|
 | Symmetric (ee, pp, mu-mu) | `ebeam_value` | `ebeam_value` | `ebeam_value = energy * 1000 / 2` |
-| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is collected in **Phase -1** (see [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md)) |
+| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is read from **`run_config.json`** (field `ebeam_proton`) |
 
 **Note:** The center-of-mass energy is `2 * ebeam_value` for symmetric colliders.
 
@@ -299,7 +299,7 @@ If `f2_default = 0.0`, set `anoinputs 2 1.0` instead.
 
 ### Polarization (Optional)
 
-If the user requested beam polarization in **Phase -1** (see [`SKILL.md`](../SKILL.md) Optional Inputs), append after `set ebeam2`:
+If polarization is enabled (read `polarization` from **`run_config.json`**), append after `set ebeam2`:
 
 ```
 set polbeam1 = {polbeam1_value}

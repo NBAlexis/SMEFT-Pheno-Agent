@@ -178,7 +178,7 @@ If the user does **not** provide `madgraph_path` (or presses Enter without a pat
 
 ### Phase 0: Environment Validation
 
-If `madgraph_path` was auto-installed in Phase -1, Phase 0 skips the existence check for `bin/mg5_aMC` (it was just verified by the installer). It still checks:
+If `config.auto_installed_mg5` is true in `run_config.json`, Phase 0 skips the existence check for `bin/mg5_aMC` (it was just verified by the installer). It still checks:
 - `HEPTools/pythia8/` exists
 - `HEPTools/lhapdf6_py3/` exists
 - `Delphes/cards/` exists

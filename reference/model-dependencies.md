@@ -60,4 +60,4 @@ To add a new UFO model to the skill:
 
 ## Phase 0 Validation
 
-If `auto_installed_mg5 = true`, Phase 0 also verifies that the model was successfully copied (if applicable). If `{madgraph_path}/models/{model}` is still missing after Phase -1, report: "Model `{model}` not found in MG5 and was not copied from dependencies. Re-run Phase -1 or install manually."
+Phase 0 verifies that every model in `config.models` exists under `{config.madgraph_path}/models/`. If a model is missing, Phase 0 attempts to copy it from the skill's `dependency/` directory (see Phase -1 Step 4). If copying fails or the model is not in `dependency/`, report: "Model `{model}` not found in MG5 and not available in skill dependencies. Re-run Phase -1 or install manually."

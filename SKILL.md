@@ -46,7 +46,7 @@ This is the **highest-level norm** of this skill. Violating this rule is a **cri
 | Prohibited Behavior | Correct Behavior |
 |---------------------|------------------|
 | Asking "是否继续？" / "Do you want to continue?" | Continue automatically |
-| Asking "是否用 debug 模式？" / "Use debug mode?" | Use the `debug` parameter as provided in Phase -1 only |
+| Asking "是否用 debug 模式？" / "Use debug mode?" | Use the `debug` parameter from `run_config.json` only |
 | Presenting options mid-execution | Proceed with the next step immediately |
 | Stopping to "wait for user instructions" | Report status and continue |
 | Self-adjusting parameters for speed | Physical parameters are immutable — NEVER modify |
@@ -119,6 +119,21 @@ The following situations are **NOT errors** and **do NOT justify stopping**. The
 **CRITICAL: Phase -1 is the ONLY interactive stage.** Once it completes, ALL subsequent phases (0–9) execute **FULLY AUTOMATICALLY** without any user interaction.
 
 When this skill is invoked, immediately execute input collection. Detailed steps: [`reference/phase-minus1-input-collection.md`](reference/phase-minus1-input-collection.md).
+
+### Phase -1 Output: `run_config.json`
+
+Phase -1 writes all validated inputs to `{workdir}/results/run_config.json`. This file is the **single source of truth** for the entire workflow. All subsequent phases (0–9) read their configuration from this file. No phase should reference Phase -1 directly, re-ask the user, or infer parameters from history.
+
+**Load the configuration:**
+```bash
+python scripts/load_run_config.py results/run_config.json
+```
+
+```python
+from scripts.load_run_config import load_run_config
+config = load_run_config("results/run_config.json")
+print(config.madgraph_path, config.delphes_card)
+```
 
 **After Phase -1 completes, the interactive portion of the workflow is OVER.** From this point forward, do NOT wait for user confirmation, do NOT ask "是否继续？" / "Shall I proceed?". Immediately execute Phase 0, then sequentially execute Phases 1–9 without stopping.
 
@@ -262,6 +277,7 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 
 | Script | Purpose | Used By |
 |--------|---------|---------|
+| `load_run_config.py` | Load and validate `run_config.json` | Phases 0–9 |
 | `extract_cross_section.py` | Parse MG5 banner → cross-section (pb) | Phases 1, 2, 4, 6 |
 | `parse_param_card.py` | Parse coefficient block (auto-detects anoinputs, dim8, etc.) from `param_card.dat` | Phases 1–4 |
 | `setup_delphes_card.py` | Copy Delphes card + dependencies to process dir | Phases 1–4 |

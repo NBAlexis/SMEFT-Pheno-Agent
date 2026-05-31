@@ -88,7 +88,7 @@ Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scik
 | 11 | AdaBoostClassifier | Ensemble |
 | 12 | KNeighborsClassifier | Distance-based |
 
-If the user specified `algorithms` in Phase -1, use those instead of the pool.
+If `config.algorithms` is set in `run_config.json`, use those instead of the pool.
 
 ### 5.2.2 Random Initial Selection
 

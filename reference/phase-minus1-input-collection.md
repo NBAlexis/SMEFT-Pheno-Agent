@@ -196,7 +196,82 @@ Before proceeding to Phase 0, confirm:
 
 **After Step 5 passes, the interactive portion of the workflow is OVER. From this point forward, the workflow is FULLY AUTOMATED. Do NOT wait for user confirmation. Do NOT ask "是否继续？" / "Shall I proceed?". Immediately execute Phase 0, then sequentially execute Phases 1–9 without stopping.**
 
-## Step 6: Build Run Configuration List
+## Step 6: Write `run_config.json`
+
+Write all collected and validated inputs to a single machine-readable configuration file:
+
+```
+{workdir}/results/run_config.json
+```
+
+This file is the **single source of truth** for all subsequent phases. No phase should reference Phase -1 directly; they must read this file.
+
+### Schema
+
+```json
+{
+  "version": "1.0",
+  "collected_at": "2026-06-01T10:00:00",
+  "madgraph_path": "/opt/MG5_aMC_v3_5_15",
+  "workdir": "/home/user/work",
+  "process": "e+ e- > a a",
+  "models": ["AQGCm_UFO"],
+  "energy": [10],
+  "luminosity": [1000],
+  "ebeam_proton": null,
+  "delphes_card": "delphes_card_CEPC.tcl",
+  "custom_card": null,
+  "polarization": null,
+  "debug": false,
+  "algorithms": null,
+  "cutexperiment_path": "./CutExperiment",
+  "run_configurations": [
+    {"energy": 10, "luminosity": 1000, "run_dir": "E10_L1000"}
+  ],
+  "auto_installed_mg5": false
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `version` | string | yes | Schema version, currently `"1.0"` |
+| `collected_at` | ISO8601 | yes | Timestamp when Phase -1 completed |
+| `madgraph_path` | string | yes | Absolute path to MG5 installation |
+| `workdir` | string | yes | Absolute path to working directory |
+| `process` | string | yes | Physics process (no NP=/QED=/QCD= suffixes) |
+| `models` | list[string] | yes | List of UFO model names |
+| `energy` | list[float] | yes | Center-of-mass energy(s) in TeV |
+| `luminosity` | list[float] | yes | Integrated luminosity(s) in fb⁻¹ |
+| `ebeam_proton` | float \| null | no | Proton beam energy in GeV (ep colliders only) |
+| `delphes_card` | string | yes | Selected Delphes `.tcl` card filename or absolute path |
+| `custom_card` | string \| null | no | Absolute path to custom Delphes card (if provided) |
+| `polarization` | [float, float] \| null | no | `polbeam1, polbeam2` in [-1, 1] |
+| `debug` | bool | yes | `true` divides all event counts by 10 |
+| `algorithms` | list[string] \| null | no | User-specified ML algorithm names |
+| `cutexperiment_path` | string \| null | no | Absolute path to CutExperiment |
+| `run_configurations` | list[dict] | yes | One entry per `(energy, luminosity)` pair |
+| `auto_installed_mg5` | bool | yes | `true` if MG5 was auto-installed in this run |
+
+### Loading the configuration
+
+**Use the script** (do not reimplement):
+
+```bash
+python scripts/load_run_config.py results/run_config.json
+```
+
+Or import in Python:
+
+```python
+from scripts.load_run_config import load_run_config
+
+config = load_run_config("results/run_config.json")
+print(config.madgraph_path)
+print(config.delphes_card)
+# config.run_configurations[0].run_dir → "E10_L1000"
+```
+
+## Step 7: Build Run Configuration List
 
 Convert inputs into a list of run configurations. Each configuration is one `(energy, luminosity)` pair.
 
@@ -208,6 +283,21 @@ Convert inputs into a list of run configurations. Each configuration is one `(en
 | List energy, single luminosity | **Invalid** — lengths must match |
 
 Example: `energy = [10, 14, 30]`, `luminosity = [1000, 3000, 10000]` → 3 runs: `(10, 1000)`, `(14, 3000)`, `(30, 10000)`
+
+## Phase -1 Output Contract
+
+After Phase -1 completes, the ONLY persistent artifacts needed by downstream phases are:
+
+1. **`{workdir}/results/run_config.json`** — the single source of truth
+2. **Models copied** to `{madgraph_path}/models/` (if applicable)
+3. **CutExperiment cloned** to `cutexperiment_path` (if applicable)
+
+**No phase after Phase -1 should:**
+- Reference "Phase -1" as a data source
+- Re-ask the user for any parameter already in `run_config.json`
+- Infer parameters from conversation history
+
+All configuration data flows through `run_config.json`.
 
 ## Prohibited Behaviors During Phase -1 (Will Cause Failure)
 
