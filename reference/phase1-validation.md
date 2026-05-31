@@ -90,9 +90,16 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 
 ### 1.1.3 Test Each Coefficient Individually
 
+**执行锁 — 严禁中途停止：**
+
+> **无论当前测试结果如何（零或非零），测试完一个系数后必须立即继续下一个系数。**
+> **严禁在循环中途：测 SM 基线、检查其他模型、报告异常、或停止工作流。**
+> **如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。**
+
 For each coefficient `fi` in this model:
 1. Determine `c0`: default from param_card, or `1.0` if default is `0.0`
-2. Write launch order with `set anoinputs {idx} {c0}` for `fi`, `set anoinputs {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
+2. Write launch order with `set {block_name} {idx} {c0}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
+   - `block_name` is obtained from `parse_param_card.py` output (`block_name` field), e.g., `anoinputs` or `dim8`.
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
 5. Extract `sigma_i` from the run banner using the canonical `extract_cross_section()` function defined in [`madgraph-reference.md`](madgraph-reference.md). **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` (or parse failure) should exclude an operator.
@@ -107,6 +114,7 @@ For each coefficient `fi` in this model:
      - Log: "Operator `{fi}` already claimed by `{claimed[fi]}`. Skipping duplicate from `{model_name}`."
      - Do NOT assign a global index
    - If `sigma_i == 0`: exclude (no claim)
+7. **Immediately proceed to the next coefficient. Do NOT pause, do NOT branch to other tasks.**
 
 ## Step 1.2: Write Global Metadata
 
@@ -142,6 +150,21 @@ results/data/phase1/
 | `generate` succeeds for every model | Abort and report MG5 error |
 | At least one operator claimed globally | Abort: process insensitive to all provided models |
 | `anchor` is set | Abort: no non-zero operators found |
+
+## Prohibited Behaviors During Phase 1 (CRITICAL)
+
+The following behaviors constitute a **critical violation** of the Execution Continuity rule and **MUST NOT occur** under any circumstances:
+
+| Prohibited Behavior | Why It's Forbidden | Correct Action |
+|---------------------|-------------------|----------------|
+| **Stopping after the first (or any) coefficient returns σ = 0** | A single zero cross-section is a valid physical result. The phase must complete before any red flag is checked. | Record the result and **immediately continue** to the next coefficient. |
+| **Testing SM baseline (all coefficients = 0) during Phase 1** | SM baseline is a Phase 2 operation. Doing it in Phase 1 is a phase boundary violation. | Stay in the coefficient testing loop. SM baseline comes **after** all coefficients are tested. |
+| **Skipping remaining coefficients because "the process seems insensitive"** | Insensitivity can only be determined after ALL coefficients are tested. | Test every coefficient in every model. No exceptions. |
+| **Switching to the next model before finishing the current model** | Model order is preserved for deduplication. Incomplete testing corrupts the claimed operator list. | Finish all coefficients in the current model before moving to the next. |
+| **Reporting red flags or asking the user mid-phase** | Red flags are checked **only after the phase completes**. | Complete the phase silently. Report findings at the phase boundary. |
+
+> **执行锁 — 最高优先级规则：**
+> 如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。中途停止是严格禁止的。
 
 ## Common Mistakes
 

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
-Parse Block anoinputs from an MG5 param_card.dat.
+Parse coefficient Block from an MG5 param_card.dat.
+
+Supports custom Block names (e.g., anoinputs, dim6, dim8, aqgc).
+Auto-detects the coefficient block if not specified.
 
 Handles case-insensitive Block matching and scan syntax retention.
 Returns a dict mapping LHA index → coefficient value.
 
 Usage:
-    python parse_param_card.py <param_card_path>
+    python parse_param_card.py <param_card_path> [--block BLOCK_NAME]
 
 Output (JSON):
     {"1": 1.0e-12, "2": 0.0, "3": 0.0, ...}
@@ -14,15 +17,41 @@ Output (JSON):
 Exit codes:
     0  success
     1  file not found
-    2  Block anoinputs not found
+    2  no coefficient block found
 """
+import argparse
 import json
 import sys
 import os
 
 
-def parse_anoinputs(param_card_path, scan_default=1.0e-12):
-    """Parse Block anoinputs from an MG5 param_card.dat.
+# Known non-coefficient blocks — excluded from auto-detection
+NON_COEFF_BLOCKS = {
+    "mass", "sminputs", "yukawa", "ckm", "decay",
+    "qnumbers", "mgincoming", "mgdecay",
+    "mzpole", "mwpole", "sin2theta", "vd", "vu",
+    "msoft", "nmssmrun", "spinfo", "modsel",
+    "frblock"  # FeynRules parameters (not anomalous couplings)
+}
+
+
+def _find_coefficient_block(param_card_path):
+    """Scan param_card for candidate coefficient blocks."""
+    candidates = []
+    with open(param_card_path) as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped.lower().startswith("block"):
+                parts = stripped.split()
+                if len(parts) >= 2:
+                    block_name = parts[1].lower().rstrip("#")
+                    if block_name not in NON_COEFF_BLOCKS:
+                        candidates.append(block_name)
+    return candidates
+
+
+def parse_coefficients(param_card_path, block_name=None, scan_default=1.0e-12):
+    """Parse a coefficient Block from an MG5 param_card.dat.
 
     Handles:
     - Case-insensitive Block matching (MG5 may rewrite BLOCK in uppercase)
@@ -31,14 +60,26 @@ def parse_anoinputs(param_card_path, scan_default=1.0e-12):
 
     Args:
         param_card_path: path to param_card.dat
+        block_name: coefficient Block name (e.g., 'anoinputs', 'dim8').
+                    If None, auto-detects from param_card.
         scan_default: default value when scan syntax is detected
 
     Returns:
-        dict mapping LHA index (str) → coefficient value (float)
+        dict with keys:
+            'block_name': str, the detected block name
+            'coefficients': dict mapping LHA index (str) → coefficient value (float)
 
     Raises:
-        ValueError: if Block anoinputs is not found
+        ValueError: if no coefficient block is found
     """
+    if block_name is None:
+        candidates = _find_coefficient_block(param_card_path)
+        if not candidates:
+            raise ValueError(f"No coefficient block found in {param_card_path}")
+        block_name = candidates[0]
+    else:
+        block_name = block_name.lower()
+
     coefficients = {}
     in_block = False
     found = False
@@ -51,7 +92,9 @@ def parse_anoinputs(param_card_path, scan_default=1.0e-12):
 
             # Case-insensitive Block matching
             if stripped.lower().startswith("block"):
-                in_block = stripped.lower().startswith("block anoinputs")
+                parts = stripped.split()
+                current_block = parts[1].lower().rstrip("#") if len(parts) >= 2 else ""
+                in_block = (current_block == block_name)
                 if in_block:
                     found = True
                 continue
@@ -66,29 +109,38 @@ def parse_anoinputs(param_card_path, scan_default=1.0e-12):
                 if val.lower().startswith("scan:"):
                     coefficients[idx] = float(scan_default)
                 else:
-                    coefficients[idx] = float(val)
+                    try:
+                        coefficients[idx] = float(val)
+                    except ValueError:
+                        # Malformed line — skip
+                        continue
 
     if not found:
-        raise ValueError(f"Block anoinputs not found in {param_card_path}")
+        raise ValueError(f"Block {block_name} not found in {param_card_path}")
 
-    return coefficients
+    return {"block_name": block_name, "coefficients": coefficients}
+
+
+# Backward-compatible alias
+parse_anoinputs = parse_coefficients
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <param_card_path> [scan_default]", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Parse coefficient block from MG5 param_card.dat")
+    parser.add_argument("param_card_path", help="Path to param_card.dat")
+    parser.add_argument("--block", default=None,
+                        help="Coefficient Block name (e.g., anoinputs, dim8). Auto-detected if omitted.")
+    parser.add_argument("--scan-default", type=float, default=1.0e-12,
+                        help="Default value when scan syntax is detected")
+    args = parser.parse_args()
 
-    param_card_path = sys.argv[1]
-    scan_default = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0e-12
-
-    if not os.path.exists(param_card_path):
-        print(f"Error: file not found: {param_card_path}", file=sys.stderr)
+    if not os.path.exists(args.param_card_path):
+        print(f"Error: file not found: {args.param_card_path}", file=sys.stderr)
         sys.exit(1)
 
     try:
-        coeffs = parse_anoinputs(param_card_path, scan_default)
-        print(json.dumps(coeffs))
+        result = parse_coefficients(args.param_card_path, block_name=args.block, scan_default=args.scan_default)
+        print(json.dumps(result))
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(2)

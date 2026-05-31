@@ -391,6 +391,8 @@ All cross-sections from MG5 banners are in **pb**. All luminosities in formulas 
 
 **Red flags are checked AFTER the phase completes, NEVER during execution.** A zero cross-section for an individual operator is a valid Phase 1 result, not a reason to abort. The red flag "Zero non-zero operators after Phase 1" means **ALL operators tested returned σ = 0 after the entire phase finished** — at that point the workflow STOPS because there is no sensitive operator to study. But you MUST NOT stop early because the first few were zero.
 
+> **执行锁 — 最高优先级规则：如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。中途停止是严格禁止的。**
+
 ### Phase Workflow Reference
 
 The following table summarizes the MG5 invocation for every phase that runs MadGraph. This is the canonical reference — all details in per-phase documents must match this table.
@@ -462,6 +464,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 10. **Feature extraction**: LHCO→CSV conversion follows [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) and adapts to the actual final-state particles in `process`.
 11. **Run directory prefix (multi-run mode)**: Before Phase 0, compute `RUN_DIR = f"E{energy}_L{luminosity}"` (dots replaced by underscores). ALL file paths in ALL phases MUST prefix `results/` with `RUN_DIR/`. Single-run mode uses `results/` directly. This is NOT optional — verify by checking `results/E{e}_L{l}/` exists before writing any data. See [Output Structure](#output-structure) for examples.
 12. **No concurrent MG5 processes**: MadGraph5 internally uses multi-threading (OpenMP) and will saturate all CPU cores. Launching multiple MG5 processes in parallel causes CPU contention and is **slower** than sequential execution. Run MG5 invocations **one at a time** — never parallelize across operators, scan points, or phases.
+13. **Phase 1 execution lock — NEVER stop mid-loop**: Testing individual operators in Phase 1 is a single uninterrupted loop over ALL coefficients in ALL models. A zero cross-section for any individual operator is a valid physical result. You MUST NOT: test SM baseline mid-phase, skip remaining coefficients, switch models early, report red flags, or ask the user. The loop completes when the last coefficient of the last model is tested — only then may red flags be evaluated. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
 
 ## Scripts
 
@@ -584,6 +587,7 @@ Directory naming: `E{energy}_L{luminosity}` with dots replaced by underscores (e
 | **Hardcoding `nev_scan` in Phase 6** | 6 | Read from `sm_baseline.json` |
 | **Using `nonzero_ops[0]` for ref** | 6 | Use the anchor operator from `anchor.json` |
 | **Confusing `N_sig` with `N_all`** | 7 | `N_sig` excludes SM; `N_all` includes it |
+| **Stopping after first zero-cross-section operator** | 1 | **CRITICAL VIOLATION.** Test ALL coefficients before any red flag check. If 10 operators, test all 10 even if 9 are zero. |
 | **Forgetting model prefix in process dirs** | 1, 3, 4 | Always include model name: `{folder_base}_{model}_p1_NP` |
 | **Training per-operator instead of anchor-only** | 5 | Train ONCE on anchor operator; apply to ALL operators |
 | **Writing to bare `results/` in multi-run mode** | All | Compute `RUN_DIR = f"E{e}_L{l}"` in Phase 0. ALL paths must use `results/{RUN_DIR}/` |
