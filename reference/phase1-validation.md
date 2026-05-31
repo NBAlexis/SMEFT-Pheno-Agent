@@ -125,6 +125,7 @@ For each coefficient `fi` in this model:
      - `claimed[fi] = model_name`
      - `operator_claims[g_idx] = {"model": model_name, "anoinput_idx": idx, "name": fi}`
      - Record cross-section: `cross_sections[fi] = {"sigma": sigma_i, "c_default": c_{n_{default}}, "model": model_name, "global_idx": g_idx}`
+       - Note: The JSON field is named `c_default` (no curly braces) for valid JSON key syntax. It corresponds to the coefficient value $c_{n_{default}}$ documented throughout the workflow.
      - If this is the **first** non-zero operator across all models, set it as `anchor`
    - If `sigma_i > 0` and `fi` IS in `claimed`:
      - Log: "Operator `{fi}` already claimed by `{claimed[fi]}`. Skipping duplicate from `{model_name}`."

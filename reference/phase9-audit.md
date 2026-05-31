@@ -30,17 +30,24 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 | `results/data/phase2/sm_baseline.json` | 2 | Abort |
 | `results/data/phase3/sm.lhco` | 3 | Abort |
 | `results/data/phase3/np_anchor.lhco` | 3 | Abort |
+| `results/data/phase4/np_o_*_f*.lhco` | 4 | Abort |
 | `results/data/phase5/sm.csv` | 5 | Abort |
 | `results/data/phase5/np_anchor.csv` | 5 | Abort |
 | `results/data/phase5/algorithm_comparison.json` | 5 | Abort |
+| `results/algorithms/anchor_*.pkl` | 5 | Abort |
+| `results/algorithms/compute_scores.py` | 5 | Abort |
+| `results/data/phase6/threshold_optimization.json` | 6 | Abort |
+| `results/data/phase6/csfit_o_*_{alg}.json` | 6 | Abort |
 | `results/data/phase7/constraint_table.json` | 7 | Abort |
 | `results/data/phase7/algorithm_selection.json` | 7 | Warn: cannot generate comparison plot |
+| `results/plots/roc_anchor.pdf` | 5 | Warn: missing ROC plot |
+| `results/plots/threshold_comparison.pdf` | 6 | Warn: missing threshold comparison plot |
 | `results/report.html` or `results/report.pdf` | 8 | Abort |
 | `results/mg5_processes/cleanup_log.json` | Cleanup | Warn: cleanup may not have run |
 | `results/mg5_processes/` (non-empty) | Cleanup | Warn: process directories not collected |
 | `results/orders/` (non-empty or missing) | Cleanup | Warn: order files not collected |
 
-**Phase 4 spot-check**: Verify at least one scan file exists per claimed operator (e.g., `np_o_1_f0.lhco`). If any operator has zero scan files, warn.
+**Phase 4 spot-check**: For each operator in `operator_claims.json`, verify at least one scan file exists (e.g., `np_o_1_f0.lhco`). If any operator has zero scan files, abort.
 
 ## Step 9.2: Numerical Sanity
 
@@ -48,7 +55,7 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 |-------|--------|
 | 1 | At least one operator claimed globally; `anchor` is set |
 | 2 | `cs_sm > 0`, `c_{scan} > 0`, `c_{scan} < 1e3`, `c_{scan}` finite |
-| 5 | `0.5 < AUC <= 1.0` for anchor training |
+| 5 | `0.5 < AUC <= 1.0` for anchor training; flag `AUC > 0.9999` as possible overfitting |
 | 6 | `csfit_sm > 0`, `csfit_np >= 0`, residual < 50% for all operators |
 | 7 | `fmin < 0 < fmax`, monotonicity for all operators |
 

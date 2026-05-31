@@ -154,8 +154,8 @@ def compute_scores(clf, X):
 Train on the **anchor operator's** SM and NP samples:
 
 1. Load `sm.csv` and `np_anchor.csv`
-2. Balance: `n = min(len(sm), len(np))`
-3. Stack: `X = np.vstack([sm[:n], np[:n]])`, `y = [0]*n + [1]*n`
+2. Balance: `n = min(len(sm), len(np_data))`
+3. Stack: `X = np.vstack([sm[:n], np_data[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
 6. Compute AUC for each (use the `compute_scores` function from Step 5.2.3)
@@ -191,7 +191,7 @@ For **every trained algorithm**, plot training-set score distributions:
 Save **every fitted model** (including those from expansion rounds):
 ```python
 for alg_name, clf in fitted_clfs.items():
-    model_path = os.path.join(ALGORITHMS, f"anchor_{alg_name}.pkl")
+    model_path = os.path.join(config.workdir, "results", "algorithms", f"anchor_{alg_name}.pkl")
     joblib.dump(clf, model_path)
 ```
 

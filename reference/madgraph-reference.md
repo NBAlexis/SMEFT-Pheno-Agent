@@ -195,7 +195,7 @@ card_path = setup_delphes_card(mg5path, delphes_card, folder_name)
 
 **Fallback:** If `delphes_card` is missing from `run_config.json` (legacy path), use the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) to select a card on-the-fly, then write it back to `run_config.json`.
 
-### Step 3: Extract SMEFT Operator Coefficients
+### Step 2: Extract SMEFT Operator Coefficients
 
 Read the parameter card:
 ```
@@ -350,7 +350,7 @@ lhco_path = convert_root_to_lhco(mg5path, folder_name, run_folder)
 - If `.lhco` < 1 KB but `.root` > 1 MB → `root2lhco` failed silently; **check the log**
 - Do NOT proceed to cleanup if `.lhco` is invalid
 
-### Step 4: Retain and Clean Files
+### Step 3: Retain and Clean Files
 
 After successful LHCO conversion, the run folder contains:
 

@@ -21,7 +21,7 @@ Verify the following are present:
 
 **CRITICAL — Parameter Source Restriction:**
 - `process`, `model`, `energy`, `luminosity` — **MUST be explicitly provided by the user in the current conversation**. No defaults, no inference from files or history.
-- `madgraph_path`, `cutexperiment_path` — The user **MUST be asked** for these. You may show a suggested default in the prompt (e.g., a path from historical context or common install location), but the user must actively confirm it (press Enter) or provide a different value. **Never silently accept a default without asking.**
+- `madgraph_path`, `cutexperiment_path` — The user **MUST be asked** for these. You may show a suggested default in the prompt (e.g., a path from historical context or common install location), but the user must actively confirm it (e.g., type `yes` to accept the default) or provide a different value. **Never silently accept a default without asking.**
 - **NEVER** infer `process`, `model`, `energy`, or `luminosity` from filesystem state, existing files, code, or cached configs.
 - If any of the 5 required parameters are not explicitly provided in the current conversation, they are **MISSING** — proceed to Step 2
 
@@ -38,21 +38,21 @@ Verify the following are present:
 Each question must include a progress indicator (e.g., `[1/9]`) so the user knows how many inputs remain:
 
 1. `[1/9] madgraph_path` — Ask:
-   > "[1/9] What is the absolute path to your MadGraph5 installation? (Press Enter to use `{default_path}`). If you don't have one, type `yes` and I'll install it automatically — this downloads ~31 MB and compiles Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes."
-   > "请提供 MadGraph5 的绝对路径（按 Enter 使用 `{default_path}`）。如果没有安装，输入 `yes` 我可以自动安装——需下载约 31 MB，编译 Pythia8、LHAPDF6 和 Delphes（用于 PDF 系统误差）。预计耗时 20–40 分钟。"
+   > "[1/9] What is the absolute path to your MadGraph5 installation? Suggested default: `{default_path}`. Type `yes` to use the default, or provide a different path. If you don't have one installed, type `install` and I'll install it automatically — this downloads ~31 MB and compiles Pythia8, LHAPDF6, and Delphes (required for PDF systematics). Total time: 20–40 minutes."
+   > "请提供 MadGraph5 的绝对路径（建议默认：`{default_path}`）。输入 `yes` 使用默认路径，或提供其他路径。如果尚未安装，输入 `install` 我可以自动安装——需下载约 31 MB，编译 Pythia8、LHAPDF6 和 Delphes（用于 PDF 系统误差）。预计耗时 20–40 分钟。"
    - If the user provides a path: use `os.path.expanduser()` and `os.path.abspath()` to resolve it, then validate that `bin/mg5_aMC` exists under it
    - If the user answers `yes`:
      1. Ask for install directory:
-        > "[1/9] Where should MG5 be installed? (Press Enter to use `~/HEP_Tools`)"
-        > "MG5 应该安装到哪个目录？（按 Enter 使用 `~/HEP_Tools`）"
+        > "[1/9] Where should MG5 be installed? Suggested default: `~/HEP_Tools`. Type `yes` to use it, or provide a different directory:"
+        > "MG5 应该安装到哪个目录？建议默认：`~/HEP_Tools`。输入 `yes` 使用默认目录，或提供其他目录："
      2. Fetch `https://launchpad.net/mg5amcnlo` and parse the HTML to find the LTS download URL and the extracted directory name (e.g. `MG5_aMC_v3_5_15`)
      3. Run: `python scripts/install_mg5.py {dir} --url {download_url} --name {extracted_name}`
      4. Use the returned path as `madgraph_path`
      5. Record `auto_installed_mg5 = true` for Phase 0 verification
-   - If the user presses Enter without a path and no default exists: treat as `yes` (auto-install)
+   - If the user types `install` or provides no path and no default exists: treat as auto-install
 2. `[2/9] workdir` —
-   > "[2/9] Where should results be saved? (Press Enter to use the current directory)"
-   > "结果保存到哪个目录？（按 Enter 使用当前目录）"
+   > "[2/9] Where should results be saved? Suggested default: the current directory. Type `yes` to use it, or provide a different path:"
+   > "结果保存到哪个目录？建议默认：当前目录。输入 `yes` 使用默认目录，或提供其他路径："
 3. `[3/9] process` —
    > "[3/9] What collider process should be studied? (Provide physics process only, no NP=/QED=/QCD= suffixes)"
    > "要研究什么对撞过程？（仅提供物理过程，不要加 NP=/QED=/QCD= 等后缀）"
@@ -88,11 +88,11 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    > "[6/9] What is the integrated luminosity in fb⁻¹? Provide a single value or a list matching the energy length, e.g. `3000` or `[1000, 3000, 10000]`."
    > "积分亮度是多少 fb⁻¹？提供单个值或与能量长度匹配的列表，例如 `3000` 或 `[1000, 3000, 10000]`。"
 7. `[7/9] cutexperiment_path` — If a default exists from context (e.g., previous conversation, `~/CutExperiment`), ask:
-   > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, press Enter to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`."
-   > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，按 Enter 从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆到 `{default_path}`。"
+   > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, type `clone` to clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{default_path}`."
+   > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，输入 `clone` 从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆到 `{default_path}`。"
    If no default exists:
-   > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
-   > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，我将从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。"
+   > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, type `clone` and I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
+   > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，输入 `clone`，我将从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。"
 8. `[8/9] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
    - Run the auto-recommendation:
      1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
@@ -101,11 +101,11 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
      4. Score each remaining card by matching its filename against the collider type
      5. Recommend the highest-scoring card
      6. Present to the user (only showing cards that scored > 0):
-        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Press Enter to use the recommended card, type a different card name to override, or provide an absolute path to a custom `.tcl` card outside `{mg5path}/Delphes/cards/`."
-        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配选项：{matched_card_list}\n> 按 Enter 使用推荐的卡片，输入其他卡片名称覆盖，或提供自定义 `.tcl` 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）。"
+        > "[8/9] Scanning detector cards in `{mg5path}/Delphes/cards/`...\n> Based on your process (`{process}`) at `{energy}` TeV, the recommended Delphes card is: **{recommended_card}**\n> Other matching options: {matched_card_list}\n> Type `yes` to use the recommended card, type a different card name to override, or provide an absolute path to a custom `.tcl` card outside `{mg5path}/Delphes/cards/`."
+        > "正在扫描 `{mg5path}/Delphes/cards/` 中的探测器卡片...\n> 根据您的过程（`{process}`）在 `{energy}` TeV 下，推荐的 Delphes 卡片是：**{recommended_card}**\n> 其他匹配选项：{matched_card_list}\n> 输入 `yes` 使用推荐的卡片，输入其他卡片名称覆盖，或提供自定义 `.tcl` 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）。"
    - **If the user provides an absolute path** (starts with `/` or `~`): treat as `custom_card`. Validate the file exists and record the absolute path as `delphes_card`.
    - **If the user types a card name** (not an absolute path): validate it exists in `{mg5path}/Delphes/cards/` and use it as `delphes_card`.
-   - **If the user presses Enter**: use the recommended card as `delphes_card`.
+   - **If the user types `yes`**: use the recommended card as `delphes_card`.
    - **If no cards match the collider type** (all scores = 0), show:
      > "[8/9] No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one (card name or absolute path to custom card):"
      > "没有探测器卡片匹配您的对撞机类型。可用卡片：{all_filtered_cards}。请指定一个（卡片名称或自定义卡片的绝对路径）："
@@ -117,19 +117,19 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    > - `polarization` — beam polarization as `polbeam1,polbeam2` in range [-1, 1] (default: no polarization)
    > - `custom_card` — absolute path to a custom Delphes card outside `{mg5path}/Delphes/cards/`
    > - Specific operators to focus on, report format preferences, or additional analysis
-   > Press Enter to skip and use all defaults."
+   > Type `skip` to use all defaults, or specify any settings above."
    > "还有其他要求或偏好吗？可选设置：
    > - `debug=true` — 所有事件数除以 10 以加快测试（默认：false）
    > - `algorithms` — 指定要比较的 ML 算法（默认：自动选择并测试多种算法）
    > - `polarization` — 束流极化，格式为 `polbeam1,polbeam2`，范围 [-1, 1]（默认：无偏振）
    > - `custom_card` — 自定义 Delphes 卡片的绝对路径（在 `{mg5path}/Delphes/cards/` 之外）
    > - 要重点关注的特定算符、报告格式偏好或其他分析需求
-   > 按 Enter 跳过并使用所有默认值。"
+   > 输入 `skip` 使用所有默认值，或指定上述任何设置。"
 
-   This is **NOT optional** — it MUST be asked even if the user is in a hurry. The user can always press Enter to accept defaults, but the question itself must be presented.
+   This is **NOT optional** — it MUST be asked even if the user is in a hurry. The user can always type `skip` to accept defaults, but the question itself must be presented.
 
 **Defaults:**
-- `workdir`: the **Working Directory** (shell `pwd`) if user presses Enter or provides no answer
+- `workdir`: the **Working Directory** (shell `pwd`) if user types `yes` or provides no answer
 - `cutexperiment_path`: clone from Gitee if user says no or provides no path
 - `delphes_card`: auto-recommended based on process initial state and energy (see below)
 - `debug`: false
