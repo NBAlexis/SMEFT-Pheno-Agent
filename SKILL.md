@@ -270,7 +270,7 @@ If `energy` and `luminosity` are both lists, execute Phases 0–9 **once per `(e
 12. **Run directory prefix (multi-run mode)**: Before Phase 0, compute `RUN_DIR = f"E{energy}_L{luminosity}"` (dots replaced by underscores). ALL file paths in ALL phases MUST prefix `results/` with `RUN_DIR/`. Single-run mode uses `results/` directly. This is NOT optional — verify by checking `results/E{e}_L{l}/` exists before writing any data. See [Output Structure](#output-structure) for examples.
 13. **No concurrent MG5 processes**: MadGraph5 internally uses multi-threading (OpenMP) and will saturate all CPU cores. Launching multiple MG5 processes in parallel causes CPU contention and is **slower** than sequential execution. Run MG5 invocations **one at a time** — never parallelize across operators, scan points, or phases.
 14. **Phase 1 execution lock — NEVER stop mid-loop**: Testing individual operators in Phase 1 is a single uninterrupted loop over ALL coefficients in ALL models. A zero cross-section for any individual operator is a valid physical result. You MUST NOT: test SM baseline mid-phase, skip remaining coefficients, switch models early, report red flags, or ask the user. The loop completes when the last coefficient of the last model is tested — only then may red flags be evaluated. See [`reference/phase1-validation.md`](reference/phase1-validation.md).
-15. **Workflow logging**: Every phase MUST write `started` and `completed` events to `results/workflow.log` (or `results/{RUN_DIR}/workflow.log`) via `scripts/workflow_logger.py`. Phase 0 checks this log before execution and resumes from the first incomplete phase. Never reimplement the log format — import `WorkflowLogger`.
+15. **Workflow logging (phase + step)**: Every phase MUST write `started` and `completed` events to `results/workflow.log` (or `results/{RUN_DIR}/workflow.log`) via `scripts/workflow_logger.py`. In addition, every significant operation within a phase — MG5 invocations, ROOT→LHCO conversions, algorithm training, threshold scans, constraint computation, report generation — MUST be logged at step level via `logger.step_start(...)` / `logger.step_complete(...)`. Step records capture inputs, outputs, duration, and errors. Phase 0 checks this log before execution and resumes from the first incomplete phase. Never reimplement the log format — import `WorkflowLogger`.
 
 ## Scripts
 
@@ -287,7 +287,7 @@ The skill provides reusable Python scripts in the `scripts/` directory. **Always
 | `normalize_process_name.py` | Normalize `e+ e- > a a` → `ep_em_to_a_a` | All phases |
 | `install_mg5.py` | Auto-install MG5 with Pythia8, LHAPDF6, and Delphes | Phase -1 |
 | `timing_tracker.py` | Track phase-level and MG5 sub-step timings | All phases |
-| `workflow_logger.py` | Append-only phase-level log; resume from last completed phase | Phases 0–9 |
+| `workflow_logger.py` | Append-only phase- and step-level log; resume from last completed phase | Phases 0–9 |
 | `read_results.py` | Typed helpers to read every JSON result file | Phases 2–9 |
 
 For detailed CLI and Python usage, run each script with `--help` or read its docstring. Examples:

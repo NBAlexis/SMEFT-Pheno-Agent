@@ -14,6 +14,11 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
+
+# Initialize logger
+from scripts.workflow_logger import WorkflowLogger
+logger = WorkflowLogger(config.workdir)
+logger.phase_start("4")
 ```
 
 Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
@@ -35,10 +40,18 @@ From `coefficient_ranges.json`, read the unified range: `c_{scan} = coefficient_
 
 For each **unique model** that has at least one claimed operator, create ONE scan process directory:
 
+```python
+logger.step_start("4", f"create_scan_dir_{model_name}", inputs={"model": model_name})
+```
+
 ```
 import model {model_name}
 generate {process_name}
 output {folder_base}_{model_name}_p4
+```
+
+```python
+logger.step_complete("4", f"create_scan_dir_{model_name}", outputs={"process_dir": f"{folder_base}_{model_name}_p4"})
 ```
 
 > **Process directory naming**: `{folder_base}_{model_name}_p4` ensures each model has its own directory. Multiple operators from the same model share one directory.
@@ -46,6 +59,10 @@ output {folder_base}_{model_name}_p4
 ## Step 4.2: Generate Scan Points Per Operator
 
 For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
+
+```python
+logger.step_start("4", f"scan_operator_o_{g_idx}", inputs={"operator": f"o_{g_idx}", "model": model_name, "anoinput_idx": anoinput_idx, "c_scan": c_scan})
+```
 
 1. Look up its source model and anoinput index from `operator_claims.json`
 2. Use the process directory `{folder_base}_{model_name}_p4`
@@ -122,9 +139,17 @@ If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operat
 6. **Re-run the scan launch** for the same operator.
 7. **Repeat from step 1 until success.** Only a user message containing `stop` aborts the retry loop.
 
+```python
+logger.step_complete("4", f"scan_operator_o_{g_idx}", outputs={"new_runs": new_runs, "num_points": len(new_runs)})
+```
+
 > **Critical**: This retry applies per-operator. An earlier operator's success does NOT protect a later operator from needing its own retry. Each operator scan is an independent retry scope.
 
 ## Step 4.3: Convert ROOT to LHCO
+
+```python
+logger.step_start("4", f"root_to_lhco_o_{g_idx}", inputs={"num_runs": len(new_runs)})
+```
 
 For each new run, convert the Delphes ROOT output to LHCO format:
 
@@ -142,9 +167,17 @@ for run in new_runs:
     convert_root_to_lhco(root_file)
 ```
 
+```python
+logger.step_complete("4", f"root_to_lhco_o_{g_idx}", outputs={"runs_converted": new_runs})
+```
+
 This produces `{run}.lhco` in the same Events directory. See [`madgraph-reference.md`](madgraph-reference.md) ROOT→LHCO Conversion for details.
 
 ## Step 4.4: Rename Output Files (Global Numbering)
+
+```python
+logger.step_start("4", f"rename_outputs_o_{g_idx}", inputs={"num_runs": len(new_runs)})
+```
 
 Map each new run to `np_o_{g_idx}_f{index}` by run order (sorted by run number):
 
@@ -167,7 +200,17 @@ for i, run in enumerate(new_runs):
     # Copy banner and lhco to results/data/phase4/
 ```
 
+```python
+logger.step_complete("4", f"rename_outputs_o_{g_idx}", outputs={"files_copied": [f"np_o_{g_idx}_f{i}" for i in range(len(new_runs))]})
+```
+
 > **Important**: The output uses **global operator index** (`o_{g_idx}`), NOT the model-internal anoinput index. This ensures all downstream phases reference operators consistently.
+
+After all operators have been processed:
+
+```python
+logger.phase_complete("4")
+```
 
 ## Output
 

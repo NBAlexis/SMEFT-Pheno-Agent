@@ -14,6 +14,11 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
+
+# Initialize logger
+from scripts.workflow_logger import WorkflowLogger
+logger = WorkflowLogger(config.workdir)
+logger.phase_start("8")
 ```
 
 ## Step 8.1: Output Format Selection
@@ -37,6 +42,10 @@ If LaTeX is unavailable, generate a self-contained HTML file:
 - CSS: minimal, readable, print-friendly
 
 ## Step 8.2: Report Structure
+
+```python
+logger.step_start("8", "generate_report", inputs={"format": "latex" if pdflatex_exists else "html", "num_operators": len(operator_claims)})
+```
 
 Follow the structure in [`reference/report-writing-guide.md`](reference/report-writing-guide.md):
 
@@ -174,6 +183,11 @@ results/report.html  # otherwise
 ```
 
 Each report covers only its own `(energy, luminosity)` combination.
+
+```python
+logger.step_complete("8", "generate_report", outputs={"report_path": "results/report.pdf" if pdflatex_exists else "results/report.html"})
+logger.phase_complete("8")
+```
 
 ## Validation
 

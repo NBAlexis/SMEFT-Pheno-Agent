@@ -15,6 +15,11 @@ config = load_run_config("{workdir}/results/run_config.json")
 # Derive process directory base name
 from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
+
+# Initialize logger
+from scripts.workflow_logger import WorkflowLogger
+logger = WorkflowLogger(config.workdir)
+logger.phase_start("1")
 ```
 
 All variables (`config.process`, `config.models`, `config.madgraph_path`, `config.energy`, etc.) are read from `config`.
@@ -70,6 +75,10 @@ For each `model_name` in the user-provided model list (in order):
 
 ### 1.1.1 Create NP Process Directory
 
+```python
+logger.step_start("1", f"mg5_generate_np_{model_name}", inputs={"model": model_name, "process": config.process})
+```
+
 Order file:
 ```
 import model {model_name}
@@ -81,7 +90,15 @@ output {folder_base}_{model_name}_p1_NP
 
 Run and check return code. Abort on any MG5 error.
 
+```python
+logger.step_complete("1", f"mg5_generate_np_{model_name}", outputs={"process_dir": f"{folder_base}_{model_name}_p1_NP"})
+```
+
 ### 1.1.2 Extract Coefficients from param_card.dat
+
+```python
+logger.step_start("1", f"parse_param_card_{model_name}", inputs={"model": model_name})
+```
 
 Read the coefficient block from `{mg5path}/{folder_base}_{model_name}_p1_NP/Cards/param_card.dat`.
 
@@ -104,6 +121,10 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 
 **Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. Report this as a parser bug.
 
+```python
+logger.step_complete("1", f"parse_param_card_{model_name}", outputs={"block_name": block_name, "num_coefficients": len(coefficients)})
+```
+
 ### 1.1.3 Test Each Coefficient Individually
 
 **执行锁 — 严禁中途停止：**
@@ -113,6 +134,11 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 > **如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。**
 
 For each coefficient `fi` in this model:
+
+```python
+logger.step_start("1", f"test_coeff_{model_name}_{fi}", inputs={"coefficient": fi, "c_default": c_default})
+```
+
 1. Determine `c_{n_{default}}`: default from param_card, or `1.0` if default is `0.0`
 2. Write launch order with `set {block_name} {idx} {c_{n_{default}}}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
    - `block_name` is obtained from `parse_param_card.py` output (`block_name` field), e.g., `anoinputs` or `dim8`.
@@ -133,7 +159,15 @@ For each coefficient `fi` in this model:
    - If `sigma_i == 0`: exclude (no claim)
 7. **Immediately proceed to the next coefficient. Do NOT pause, do NOT branch to other tasks.**
 
+```python
+logger.step_complete("1", f"test_coeff_{model_name}_{fi}", outputs={"sigma": sigma_i, "claimed": sigma_i > 0 and fi not in claimed, "global_idx": g_idx if (sigma_i > 0 and fi not in claimed) else None})
+```
+
 ## Step 1.2: Write Global Metadata
+
+```python
+logger.step_start("1", "write_global_metadata", inputs={"num_claimed": len(operator_claims), "num_tested": len(cross_sections)})
+```
 
 After all models have been processed:
 
@@ -147,6 +181,11 @@ After all models have been processed:
   "anoinput_idx": 1,
   "name": "fS0"
 }
+```
+
+```python
+logger.step_complete("1", "write_global_metadata", outputs={"anchor": anchor, "operator_claims_path": "results/data/phase1/operator_claims.json"})
+logger.phase_complete("1")
 ```
 
 ## Output

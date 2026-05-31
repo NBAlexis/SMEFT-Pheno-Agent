@@ -11,11 +11,20 @@ Load the configuration:
 ```python
 from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
+
+# Initialize logger
+from scripts.workflow_logger import WorkflowLogger
+logger = WorkflowLogger(config.workdir)
+logger.phase_start("5")
 ```
 
 Read `anchor.json` from Phase 1. The anchor operator defines the SM vs NP discrimination task.
 
 ## Step 5.1: Convert LHCO to CSV
+
+```python
+logger.step_start("5", "convert_lhco_to_csv", inputs={"sm": "sm.lhco", "np": "np_anchor.lhco"})
+```
 
 Use CutExperiment to load `.lhco` files and extract feature vectors:
 
@@ -70,6 +79,10 @@ Save as `.csv`:
 ```
 sm.lhco → sm.csv
 np_anchor.lhco → np_anchor.csv
+```
+
+```python
+logger.step_complete("5", "convert_lhco_to_csv", outputs={"sm_csv": "sm.csv", "np_csv": "np_anchor.csv", "num_features": X.shape[1] if 'X' in locals() else None})
 ```
 
 **Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for the full pipeline.
@@ -151,6 +164,10 @@ def compute_scores(clf, X):
 
 ### 5.2.4 Train
 
+```python
+logger.step_start("5", "train_algorithms", inputs={"num_algorithms": len(selected), "algorithms": [a.__name__ for a in selected]})
+```
+
 Train on the **anchor operator's** SM and NP samples:
 
 1. Load `sm.csv` and `np_anchor.csv`
@@ -161,9 +178,17 @@ Train on the **anchor operator's** SM and NP samples:
 6. **Compute and record AUC for each** using the `compute_scores` function from Step 5.2.3 — **this is for report plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
+```python
+logger.step_complete("5", "train_algorithms", outputs={"aucs": {name: auc for name, auc in aucs.items()}})
+```
+
 > **Algorithm selection is deferred to Phase 6.** Phase 5 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. The best algorithm is determined by the narrowest `S_stat = 2` constraint width in Phase 6.
 
 ## Step 5.3: Score Distribution Histograms
+
+```python
+logger.step_start("5", "plot_score_distributions", inputs={"num_algorithms": len(fitted_clfs)})
+```
 
 For **every trained algorithm**, plot training-set score distributions:
 - Style: `plt.hist(..., histtype='step')`
@@ -172,7 +197,15 @@ For **every trained algorithm**, plot training-set score distributions:
 - y-axis: log scale if peak counts differ by >10x
 - Filename: `score_dist_anchor_{alg}.pdf`
 
+```python
+logger.step_complete("5", "plot_score_distributions", outputs={"plots": [f"score_dist_anchor_{alg}.pdf" for alg in fitted_clfs]})
+```
+
 ## Step 5.4: Save All Algorithms
+
+```python
+logger.step_start("5", "save_algorithms", inputs={"num_algorithms": len(fitted_clfs)})
+```
 
 Save **every fitted model**:
 ```python
@@ -194,6 +227,11 @@ Record all AUCs in `algorithm_comparison.json`:
   "anchor_operator": "fS0",
   "anchor_model": "AQGCm_UFO"
 }
+```
+
+```python
+logger.step_complete("5", "save_algorithms", outputs={"algorithm_comparison_path": "results/data/phase5/algorithm_comparison.json"})
+logger.phase_complete("5")
 ```
 
 ## Output
