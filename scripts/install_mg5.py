@@ -30,6 +30,7 @@ Example:
     # Result: ~/MG5_aMC/MG5_aMC_v3_5_15/
 """
 import argparse
+import glob
 import os
 import shutil
 import subprocess
@@ -134,7 +135,7 @@ def verify_installation(mg5path):
         ("MG5 binary", os.path.join(mg5path, "bin", "mg5_aMC")),
         ("Pythia8", os.path.join(mg5path, "HEPTools", "pythia8", "lib", "libpythia8.so")),
         ("LHAPDF6", os.path.join(mg5path, "HEPTools", "lhapdf6_py3", "bin", "lhapdf-config")),
-        ("Delphes cards", os.path.join(mg5path, "Delphes", "cards", "delphes_card_default.dat")),
+        ("Delphes cards directory", os.path.join(mg5path, "Delphes", "cards")),
     ]
 
     missing = []
@@ -146,6 +147,19 @@ def verify_installation(mg5path):
         print("ERROR: Verification failed — components missing after install:", file=sys.stderr)
         for name, path in missing:
             print(f"  - {name}: {path}", file=sys.stderr)
+        sys.exit(4)
+
+    cards_dir = os.path.join(mg5path, "Delphes", "cards")
+    detector_cards = [
+        path
+        for pattern in ("*.tcl", "*.dat")
+        for path in glob.glob(os.path.join(cards_dir, pattern))
+    ]
+    if not detector_cards:
+        print(
+            f"ERROR: Verification failed - no .tcl or .dat Delphes cards found in {cards_dir}",
+            file=sys.stderr,
+        )
         sys.exit(4)
 
     print("All components verified.")

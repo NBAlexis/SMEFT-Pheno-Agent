@@ -1,9 +1,29 @@
-# Phase 1: Validate New Physics Impact (Multi-Model)
+# Phase 3: Validate New Physics Impact (Multi-Model)
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
 Identify which SMEFT operators across **all specified models** actually affect the chosen process. Operators are globally deduplicated and continuously numbered. The first non-zero operator found across all models becomes the **anchor** for ML training and threshold optimization.
+
+## Phase 3 Loop Completion Contract
+
+The completion unit of Phase 3 is the full coefficient loop across all requested models. A single coefficient result is never a phase-level decision.
+
+Required loop behavior:
+1. Build the complete ordered coefficient list from every requested model.
+2. Test each coefficient exactly once unless it is a duplicate already claimed from an earlier model.
+3. Record every result, including `sigma = 0`.
+4. Continue immediately after each coefficient, regardless of whether `sigma` is zero or non-zero.
+5. Evaluate the zero-nonzero-operators red flag only after `tested_count == total_coefficients`.
+
+Forbidden during the loop:
+- Do not ask the user what to do.
+- Do not test the SM baseline.
+- Do not reduce `nev_phase3`.
+- Do not stop because the first few coefficients have `sigma = 0`.
+- Do not infer process insensitivity until every coefficient in every model has been tested.
+
+Use `config.locked_event_counts.nev_phase3` for every Phase 3 launch. Never invent or resize the event count.
 
 ## Prerequisite
 
@@ -19,7 +39,7 @@ folder_base = normalize_process_name(config.process)
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
-logger.phase_start("1")
+logger.phase_start("3")
 ```
 
 All variables (`config.process`, `config.models`, `config.madgraph_path`, `config.energy`, etc.) are read from `config`.
@@ -89,7 +109,7 @@ anchor = {
 }
 ```
 
-## Step 1.1: Iterate All Models
+## Step 3.1: Iterate All Models
 
 For each `model_name` in the user-provided model list (in order):
 
@@ -99,24 +119,24 @@ Order file:
 ```
 import model {model_name}
 generate {process_name} NP>0
-output {folder_base}_{model_name}_p1_NP
+output {folder_base}_{model_name}_p3_NP
 ```
 
-> **Process directory naming**: Include the model name to avoid conflicts when multiple models define the same process. Example: `ee_a_jj_AQGCm_UFO_p1_NP`.
+> **Process directory naming**: Include the model name to avoid conflicts when multiple models define the same process. Example: `ee_a_jj_AQGCm_UFO_p3_NP`.
 
 Run and check return code. Abort on any MG5 error.
 
 ```python
 model_status = {}  # initialize before iterating models
 
-with workflow_step(logger, "1", f"mg5_generate_np_{model_name}",
+with workflow_step(logger, "3", f"mg5_generate_np_{model_name}",
                    inputs={"model": model_name, "process": config.process}):
     order_path = os.path.join(config.workdir, "results", run_dir, "orders", f"order_{model_name}.txt")
     os.makedirs(os.path.dirname(order_path), exist_ok=True)
     with open(order_path, "w") as f:
         f.write(f"import model {model_name}\n")
         f.write(f"generate {config.process} NP>0\n")
-        f.write(f"output {folder_base}_{model_name}_p1_NP\n")
+        f.write(f"output {folder_base}_{model_name}_p3_NP\n")
     subprocess.run([os.path.join(config.madgraph_path, "bin", "mg5_aMC"), order_path],
                    cwd=config.madgraph_path, check=True)
 
@@ -126,7 +146,7 @@ model_status[model_name] = {"has_feynman_diagrams": True}
 
 ### 1.1.2 Extract Coefficients from param_card.dat
 
-Read the coefficient block from `{mg5path}/{folder_base}_{model_name}_p1_NP/Cards/param_card.dat`.
+Read the coefficient block from `{mg5path}/{folder_base}_{model_name}_p3_NP/Cards/param_card.dat`.
 
 **Use the script** (do not reimplement):
 
@@ -139,10 +159,10 @@ Or import in Python:
 from scripts.parse_param_card import parse_anoinputs
 from scripts.workflow_logger import workflow_step
 
-with workflow_step(logger, "1", f"parse_param_card_{model_name}",
+with workflow_step(logger, "3", f"parse_param_card_{model_name}",
                    inputs={"model": model_name}):
     param_card_path = os.path.join(config.madgraph_path,
-                                   f"{folder_base}_{model_name}_p1_NP",
+                                   f"{folder_base}_{model_name}_p3_NP",
                                    "Cards", "param_card.dat")
     result = parse_anoinputs(param_card_path, scan_default=1.0e-12)
     block_name = result["block_name"]       # e.g. "anoinputs" or "dim8"
@@ -164,7 +184,7 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 For each coefficient `fi` in this model:
 
 1. Determine `c_{n_{default}}`: default from param_card, or `1.0` if default is `0.0`
-2. Write launch order with `set {block_name} {idx} {c_{n_{default}}}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
+2. Write launch order with `set {block_name} {idx} {c_{n_{default}}}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = config.locked_event_counts.nev_phase3`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
    - `block_name` is obtained from `parse_param_card.py` output (`block_name` field), e.g., `anoinputs` or `dim8`.
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
@@ -200,17 +220,17 @@ For each coefficient `fi` in this model:
 for idx, default_val in coefficients.items():
     fi = f"C{idx}"
     c_default = default_val if default_val != 0.0 else 1.0
-    with workflow_step(logger, "1", f"test_coeff_{model_name}_{fi}",
+    with workflow_step(logger, "3", f"test_coeff_{model_name}_{fi}",
                        inputs={"coefficient": fi, "c_default": c_default}):
         # Build and write launch order
         launch_order = os.path.join(config.workdir, "results", run_dir,
                                     "orders", f"launch_{model_name}_{fi}.txt")
         with open(launch_order, "w") as f:
-            f.write(f"launch {folder_base}_{model_name}_p1_NP\n")
+            f.write(f"launch {folder_base}_{model_name}_p3_NP\n")
             for other_idx in coefficients:
                 val = c_default if other_idx == idx else 0.0
                 f.write(f"set {block_name} {other_idx} {val}\n")
-            f.write(f"set nevents {nev_phase1}\n")
+            f.write(f"set nevents {config.locked_event_counts.nev_phase3}\n")
             f.write("done\n")
 
         # Run MG5
@@ -222,7 +242,7 @@ for idx, default_val in coefficients.items():
         # (post-processing and deduplication logic here)
 ```
 
-## Step 1.2: Write Global Metadata
+## Step 3.2: Write Global Metadata
 
 After all models have been processed:
 
@@ -242,29 +262,29 @@ After all models have been processed:
 ```python
 import json
 
-with workflow_step(logger, "1", "write_global_metadata",
+with workflow_step(logger, "3", "write_global_metadata",
                    inputs={"num_claimed": len(operator_claims),
                            "num_tested": len(cross_sections)}):
-    phase1_dir = os.path.join(config.workdir, "results", run_dir, "data", "phase1")
-    os.makedirs(phase1_dir, exist_ok=True)
-    with open(os.path.join(phase1_dir, "operator_claims.json"), "w") as f:
+    phase3_dir = os.path.join(config.workdir, "results", run_dir, "data", "phase3")
+    os.makedirs(phase3_dir, exist_ok=True)
+    with open(os.path.join(phase3_dir, "operator_claims.json"), "w") as f:
         json.dump(operator_claims, f, indent=2)
-    with open(os.path.join(phase1_dir, "cross_sections.json"), "w") as f:
+    with open(os.path.join(phase3_dir, "cross_sections.json"), "w") as f:
         json.dump(cross_sections, f, indent=2)
-    with open(os.path.join(phase1_dir, "model_status.json"), "w") as f:
+    with open(os.path.join(phase3_dir, "model_status.json"), "w") as f:
         json.dump(model_status, f, indent=2)
-    with open(os.path.join(phase1_dir, "anchor.json"), "w") as f:
+    with open(os.path.join(phase3_dir, "anchor.json"), "w") as f:
         json.dump(anchor if anchor else {}, f, indent=2)
 
-logger.phase_complete("1")
+logger.phase_complete("3")
 ```
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase1/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase3/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ```
-results/data/phase1/
+results/data/phase3/
   operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
   cross_sections.json        # {fi: {sigma, c_default, model, global_idx}} for all tested
   model_status.json          # {model: {has_feynman_diagrams, num_coefficients, coefficients: {fi: {c_default, sigma}}}}
@@ -296,7 +316,7 @@ If **all** tested operators return `sigma = 0` (or if `anchor` is not set), the 
 Example report format:
 
 ```
-Phase 1 Complete — Zero Non-Zero Operators Found
+Phase 3 Complete — Zero Non-Zero Operators Found
 ==================================================
 
 Model: nTGC_UFO_11g1
@@ -315,16 +335,16 @@ Model: nTGC_UFO_12g2
 RED FLAG: No operator claimed. Process is insensitive to all provided models.
 ```
 
-This report is written to the log and to a file `results/data/phase1/phase1_report.txt` so the user can inspect the full result without re-running MG5.
+This report is written to the log and to a file `results/data/phase3/phase3_report.txt` so the user can inspect the full result without re-running MG5.
 
-## Prohibited Behaviors During Phase 1 (CRITICAL)
+## Prohibited Behaviors During Phase 3 (CRITICAL)
 
 The following behaviors constitute a **critical violation** of the Execution Continuity rule and **MUST NOT occur** under any circumstances:
 
 | Prohibited Behavior | Why It's Forbidden | Correct Action |
 |---------------------|-------------------|----------------|
 | **Stopping after the first (or any) coefficient returns σ = 0** | A single zero cross-section is a valid physical result. The phase must complete before any red flag is checked. | Record the result and **immediately continue** to the next coefficient. |
-| **Testing SM baseline (all coefficients = 0) during Phase 1** | SM baseline is a Phase 2 operation. Doing it in Phase 1 is a phase boundary violation. | Stay in the coefficient testing loop. SM baseline comes **after** all coefficients are tested. |
+| **Testing SM baseline (all coefficients = 0) during Phase 3** | SM baseline is a Phase 4 operation. Doing it in Phase 3 is a phase boundary violation. | Stay in the coefficient testing loop. SM baseline comes **after** all coefficients are tested. |
 | **Skipping remaining coefficients because "the process seems insensitive"** | Insensitivity can only be determined after ALL coefficients are tested. | Test every coefficient in every model. No exceptions. |
 | **Switching to the next model before finishing the current model** | Model order is preserved for deduplication. Incomplete testing corrupts the claimed operator list. | Finish all coefficients in the current model before moving to the next. |
 | **Reporting red flags or asking the user mid-phase** | Red flags are checked **only after the phase completes**. | Complete the phase silently. Report findings at the phase boundary. |
@@ -344,8 +364,8 @@ The following behaviors constitute a **critical violation** of the Execution Con
 
 ## Phase Transition
 
-After `logger.phase_complete("1")` is called and all JSON outputs are written:
+After `logger.phase_complete("3")` is called and all JSON outputs are written:
 
 1. **Check validation rules immediately**: If `anchor` is not set, emit the Zero Cross-Section Report and abort.
-2. **If validation passes** (at least one operator claimed, anchor is set): **proceed immediately to Phase 2 without stopping.**
+2. **If validation passes** (at least one operator claimed, anchor is set): **proceed immediately to Phase 4 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input. The workflow runs to completion automatically per [`SKILL.md`](../SKILL.md) SUPREME RULE.

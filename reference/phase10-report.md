@@ -1,4 +1,4 @@
-# Phase 8: Generate Publication-Quality Report
+# Phase 10: Generate Publication-Quality Report
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
@@ -18,10 +18,10 @@ folder_base = normalize_process_name(config.process)
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
-logger.phase_start("8")
+logger.phase_start("10")
 ```
 
-## Step 8.1: Output Format Selection
+## Step 10.1: Output Format Selection
 
 ```bash
 which pdflatex
@@ -38,13 +38,13 @@ If LaTeX is unavailable, generate a self-contained HTML file:
 - Use MathJax CDN for formula rendering: `<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>`
 - Embed all figures as base64-encoded PDFs (or regenerate as PNG for HTML): `<img src="data:image/png;base64,...">`
 - Include all tables inline
-- Structure with `<h1>`–`<h3>` matching the section numbering in Step 8.2
+- Structure with `<h1>`–`<h3>` matching the section numbering in Step 10.2
 - CSS: minimal, readable, print-friendly
 
-## Step 8.2: Report Structure
+## Step 10.2: Report Structure
 
 ```python
-with workflow_step(logger, "8", "generate_report",
+with workflow_step(logger, "10", "generate_report",
                    inputs={"format": "latex" if pdflatex_exists else "html", "num_operators": len(operator_claims)}):
 ```
 
@@ -60,7 +60,7 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
      | AQGCs_UFO | o_3, o_4, o_5 |
 4. **Event Generation & Data Preparation**: MC setup, dataset composition, event counts, scan points, feature list
    - Note: ML training uses the anchor operator (`o_1` from `{anchor_model}`)
-   - Include **Feynman diagrams** (see Step 8.6 below)
+   - Include **Feynman diagrams** (see Step 10.6 below)
 5. **Machine Learning Methodology**: algorithms, score functions, training setup, AUC comparison, score distributions
    - Training performed on anchor operator only; algorithms applied universally
 6. **Event Selection Optimization**: per-algorithm threshold optimization (using anchor operator), fit plots, threshold comparison
@@ -69,7 +69,7 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
 8. **Conclusions**: summary, physical interpretation, outlook
 9. **References**: mandatory toolchain citations with DOI and arXiv
 
-## Step 8.3: Required Figures (PDF Vector Format)
+## Step 10.3: Required Figures (PDF Vector Format)
 
 **All figures must be generated as PDF for vector quality.** Use `plt.savefig(..., format='pdf')`.
 
@@ -81,11 +81,11 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
 | Cross-section fits | `results/plots/csfit_plot_o_*_{alg}*.pdf` (all algorithms, all operators) |
 | Algorithm comparison | `results/plots/algorithm_comparison.pdf` |
 
-## Step 8.4: Algorithm Comparison Section (Required)
+## Step 10.4: Algorithm Comparison Section (Required)
 
 ### AUC Comparison Table (All Trained Algorithms)
 
-**The report presents all trained algorithms.** In Phase 5, exactly 3 algorithms are randomly selected from the pool (or user-specified algorithms if `config.algorithms` is set). The full pool is recorded in `algorithm_comparison.json`. Since training is done on the anchor operator only, there is a single AUC value per algorithm:
+**The report presents all trained algorithms.** In Phase 7, exactly 3 algorithms are randomly selected from the pool (or user-specified algorithms if `config.algorithms` is set). The full pool is recorded in `algorithm_comparison.json`. Since training is done on the anchor operator only, there is a single AUC value per algorithm:
 
 | Algorithm | Anchor AUC |
 |-----------|-----------|
@@ -110,7 +110,7 @@ Follow the structure in [`reference/report-writing-guide.md`](reference/report-w
 
 One plot per operator, or a combined plot showing all operators.
 
-## Step 8.5: Required Formulas (LaTeX)
+## Step 10.5: Required Formulas (LaTeX)
 
 All formulas must be rendered in LaTeX. `L` denotes physics luminosity in pb⁻¹.
 
@@ -130,7 +130,7 @@ $$
 \sigma(f) = \sigma_{\mathrm{SM}} + f \cdot \sigma_{\mathrm{int}} + f^{2} \cdot \sigma_{\mathrm{NP}}
 $$
 
-## Step 8.6: Feynman Diagrams (Required)
+## Step 10.6: Feynman Diagrams (Required)
 
 Include representative Feynman diagrams from both the SM (`NP=0`) and NP (`NP>0`) process directories to illustrate the physics process. Use the **anchor model's** process directories.
 
@@ -140,8 +140,8 @@ MG5 stores Feynman diagrams in each process directory under `SubProcesses/`:
 
 | Process Type | Location | Files |
 |--------------|----------|-------|
-| SM baseline | `{mg5path}/{folder_base}_{anchor_model}_p2_SM/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
-| NP (EFT) | `{mg5path}/{folder_base}_{anchor_model}_p3_NP/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
+| SM baseline | `{mg5path}/{folder_base}_{anchor_model}_p4_SM/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
+| NP (EFT) | `{mg5path}/{folder_base}_{anchor_model}_p5_NP/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
 
 The `diagrams.html` file in each `SubProcesses/P*/` directory is an index that lists all diagrams with their process labels (e.g., `e+ e- > a u u~ NP=0 @1`).
 
@@ -186,23 +186,23 @@ results/report.html  # otherwise
 Each report covers only its own `(energy, luminosity)` combination.
 
 ```python
-logger.phase_complete("8")
+logger.phase_complete("10")
 ```
 
 ## Validation
 
 - Report event counts must match actual debug-adjusted counts
-- Report constraint table must match Phase 7 `constraint_table.json`
+- Report constraint table must match Phase 9 `constraint_table.json`
 - Report must include ALL globally claimed operators with their source models
-- Algorithm comparison data must match Phase 7 `algorithm_selection.json`
-- All algorithms trained in Phase 5 must appear in the comparison section
+- Algorithm comparison data must match Phase 9 `algorithm_selection.json`
+- All algorithms trained in Phase 7 must appear in the comparison section
 - All figures in report must be PDF vector format
 - All formulas must be LaTeX-rendered
 
 ## Phase Transition
 
-After `logger.phase_complete("8")` is called and the HTML report is written:
+After `logger.phase_complete("10")` is called and the HTML report is written:
 
 1. **Check validation rules immediately**: If report is missing required sections, flag warning but continue.
-2. **If validation passes**: **proceed immediately to Phase 9 without stopping.**
+2. **If validation passes**: run Cleanup, then proceed immediately to Phase 11 without stopping.
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

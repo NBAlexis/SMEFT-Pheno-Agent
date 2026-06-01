@@ -1,4 +1,4 @@
-# Phase 4: Generate SM+NP Coefficient Scan Samples
+# Phase 6: Generate SM+NP Coefficient Scan Samples
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
@@ -18,7 +18,7 @@ folder_base = normalize_process_name(config.process)
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
-logger.phase_start("4")
+logger.phase_start("6")
 ```
 
 Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
@@ -36,40 +36,40 @@ From `coefficient_ranges.json`, read the unified range: `c_{scan} = coefficient_
 - Do **NOT** rename individual `run_XX` folders — this breaks run-number tracking
 - If `tag_2` appears, you violated this rule
 
-## Step 4.1: Create Scan Process Directories
+## Step 6.1: Create Scan Process Directories
 
 For each **unique model** that has at least one claimed operator, create ONE scan process directory:
 
 ```python
-with workflow_step(logger, "4", f"create_scan_dir_{model_name}",
+with workflow_step(logger, "6", f"create_scan_dir_{model_name}",
                    inputs={"model": model_name}):
 ```
 
 ```
 import model {model_name}
 generate {process_name}
-output {folder_base}_{model_name}_p4
+output {folder_base}_{model_name}_p6
 ```
 
 
-> **Process directory naming**: `{folder_base}_{model_name}_p4` ensures each model has its own directory. Multiple operators from the same model share one directory.
+> **Process directory naming**: `{folder_base}_{model_name}_p6` ensures each model has its own directory. Multiple operators from the same model share one directory.
 
-## Step 4.2: Generate Scan Points Per Operator
+## Step 6.2: Generate Scan Points Per Operator
 
 For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
 
 ```python
-with workflow_step(logger, "4", f"scan_operator_o_{g_idx}",
+with workflow_step(logger, "6", f"scan_operator_o_{g_idx}",
                    inputs={"operator": f"o_{g_idx}", "model": model_name,
                            "anoinput_idx": anoinput_idx, "c_scan": c_scan}):
 ```
 
 1. Look up its source model and anoinput index from `operator_claims.json`
-2. Use the process directory `{folder_base}_{model_name}_p4`
+2. Use the process directory `{folder_base}_{model_name}_p6`
 3. Generate 11 scan points programmatically — **do not hand-compute the values**:
 
 ```python
-c_scan = coefficient_ranges["global"][1]  # positive bound from Phase 2
+c_scan = coefficient_ranges["global"][1]  # positive bound from Phase 4
 coefficient_list = [-c_scan + 0.2 * c_scan * n for n in range(11)]
 scan_values = ",".join(str(v) for v in coefficient_list)
 ```
@@ -77,7 +77,7 @@ scan_values = ",".join(str(v) for v in coefficient_list)
 Launch order (follows [`madgraph-reference.md`](madgraph-reference.md) Event Generation Order template):
 
 ```
-launch {folder_base}_{model_name}_p4
+launch {folder_base}_{model_name}_p6
 detector = Delphes
 analysis = OFF
 0
@@ -103,7 +103,7 @@ set nevents = {nev_scan}
 events_dir = os.path.join(MG5PATH, PROC_SCAN, "Events")
 existing = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
 
-with workflow_step(logger, "4", f"scan_launch_o_{g_idx}",
+with workflow_step(logger, "6", f"scan_launch_o_{g_idx}",
                    inputs={"order": order_path}):
     subprocess.run([...])  # MG5 launch command
 
@@ -119,14 +119,14 @@ If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operat
 1. **Log the failure** with the operator name and error reason.
 2. **Clean temporary files** in the process directory:
    ```bash
-   find {mg5path}/{folder_base}_{model_name}_p4/Events/run_*/ \
+   find {mg5path}/{folder_base}_{model_name}_p6/Events/run_*/ \
        \( -name "*.root" -o -name "*.lhe.gz" -o -name "*.hepmc.gz" \) -delete
    ```
 3. **Rename the process directory** to a broken suffix (preserve it for debugging):
    ```python
    import time
-   broken_name = f"{folder_base}_{model_name}_p4_broken_{int(time.time())}"
-   os.rename(f"{mg5path}/{folder_base}_{model_name}_p4",
+   broken_name = f"{folder_base}_{model_name}_p6_broken_{int(time.time())}"
+   os.rename(f"{mg5path}/{folder_base}_{model_name}_p6",
              f"{mg5path}/{broken_name}")
    ```
 4. **Report to the user** (but do NOT stop):
@@ -135,7 +135,7 @@ If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operat
    ```
    import model {model_name}
    generate {process_name}
-   output {folder_base}_{model_name}_p4
+   output {folder_base}_{model_name}_p6
    ```
 6. **Re-run the scan launch** for the same operator.
 7. **Repeat from step 1 until success.** Only a user message containing `stop` aborts the retry loop.
@@ -145,10 +145,10 @@ If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operat
 
 > **Critical**: This retry applies per-operator. An earlier operator's success does NOT protect a later operator from needing its own retry. Each operator scan is an independent retry scope.
 
-## Step 4.3: Convert ROOT to LHCO
+## Step 6.3: Convert ROOT to LHCO
 
 ```python
-with workflow_step(logger, "4", f"root_to_lhco_o_{g_idx}",
+with workflow_step(logger, "6", f"root_to_lhco_o_{g_idx}",
                    inputs={"num_runs": len(new_runs)}):
 ```
 
@@ -156,7 +156,7 @@ For each new run, convert the Delphes ROOT output to LHCO format:
 
 **Use the script** (do not reimplement):
 ```bash
-python scripts/convert_root_to_lhco.py {mg5path}/{folder_base}_{model_name}_p4/Events/{run}/ {run}.root
+python scripts/convert_root_to_lhco.py {mg5path}/{folder_base}_{model_name}_p6/Events/{run}/ {run}.root
 ```
 
 Or in Python:
@@ -171,10 +171,10 @@ for run in new_runs:
 
 This produces `{run}.lhco` in the same Events directory. See [`madgraph-reference.md`](madgraph-reference.md) ROOT→LHCO Conversion for details.
 
-## Step 4.4: Rename Output Files (Global Numbering)
+## Step 6.4: Rename Output Files (Global Numbering)
 
 ```python
-with workflow_step(logger, "4", f"rename_outputs_o_{g_idx}",
+with workflow_step(logger, "6", f"rename_outputs_o_{g_idx}",
                    inputs={"num_runs": len(new_runs)}):
 ```
 
@@ -196,7 +196,7 @@ for i, run in enumerate(new_runs):
     run_lhco = os.path.join(events_dir, run, f"{run}.lhco")
     dest_banner = f"np_o_{g_idx}_f{i}_banner.txt"
     dest_lhco   = f"np_o_{g_idx}_f{i}.lhco"
-    # Copy banner and lhco to results/data/phase4/
+    # Copy banner and lhco to results/data/phase6/
 ```
 
 ```python)]})
@@ -207,15 +207,15 @@ for i, run in enumerate(new_runs):
 After all operators have been processed:
 
 ```python
-logger.phase_complete("4")
+logger.phase_complete("6")
 ```
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase4/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase6/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ```
-results/data/phase4/
+results/data/phase6/
   np_o_1_f0_banner.txt    np_o_1_f0.lhco
   np_o_1_f1_banner.txt    np_o_1_f1.lhco
   np_o_1_f2_banner.txt    np_o_1_f2.lhco
@@ -247,5 +247,5 @@ results/data/phase4/
 After all operators are scanned and all LHCO files are copied:
 
 1. **Check validation rules immediately**: If any scan point is missing, abort.
-2. **If validation passes**: **proceed immediately to Phase 5 without stopping.**
+2. **If validation passes**: **proceed immediately to Phase 7 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

@@ -12,7 +12,7 @@ Usage:
     python run_mg5.py <mg5path> <order_filename>
 
 Example:
-    python run_mg5.py /opt/MG5_aMC_v3_5_6 order_p1_20260525_01.txt
+    python run_mg5.py /opt/MG5_aMC_v3_5_6 order_p3_20260525_01.txt
 
 Exit codes:
     0  success

@@ -32,18 +32,18 @@ class TimingTracker:
     """Tracks phase-level and MG5 sub-step timings."""
 
     PHASE_ORDER = [
-        "Phase -1: Input Collection",
-        "Phase 0: Environment",
-        "Phase 1: Validation",
-        "Phase 2: Range Estimation",
-        "Phase 3: Pure Samples",
-        "Phase 4: Coefficient Scan",
-        "Phase 5: ML Training",
-        "Phase 6: Selection Optimization",
-        "Phase 7: Constraints",
-        "Phase 8: Report",
+        "Phase 1: Input Collection",
+        "Phase 2: Environment",
+        "Phase 3: Validation",
+        "Phase 4: Range Estimation",
+        "Phase 5: Pure Samples",
+        "Phase 6: Coefficient Scan",
+        "Phase 7: ML Training",
+        "Phase 8: Selection Optimization",
+        "Phase 9: Constraints",
+        "Phase 10: Report",
         "Cleanup",
-        "Phase 9: Audit",
+        "Phase 11: Audit",
     ]
 
     def __init__(self, log_path=None):
@@ -232,9 +232,9 @@ save_log = lambda path: get_tracker().save_log(path)
 if __name__ == "__main__":
     # Demo
     tracker = TimingTracker()
-    with tracker.phase_timer("Phase 1: Validation"):
+    with tracker.phase_timer("Phase 3: Validation"):
         time.sleep(0.1)
-    with tracker.phase_timer("Phase 2: Range"):
+    with tracker.phase_timer("Phase 4: Range"):
         time.sleep(0.05)
         tracker.record_mg5_step("madgraph", time.time() - 0.04, time.time() - 0.01)
     tracker.print_report()

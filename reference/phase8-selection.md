@@ -1,4 +1,4 @@
-# Phase 6: Apply Selection and Fit Cross-Section
+# Phase 8: Apply Selection and Fit Cross-Section
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
@@ -15,25 +15,25 @@ config = load_run_config("{workdir}/results/run_config.json")
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
-logger.phase_start("6")
+logger.phase_start("8")
 ```
 
-Read `anchor.json` from Phase 1. The anchor operator (`o_1` by convention) provides the scan data for threshold optimization.
+Read `anchor.json` from Phase 3. The anchor operator (`o_1` by convention) provides the scan data for threshold optimization.
 
-## Step 6.1: Convert Scan LHCO to CSV
+## Step 8.1: Convert Scan LHCO to CSV
 
 ```python
-with workflow_step(logger, "6", "convert_scan_lhco_to_csv",
+with workflow_step(logger, "8", "convert_scan_lhco_to_csv",
                    inputs={"num_operators": len(operator_claims), "points_per_operator": 11}):
 ```
 
-Convert all Phase 4 `.lhco` files to `.csv` using same feature extraction as Phase 5.
+Convert all Phase 6 `.lhco` files to `.csv` using same feature extraction as Phase 7.
 
 
-## Step 6.2: Score All Scan Points (Per Algorithm)
+## Step 8.2: Score All Scan Points (Per Algorithm)
 
 ```python
-with workflow_step(logger, "6", "score_scan_points",
+with workflow_step(logger, "8", "score_scan_points",
                    inputs={"num_algorithms": len(alg_data["anchor"])}):
 ```
 
@@ -53,12 +53,12 @@ for alg_name, alg_info in alg_data["anchor"].items():
     scores = compute_scores(clf, X)  # normalized [0, 1], higher = more NP-like
 ```
 
-Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 5 (Step 5.2.3) and handles normalization automatically for all algorithm types.
+Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 7 (Step 7.2.3) and handles normalization automatically for all algorithm types.
 
 ```python)})
 ```
 
-## Step 6.3: Optimize Threshold Per Algorithm (using anchor operator)
+## Step 8.3: Optimize Threshold Per Algorithm (using anchor operator)
 
 ### Reference Operator Selection
 
@@ -86,7 +86,7 @@ nev_scan = baseline["n_scan"]
 For **each algorithm**, for each threshold in 51 points on [0, 1]:
 
 ```python
-with workflow_step(logger, "6", f"optimize_threshold_{alg_name}",
+with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
                    inputs={"algorithm": alg_name, "num_thresholds": 51}):
 ```
 1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (11 points from `-c_{n_{scan}}` to `+c_{n_{scan}}`, including c=0)
@@ -133,14 +133,14 @@ def fit_and_solve(scan_coeffs, scan_features, scan_cs, clf_alg, threshold, op, L
     ...
 ```
 
-## Step 6.4: Apply Each Algorithm's Optimal Threshold to All Operators
+## Step 8.4: Apply Each Algorithm's Optimal Threshold to All Operators
 
 ```python
-with workflow_step(logger, "6", "apply_thresholds_all_operators",
+with workflow_step(logger, "8", "apply_thresholds_all_operators",
                    inputs={"num_algorithms": len(alg_data["anchor"]), "num_operators": len(operator_claims)}):
 ```
 
-For **each algorithm**, using **its own** optimal threshold from Step 6.3, repeat the quadratic fit for **EVERY globally claimed operator** (`o_1` through `o_N`).
+For **each algorithm**, using **its own** optimal threshold from Step 8.3, repeat the quadratic fit for **EVERY globally claimed operator** (`o_1` through `o_N`).
 
 For each operator `o_{g_idx}`:
 - Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
@@ -155,10 +155,10 @@ For each operator `o_{g_idx}`:
 ```python * len(alg_data["anchor"])})
 ```
 
-## Step 6.5: Plot
+## Step 8.5: Plot
 
 ```python
-with workflow_step(logger, "6", "plot_csfit_and_threshold_comparison",
+with workflow_step(logger, "8", "plot_csfit_and_threshold_comparison",
                    inputs={"num_algorithms": len(alg_data["anchor"]), "num_operators": len(operator_claims)}):
 ```
 
@@ -167,15 +167,15 @@ For each algorithm and each operator: scatter `cs_cut_x` points + fitted curve `
 Also plot **algorithm comparison**: for the anchor operator, show constraint width vs threshold for all algorithms on the same plot.
 
 ```python
-logger.phase_complete("6")
+logger.phase_complete("8")
 ```
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase6/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase8/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ```
-results/data/phase6/
+results/data/phase8/
   threshold_optimization.json    # per-algorithm optimal thresholds (from anchor)
   csfit_o_1_{alg1}.json, csfit_o_1_{alg2}.json, ...
   csfit_o_2_{alg1}.json, csfit_o_2_{alg2}.json, ...
@@ -200,5 +200,5 @@ results/plots/
 After all operators are fitted and all JSON files are written:
 
 1. **Check validation rules immediately**: If any fit residual exceeds 0.5, flag warning but continue.
-2. **If validation passes**: **proceed immediately to Phase 7 without stopping.**
+2. **If validation passes**: **proceed immediately to Phase 9 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

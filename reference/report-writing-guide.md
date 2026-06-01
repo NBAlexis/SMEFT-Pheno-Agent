@@ -395,21 +395,21 @@ $$
 | 2 | ML score distributions (all algorithms, SM vs NP) | `results/plots/score_dist_anchor_*alg*.pdf` |
 | 3 | Threshold optimization comparison (all algorithms) | `results/plots/threshold_comparison.pdf` |
 | 4 | Cross-section fit plots (all algorithms, per operator) | `results/plots/csfit_plot_o*_*alg*.pdf` |
-| 5 | Algorithm comparison **band plot** ($[f_{\min}, f_{\max}]$ intervals side-by-side) | Generate from Phase 7 `algorithm_selection.json` |
+| 5 | Algorithm comparison **band plot** ($[f_{\min}, f_{\max}]$ intervals side-by-side) | Generate from Phase 9 `algorithm_selection.json` |
 
 ## Required Tables Checklist
 
 | Table | Content | Source |
 |-------|---------|--------|
 | 1 | Operator definitions / Unitarity bounds | SKILL inputs / theoretical |
-| 2 | Feature list | Phase 5 feature extraction |
-| 3 | Hyperparameters per algorithm | Phase 5 training config |
-| 4 | AUC comparison | Phase 5 `algorithm_comparison.json` |
-| 5 | Optimal thresholds per algorithm | Phase 6 `threshold_optimization.json` |
-| 6 | Cut efficiency per algorithm | Phase 6 results |
-| 7 | Fit parameters per algorithm | Phase 6 fit results |
-| 8 | Final constraints (best algorithm only) | Phase 7 `constraint_table.json` |
-| 9 | Algorithm comparison (full intervals, justifies selection) | Phase 7 `algorithm_selection.json` |
+| 2 | Feature list | Phase 7 feature extraction |
+| 3 | Hyperparameters per algorithm | Phase 7 training config |
+| 4 | AUC comparison | Phase 7 `algorithm_comparison.json` |
+| 5 | Optimal thresholds per algorithm | Phase 8 `threshold_optimization.json` |
+| 6 | Cut efficiency per algorithm | Phase 8 results |
+| 7 | Fit parameters per algorithm | Phase 8 fit results |
+| 8 | Final constraints (best algorithm only) | Phase 9 `constraint_table.json` |
+| 9 | Algorithm comparison (full intervals, justifies selection) | Phase 9 `algorithm_selection.json` |
 | 10 | Best algorithm by operator | Derived from Table 9 |
 
 ## Formula Presentation Standards
@@ -454,10 +454,10 @@ Before declaring a report complete, verify:
 - [ ] All mandatory toolchain citations are present
 - [ ] Each algorithm has its score formula defined mathematically
 - [ ] Event counts match actual generated counts (debug-adjusted if applicable)
-- [ ] Final constraint table matches Phase 7 `constraint_table.json` exactly
+- [ ] Final constraint table matches Phase 9 `constraint_table.json` exactly
 - [ ] Algorithm comparison data contains full intervals $[-c_{n_{s=2}}, c_{n_{s=2}}]$
 - [ ] Algorithm comparison plot is a **band plot** showing $[-c_{n_{s=2}}, c_{n_{s=2}}]$, not a bar chart
-- [ ] All algorithms trained in Phase 5 appear in the comparison section
+- [ ] All algorithms trained in Phase 7 appear in the comparison section
 - [ ] Best algorithm is selected by constraint width, not AUC
 - [ ] All operator names are consistent across all sections
 - [ ] All formulas use the same symbol conventions
@@ -477,13 +477,13 @@ Before declaring a report complete, verify:
 | Missing MadGraph/FeynRules/UFO/Delphes/MLAnalysis citation | Incomplete methodology | Add mandatory citations |
 | No score function definition | Algorithm not reproducible | Add mathematical definition |
 | Algorithm comparison is a bar chart of widths | Wrong visualization type | Use band plot showing $[-c_{n_{s=2}}, c_{n_{s=2}}]$ |
-| Algorithm selection data only has widths | Cannot draw band plot | Re-run Phase 7 with full intervals |
+| Algorithm selection data only has widths | Cannot draw band plot | Re-run Phase 9 with full intervals |
 | Missing dataset composition table | Incomplete methodology | Add SM/NP/Scan dataset details |
 | Missing scan coefficient list | Results not reproducible | Add table of 11 scan points |
 | S_stat symbols undefined | Formula unreadable | Define every symbol in text |
 | Empty sections | Report is incomplete | Do not deliver |
 | Missing figures | Results not visualized | Generate all required plots |
-| Only one algorithm analyzed | Missing core comparison | Re-run Phase 6-7 for all algorithms |
+| Only one algorithm analyzed | Missing core comparison | Re-run Phase 8-9 for all algorithms |
 | Best algorithm selected by AUC | Wrong criterion | Re-select by constraint width |
-| Constraints don't match Phase 7 | Data inconsistency | Re-run or fix source |
+| Constraints don't match Phase 9 | Data inconsistency | Re-run or fix source |
 | Formulas without definitions | Unreadable for non-experts | Add symbol definitions |

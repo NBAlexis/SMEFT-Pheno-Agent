@@ -1,4 +1,4 @@
-# Phase 7: Compute Expected Coefficient Constraints
+# Phase 9: Compute Expected Coefficient Constraints
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
@@ -15,10 +15,10 @@ config = load_run_config("{workdir}/results/run_config.json")
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
-logger.phase_start("7")
+logger.phase_start("9")
 ```
 
-Read `operator_claims.json` from Phase 1 to know the total number of global operators.
+Read `operator_claims.json` from Phase 3 to know the total number of global operators.
 
 ## Formula
 
@@ -47,13 +47,13 @@ Use the Asimov formula unless there is a specific reason to use the standard app
 ## Best Algorithm Selection
 
 ```python
-with workflow_step(logger, "7", "select_best_algorithms",
+with workflow_step(logger, "9", "select_best_algorithms",
                    inputs={"num_operators": len(operator_claims), "num_algorithms": len(alg_data["anchor"])}):
 ```
 
 Before computing final constraints, select the best algorithm per operator:
 
-1. Load all algorithm fit results from Phase 6
+1. Load all algorithm fit results from Phase 8
 2. For each algorithm, compute the full constraint interval $[f_{\min}, f_{\max}]$ at $S=2$
 3. Select algorithm with **narrowest interval width** ($f_{\max} - f_{\min}$) as best
 4. Record the full interval for every algorithm (needed for the comparison plot)
@@ -66,7 +66,7 @@ Before computing final constraints, select the best algorithm per operator:
 ## Final Constraint Computation
 
 ```python
-with workflow_step(logger, "7", "compute_final_constraints",
+with workflow_step(logger, "9", "compute_final_constraints",
                    inputs={"num_operators": len(operator_claims), "significance_levels": [2, 3, 5]}):
 ```
 
@@ -81,12 +81,12 @@ For each operator `o_n` and each significance $s$:
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase7/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase9/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 Final constraint table (best algorithm only):
 
 ```
-results/data/phase7/
+results/data/phase9/
   constraint_table.json          # best algorithm constraints for ALL operators
   constraint_table.csv
   algorithm_selection.json       # full intervals for all algorithms (for comparison plot)
@@ -122,7 +122,7 @@ Algorithm selection record (must contain **full intervals**, not just widths):
 **Note**: Only the best algorithm stores S3 and S5 intervals. Non-best algorithms store S2 only (used for the comparison plot). The `constraint_table.json` contains the final physical result (best algorithm at all significance levels for all operators).
 
 ```python
-logger.phase_complete("7")
+logger.phase_complete("9")
 ```
 
 ## Validation
@@ -134,8 +134,8 @@ If monotonicity is violated, flag as constraint error.
 
 ## Phase Transition
 
-After `logger.phase_complete("7")` is called and `constraint_table.json` is written:
+After `logger.phase_complete("9")` is called and `constraint_table.json` is written:
 
 1. **Check validation rules immediately**: If monotonicity is violated, flag warning but continue.
-2. **If validation passes**: **proceed immediately to Phase 8 without stopping.**
+2. **If validation passes**: **proceed immediately to Phase 10 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

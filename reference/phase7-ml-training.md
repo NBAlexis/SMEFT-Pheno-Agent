@@ -1,4 +1,4 @@
-# Phase 5: Train ML Event Selection Strategy
+# Phase 7: Train ML Event Selection Strategy
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
@@ -15,15 +15,15 @@ config = load_run_config("{workdir}/results/run_config.json")
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
-logger.phase_start("5")
+logger.phase_start("7")
 ```
 
-Read `anchor.json` from Phase 1. The anchor operator defines the SM vs NP discrimination task.
+Read `anchor.json` from Phase 3. The anchor operator defines the SM vs NP discrimination task.
 
-## Step 5.1: Convert LHCO to CSV
+## Step 7.1: Convert LHCO to CSV
 
 ```python
-with workflow_step(logger, "5", "convert_lhco_to_csv",
+with workflow_step(logger, "7", "convert_lhco_to_csv",
                    inputs={"sm": "sm.lhco", "np": "np_anchor.lhco"}):
 ```
 
@@ -87,7 +87,7 @@ np_anchor.lhco → np_anchor.csv
 
 **Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for the full pipeline.
 
-## Step 5.2: Algorithm Pool and Selection Strategy
+## Step 7.2: Algorithm Pool and Selection Strategy
 
 ### 5.2.1 Define the Algorithm Pool
 
@@ -112,7 +112,7 @@ Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scik
 If `config.algorithms` is set in `run_config.json`, use those instead of the pool.
 
 **On-demand dependency installation:**
-If a selected algorithm requires a package not yet installed (e.g., `xgboost`, `lightgbm`, or `torch`), install it into the **same venv** created in Phase 0:
+If a selected algorithm requires a package not yet installed (e.g., `xgboost`, `lightgbm`, or `torch`), install it into the **same venv** created in Phase 2:
 
 ```python
 import os, subprocess
@@ -139,7 +139,7 @@ selected = rng.sample(algorithm_pool, 3)
 
 ### 5.2.3 Write `compute_scores` Function
 
-Before training, write a unified score-computation function. This function is used in Phase 5 (ROC/AUC) and Phase 6 (threshold optimization). Save it to `{workdir}/results/algorithms/compute_scores.py`:
+Before training, write a unified score-computation function. This function is used in Phase 7 (ROC/AUC) and Phase 8 (threshold optimization). Save it to `{workdir}/results/algorithms/compute_scores.py`:
 
 ```python
 import numpy as np
@@ -165,7 +165,7 @@ def compute_scores(clf, X):
 ### 5.2.4 Train
 
 ```python
-with workflow_step(logger, "5", "train_algorithms",
+with workflow_step(logger, "7", "train_algorithms",
                    inputs={"num_algorithms": len(selected), "algorithms": [a.__name__ for a in selected]}):
 ```
 
@@ -176,18 +176,18 @@ Train on the **anchor operator's** SM and NP samples:
 3. Stack: `X = np.vstack([sm[:n], np_data[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
-6. **Compute and record AUC for each** using the `compute_scores` function from Step 5.2.3 — **this is for report plotting only, NOT for algorithm selection**
+6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 — **this is for report plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
 ```python}})
 ```
 
-> **Algorithm selection is deferred to Phase 6.** Phase 5 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. The best algorithm is determined by the narrowest `S_stat = 2` constraint width in Phase 6.
+> **Algorithm selection is deferred to Phase 8.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. The best algorithm is determined by the narrowest `S_stat = 2` constraint width in Phase 8.
 
-## Step 5.3: Score Distribution Histograms
+## Step 7.3: Score Distribution Histograms
 
 ```python
-with workflow_step(logger, "5", "plot_score_distributions",
+with workflow_step(logger, "7", "plot_score_distributions",
                    inputs={"num_algorithms": len(fitted_clfs)}):
 ```
 
@@ -199,10 +199,10 @@ For **every trained algorithm**, plot training-set score distributions:
 - Filename: `score_dist_anchor_{alg}.pdf`
 
 
-## Step 5.4: Save All Algorithms
+## Step 7.4: Save All Algorithms
 
 ```python
-with workflow_step(logger, "5", "save_algorithms",
+with workflow_step(logger, "7", "save_algorithms",
                    inputs={"num_algorithms": len(fitted_clfs)}):
 ```
 
@@ -229,15 +229,15 @@ Record all AUCs in `algorithm_comparison.json`:
 ```
 
 ```python
-logger.phase_complete("5")
+logger.phase_complete("7")
 ```
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase7/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ```
-results/data/phase5/
+results/data/phase7/
   sm.csv, np_anchor.csv
   algorithm_comparison.json
 results/plots/
@@ -253,8 +253,8 @@ results/algorithms/
 
 ## Phase Transition
 
-After `logger.phase_complete("5")` is called and all algorithms are saved:
+After `logger.phase_complete("7")` is called and all algorithms are saved:
 
 1. **Check validation rules immediately**: If no algorithm achieves AUC > 0.5, abort with red flag.
-2. **If validation passes**: **proceed immediately to Phase 6 without stopping.**
+2. **If validation passes**: **proceed immediately to Phase 8 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

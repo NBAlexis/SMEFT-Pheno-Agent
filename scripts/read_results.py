@@ -30,75 +30,75 @@ def _load_json(path: str) -> Any:
 
 
 # ---------------------------------------------------------------------------
-# Phase 1
+# Phase 3
 # ---------------------------------------------------------------------------
 
 def read_operator_claims(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read operator_claims.json: {global_idx: {model, anoinput_idx, name}}."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase1/operator_claims.json"))
+    return _load_json(_result_path(workdir, run_dir, "data/phase3/operator_claims.json"))
 
 
 def read_cross_sections(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read cross_sections.json: {fi: {sigma, c_default, model, global_idx}}."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase1/cross_sections.json"))
+    return _load_json(_result_path(workdir, run_dir, "data/phase3/cross_sections.json"))
 
 
 def read_anchor(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read anchor.json: {global_idx, model, anoinput_idx, name}."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase1/anchor.json"))
+    return _load_json(_result_path(workdir, run_dir, "data/phase3/anchor.json"))
 
 
 # ---------------------------------------------------------------------------
-# Phase 2
+# Phase 4
 # ---------------------------------------------------------------------------
 
 def read_coefficient_ranges(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read coefficient_ranges.json: {"global": [-c_scan, c_scan]}."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase2/coefficient_ranges.json"))
+    return _load_json(_result_path(workdir, run_dir, "data/phase4/coefficient_ranges.json"))
 
 
 def read_sm_baseline(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read sm_baseline.json: {cs_sm, n_scan, L_prime, anchor_model, c_scan}."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase2/sm_baseline.json"))
-
-
-# ---------------------------------------------------------------------------
-# Phase 5
-# ---------------------------------------------------------------------------
-
-def read_algorithm_comparison(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Read algorithm_comparison.json: {anchor: {alg: {auc, algorithm_path}}, ...}."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase5/algorithm_comparison.json"))
-
-
-# ---------------------------------------------------------------------------
-# Phase 6
-# ---------------------------------------------------------------------------
-
-def read_threshold_optimization(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Read threshold_optimization.json: per-algorithm optimal thresholds."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase6/threshold_optimization.json"))
-
-
-def read_csfit(workdir: str, operator: str, algorithm: str,
-               run_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Read csfit_{operator}_{algorithm}.json: quadratic fit coefficients."""
-    fname = f"data/phase6/csfit_{operator}_{algorithm}.json"
-    return _load_json(_result_path(workdir, run_dir, fname))
+    return _load_json(_result_path(workdir, run_dir, "data/phase4/sm_baseline.json"))
 
 
 # ---------------------------------------------------------------------------
 # Phase 7
 # ---------------------------------------------------------------------------
 
+def read_algorithm_comparison(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Read algorithm_comparison.json: {anchor: {alg: {auc, algorithm_path}}, ...}."""
+    return _load_json(_result_path(workdir, run_dir, "data/phase7/algorithm_comparison.json"))
+
+
+# ---------------------------------------------------------------------------
+# Phase 8
+# ---------------------------------------------------------------------------
+
+def read_threshold_optimization(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Read threshold_optimization.json: per-algorithm optimal thresholds."""
+    return _load_json(_result_path(workdir, run_dir, "data/phase8/threshold_optimization.json"))
+
+
+def read_csfit(workdir: str, operator: str, algorithm: str,
+               run_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Read csfit_{operator}_{algorithm}.json: quadratic fit coefficients."""
+    fname = f"data/phase8/csfit_{operator}_{algorithm}.json"
+    return _load_json(_result_path(workdir, run_dir, fname))
+
+
+# ---------------------------------------------------------------------------
+# Phase 9
+# ---------------------------------------------------------------------------
+
 def read_constraint_table(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read constraint_table.json: best-algorithm constraints for all operators."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase7/constraint_table.json"))
+    return _load_json(_result_path(workdir, run_dir, "data/phase9/constraint_table.json"))
 
 
 def read_algorithm_selection(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     """Read algorithm_selection.json: per-operator interval comparison across algorithms."""
-    return _load_json(_result_path(workdir, run_dir, "data/phase7/algorithm_selection.json"))
+    return _load_json(_result_path(workdir, run_dir, "data/phase9/algorithm_selection.json"))
 
 
 # ---------------------------------------------------------------------------

@@ -93,7 +93,8 @@ After all installs complete, verify:
 ls {mg5path}/bin/mg5_aMC
 ls {mg5path}/HEPTools/pythia8/lib/libpythia8.so
 ls {mg5path}/HEPTools/lhapdf6_py3/bin/lhapdf-config
-ls {mg5path}/Delphes/cards/delphes_card_default.dat
+ls {mg5path}/Delphes/cards
+find {mg5path}/Delphes/cards -maxdepth 1 \( -name "*.tcl" -o -name "*.dat" \)
 ```
 
 ### Step 5: Environment Variables
@@ -163,7 +164,7 @@ python scripts/install_mg5.py ~/MG5_aMC \
 
 ## Integration with SKILL.md
 
-### Phase -1: Input Collection
+### Phase 1: Input Collection
 
 If the user does **not** provide `madgraph_path` (or presses Enter without a path), and no default exists from context, the skill should:
 
@@ -176,9 +177,9 @@ If the user does **not** provide `madgraph_path` (or presses Enter without a pat
    - Run `scripts/install_mg5.py {dir} --url {url} --name {name}`
    - Use the returned path as `madgraph_path`
 
-### Phase 0: Environment Validation
+### Phase 2: Environment Validation
 
-If `config.auto_installed_mg5` is true in `run_config.json`, Phase 0 skips the existence check for `bin/mg5_aMC` (it was just verified by the installer). It still checks:
+If `config.auto_installed_mg5` is true in `run_config.json`, Phase 2 skips the existence check for `bin/mg5_aMC` (it was just verified by the installer). It still checks:
 - `HEPTools/pythia8/` exists
 - `HEPTools/lhapdf6_py3/` exists
 - `Delphes/cards/` exists

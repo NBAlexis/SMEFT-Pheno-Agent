@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Load and validate the run configuration produced by Phase -1.
+Load and validate the run configuration produced by Phase 1.
 
 Usage:
     from scripts.load_run_config import load_run_config
@@ -32,13 +32,31 @@ REQUIRED_FIELDS = [
 
 OPTIONAL_FIELDS = [
     "ebeam_proton",
-    "custom_card",
     "polarization",
     "debug",
     "algorithms",
+    "analysis_notes",
     "cutexperiment_path",
     "auto_installed_mg5",
+    "event_counts_locked",
+    "locked_event_counts",
 ]
+
+NORMAL_EVENT_COUNTS = {
+    "nev_phase3": 10000,
+    "nev_phase4": 10000,
+    "nev_sm": 500000,
+    "nev_np": 100000,
+    "nev_scan": 1000000,
+}
+
+DEBUG_EVENT_COUNTS = {
+    "nev_phase3": 1000,
+    "nev_phase4": 1000,
+    "nev_sm": 50000,
+    "nev_np": 10000,
+    "nev_scan": 100000,
+}
 
 
 def _dict_to_namespace(d):
@@ -66,7 +84,7 @@ def load_run_config(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"run_config.json not found: {path}")
 
-    with open(path) as f:
+    with open(path, encoding="utf-8-sig") as f:
         data = json.load(f)
 
     # Validate version
@@ -103,6 +121,24 @@ def load_run_config(path):
             f"({len(data['energy'])}) lengths must match"
         )
 
+    if "debug" not in data:
+        data["debug"] = False
+    if "event_counts_locked" not in data:
+        data["event_counts_locked"] = True
+    if "locked_event_counts" not in data:
+        data["locked_event_counts"] = (
+            DEBUG_EVENT_COUNTS.copy() if data.get("debug") else NORMAL_EVENT_COUNTS.copy()
+        )
+
+    expected_counts = DEBUG_EVENT_COUNTS if data.get("debug") else NORMAL_EVENT_COUNTS
+    if data["locked_event_counts"] != expected_counts:
+        raise ValueError(
+            "locked_event_counts do not match the selected debug mode. "
+            f"Expected {expected_counts}, got {data['locked_event_counts']}"
+        )
+    if data["event_counts_locked"] is not True:
+        raise ValueError("event_counts_locked must be true")
+
     # Resolve absolute paths for key directories
     data["madgraph_path"] = os.path.abspath(os.path.expanduser(data["madgraph_path"]))
     data["workdir"] = os.path.abspath(os.path.expanduser(data["workdir"]))
@@ -110,9 +146,6 @@ def load_run_config(path):
         data["cutexperiment_path"] = os.path.abspath(
             os.path.expanduser(data["cutexperiment_path"])
         )
-    if data.get("custom_card"):
-        data["custom_card"] = os.path.abspath(os.path.expanduser(data["custom_card"]))
-
     return _dict_to_namespace(data)
 
 

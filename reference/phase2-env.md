@@ -1,9 +1,9 @@
-# Phase 0: Environment Validation
+# Phase 2: Environment Validation
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Verify all dependencies exist before starting the workflow. Phase 0 reads the workflow configuration from **`run_config.json`** (produced by Phase -1). No parameter should be sourced from conversation history or user interaction.
+Verify all dependencies exist before starting the workflow. Phase 2 reads the workflow configuration from **`run_config.json`** (produced by Phase 1). No parameter should be sourced from conversation history or user interaction.
 
 ## Prerequisite
 
@@ -29,30 +29,30 @@ resume_phase = logger.get_resume_phase()
 
 | `resume_phase` | Action |
 |----------------|--------|
-| `None` | No prior log — start normally from Phase 0 |
-| `"0"` | Phase -1 completed, Phase 0 not started — start Phase 0 |
-| `"1"` to `"8"` | Last completed phase was N‑1 — skip to phase `resume_phase` |
-| `"9"` or `"10"` | Workflow already finished — run Phase 9 audit only |
+| `None` | No prior log — start normally from Phase 2 |
+| `"2"` | Phase 1 completed, Phase 2 not started — start Phase 2 |
+| `"3"` to `"10"` | Last completed phase was N-1; skip to phase `resume_phase` |
+| `"11"` or later | Workflow already finished; run Phase 11 audit only |
 
 When resuming, **still run Step 1–9** (environment validation must pass every time), but skip phase execution bodies for already-completed phases. Log a `started` + `completed` pair for each skipped phase so the log remains continuous.
 
 ```python
-logger.phase_start("0")
+logger.phase_start("2")
 ```
 
 ## Steps
 
 1. **Validate `run_config.json`**:
    ```python
-   with workflow_step(logger, "0", "validate_run_config"):
+   with workflow_step(logger, "2", "validate_run_config"):
        config = load_run_config(os.path.join(config.workdir, "results", "run_config.json"))
        resume_phase = logger.get_resume_phase()
    ```
-   Verify the file exists and `load_run_config` returns without error. If missing or invalid, STOP and report: "run_config.json not found or invalid. Phase -1 must complete successfully before Phase 0."
+   Verify the file exists and `load_run_config` returns without error. If missing or invalid, STOP and report: "run_config.json not found or invalid. Phase 1 must complete successfully before Phase 2."
    - Also check `workflow.log` for resume info (see Resume section above).
 2. **MadGraph5**:
    ```python
-   with workflow_step(logger, "0", "validate_madgraph5",
+   with workflow_step(logger, "2", "validate_madgraph5",
                       inputs={"mg5path": config.madgraph_path,
                               "auto_installed": config.auto_installed_mg5}):
    ```
@@ -65,17 +65,19 @@ logger.phase_start("0")
    ```
 3. **CutExperiment**:
    ```python
-   with workflow_step(logger, "0", "validate_cutexperiment",
+   with workflow_step(logger, "2", "validate_cutexperiment",
                       inputs={"cutexperiment_path": config.cutexperiment_path}):
    ```
-   - If `config.cutexperiment_path` is set: verify it exists
-   - If not set: clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{config.workdir}/CutExperiment`, update `config.cutexperiment_path` in memory, and write the updated path back to `run_config.json`
+   - Phase 1 should normally set `config.cutexperiment_path`.
+   - If the path is set: verify it exists and contains usable CutExperiment files.
+   - If the path is missing or the user selected `clone`: run `python scripts/install_cutexperiment.py {config.workdir}/CutExperiment`, parse the printed `CutExperiment path: ...`, update `config.cutexperiment_path`, and write the updated path back to `run_config.json`.
+   - If clone/validation fails, report the script exit code and stderr. This is unrecoverable unless the user provides a valid existing path by rerunning Phase 1.
    ```python
        pass  # validation / clone logic inside the block above
    ```
 4. **Model(s)**:
    ```python
-   with workflow_step(logger, "0", "validate_models",
+   with workflow_step(logger, "2", "validate_models",
                       inputs={"models": config.models}):
    ```
    `config.models` is a list of model names.
@@ -88,7 +90,7 @@ logger.phase_start("0")
    ```
 5. **Physics inputs**:
    ```python
-   with workflow_step(logger, "0", "validate_physics_inputs",
+   with workflow_step(logger, "2", "validate_physics_inputs",
                       inputs={"energy": config.energy, "luminosity": config.luminosity}):
        for e in config.energy:
            if e <= 0:
@@ -96,6 +98,16 @@ logger.phase_start("0")
        for l in config.luminosity:
            if l <= 0:
                raise ValueError(f"luminosity must be > 0, got {l}")
+       if config.event_counts_locked is not True:
+           raise ValueError("event_counts_locked must be true")
+       expected = {
+           False: {"nev_phase3": 10000, "nev_phase4": 10000,
+                   "nev_sm": 500000, "nev_np": 100000, "nev_scan": 1000000},
+           True: {"nev_phase3": 1000, "nev_phase4": 1000,
+                  "nev_sm": 50000, "nev_np": 10000, "nev_scan": 100000},
+       }[bool(config.debug)]
+       if config.locked_event_counts.__dict__ != expected:
+           raise ValueError("locked_event_counts do not match debug mode")
    ```
 6. **Python virtual environment**:
    ```python
@@ -110,7 +122,7 @@ venv_dir = os.path.join(config.workdir, "venv")
 python_bin = os.path.join(venv_dir, "bin", "python")
 pip_bin = os.path.join(venv_dir, "bin", "pip")
 
-with workflow_step(logger, "0", "setup_venv", inputs={"venv_dir": venv_dir}):
+with workflow_step(logger, "2", "setup_venv", inputs={"venv_dir": venv_dir}):
     # Create venv if not exists
     if not os.path.exists(venv_dir):
         subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
@@ -124,25 +136,28 @@ with workflow_step(logger, "0", "setup_venv", inputs={"venv_dir": venv_dir}):
 
 Record `python_bin` in memory (e.g., write to a small metadata file or set an environment variable) so Phases 1–9 know which Python interpreter to use for all subsequent Python operations.
 
-> **Optional dependencies** (`xgboost`, `lightgbm`, `torch`) are **NOT** installed in Phase 0. They are installed on-demand in Phase 5 into the same venv when the corresponding algorithm is selected. See [`phase5-ml-training.md`](phase5-ml-training.md) Section 5.2.1.
+> **Optional dependencies** (`xgboost`, `lightgbm`, `torch`) are **NOT** installed in Phase 2. They are installed on-demand in Phase 7 into the same venv when the corresponding algorithm is selected. See [`phase7-ml-training.md`](phase7-ml-training.md) Section 5.2.1.
 
 7. **Delphes card**:
    ```python
-   with workflow_step(logger, "0", "validate_delphes_card",
+   with workflow_step(logger, "2", "validate_delphes_card",
                       inputs={"delphes_card": config.delphes_card}):
-       card_path = os.path.join(config.madgraph_path, "Delphes", "cards", config.delphes_card)
-       if not os.path.exists(card_path):
-           if config.custom_card and os.path.exists(config.custom_card):
-               pass  # custom card is valid
-           else:
-               raise ValueError(f"Delphes card not found: {config.delphes_card}")
+      if os.path.isabs(config.delphes_card):
+          card_path = config.delphes_card
+      else:
+          card_path = os.path.join(config.madgraph_path, "Delphes", "cards", config.delphes_card)
+      if not os.path.exists(card_path):
+          raise ValueError(f"Delphes card not found: {config.delphes_card}")
+      if not card_path.endswith((".tcl", ".dat")):
+          raise ValueError(f"Delphes card must be .tcl or .dat: {card_path}")
    ```
 
 8. **Working Directory guard**:
    ```python
-   with workflow_step(logger, "0", "guard_workdir",
+   with workflow_step(logger, "2", "guard_workdir",
                       inputs={"workdir": config.workdir}):
-       skill_dir = os.path.dirname(os.path.abspath("SKILL.md"))
+       # Resolve this from the installed skill directory, not from workdir.
+       skill_dir = os.path.abspath("<installed automated-smeft-ml-pheno skill directory>")
        if config.workdir.startswith(skill_dir):
            parent = os.path.dirname(skill_dir)
            config.workdir = parent
@@ -158,7 +173,7 @@ Record `python_bin` in memory (e.g., write to a small metadata file or set an en
 import os
 
 run_dirs = []
-with workflow_step(logger, "0", "setup_run_directories",
+with workflow_step(logger, "2", "setup_run_directories",
                    inputs={"num_runs": len(config.run_configurations)}):
     for run in config.run_configurations:
         run_dir = os.path.join(config.workdir, "results", run.run_dir)
@@ -166,7 +181,7 @@ with workflow_step(logger, "0", "setup_run_directories",
         for sub in ["data", "plots", "algorithms", "mg5_processes", "orders"]:
             os.makedirs(os.path.join(run_dir, sub), exist_ok=True)
 
-logger.phase_complete("0")
+logger.phase_complete("2")
 ```
 
 ## Critical Rules
@@ -195,8 +210,9 @@ with workflow_step(logger, phase, "mg5_launch", inputs={"order": order_path}):
 
 ## Phase Transition
 
-After `logger.phase_complete("0")` is called and run directories are set up:
+After `logger.phase_complete("2")` is called and run directories are set up:
 
 1. **Check validation rules immediately**: If any critical check failed, abort with red flag.
-2. **If validation passes**: **proceed immediately to Phase 1 without stopping.**
+2. **If validation passes**: **proceed immediately to Phase 3 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.
+

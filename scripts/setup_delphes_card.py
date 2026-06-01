@@ -11,7 +11,7 @@ Usage:
 
 Example:
     python setup_delphes_card.py /opt/MG5_aMC_v3_5_6 delphes_card_CEPC.tcl \
-        ep_em_to_a_jj_p1_20260525_01_NP
+        ep_em_to_a_jj_p3_20260525_01_NP
 
 Exit codes:
     0  success

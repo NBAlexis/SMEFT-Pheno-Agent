@@ -9,24 +9,25 @@ Usage in a phase:
     logger = WorkflowLogger(config.workdir, run_dir)
 
     # Phase boundary
-    logger.phase_start("4")
+    logger.phase_start("6")
     # ... do work ...
-    logger.phase_complete("4")
+    logger.phase_complete("6")
 
     # Step-level (every significant operation)
-    logger.step("4", "mg5_launch", "started", inputs={"operator": "fS0", "nevents": 10000})
+    logger.step("6", "mg5_launch", "started", inputs={"operator": "fS0", "nevents": 10000})
     # ... run MG5 ...
-    logger.step("4", "mg5_launch", "completed",
+    logger.step("6", "mg5_launch", "completed",
                 outputs={"returncode": 0, "runs_created": ["run_01", "run_02"]},
                 duration_ms=45000)
 
-Resume logic (called in Phase 0):
+Resume logic (called in Phase 2):
     last_completed = logger.last_completed_phase()
 """
 
 import functools
 import json
 import os
+import sys
 import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -177,7 +178,7 @@ class _WorkflowStepContext:
     """Context manager that auto-logs step start / complete / fail.
 
     Usage:
-        with _WorkflowStepContext(logger, "1", "test_coeff_fS0",
+        with _WorkflowStepContext(logger, "3", "test_coeff_fS0",
                                   inputs={"c": 1e-12}) as step:
             result = run_mg5(...)
             step.set_outputs({"sigma": sigma})
@@ -236,14 +237,14 @@ def workflow_step(
 
     Example — wrapping a subprocess call::
 
-        with workflow_step(logger, "0", "setup_venv",
+        with workflow_step(logger, "2", "setup_venv",
                            inputs={"venv_dir": venv_dir}):
             subprocess.run([sys.executable, "-m", "venv", venv_dir],
                            check=True)
 
     Example — capturing outputs::
 
-        with workflow_step(logger, "1", "test_coeff_fS0",
+        with workflow_step(logger, "3", "test_coeff_fS0",
                            inputs={"c": 1e-12}) as step:
             run_mg5(...)
             sigma = extract_cross_section(...)
@@ -251,7 +252,7 @@ def workflow_step(
 
     Example — exception auto-logged as 'failed'::
 
-        with workflow_step(logger, "0", "validate_madgraph5",
+        with workflow_step(logger, "2", "validate_madgraph5",
                            inputs={"mg5path": mg5path}):
             if not os.path.exists(mg5path):
                 raise RuntimeError("MG5 not found")
@@ -277,7 +278,7 @@ def logged_step(
 
     Example::
 
-        @logged_step("0", "setup_venv")
+        @logged_step("2", "setup_venv")
         def setup_venv(venv_dir: str, *, logger: WorkflowLogger):
             subprocess.run([sys.executable, "-m", "venv", venv_dir],
                            check=True)
@@ -286,7 +287,7 @@ def logged_step(
 
     Example with dynamic inputs::
 
-        @logged_step("0", "validate_model",
+        @logged_step("2", "validate_model",
                      inputs_fn=lambda model, **kw: {"model": model})
         def validate_model(model: str, *, logger: WorkflowLogger):
             exists = os.path.exists(f"models/{model}")

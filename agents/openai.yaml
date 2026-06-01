@@ -1,0 +1,7 @@
+interface:
+  display_name: "Automated SMEFT ML Phenomenology"
+  short_description: "Run SMEFT collider studies with MG5, Delphes, and ML constraints."
+  default_prompt: "Use $automated-smeft-ml-pheno to collect inputs and run a SMEFT collider phenomenology study with ML event selection."
+
+policy:
+  allow_implicit_invocation: true

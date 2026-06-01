@@ -20,7 +20,7 @@ dependency/
 
 ## Usage Flow
 
-During **Phase -1** (Input Collection), after the user provides the model name:
+During **Phase 1** (Input Collection), after the user provides the model name:
 
 1. Check if `{madgraph_path}/models/{model}` exists
 2. If **yes**: proceed
@@ -60,6 +60,6 @@ To add a new UFO model to the skill:
 2. Ensure the directory name matches the model name expected by MG5 (`import model {model_name}`)
 3. No code changes are required — the skill scans `dependency/` at runtime
 
-## Phase 0 Validation
+## Phase 2 Validation
 
-Phase 0 verifies that every model in `config.models` exists under `{config.madgraph_path}/models/`. If a model is missing, Phase 0 attempts to copy it from the skill's `dependency/` directory (see Phase -1 Step 4). If copying fails or the model is not in `dependency/`, report: "Model `{model}` not found in MG5 and not available in skill dependencies. Re-run Phase -1 or install manually."
+Phase 2 verifies that every model in `config.models` exists under `{config.madgraph_path}/models/`. If a model is missing, Phase 2 attempts to copy it from the skill's `dependency/` directory (see Phase 1 Step 4). If copying fails or the model is not in `dependency/`, report: "Model `{model}` not found in MG5 and not available in skill dependencies. Re-run Phase 1 or install manually."

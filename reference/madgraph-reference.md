@@ -75,8 +75,8 @@ Where `folder_base` is the normalized `process_name`.
 
 Example:
 ```
-order_p1_20260525_01.txt
-ep_em_to_a_a_p1_20260525_01
+order_p3_20260525_01.txt
+ep_em_to_a_a_p3_20260525_01
 ```
 
 **Collision avoidance:** Before creating the file or folder, check if a name already exists in `mg5path/`. If so, increment the suffix until unique.
@@ -85,7 +85,7 @@ ep_em_to_a_a_p1_20260525_01
 
 The order file is placed **directly under `mg5path/`**:
 ```
-{mg5path}/order_p1_20260525_01.txt
+{mg5path}/order_p3_20260525_01.txt
 ```
 
 The output folder is also placed under `mg5path/`:
@@ -99,9 +99,9 @@ Depending on the Phase task, there are **three generation modes**. The `generate
 
 | Mode | Order file `generate` line | Folder suffix | Used by |
 |------|---------------------------|---------------|---------|
-| Default | `generate {process_name}` | (none) | Phase 4 scan |
-| Pure SM (NP off) | `generate {process_name} NP=0` | `_SM` | Phase 2 baseline, Phase 3 SM |
-| New Physics on | `generate {process_name} NP>0` | `_NP` | Phase 1 validation, Phase 3 NP |
+| Default | `generate {process_name}` | (none) | Phase 6 scan |
+| Pure SM (NP off) | `generate {process_name} NP=0` | `_SM` | Phase 4 baseline, Phase 5 SM |
+| New Physics on | `generate {process_name} NP>0` | `_NP` | Phase 3 validation, Phase 5 NP |
 
 **Folder naming rule:**
 - Default: `{folder_base}_{phase}_{timestamp}_{suffix}`
@@ -109,16 +109,16 @@ Depending on the Phase task, there are **three generation modes**. The `generate
 - NP mode: `{folder_base}_{phase}_{timestamp}_{suffix}_NP`
 
 **Phase directory examples (single-model mode):**
-- Phase 1: `ep_em_to_a_a_p1_20260525_01_NP`
-- Phase 2: `ep_em_to_a_a_p2_20260525_01_SM`
-- Phase 3 SM: `ep_em_to_a_a_p3_20260525_01_SM`
-- Phase 3 NP: `ep_em_to_a_a_p3_20260525_01_NP`
-- Phase 4: `ep_em_to_a_a_p4_20260525_01`
+- Phase 3: `ep_em_to_a_a_p3_20260525_01_NP`
+- Phase 4: `ep_em_to_a_a_p4_20260525_01_SM`
+- Phase 5 SM: `ep_em_to_a_a_p5_20260525_01_SM`
+- Phase 5 NP: `ep_em_to_a_a_p5_20260525_01_NP`
+- Phase 6: `ep_em_to_a_a_p6_20260525_01`
 
 **Multi-model mode:** When multiple models are used, insert the model name to avoid collisions. The timestamp suffix is omitted because model names provide uniqueness:
-- Phase 1: `ep_em_to_a_a_AQGCm_UFO_p1_NP`
-- Phase 2 SM: `ep_em_to_a_a_AQGCm_UFO_p2_SM`
-- Phase 4: `ep_em_to_a_a_AQGCm_UFO_p4`
+- Phase 3: `ep_em_to_a_a_AQGCm_UFO_p3_NP`
+- Phase 4 SM: `ep_em_to_a_a_AQGCm_UFO_p4_SM`
+- Phase 6: `ep_em_to_a_a_AQGCm_UFO_p6`
 
 ### Minimum Order File for Process Creation
 
@@ -132,7 +132,7 @@ Example (SM mode):
 ```
 import model gQGC_UFO
 generate e+ e- > a a NP=0
-output ep_em_to_a_a_p1_20260525_01_SM
+output ep_em_to_a_a_p4_20260525_01_SM
 ```
 
 ## Running MadGraph
@@ -173,7 +173,7 @@ After the process directory is created (`output` step completed), the following 
 
 ### Step 1: Prepare Delphes Card
 
-The Delphes detector card is read from **`run_config.json`** (field `delphes_card`), which was determined during Phase -1 — either user-specified or auto-recommended. See [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) for the selection logic.
+The Delphes detector card is read from **`run_config.json`** (field `delphes_card`), which was determined during Phase 1 — either user-specified or auto-recommended. See [`reference/phase1-input-collection.md`](phase1-input-collection.md) for the selection logic.
 
 **(1.1) Use the script:**
 
@@ -193,7 +193,7 @@ from scripts.setup_delphes_card import setup_delphes_card
 card_path = setup_delphes_card(mg5path, delphes_card, folder_name)
 ```
 
-**Fallback:** If `delphes_card` is missing from `run_config.json` (legacy path), use the auto-recommendation logic from [`reference/phase-minus1-input-collection.md`](phase-minus1-input-collection.md) to select a card on-the-fly, then write it back to `run_config.json`.
+**Fallback:** If `delphes_card` is missing from `run_config.json` (legacy path), use the auto-recommendation logic from [`reference/phase1-input-collection.md`](phase1-input-collection.md) to select a card on-the-fly, then write it back to `run_config.json`.
 
 ### Step 2: Extract SMEFT Operator Coefficients
 

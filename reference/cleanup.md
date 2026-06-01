@@ -18,7 +18,7 @@ folder_base = normalize_process_name(config.process)
 
 ## When to Run
 
-Execute **after Phase 8 (report generation)** and **before Phase 9 (audit)**. At this point, all required files (banners, LHCO, CSV, plots, report) have already been copied to `results/`.
+Execute **after Phase 10 (report generation)** and **before Phase 11 (audit)**. At this point, all required files (banners, LHCO, CSV, plots, report) have already been copied to `results/`.
 
 ## Critical Rule
 
@@ -36,11 +36,11 @@ Use glob patterns to match both conventions:
 
 | Phase | Process Directory Pattern |
 |-------|---------------------------|
-| 1 | `{folder_base}_p1_*_NP` or `{folder_base}_*_p1_NP` |
-| 2 | `{folder_base}_p2_*_SM` or `{folder_base}_*_p2_SM` |
-| 3 SM | `{folder_base}_p3_*_SM` or `{folder_base}_*_p3_SM` |
-| 3 NP | `{folder_base}_p3_*_NP` or `{folder_base}_*_p3_NP` |
-| 4 | `{folder_base}_p4_*` or `{folder_base}_*_p4` |
+| 3 | `{folder_base}_p3_*_NP` or `{folder_base}_*_p3_NP` |
+| 4 | `{folder_base}_p4_*_SM` or `{folder_base}_*_p4_SM` |
+| 5 SM | `{folder_base}_p5_*_SM` or `{folder_base}_*_p5_SM` |
+| 5 NP | `{folder_base}_p5_*_NP` or `{folder_base}_*_p5_NP` |
+| 6 | `{folder_base}_p6_*` or `{folder_base}_*_p6` |
 
 > **Note**: The glob patterns use `*` to match either the timestamp suffix (single-model) or the model name (multi-model).
 
@@ -52,7 +52,7 @@ All order files written to `mg5path/` during this workflow must also be moved. O
 order_p{phase}_{timestamp}_{random_suffix}.txt
 ```
 
-Examples: `order_p1_20260525_01.txt`, `order_p2_20260525_01.txt`, etc.
+Examples: `order_p3_20260525_01.txt`, `order_p4_20260525_01.txt`, etc.
 
 ## Collection Procedure
 
@@ -78,16 +78,16 @@ Examples: `order_p1_20260525_01.txt`, `order_p2_20260525_01.txt`, etc.
 
    # Use glob to match both single-model (timestamped) and multi-model (model-named) directories
    process_dir_patterns = [
-       f"{folder_base}_p1_*_NP",      # Phase 1 NP (single-model timestamped)
-       f"{folder_base}_*_p1_NP",      # Phase 1 NP (multi-model)
-       f"{folder_base}_p2_*_SM",      # Phase 2 SM (single-model)
-       f"{folder_base}_*_p2_SM",      # Phase 2 SM (multi-model)
-       f"{folder_base}_p4_*",         # Phase 4 scan (single-model)
-       f"{folder_base}_*_p4",         # Phase 4 scan (multi-model)
-       f"{folder_base}_p3_*_SM",      # Phase 3 SM (single-model)
-       f"{folder_base}_*_p3_SM",      # Phase 3 SM (multi-model)
-       f"{folder_base}_p3_*_NP",      # Phase 3 NP (single-model)
+       f"{folder_base}_p3_*_NP",      # Phase 3 NP (single-model timestamped)
        f"{folder_base}_*_p3_NP",      # Phase 3 NP (multi-model)
+       f"{folder_base}_p4_*_SM",      # Phase 4 SM (single-model)
+       f"{folder_base}_*_p4_SM",      # Phase 4 SM (multi-model)
+       f"{folder_base}_p6_*",         # Phase 6 scan (single-model)
+       f"{folder_base}_*_p6",         # Phase 6 scan (multi-model)
+       f"{folder_base}_p5_*_SM",      # Phase 5 SM (single-model)
+       f"{folder_base}_*_p5_SM",      # Phase 5 SM (multi-model)
+       f"{folder_base}_p5_*_NP",      # Phase 5 NP (single-model)
+       f"{folder_base}_*_p5_NP",      # Phase 5 NP (multi-model)
    ]
 
    moved_dirs = []
@@ -121,8 +121,8 @@ Examples: `order_p1_20260525_01.txt`, `order_p2_20260525_01.txt`, etc.
      "source": "/home/user/MG5_aMC_v3_5_6",
      "destination_processes": "/home/user/work/results/E10_L1000/mg5_processes",
      "destination_orders": "/home/user/work/results/E10_L1000/orders",
-     "moved_directories": ["mup_mum_to_ll_vlvl_p1_20260525_01_NP", "mup_mum_to_ll_vlvl_AQGCm_UFO_p1_NP", ...],
-     "moved_order_files": ["order_p1_20260525_01.txt", "order_p2_20260525_01.txt", ...],
+     "moved_directories": ["mup_mum_to_ll_vlvl_p3_20260525_01_NP", "mup_mum_to_ll_vlvl_AQGCm_UFO_p3_NP", ...],
+     "moved_order_files": ["order_p3_20260525_01.txt", "order_p4_20260525_01.txt", ...],
      "total_moved_dirs": 5,
      "total_moved_orders": 8
    }
@@ -142,4 +142,4 @@ Before moving, verify:
 After cleanup:
 - `mg5path` should contain **no** process directories from this workflow
 - `mg5path` should contain **no** order files matching `order_p*.txt` from this workflow
-- Phase 9 audit should verify the cleanup log exists and records both directories and order files
+- Phase 11 audit should verify the cleanup log exists and records both directories and order files

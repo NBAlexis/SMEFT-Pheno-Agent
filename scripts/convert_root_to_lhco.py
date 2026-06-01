@@ -10,7 +10,7 @@ Usage:
 
 Example:
     python convert_root_to_lhco.py /opt/MG5_aMC_v3_5_6 \
-        ep_em_to_a_jj_p4_20260525_01 run_01
+        ep_em_to_a_jj_p6_20260525_01 run_01
 
 The script reads the delphes_card.dat to determine the jet branch name,
 then runs root2lhco and validates the output LHCO file.
