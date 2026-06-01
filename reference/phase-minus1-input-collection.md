@@ -35,9 +35,33 @@ Verify the following are present:
 1. Determine `skill_dir` — the absolute directory containing `SKILL.md`. Use `os.path.dirname(os.path.abspath("SKILL.md"))` or equivalent.
 2. Scan `os.path.join(skill_dir, "dependency/")` for available UFO models (subdirectories). Save the list as `dependency_models` — you **must** present it in question `[4/9]`. If the directory does not exist or is empty, set `dependency_models = []` and proceed.
 
-**ALWAYS ask exactly ONE parameter per message.** After the user answers, move to the next. Never present a list or table of parameters to fill. Never ask "please provide all of the above" or "confirm previous parameters" — even if the user says "start now", "重新测试", or "use the same as before". The user must be able to type paths, process strings, and numeric values directly, one per message. Violating this rule breaks the standardized input collection and leads to workflow failures.
+---
 
-**Every question MUST be presented in BOTH English and Chinese** (bilingual). Present the English text first, followed by the Chinese text on the next line. Do NOT skip the Chinese translation.
+### CRITICAL — Question Format Rules (Violating Any = Failure)
+
+| # | Rule | Violation Example |
+|---|------|-------------------|
+| 1 | **ONE parameter per message** | Presenting a list/table of parameters to fill; asking "please provide all of the above" |
+| 2 | **EVERY question MUST be bilingual** (English first, Chinese on the next line) | Asking in Chinese only; skipping English; asking in English only; merging both languages into one line |
+| 3 | **Progress indicator mandatory** | Omitting `[N/9]` from the question |
+
+> **双语格式 — 严禁错误：**
+> ```
+> [1/9] English question text here.
+> 中文问题在这里。
+> ```
+> **Wrong:** `[1/9] 只有中文。` ❌  
+> **Wrong:** `[1/9] English only.` ❌  
+> **Wrong:** `[1/9] English + 中文混在同一行。` ❌  
+> **Correct:**
+> ```
+> [1/9] What is the path?
+> 路径是什么？
+> ```
+
+---
+
+**Question order:**
 
 **Question order:**
 
@@ -343,7 +367,9 @@ All configuration data flows through `run_config.json`.
 
 | Prohibited Behavior | Why |
 |---------------------|-----|
-| **Asking multiple parameters in one message** | **VIOLATION of Step 2.** One parameter per message, no tables, no "provide all above". |
+| **Asking multiple parameters in one message** | **VIOLATION of Step 2 Rule #1.** One parameter per message, no tables, no "provide all above". |
+| **Asking in only one language** (English-only or Chinese-only) | **VIOLATION of Step 2 Rule #2.** Every question MUST be bilingual. This is a recurring failure mode — see Step 2 CRITICAL table for exact format. |
+| **Merging both languages into one line** | **VIOLATION of Step 2 Rule #2.** English and Chinese MUST be on separate lines. |
 | Inferring defaults from example1/example2/history | Each run is independent; historical parameters are NOT defaults |
 | Using "start now" / "直接开始" as override | User urgency does NOT bypass input collection |
 | Proceeding to Phase 0 with missing inputs | Phase -1 must be fully completed first |
