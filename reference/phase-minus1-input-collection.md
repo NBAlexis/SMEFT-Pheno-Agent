@@ -17,7 +17,7 @@ Verify the following are present:
 - `energy`
 - `luminosity`
 
-**DO NOT** check file systems, do NOT create directories, do NOT run any commands before this step completes.
+> **Step 1 restriction only**: Do NOT check file systems, do NOT create directories, do NOT run any commands while performing the input-presence check above. Step 1 is a pure conversation-state check — no filesystem inspection. Step 2 **will** require filesystem actions (e.g., scanning `dependency/` for models).
 
 **CRITICAL — Parameter Source Restriction:**
 - `process`, `model`, `energy`, `luminosity` — **MUST be explicitly provided by the user in the current conversation**. No defaults, no inference from files or history.
@@ -30,6 +30,9 @@ Verify the following are present:
 - This rule **OVERRIDES** the "present in current conversation" check above. User intent to restart takes absolute precedence.
 
 ## Step 2: If Any Input Is Missing, Ask the User
+
+**Pre-step actions (MUST complete before asking the first question):**
+1. Scan the skill's `dependency/` directory for available UFO models. Save the list — you **must** present it in question `[4/9]`.
 
 **ALWAYS ask exactly ONE parameter per message.** After the user answers, move to the next. Never present a list or table of parameters to fill. Never ask "please provide all of the above" or "confirm previous parameters" — even if the user says "start now", "重新测试", or "use the same as before". The user must be able to type paths, process strings, and numeric values directly, one per message. Violating this rule breaks the standardized input collection and leads to workflow failures.
 
