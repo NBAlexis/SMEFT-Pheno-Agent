@@ -42,38 +42,41 @@ logger.phase_start("0")
 
 ## Steps
 
-1. **Validate `run_config.json`**: 
+1. **Validate `run_config.json`**:
    ```python
-   logger.step_start("0", "validate_run_config")
+   with workflow_step(logger, "0", "validate_run_config"):
+       config = load_run_config(os.path.join(config.workdir, "results", "run_config.json"))
+       resume_phase = logger.get_resume_phase()
    ```
    Verify the file exists and `load_run_config` returns without error. If missing or invalid, STOP and report: "run_config.json not found or invalid. Phase -1 must complete successfully before Phase 0."
    - Also check `workflow.log` for resume info (see Resume section above).
-   ```python
-   logger.step_complete("0", "validate_run_config", outputs={"resume_phase": resume_phase})
-   ```
 2. **MadGraph5**:
    ```python
-   logger.step_start("0", "validate_madgraph5", inputs={"mg5path": config.madgraph_path, "auto_installed": config.auto_installed_mg5})
+   with workflow_step(logger, "0", "validate_madgraph5",
+                      inputs={"mg5path": config.madgraph_path,
+                              "auto_installed": config.auto_installed_mg5}):
    ```
    - If `config.auto_installed_mg5` is true (see [`madgraph-installation.md`](madgraph-installation.md)):
      - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist under `config.madgraph_path`. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
      - The installer script prints an environment report at the end showing current `PATH` / `LD_LIBRARY_PATH` and recommended exports. The script does **not** modify any environment variable. The LLM/skill should inspect the report and the user's `~/.bashrc`, then decide whether to set the exports for the current session and/or append them to `~/.bashrc` (with `# MG5_auto_install` markers).
    - Otherwise: verify `config.madgraph_path` exists and contains `bin/mg5_aMC`
    ```python
-   logger.step_complete("0", "validate_madgraph5", outputs={"mg5path": config.madgraph_path})
+       pass  # validation logic inside the block above
    ```
 3. **CutExperiment**:
    ```python
-   logger.step_start("0", "validate_cutexperiment", inputs={"cutexperiment_path": config.cutexperiment_path})
+   with workflow_step(logger, "0", "validate_cutexperiment",
+                      inputs={"cutexperiment_path": config.cutexperiment_path}):
    ```
    - If `config.cutexperiment_path` is set: verify it exists
    - If not set: clone from `https://gitee.com/NBAlexis/CutExperiment.git` into `{config.workdir}/CutExperiment`, update `config.cutexperiment_path` in memory, and write the updated path back to `run_config.json`
    ```python
-   logger.step_complete("0", "validate_cutexperiment", outputs={"cutexperiment_path": config.cutexperiment_path})
+       pass  # validation / clone logic inside the block above
    ```
 4. **Model(s)**:
    ```python
-   logger.step_start("0", "validate_models", inputs={"models": config.models})
+   with workflow_step(logger, "0", "validate_models",
+                      inputs={"models": config.models}):
    ```
    `config.models` is a list of model names.
    - For **each** model in the list:
@@ -81,19 +84,22 @@ logger.phase_start("0")
      - If not, check the skill's `dependency/` directory. If the model exists there, copy it to `{config.madgraph_path}/models/{model}`. If the model is missing in both locations, STOP and report the missing model.
    - If any model fails validation, STOP and report the missing model.
    ```python
-   logger.step_complete("0", "validate_models", outputs={"models_validated": config.models})
+       pass  # validation / copy logic inside the block above
    ```
 5. **Physics inputs**:
    ```python
-   logger.step_start("0", "validate_physics_inputs", inputs={"energy": config.energy, "luminosity": config.luminosity})
-   ```
-   Validate all values in `config.energy` > 0 and all values in `config.luminosity` > 0
-   ```python
-   logger.step_complete("0", "validate_physics_inputs", outputs={"energy": config.energy, "luminosity": config.luminosity})
+   with workflow_step(logger, "0", "validate_physics_inputs",
+                      inputs={"energy": config.energy, "luminosity": config.luminosity}):
+       for e in config.energy:
+           if e <= 0:
+               raise ValueError(f"energy must be > 0, got {e}")
+       for l in config.luminosity:
+           if l <= 0:
+               raise ValueError(f"luminosity must be > 0, got {l}")
    ```
 6. **Python virtual environment**:
    ```python
-   logger.step_start("0", "setup_venv")
+   from scripts.workflow_logger import workflow_step
    ```
    Create a local venv under `{config.workdir}/venv/` and install all required packages directly. Do NOT check whether packages exist in the system Python — a fresh venv starts empty.
 
@@ -104,59 +110,62 @@ venv_dir = os.path.join(config.workdir, "venv")
 python_bin = os.path.join(venv_dir, "bin", "python")
 pip_bin = os.path.join(venv_dir, "bin", "pip")
 
-# Create venv if not exists
-if not os.path.exists(venv_dir):
-    subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
+with workflow_step(logger, "0", "setup_venv", inputs={"venv_dir": venv_dir}):
+    # Create venv if not exists
+    if not os.path.exists(venv_dir):
+        subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
 
-# Install required packages (always run — idempotent)
-subprocess.run(
-    [pip_bin, "install", "numpy", "scipy", "scikit-learn", "joblib", "matplotlib"],
-    check=True
-)
+    # Install required packages (always run — idempotent)
+    subprocess.run(
+        [pip_bin, "install", "numpy", "scipy", "scikit-learn", "joblib", "matplotlib"],
+        check=True
+    )
 ```
 
 Record `python_bin` in memory (e.g., write to a small metadata file or set an environment variable) so Phases 1–9 know which Python interpreter to use for all subsequent Python operations.
-
-```python
-logger.step_complete("0", "setup_venv", outputs={"venv_dir": venv_dir, "python_bin": python_bin})
-```
 
 > **Optional dependencies** (`xgboost`, `lightgbm`, `torch`) are **NOT** installed in Phase 0. They are installed on-demand in Phase 5 into the same venv when the corresponding algorithm is selected. See [`phase5-ml-training.md`](phase5-ml-training.md) Section 5.2.1.
 
 7. **Delphes card**:
    ```python
-   logger.step_start("0", "validate_delphes_card", inputs={"delphes_card": config.delphes_card})
-   ```
-   Verify `config.delphes_card` exists at `{config.madgraph_path}/Delphes/cards/{config.delphes_card}`. If `config.custom_card` is set, verify it exists at the given absolute path. If neither exists, this is a validation error — `run_config.json` was not properly validated in Phase -1.
-   ```python
-   logger.step_complete("0", "validate_delphes_card", outputs={"card_path": config.delphes_card})
+   with workflow_step(logger, "0", "validate_delphes_card",
+                      inputs={"delphes_card": config.delphes_card}):
+       card_path = os.path.join(config.madgraph_path, "Delphes", "cards", config.delphes_card)
+       if not os.path.exists(card_path):
+           if config.custom_card and os.path.exists(config.custom_card):
+               pass  # custom card is valid
+           else:
+               raise ValueError(f"Delphes card not found: {config.delphes_card}")
    ```
 
 8. **Working Directory guard**:
    ```python
-   logger.step_start("0", "guard_workdir", inputs={"workdir": config.workdir})
-   ```
-   Verify `config.workdir` is NOT inside the Skill Directory (where `SKILL.md` is located). If it is, update `config.workdir` to the Skill Directory's parent, write the updated value back to `run_config.json`, and report: "Work directory adjusted to `{parent}` to avoid writing into the skill installation."
-   ```python
-   logger.step_complete("0", "guard_workdir", outputs={"workdir": config.workdir})
+   with workflow_step(logger, "0", "guard_workdir",
+                      inputs={"workdir": config.workdir}):
+       skill_dir = os.path.dirname(os.path.abspath("SKILL.md"))
+       if config.workdir.startswith(skill_dir):
+           parent = os.path.dirname(skill_dir)
+           config.workdir = parent
+           with open(os.path.join(config.workdir, "results", "run_config.json"), "w") as f:
+               json.dump(config.__dict__, f, indent=2)
+           print(f"Work directory adjusted to {parent} to avoid writing into the skill installation.")
    ```
 
 9. **Run directory setup**:
-   ```python
-   logger.step_start("0", "setup_run_directories", inputs={"num_runs": len(config.run_configurations)})
-   ```
    All `results/` paths are relative to `config.workdir`. For each entry in `config.run_configurations`, create `{config.workdir}/results/{run_dir}/` with subdirectories `data/`, `plots/`, `algorithms/`, `mg5_processes/`, `orders/`. ALL subsequent phases MUST write to these directories, NEVER to bare `results/`.
 
 ```python
 import os
-for run in config.run_configurations:
-    run_dir = os.path.join(config.workdir, "results", run.run_dir)
-    for sub in ["data", "plots", "algorithms", "mg5_processes", "orders"]:
-        os.makedirs(os.path.join(run_dir, sub), exist_ok=True)
-```
 
-```python
-logger.step_complete("0", "setup_run_directories", outputs={"run_dirs": [run.run_dir for run in config.run_configurations]})
+run_dirs = []
+with workflow_step(logger, "0", "setup_run_directories",
+                   inputs={"num_runs": len(config.run_configurations)}):
+    for run in config.run_configurations:
+        run_dir = os.path.join(config.workdir, "results", run.run_dir)
+        run_dirs.append(run.run_dir)
+        for sub in ["data", "plots", "algorithms", "mg5_processes", "orders"]:
+            os.makedirs(os.path.join(run_dir, sub), exist_ok=True)
+
 logger.phase_complete("0")
 ```
 
@@ -168,17 +177,18 @@ logger.phase_complete("0")
 
 ## MG5 Return Code Checking
 
-Every MG5 subprocess MUST check the return code:
+Every MG5 subprocess MUST be wrapped by `workflow_step(...)` and MUST check the return code:
 
 ```python
-result = subprocess.run(
-    ["./bin/mg5_aMC", "order.txt"],
-    cwd=MG5PATH,
-    capture_output=True,
-    text=True
-)
-if result.returncode != 0:
-    print(f"STDOUT:\n{result.stdout}")
-    print(f"STDERR:\n{result.stderr}")
-    raise RuntimeError(f"MG5 failed with exit code {result.returncode}")
+with workflow_step(logger, phase, "mg5_launch", inputs={"order": order_path}):
+    result = subprocess.run(
+        ["./bin/mg5_aMC", order_path],
+        cwd=MG5PATH,
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        print(f"STDOUT:\n{result.stdout}")
+        print(f"STDERR:\n{result.stderr}")
+        raise RuntimeError(f"MG5 failed with exit code {result.returncode}")
 ```

@@ -13,7 +13,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("9")
 ```
@@ -25,7 +25,7 @@ logger.phase_start("9")
 ## Step 9.1: File Existence Check
 
 ```python
-logger.step_start("9", "check_file_existence")
+with workflow_step(logger, "9", "check_file_existence"):
 ```
 
 Verify every expected file exists and has size > 0. In multi-run mode, read all paths as `results/{RUN_DIR}/...`.
@@ -58,14 +58,11 @@ Verify every expected file exists and has size > 0. In multi-run mode, read all 
 
 **Phase 4 spot-check**: For each operator in `operator_claims.json`, verify at least one scan file exists (e.g., `np_o_1_f0.lhco`). If any operator has zero scan files, abort.
 
-```python
-logger.step_complete("9", "check_file_existence", outputs={"passed": passed, "failed": failed})
-```
 
 ## Step 9.2: Numerical Sanity
 
 ```python
-logger.step_start("9", "check_numerical_sanity")
+with workflow_step(logger, "9", "check_numerical_sanity"):
 ```
 
 | Phase | Checks |
@@ -76,14 +73,11 @@ logger.step_start("9", "check_numerical_sanity")
 | 6 | `csfit_sm > 0`, `csfit_np >= 0`, residual < 50% for all operators |
 | 7 | `fmin < 0 < fmax`, monotonicity for all operators |
 
-```python
-logger.step_complete("9", "check_numerical_sanity", outputs={"passed": passed, "failed": failed})
-```
 
 ## Step 9.3: Cross-Phase Consistency
 
 ```python
-logger.step_start("9", "check_cross_phase_consistency")
+with workflow_step(logger, "9", "check_cross_phase_consistency"):
 ```
 
 | Check | Expected | Action |
@@ -96,14 +90,12 @@ logger.step_start("9", "check_cross_phase_consistency")
 | Report table == P7 table | Match | Abort |
 | `anchor.json` model matches P2/P3 SM model | Same model | Abort |
 
-```python
-logger.step_complete("9", "check_cross_phase_consistency", outputs={"passed": passed, "failed": failed})
-```
 
 ## Step 9.4: Audit Log
 
 ```python
-logger.step_start("9", "write_audit_log", inputs={"overall_status": overall_status})
+with workflow_step(logger, "9", "write_audit_log",
+                   inputs={"overall_status": overall_status}):
 ```
 
 ```json
@@ -120,7 +112,6 @@ logger.step_start("9", "write_audit_log", inputs={"overall_status": overall_stat
 ```
 
 ```python
-logger.step_complete("9", "write_audit_log", outputs={"audit_log_path": "results/data/phase9/audit_log.json", "status": overall_status})
 logger.phase_complete("9")
 ```
 

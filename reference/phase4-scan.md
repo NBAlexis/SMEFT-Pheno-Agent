@@ -16,7 +16,7 @@ from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("4")
 ```
@@ -41,7 +41,8 @@ From `coefficient_ranges.json`, read the unified range: `c_{scan} = coefficient_
 For each **unique model** that has at least one claimed operator, create ONE scan process directory:
 
 ```python
-logger.step_start("4", f"create_scan_dir_{model_name}", inputs={"model": model_name})
+with workflow_step(logger, "4", f"create_scan_dir_{model_name}",
+                   inputs={"model": model_name}):
 ```
 
 ```
@@ -50,9 +51,6 @@ generate {process_name}
 output {folder_base}_{model_name}_p4
 ```
 
-```python
-logger.step_complete("4", f"create_scan_dir_{model_name}", outputs={"process_dir": f"{folder_base}_{model_name}_p4"})
-```
 
 > **Process directory naming**: `{folder_base}_{model_name}_p4` ensures each model has its own directory. Multiple operators from the same model share one directory.
 
@@ -61,7 +59,9 @@ logger.step_complete("4", f"create_scan_dir_{model_name}", outputs={"process_dir
 For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
 
 ```python
-logger.step_start("4", f"scan_operator_o_{g_idx}", inputs={"operator": f"o_{g_idx}", "model": model_name, "anoinput_idx": anoinput_idx, "c_scan": c_scan})
+with workflow_step(logger, "4", f"scan_operator_o_{g_idx}",
+                   inputs={"operator": f"o_{g_idx}", "model": model_name,
+                           "anoinput_idx": anoinput_idx, "c_scan": c_scan}):
 ```
 
 1. Look up its source model and anoinput index from `operator_claims.json`
@@ -103,8 +103,9 @@ set nevents = {nev_scan}
 events_dir = os.path.join(MG5PATH, PROC_SCAN, "Events")
 existing = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
 
-# Run MG5
-subprocess.run([...])
+with workflow_step(logger, "4", f"scan_launch_o_{g_idx}",
+                   inputs={"order": order_path}):
+    subprocess.run([...])  # MG5 launch command
 
 all_runs = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
 new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
@@ -139,8 +140,7 @@ If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operat
 6. **Re-run the scan launch** for the same operator.
 7. **Repeat from step 1 until success.** Only a user message containing `stop` aborts the retry loop.
 
-```python
-logger.step_complete("4", f"scan_operator_o_{g_idx}", outputs={"new_runs": new_runs, "num_points": len(new_runs)})
+```python})
 ```
 
 > **Critical**: This retry applies per-operator. An earlier operator's success does NOT protect a later operator from needing its own retry. Each operator scan is an independent retry scope.
@@ -148,7 +148,8 @@ logger.step_complete("4", f"scan_operator_o_{g_idx}", outputs={"new_runs": new_r
 ## Step 4.3: Convert ROOT to LHCO
 
 ```python
-logger.step_start("4", f"root_to_lhco_o_{g_idx}", inputs={"num_runs": len(new_runs)})
+with workflow_step(logger, "4", f"root_to_lhco_o_{g_idx}",
+                   inputs={"num_runs": len(new_runs)}):
 ```
 
 For each new run, convert the Delphes ROOT output to LHCO format:
@@ -167,16 +168,14 @@ for run in new_runs:
     convert_root_to_lhco(root_file)
 ```
 
-```python
-logger.step_complete("4", f"root_to_lhco_o_{g_idx}", outputs={"runs_converted": new_runs})
-```
 
 This produces `{run}.lhco` in the same Events directory. See [`madgraph-reference.md`](madgraph-reference.md) ROOT→LHCO Conversion for details.
 
 ## Step 4.4: Rename Output Files (Global Numbering)
 
 ```python
-logger.step_start("4", f"rename_outputs_o_{g_idx}", inputs={"num_runs": len(new_runs)})
+with workflow_step(logger, "4", f"rename_outputs_o_{g_idx}",
+                   inputs={"num_runs": len(new_runs)}):
 ```
 
 Map each new run to `np_o_{g_idx}_f{index}` by run order (sorted by run number):
@@ -200,8 +199,7 @@ for i, run in enumerate(new_runs):
     # Copy banner and lhco to results/data/phase4/
 ```
 
-```python
-logger.step_complete("4", f"rename_outputs_o_{g_idx}", outputs={"files_copied": [f"np_o_{g_idx}_f{i}" for i in range(len(new_runs))]})
+```python)]})
 ```
 
 > **Important**: The output uses **global operator index** (`o_{g_idx}`), NOT the model-internal anoinput index. This ensures all downstream phases reference operators consistently.

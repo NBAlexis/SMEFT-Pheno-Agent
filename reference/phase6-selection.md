@@ -13,7 +13,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("6")
 ```
@@ -23,19 +23,18 @@ Read `anchor.json` from Phase 1. The anchor operator (`o_1` by convention) provi
 ## Step 6.1: Convert Scan LHCO to CSV
 
 ```python
-logger.step_start("6", "convert_scan_lhco_to_csv", inputs={"num_operators": len(operator_claims), "points_per_operator": 11})
+with workflow_step(logger, "6", "convert_scan_lhco_to_csv",
+                   inputs={"num_operators": len(operator_claims), "points_per_operator": 11}):
 ```
 
 Convert all Phase 4 `.lhco` files to `.csv` using same feature extraction as Phase 5.
 
-```python
-logger.step_complete("6", "convert_scan_lhco_to_csv", outputs={"csv_files_generated": True})
-```
 
 ## Step 6.2: Score All Scan Points (Per Algorithm)
 
 ```python
-logger.step_start("6", "score_scan_points", inputs={"num_algorithms": len(alg_data["anchor"])})
+with workflow_step(logger, "6", "score_scan_points",
+                   inputs={"num_algorithms": len(alg_data["anchor"])}):
 ```
 
 Load algorithms from `algorithm_comparison.json` under the `"anchor"` key:
@@ -56,8 +55,7 @@ for alg_name, alg_info in alg_data["anchor"].items():
 
 Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 5 (Step 5.2.3) and handles normalization automatically for all algorithm types.
 
-```python
-logger.step_complete("6", "score_scan_points", outputs={"algorithms_scored": list(alg_data["anchor"].keys())})
+```python)})
 ```
 
 ## Step 6.3: Optimize Threshold Per Algorithm (using anchor operator)
@@ -88,7 +86,8 @@ nev_scan = baseline["n_scan"]
 For **each algorithm**, for each threshold in 51 points on [0, 1]:
 
 ```python
-logger.step_start("6", f"optimize_threshold_{alg_name}", inputs={"algorithm": alg_name, "num_thresholds": 51})
+with workflow_step(logger, "6", f"optimize_threshold_{alg_name}",
+                   inputs={"algorithm": alg_name, "num_thresholds": 51}):
 ```
 1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (11 points from `-c_{n_{scan}}` to `+c_{n_{scan}}`, including c=0)
 2. Compute cut cross-section:
@@ -111,9 +110,6 @@ logger.step_start("6", f"optimize_threshold_{alg_name}", inputs={"algorithm": al
 
 Select the threshold that **minimizes the constraint width `2 * c_{n_{s=2}}`** for each algorithm individually.
 
-```python
-logger.step_complete("6", f"optimize_threshold_{alg_name}", outputs={"optimal_threshold": optimal_threshold, "constraint_width": min_width})
-```
 
 Record per algorithm:
 ```json
@@ -140,7 +136,8 @@ def fit_and_solve(scan_coeffs, scan_features, scan_cs, clf_alg, threshold, op, L
 ## Step 6.4: Apply Each Algorithm's Optimal Threshold to All Operators
 
 ```python
-logger.step_start("6", "apply_thresholds_all_operators", inputs={"num_algorithms": len(alg_data["anchor"]), "num_operators": len(operator_claims)})
+with workflow_step(logger, "6", "apply_thresholds_all_operators",
+                   inputs={"num_algorithms": len(alg_data["anchor"]), "num_operators": len(operator_claims)}):
 ```
 
 For **each algorithm**, using **its own** optimal threshold from Step 6.3, repeat the quadratic fit for **EVERY globally claimed operator** (`o_1` through `o_N`).
@@ -155,14 +152,14 @@ For each operator `o_{g_idx}`:
 - Apply the algorithm's threshold
 - Fit quadratic and record coefficients
 
-```python
-logger.step_complete("6", "apply_thresholds_all_operators", outputs={"fit_files_generated": len(operator_claims) * len(alg_data["anchor"])})
+```python * len(alg_data["anchor"])})
 ```
 
 ## Step 6.5: Plot
 
 ```python
-logger.step_start("6", "plot_csfit_and_threshold_comparison", inputs={"num_algorithms": len(alg_data["anchor"]), "num_operators": len(operator_claims)})
+with workflow_step(logger, "6", "plot_csfit_and_threshold_comparison",
+                   inputs={"num_algorithms": len(alg_data["anchor"]), "num_operators": len(operator_claims)}):
 ```
 
 For each algorithm and each operator: scatter `cs_cut_x` points + fitted curve `csfit(f)`.
@@ -170,7 +167,6 @@ For each algorithm and each operator: scatter `cs_cut_x` points + fitted curve `
 Also plot **algorithm comparison**: for the anchor operator, show constraint width vs threshold for all algorithms on the same plot.
 
 ```python
-logger.step_complete("6", "plot_csfit_and_threshold_comparison", outputs={"plots_generated": True})
 logger.phase_complete("6")
 ```
 

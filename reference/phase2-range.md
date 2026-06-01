@@ -16,7 +16,7 @@ from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("2")
 ```
@@ -29,10 +29,6 @@ The coefficient range depends on the SM baseline cross-section and the NP cross-
 - A single unified range simplifies Phase 4 scanning and Phase 7 constraint computation
 
 ## Step 2.1: Generate SM Baseline
-
-```python
-logger.step_start("2", "generate_sm_baseline", inputs={"anchor_model": anchor_model, "nevents": config.nev_phase2})
-```
 
 Create SM process using the **anchor model** (from `anchor.json`):
 
@@ -51,7 +47,11 @@ python scripts/extract_cross_section.py {banner_path}
 ```
 
 ```python
-logger.step_complete("2", "generate_sm_baseline", outputs={"cs_sm": cs_sm, "banner_path": banner_path})
+with workflow_step(logger, "2", "generate_sm_baseline",
+                   inputs={"anchor_model": anchor_model,
+                           "nevents": config.nev_phase2}):
+    # Write order, run MG5, extract cs_sm
+    pass  # implementation here
 ```
 
 ## Step 2.2: Compute Expected Event Counts
@@ -75,10 +75,6 @@ S_stat(c_{scan}) = N_NP(c_{scan}) / sqrt(N_SM + N_NP(c_{scan}))
 
 ## Step 2.3: Solve for c_{scan}
 
-```python
-logger.step_start("2", "compute_c_scan", inputs={"cs_sm": cs_sm, "cs_np": cs_np, "c_default": c_default, "n_scan": config.nev_scan})
-```
-
 Solve `S_stat(c_{scan}) = 2`:
 
 ```
@@ -94,7 +90,25 @@ c_{scan} = c_{n_{default}} * sqrt(N_NP * cs_sm / (n_scan * cs_np))
 Scan range: `[-c_{scan}, c_{scan}]` — applies to **all** globally claimed operators (`c_{n_{scan}} = c_{scan}` for all `n`).
 
 ```python
-logger.step_complete("2", "compute_c_scan", outputs={"c_scan": c_scan})
+with workflow_step(logger, "2", "compute_c_scan",
+                   inputs={"cs_sm": cs_sm, "cs_np": cs_np,
+                           "c_default": c_default, "n_scan": config.nev_scan}):
+    # Compute c_scan using the formula above
+    import math
+    N_NP = 2 + 2 * math.sqrt(1 + n_scan)
+    c_scan = c_default * math.sqrt(N_NP * cs_sm / (n_scan * cs_np))
+    if cs_sm == 0:
+        raise ValueError("cs_sm is zero; aborting.")
+
+    # Write outputs
+    phase2_dir = os.path.join(config.workdir, "results", run_dir, "data", "phase2")
+    os.makedirs(phase2_dir, exist_ok=True)
+    with open(os.path.join(phase2_dir, "coefficient_ranges.json"), "w") as f:
+        json.dump({"global": [-c_scan, c_scan]}, f, indent=2)
+    with open(os.path.join(phase2_dir, "sm_baseline.json"), "w") as f:
+        json.dump({"cs_sm": cs_sm, "n_scan": n_scan, "L_prime": n_scan / cs_sm,
+                   "anchor_model": anchor_model, "c_scan": c_scan}, f, indent=2)
+
 logger.phase_complete("2")
 ```
 

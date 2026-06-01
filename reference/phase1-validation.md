@@ -17,7 +17,7 @@ from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("1")
 ```
@@ -75,10 +75,6 @@ For each `model_name` in the user-provided model list (in order):
 
 ### 1.1.1 Create NP Process Directory
 
-```python
-logger.step_start("1", f"mg5_generate_np_{model_name}", inputs={"model": model_name, "process": config.process})
-```
-
 Order file:
 ```
 import model {model_name}
@@ -91,14 +87,19 @@ output {folder_base}_{model_name}_p1_NP
 Run and check return code. Abort on any MG5 error.
 
 ```python
-logger.step_complete("1", f"mg5_generate_np_{model_name}", outputs={"process_dir": f"{folder_base}_{model_name}_p1_NP"})
+with workflow_step(logger, "1", f"mg5_generate_np_{model_name}",
+                   inputs={"model": model_name, "process": config.process}):
+    order_path = os.path.join(config.workdir, "results", run_dir, "orders", f"order_{model_name}.txt")
+    os.makedirs(os.path.dirname(order_path), exist_ok=True)
+    with open(order_path, "w") as f:
+        f.write(f"import model {model_name}\n")
+        f.write(f"generate {config.process} NP>0\n")
+        f.write(f"output {folder_base}_{model_name}_p1_NP\n")
+    subprocess.run([os.path.join(config.madgraph_path, "bin", "mg5_aMC"), order_path],
+                   cwd=config.madgraph_path, check=True)
 ```
 
 ### 1.1.2 Extract Coefficients from param_card.dat
-
-```python
-logger.step_start("1", f"parse_param_card_{model_name}", inputs={"model": model_name})
-```
 
 Read the coefficient block from `{mg5path}/{folder_base}_{model_name}_p1_NP/Cards/param_card.dat`.
 
@@ -111,19 +112,21 @@ python scripts/parse_param_card.py {param_card_path}
 Or import in Python:
 ```python
 from scripts.parse_param_card import parse_anoinputs
+from scripts.workflow_logger import workflow_step
 
-result = parse_anoinputs(param_card_path, scan_default=1.0e-12)
-block_name = result["block_name"]       # e.g. "anoinputs" or "dim8"
-coefficients = result["coefficients"]   # {"1": 1.0e-12, "2": 0.0, ...}
+with workflow_step(logger, "1", f"parse_param_card_{model_name}",
+                   inputs={"model": model_name}):
+    param_card_path = os.path.join(config.madgraph_path,
+                                   f"{folder_base}_{model_name}_p1_NP",
+                                   "Cards", "param_card.dat")
+    result = parse_anoinputs(param_card_path, scan_default=1.0e-12)
+    block_name = result["block_name"]       # e.g. "anoinputs" or "dim8"
+    coefficients = result["coefficients"]   # {"1": 1.0e-12, "2": 0.0, ...}
 ```
 
 The script handles case-insensitive Block matching, scan syntax retention, and Block boundary detection.
 
 **Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. Report this as a parser bug.
-
-```python
-logger.step_complete("1", f"parse_param_card_{model_name}", outputs={"block_name": block_name, "num_coefficients": len(coefficients)})
-```
 
 ### 1.1.3 Test Each Coefficient Individually
 
@@ -134,10 +137,6 @@ logger.step_complete("1", f"parse_param_card_{model_name}", outputs={"block_name
 > **如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。**
 
 For each coefficient `fi` in this model:
-
-```python
-logger.step_start("1", f"test_coeff_{model_name}_{fi}", inputs={"coefficient": fi, "c_default": c_default})
-```
 
 1. Determine `c_{n_{default}}`: default from param_card, or `1.0` if default is `0.0`
 2. Write launch order with `set {block_name} {idx} {c_{n_{default}}}` for `fi`, `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_phase1}`. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for the exact syntax.
@@ -160,14 +159,32 @@ logger.step_start("1", f"test_coeff_{model_name}_{fi}", inputs={"coefficient": f
 7. **Immediately proceed to the next coefficient. Do NOT pause, do NOT branch to other tasks.**
 
 ```python
-logger.step_complete("1", f"test_coeff_{model_name}_{fi}", outputs={"sigma": sigma_i, "claimed": sigma_i > 0 and fi not in claimed, "global_idx": g_idx if (sigma_i > 0 and fi not in claimed) else None})
+for idx, default_val in coefficients.items():
+    fi = f"C{idx}"
+    c_default = default_val if default_val != 0.0 else 1.0
+    with workflow_step(logger, "1", f"test_coeff_{model_name}_{fi}",
+                       inputs={"coefficient": fi, "c_default": c_default}):
+        # Build and write launch order
+        launch_order = os.path.join(config.workdir, "results", run_dir,
+                                    "orders", f"launch_{model_name}_{fi}.txt")
+        with open(launch_order, "w") as f:
+            f.write(f"launch {folder_base}_{model_name}_p1_NP\n")
+            for other_idx in coefficients:
+                val = c_default if other_idx == idx else 0.0
+                f.write(f"set {block_name} {other_idx} {val}\n")
+            f.write(f"set nevents {nev_phase1}\n")
+            f.write("done\n")
+
+        # Run MG5
+        subprocess.run([os.path.join(config.madgraph_path, "bin", "mg5_aMC"),
+                        launch_order],
+                       cwd=config.madgraph_path, check=True)
+
+        # Extract cross-section from latest run banner
+        # (post-processing and deduplication logic here)
 ```
 
 ## Step 1.2: Write Global Metadata
-
-```python
-logger.step_start("1", "write_global_metadata", inputs={"num_claimed": len(operator_claims), "num_tested": len(cross_sections)})
-```
 
 After all models have been processed:
 
@@ -184,7 +201,20 @@ After all models have been processed:
 ```
 
 ```python
-logger.step_complete("1", "write_global_metadata", outputs={"anchor": anchor, "operator_claims_path": "results/data/phase1/operator_claims.json"})
+import json
+
+with workflow_step(logger, "1", "write_global_metadata",
+                   inputs={"num_claimed": len(operator_claims),
+                           "num_tested": len(cross_sections)}):
+    phase1_dir = os.path.join(config.workdir, "results", run_dir, "data", "phase1")
+    os.makedirs(phase1_dir, exist_ok=True)
+    with open(os.path.join(phase1_dir, "operator_claims.json"), "w") as f:
+        json.dump(operator_claims, f, indent=2)
+    with open(os.path.join(phase1_dir, "cross_sections.json"), "w") as f:
+        json.dump(cross_sections, f, indent=2)
+    with open(os.path.join(phase1_dir, "anchor.json"), "w") as f:
+        json.dump(anchor if anchor else {}, f, indent=2)
+
 logger.phase_complete("1")
 ```
 

@@ -13,7 +13,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("7")
 ```
@@ -47,7 +47,8 @@ Use the Asimov formula unless there is a specific reason to use the standard app
 ## Best Algorithm Selection
 
 ```python
-logger.step_start("7", "select_best_algorithms", inputs={"num_operators": len(operator_claims), "num_algorithms": len(alg_data["anchor"])})
+with workflow_step(logger, "7", "select_best_algorithms",
+                   inputs={"num_operators": len(operator_claims), "num_algorithms": len(alg_data["anchor"])}):
 ```
 
 Before computing final constraints, select the best algorithm per operator:
@@ -59,14 +60,14 @@ Before computing final constraints, select the best algorithm per operator:
 
 **Note**: The best algorithm may differ from the highest-AUC algorithm. This is expected and should be reported.
 
-```python
-logger.step_complete("7", "select_best_algorithms", outputs={"best_by_operator": {op: best_alg for op, best_alg in best_algorithms.items()}})
+```python}})
 ```
 
 ## Final Constraint Computation
 
 ```python
-logger.step_start("7", "compute_final_constraints", inputs={"num_operators": len(operator_claims), "significance_levels": [2, 3, 5]})
+with workflow_step(logger, "7", "compute_final_constraints",
+                   inputs={"num_operators": len(operator_claims), "significance_levels": [2, 3, 5]}):
 ```
 
 Using **only the best algorithm's** fit results, compute constraints for **all globally claimed operators** at $S = 2, 3, 5$.
@@ -121,7 +122,6 @@ Algorithm selection record (must contain **full intervals**, not just widths):
 **Note**: Only the best algorithm stores S3 and S5 intervals. Non-best algorithms store S2 only (used for the comparison plot). The `constraint_table.json` contains the final physical result (best algorithm at all significance levels for all operators).
 
 ```python
-logger.step_complete("7", "compute_final_constraints", outputs={"constraint_table_path": "results/data/phase7/constraint_table.json"})
 logger.phase_complete("7")
 ```
 

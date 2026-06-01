@@ -16,7 +16,7 @@ from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
 
 # Initialize logger
-from scripts.workflow_logger import WorkflowLogger
+from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("3")
 ```
@@ -24,10 +24,6 @@ logger.phase_start("3")
 Read `anchor.json` from Phase 1 to determine the anchor model and anchor operator.
 
 ## Step 3.1: Pure SM Sample
-
-```python
-logger.step_start("3", "generate_sm_sample", inputs={"anchor_model": anchor_model, "nevents": config.nev_sm})
-```
 
 1. **Create SM process directory using the anchor model:**
    ```
@@ -45,16 +41,16 @@ results/data/phase3/sm.lhco
 ```
 
 ```python
-logger.step_complete("3", "generate_sm_sample", outputs={"lhco_path": "results/data/phase3/sm.lhco"})
+with workflow_step(logger, "3", "generate_sm_sample",
+                   inputs={"anchor_model": anchor_model,
+                           "nevents": config.nev_sm}):
+    # Write order, run MG5, post-process, copy results
+    pass  # implementation here
 ```
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase3/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ## Step 3.2: Pure NP Sample (Anchor Operator Only)
-
-```python
-logger.step_start("3", "generate_np_anchor", inputs={"anchor_model": anchor_model, "anchor_operator": anchor_name, "c_scan": c_scan, "nevents": config.nev_np})
-```
 
 Generate the NP sample **only for the anchor operator**:
 
@@ -73,7 +69,14 @@ results/data/phase3/np_anchor.lhco
 ```
 
 ```python
-logger.step_complete("3", "generate_np_anchor", outputs={"lhco_path": "results/data/phase3/np_anchor.lhco"})
+with workflow_step(logger, "3", "generate_np_anchor",
+                   inputs={"anchor_model": anchor_model,
+                           "anchor_operator": anchor_name,
+                           "c_scan": c_scan,
+                           "nevents": config.nev_np}):
+    # Write order, run MG5, post-process, copy results
+    pass  # implementation here
+
 logger.phase_complete("3")
 ```
 

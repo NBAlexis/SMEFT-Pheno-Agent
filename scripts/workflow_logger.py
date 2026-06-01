@@ -24,11 +24,13 @@ Resume logic (called in Phase 0):
     last_completed = logger.last_completed_phase()
 """
 
+import functools
 import json
 import os
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Generator, Optional
 
 
 class WorkflowLogger:
@@ -165,6 +167,169 @@ class WorkflowLogger:
                 steps.append(record)
         steps.reverse()
         return steps
+
+
+# ------------------------------------------------------------------
+# Mandatory logging primitives — zero bare operations
+# ------------------------------------------------------------------
+
+class _WorkflowStepContext:
+    """Context manager that auto-logs step start / complete / fail.
+
+    Usage:
+        with _WorkflowStepContext(logger, "1", "test_coeff_fS0",
+                                  inputs={"c": 1e-12}) as step:
+            result = run_mg5(...)
+            step.set_outputs({"sigma": sigma})
+
+    On normal exit: logs 'completed' with outputs.
+    On exception: logs 'failed' with error text, then re-raises.
+    """
+
+    def __init__(
+        self,
+        logger: WorkflowLogger,
+        phase: str,
+        step_name: str,
+        inputs: Optional[Dict[str, Any]] = None,
+    ):
+        self.logger = logger
+        self.phase = phase
+        self.step_name = step_name
+        self.inputs = inputs
+        self._outputs: Optional[Dict[str, Any]] = None
+
+    def __enter__(self) -> "_WorkflowStepContext":
+        self.logger.step_start(self.phase, self.step_name, inputs=self.inputs)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        if exc_type is not None:
+            self.logger.step_fail(
+                self.phase, self.step_name, error=str(exc_val)
+            )
+        else:
+            self.logger.step_complete(
+                self.phase, self.step_name, outputs=self._outputs
+            )
+        return False  # do not swallow exceptions
+
+    def set_outputs(self, outputs: Dict[str, Any]) -> None:
+        """Record outputs to be logged on successful completion."""
+        self._outputs = outputs
+
+
+@contextmanager
+def workflow_step(
+    logger: WorkflowLogger,
+    phase: str,
+    step_name: str,
+    inputs: Optional[Dict[str, Any]] = None,
+) -> Generator[_WorkflowStepContext, None, None]:
+    """Context manager that guarantees step-level logging.
+
+    **This is the primary mechanism for zero-bare-operations compliance.**
+    Any filesystem operation, subprocess call, download, install, or
+    validation check must be wrapped by this context manager (or by
+    ``@logged_step``).  Bare ``subprocess.run`` / ``os.makedirs`` /
+    ``shutil.copy`` without logging is a skill violation.
+
+    Example — wrapping a subprocess call::
+
+        with workflow_step(logger, "0", "setup_venv",
+                           inputs={"venv_dir": venv_dir}):
+            subprocess.run([sys.executable, "-m", "venv", venv_dir],
+                           check=True)
+
+    Example — capturing outputs::
+
+        with workflow_step(logger, "1", "test_coeff_fS0",
+                           inputs={"c": 1e-12}) as step:
+            run_mg5(...)
+            sigma = extract_cross_section(...)
+            step.set_outputs({"sigma": sigma})
+
+    Example — exception auto-logged as 'failed'::
+
+        with workflow_step(logger, "0", "validate_madgraph5",
+                           inputs={"mg5path": mg5path}):
+            if not os.path.exists(mg5path):
+                raise RuntimeError("MG5 not found")
+    """
+    ctx = _WorkflowStepContext(logger, phase, step_name, inputs)
+    with ctx:
+        yield ctx
+
+
+def logged_step(
+    phase: str,
+    step_name: Optional[str] = None,
+    inputs_fn=None,
+):
+    """Decorator that auto-logs step start / complete / fail around a function.
+
+    The decorated function **must** accept a ``logger: WorkflowLogger``
+    keyword argument (or a positional argument of type ``WorkflowLogger``).
+    If no logger is found, the function runs silently (degraded mode).
+
+    The return value of the decorated function is used as ``outputs`` if it
+    is a ``dict``; otherwise outputs are omitted.
+
+    Example::
+
+        @logged_step("0", "setup_venv")
+        def setup_venv(venv_dir: str, *, logger: WorkflowLogger):
+            subprocess.run([sys.executable, "-m", "venv", venv_dir],
+                           check=True)
+            python_bin = os.path.join(venv_dir, "bin", "python")
+            return {"venv_dir": venv_dir, "python_bin": python_bin}
+
+    Example with dynamic inputs::
+
+        @logged_step("0", "validate_model",
+                     inputs_fn=lambda model, **kw: {"model": model})
+        def validate_model(model: str, *, logger: WorkflowLogger):
+            exists = os.path.exists(f"models/{model}")
+            return {"exists": exists}
+    """
+    def decorator(func):
+        actual_step_name = step_name or func.__name__
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Locate logger in args or kwargs
+            logger = kwargs.get("logger")
+            if logger is None:
+                for arg in args:
+                    if isinstance(arg, WorkflowLogger):
+                        logger = arg
+                        break
+
+            inputs = inputs_fn(*args, **kwargs) if inputs_fn else None
+
+            if logger is None:
+                # Degraded mode — log to stderr so the violation is visible
+                print(
+                    f"[WORKFLOW WARNING] {actual_step_name} executed without "
+                    f"a WorkflowLogger. Pass logger=... to enable step-level "
+                    f"logging.",
+                    file=sys.stderr,
+                )
+                return func(*args, **kwargs)
+
+            logger.step_start(phase, actual_step_name, inputs=inputs)
+            try:
+                result = func(*args, **kwargs)
+                outputs = result if isinstance(result, dict) else None
+                logger.step_complete(phase, actual_step_name, outputs=outputs)
+                return result
+            except Exception as e:
+                logger.step_fail(phase, actual_step_name, error=str(e))
+                raise
+
+        return wrapper
+
+    return decorator
 
 
 def main():
