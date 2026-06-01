@@ -32,7 +32,8 @@ Verify the following are present:
 ## Step 2: If Any Input Is Missing, Ask the User
 
 **Pre-step actions (MUST complete before asking the first question):**
-1. Scan the skill's `dependency/` directory for available UFO models. Save the list — you **must** present it in question `[4/9]`.
+1. Determine `skill_dir` — the absolute directory containing `SKILL.md`. Use `os.path.dirname(os.path.abspath("SKILL.md"))` or equivalent.
+2. Scan `os.path.join(skill_dir, "dependency/")` for available UFO models (subdirectories). Save the list as `dependency_models` — you **must** present it in question `[4/9]`. If the directory does not exist or is empty, set `dependency_models = []` and proceed.
 
 **ALWAYS ask exactly ONE parameter per message.** After the user answers, move to the next. Never present a list or table of parameters to fill. Never ask "please provide all of the above" or "confirm previous parameters" — even if the user says "start now", "重新测试", or "use the same as before". The user must be able to type paths, process strings, and numeric values directly, one per message. Violating this rule breaks the standardized input collection and leads to workflow failures.
 
@@ -92,10 +93,12 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    > "要研究什么对撞过程？（仅提供物理过程，不要加 NP=/QED=/QCD= 等后缀）"
    - After the user provides `process`, **immediately inspect the initial state** (particles left of `>`)
    - If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~` (electron-proton collider), **insert an extra required question before continuing**:
-     > "[追加] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
-     > "您的过程涉及电子-质子对撞机。质子束流能量是多少 GeV（`ebeam_proton`）？"
+     > "[3a/9] Your process involves an electron-proton collider. What is the proton beam energy in GeV (`ebeam_proton`)?"
+     > "[3a/9] 您的过程涉及电子-质子对撞机。质子束流能量是多少 GeV（`ebeam_proton`）？"
    - If the initial state is anything else (e+e-, pp, mu+mu-), skip this question
-4. `[4/9] model` — Before asking, scan the skill's `dependency/` directory (same directory as `SKILL.md`) at runtime for available UFO models. Do **not** hardcode a list. Present the question as:
+4. `[4/9] model` —
+   > **CRITICAL — Dependency scan is mandatory**: The `dependency_models` list obtained in the Pre-step actions **MUST** be presented in this question. Do **not** omit it. Do **not** hardcode a list. If `dependency_models` is empty, state "No models found in skill dependency folder." and still ask the question.
+   Present the question as:
    > "[4/9] What SMEFT model name(s) should be used? Provide a single model or a list, e.g. `AQGCm_UFO` or `[AQGCm_UFO, AQGCs_UFO]`. Models available in the skill dependency folder: {dependency_models}. You may also use any model already installed in `{madgraph_path}/models/`."
    > "使用哪个 SMEFT 模型？提供单个模型或列表，例如 `AQGCm_UFO` 或 `[AQGCm_UFO, AQGCs_UFO]`。skill 依赖文件夹中可用的模型：{dependency_models}。也可以使用已安装在 `{madgraph_path}/models/` 中的任何模型。"
    - Parse the user's response:
@@ -128,6 +131,7 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    > "[7/9] Do you already have CutExperiment installed? If so, provide the path. If not, type `clone` and I will clone it from `https://gitee.com/NBAlexis/CutExperiment.git`."
    > "您是否已经安装了 CutExperiment？如果已安装请提供路径。如果未安装，输入 `clone`，我将从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。"
 8. `[8/9] Delphes card selection` — After `madgraph_path`, `process`, and `energy` are known:
+   > **CRITICAL — Scanning is mandatory**: You **MUST** run the auto-recommendation scan BEFORE presenting question [8/9]. There is no fallback to a generic question. Presenting `[8/9]` without scanning, scoring, and recommending a card is a **critical violation**.
    - Run the auto-recommendation:
      1. Scan `{madgraph_path}/Delphes/cards/` for all `*.tcl` files
      2. **Filter out non-detector cards** — exclude `converter_card.tcl`, `gen_card.tcl`, `validation_card.tcl`, `delphes_card_llptest.tcl`, and any file whose name starts with `trackResolution`, `trkCounting`, or `gen_`
@@ -140,6 +144,9 @@ Each question must include a progress indicator (e.g., `[1/9]`) so the user know
    - **If the user provides an absolute path** (starts with `/` or `~`): treat as `custom_card`. Validate the file exists and record the absolute path as `delphes_card`.
    - **If the user types a card name** (not an absolute path): validate it exists in `{mg5path}/Delphes/cards/` and use it as `delphes_card`.
    - **If the user types `yes`**: use the recommended card as `delphes_card`.
+   - **If `{madgraph_path}/Delphes/cards/` does not exist at all**:
+     > "[8/9] ERROR: Delphes cards directory not found at `{madgraph_path}/Delphes/cards/`. Please verify your MadGraph5 installation includes Delphes, or provide an absolute path to a custom `.tcl` card:"
+     > "错误：在 `{madgraph_path}/Delphes/cards/` 未找到 Delphes 卡片目录。请确认 MadGraph5 安装包含 Delphes，或提供自定义 `.tcl` 卡片的绝对路径："
    - **If no cards match the collider type** (all scores = 0), show:
      > "[8/9] No detector cards match your collider type. Available cards: {all_filtered_cards}. Please specify one (card name or absolute path to custom card):"
      > "没有探测器卡片匹配您的对撞机类型。可用卡片：{all_filtered_cards}。请指定一个（卡片名称或自定义卡片的绝对路径）："
@@ -342,3 +349,4 @@ All configuration data flows through `run_config.json`.
 | Proceeding to Phase 0 with missing inputs | Phase -1 must be fully completed first |
 | Creating directories before all inputs are validated | Directory creation is a Phase 0 action, not Phase -1 |
 | **Stopping mid-execution to ask user whether to continue** | **ONCE STARTED, the workflow MUST run to completion automatically. Only stop on errors or red flags.** |
+| **Asking for `delphes_card` without scanning and scoring cards first** | **VIOLATION of Step 8.** The auto-recommendation scan is mandatory. A bare generic question (e.g., "Which card do you want?") without scanning, scoring, and presenting a recommendation corrupts the card-selection contract and loses critical context the user needs to decide. |
