@@ -341,3 +341,11 @@ The following behaviors constitute a **critical violation** of the Execution Con
 | Claiming duplicate operators | Check `claimed` dict before assigning global index |
 | Forgetting to include model in process dir name | Always prefix/suffix with model name to avoid collisions |
 | Not setting anchor if first model has all-zero operators | Continue to next model; anchor is first non-zero across ALL models |
+
+## Phase Transition
+
+After `logger.phase_complete("1")` is called and all JSON outputs are written:
+
+1. **Check validation rules immediately**: If `anchor` is not set, emit the Zero Cross-Section Report and abort.
+2. **If validation passes** (at least one operator claimed, anchor is set): **proceed immediately to Phase 2 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input. The workflow runs to completion automatically per [`SKILL.md`](../SKILL.md) SUPREME RULE.

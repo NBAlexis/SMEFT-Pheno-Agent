@@ -194,3 +194,11 @@ results/plots/
 - `csfit_sm > 0`
 - `csfit_np >= 0`
 - Residual: `|cs_cut_x - csfit(f_x)| / csfit(f_x) < 0.5` for all points
+
+## Phase Transition
+
+After all operators are fitted and all JSON files are written:
+
+1. **Check validation rules immediately**: If any fit residual exceeds 0.5, flag warning but continue.
+2. **If validation passes**: **proceed immediately to Phase 7 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

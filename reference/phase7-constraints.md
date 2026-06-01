@@ -131,3 +131,11 @@ logger.phase_complete("7")
 - $c_{n_{s=5}} < c_{n_{s=3}} < c_{n_{s=2}}}$ (constraints tighten with higher significance)
 
 If monotonicity is violated, flag as constraint error.
+
+## Phase Transition
+
+After `logger.phase_complete("7")` is called and `constraint_table.json` is written:
+
+1. **Check validation rules immediately**: If monotonicity is violated, flag warning but continue.
+2. **If validation passes**: **proceed immediately to Phase 8 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

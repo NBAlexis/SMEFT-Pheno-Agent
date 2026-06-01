@@ -198,3 +198,11 @@ logger.phase_complete("8")
 - All algorithms trained in Phase 5 must appear in the comparison section
 - All figures in report must be PDF vector format
 - All formulas must be LaTeX-rendered
+
+## Phase Transition
+
+After `logger.phase_complete("8")` is called and the HTML report is written:
+
+1. **Check validation rules immediately**: If report is missing required sections, flag warning but continue.
+2. **If validation passes**: **proceed immediately to Phase 9 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

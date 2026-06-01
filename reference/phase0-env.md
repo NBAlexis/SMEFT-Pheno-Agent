@@ -192,3 +192,11 @@ with workflow_step(logger, phase, "mg5_launch", inputs={"order": order_path}):
         print(f"STDERR:\n{result.stderr}")
         raise RuntimeError(f"MG5 failed with exit code {result.returncode}")
 ```
+
+## Phase Transition
+
+After `logger.phase_complete("0")` is called and run directories are set up:
+
+1. **Check validation rules immediately**: If any critical check failed, abort with red flag.
+2. **If validation passes**: **proceed immediately to Phase 1 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

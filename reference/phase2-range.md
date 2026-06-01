@@ -127,3 +127,11 @@ results/data/phase2/
 - `cs_sm > 0`
 - `c_{scan} > 0` and finite
 - `c_{scan} < 1e3`
+
+## Phase Transition
+
+After `logger.phase_complete("2")` is called and all JSON outputs are written:
+
+1. **Check validation rules immediately**: If `cs_sm <= 0` or `c_{scan}` is invalid, abort with red flag.
+2. **If validation passes**: **proceed immediately to Phase 3 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

@@ -120,3 +120,12 @@ logger.phase_complete("9")
 | PASS | No abort, no warnings | Deliver report |
 | WARN | No abort, has warnings | Deliver report with audit log |
 | FAIL | Any abort condition | Do NOT deliver. Return log to user |
+
+## Phase Transition
+
+After `logger.phase_complete("9")` is called and `audit_report.json` is written:
+
+1. **Check final status immediately**.
+2. **If PASS or WARN**: Deliver the report and audit log to the user. Workflow is complete.
+3. **If FAIL**: Return the audit log to the user. Do NOT deliver the report.
+4. This is the **final phase**. No further phases exist.

@@ -88,3 +88,11 @@ logger.phase_complete("3")
 
 - `sm.lhco` must exist and be non-empty (abort if missing)
 - `np_anchor.lhco` must exist and be non-empty (abort if missing)
+
+## Phase Transition
+
+After `logger.phase_complete("3")` is called and all LHCO files are copied:
+
+1. **Check validation rules immediately**: If either LHCO file is missing, abort.
+2. **If validation passes**: **proceed immediately to Phase 4 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

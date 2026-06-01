@@ -241,3 +241,11 @@ results/data/phase4/
 | Creating one process dir per operator | Create one per **model** (operators from the same model share a directory) |
 | tag_2 ROOT files | Only happens if existing runs were modified and re-launched |
 | Hardcoding `tag_1` in root2lhco call | Check which tag actually exists |
+
+## Phase Transition
+
+After all operators are scanned and all LHCO files are copied:
+
+1. **Check validation rules immediately**: If any scan point is missing, abort.
+2. **If validation passes**: **proceed immediately to Phase 5 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

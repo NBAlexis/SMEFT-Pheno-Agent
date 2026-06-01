@@ -350,3 +350,11 @@ All configuration data flows through `run_config.json`.
 | Creating directories before all inputs are validated | Directory creation is a Phase 0 action, not Phase -1 |
 | **Stopping mid-execution to ask user whether to continue** | **ONCE STARTED, the workflow MUST run to completion automatically. Only stop on errors or red flags.** |
 | **Asking for `delphes_card` without scanning and scoring cards first** | **VIOLATION of Step 8.** The auto-recommendation scan is mandatory. A bare generic question (e.g., "Which card do you want?") without scanning, scoring, and presenting a recommendation corrupts the card-selection contract and loses critical context the user needs to decide. |
+
+## Phase Transition
+
+After `run_config.json` is written and all inputs are validated:
+
+1. **Check that `run_config.json` exists and is valid JSON**.
+2. **If valid**: **proceed immediately to Phase 0 without stopping.** Phase 0 begins automatically — no user confirmation needed.
+3. **Do NOT**: summarize inputs, ask for confirmation, present options, or wait for user input. The workflow runs to completion automatically per [`SKILL.md`](../SKILL.md) SUPREME RULE.

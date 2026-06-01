@@ -250,3 +250,11 @@ results/algorithms/
 ## Validation
 
 - `0.5 < AUC <= 1.0` for anchor training
+
+## Phase Transition
+
+After `logger.phase_complete("5")` is called and all algorithms are saved:
+
+1. **Check validation rules immediately**: If no algorithm achieves AUC > 0.5, abort with red flag.
+2. **If validation passes**: **proceed immediately to Phase 6 without stopping.**
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

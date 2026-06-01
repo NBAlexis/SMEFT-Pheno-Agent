@@ -40,6 +40,7 @@ This is the **highest-level norm** of this skill. Violating this rule is a **cri
 | User says "直接开始" / "start now" | **Already started. Do NOT ask again.** |
 | MG5 error occurs | Report the error, attempt recovery if possible, **only stop if unrecoverable** |
 | Resource temporarily unavailable | Wait and retry, **do NOT ask user** |
+| Phase N completes successfully | **Proceed immediately to Phase N+1.** Never pause between phases. |
 
 ### What This Prohibits (CRITICAL)
 
@@ -49,6 +50,7 @@ This is the **highest-level norm** of this skill. Violating this rule is a **cri
 | Asking "是否用 debug 模式？" / "Use debug mode?" | Use the `debug` parameter from `run_config.json` only |
 | Presenting options mid-execution | Proceed with the next step immediately |
 | Stopping to "wait for user instructions" | Report status and continue |
+| Stopping between phases to present results or ask for confirmation | Proceed immediately to the next phase per the Phase Transition section of each phase doc |
 | Self-adjusting parameters for speed | Physical parameters are immutable — NEVER modify |
 
 ### The ONLY Valid Stop Conditions
