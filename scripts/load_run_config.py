@@ -36,6 +36,7 @@ OPTIONAL_FIELDS = [
     "debug",
     "algorithms",
     "analysis_notes",
+    "execution",
     "cutexperiment_path",
     "auto_installed_mg5",
     "event_counts_locked",
@@ -57,6 +58,8 @@ DEBUG_EVENT_COUNTS = {
     "nev_np": 10000,
     "nev_scan": 100000,
 }
+
+VALID_EXECUTION_MODES = {"local", "ssh", "wsl2"}
 
 
 def _dict_to_namespace(d):
@@ -123,6 +126,18 @@ def load_run_config(path):
 
     if "debug" not in data:
         data["debug"] = False
+    if "execution" not in data:
+        data["execution"] = {"mode": "local"}
+    if not isinstance(data["execution"], dict):
+        raise ValueError("execution must be an object")
+    mode = data["execution"].get("mode", "local")
+    if mode not in VALID_EXECUTION_MODES:
+        raise ValueError(
+            f"execution.mode must be one of {sorted(VALID_EXECUTION_MODES)}, got {mode!r}"
+        )
+    data["execution"]["mode"] = mode
+    if mode == "ssh" and not data["execution"].get("ssh_target"):
+        raise ValueError("execution.ssh_target is required when execution.mode is 'ssh'")
     if "event_counts_locked" not in data:
         data["event_counts_locked"] = True
     if "locked_event_counts" not in data:
@@ -139,13 +154,14 @@ def load_run_config(path):
     if data["event_counts_locked"] is not True:
         raise ValueError("event_counts_locked must be true")
 
-    # Resolve absolute paths for key directories
-    data["madgraph_path"] = os.path.abspath(os.path.expanduser(data["madgraph_path"]))
-    data["workdir"] = os.path.abspath(os.path.expanduser(data["workdir"]))
-    if data.get("cutexperiment_path"):
-        data["cutexperiment_path"] = os.path.abspath(
-            os.path.expanduser(data["cutexperiment_path"])
-        )
+    # Resolve local paths only in local mode. SSH/WSL2 paths belong to the target.
+    if mode == "local":
+        data["madgraph_path"] = os.path.abspath(os.path.expanduser(data["madgraph_path"]))
+        data["workdir"] = os.path.abspath(os.path.expanduser(data["workdir"]))
+        if data.get("cutexperiment_path"):
+            data["cutexperiment_path"] = os.path.abspath(
+                os.path.expanduser(data["cutexperiment_path"])
+            )
     return _dict_to_namespace(data)
 
 

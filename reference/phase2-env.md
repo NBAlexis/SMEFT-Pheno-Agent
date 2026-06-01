@@ -1,20 +1,37 @@
 # Phase 2: Environment Validation
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE: once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Verify all dependencies exist before starting the workflow. Phase 2 reads the workflow configuration from **`run_config.json`** (produced by Phase 1). No parameter should be sourced from conversation history or user interaction.
+
+Verify all dependencies exist before starting the workflow. Phase 2 reads the local control copy of `run_config.json` produced by Phase 1. In SSH/WSL2 mode, the same JSON must also exist at `{workdir}/results/run_config.json` on the selected target. No parameter should be sourced from conversation history or user interaction.
 
 ## Prerequisite
-
-Load the configuration:
 
 ```python
 from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 ```
 
-All steps below reference fields from `config` (e.g., `config.madgraph_path`, `config.models`).
+All steps below reference fields from `config`.
+
+## Execution Target
+
+Read `config.execution.mode` before running any command:
+
+| Mode | Meaning | Path semantics |
+|---|---|---|
+| `local` | Run commands on the current machine | local filesystem paths |
+| `ssh` | Run commands on `config.execution.ssh_target` | Linux paths on the SSH host |
+| `wsl2` | Run commands inside WSL2 | Linux paths inside the WSL2 distro |
+
+For target-aware commands, use:
+
+```bash
+python scripts/remote_exec.py --config {local_run_config} --cwd {target_cwd} -- {command}
+```
+
+Do not hand-write ad-hoc SSH or WSL prefixes in later phases. In SSH and WSL2 modes, do not validate target paths with local `os.path.exists`.
 
 ## Resume / Checkpoint Behaviour
 
@@ -25,194 +42,98 @@ from scripts.workflow_logger import WorkflowLogger
 
 logger = WorkflowLogger(config.workdir)
 resume_phase = logger.get_resume_phase()
-```
-
-| `resume_phase` | Action |
-|----------------|--------|
-| `None` | No prior log — start normally from Phase 2 |
-| `"2"` | Phase 1 completed, Phase 2 not started — start Phase 2 |
-| `"3"` to `"10"` | Last completed phase was N-1; skip to phase `resume_phase` |
-| `"11"` or later | Workflow already finished; run Phase 11 audit only |
-
-When resuming, **still run Step 1–9** (environment validation must pass every time), but skip phase execution bodies for already-completed phases. Log a `started` + `completed` pair for each skipped phase so the log remains continuous.
-
-```python
 logger.phase_start("2")
 ```
 
+| `resume_phase` | Action |
+|---|---|
+| `None` | No prior log: start normally from Phase 2 |
+| `"2"` | Phase 1 completed, Phase 2 not started: start Phase 2 |
+| `"3"` to `"10"` | Last completed phase was N-1; skip to `resume_phase` after validation |
+| `"11"` or later | Workflow already finished; run Phase 11 audit only |
+
+When resuming, still run all Phase 2 validation steps every time.
+
 ## Steps
 
-1. **Validate `run_config.json`**:
+1. **Validate `run_config.json`**
    ```python
    with workflow_step(logger, "2", "validate_run_config"):
-       config = load_run_config(os.path.join(config.workdir, "results", "run_config.json"))
-       resume_phase = logger.get_resume_phase()
+       config = load_run_config(local_run_config)
    ```
-   Verify the file exists and `load_run_config` returns without error. If missing or invalid, STOP and report: "run_config.json not found or invalid. Phase 1 must complete successfully before Phase 2."
-   - Also check `workflow.log` for resume info (see Resume section above).
-2. **MadGraph5**:
+   Verify `execution.mode` is `local`, `ssh`, or `wsl2`. For SSH mode, verify `execution.ssh_target` exists. For SSH/WSL2 mode, verify `remote_exec.py -- true` returns 0 and that the target copy `{workdir}/results/run_config.json` exists.
+
+2. **Validate MadGraph5**
    ```python
    with workflow_step(logger, "2", "validate_madgraph5",
                       inputs={"mg5path": config.madgraph_path,
-                              "auto_installed": config.auto_installed_mg5}):
+                              "mode": config.execution.mode}):
    ```
-   - If `config.auto_installed_mg5` is true (see [`madgraph-installation.md`](madgraph-installation.md)):
-     - Verify `bin/mg5_aMC`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` all exist under `config.madgraph_path`. If any component is missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
-     - The installer script prints an environment report at the end showing current `PATH` / `LD_LIBRARY_PATH` and recommended exports. The script does **not** modify any environment variable. The LLM/skill should inspect the report and the user's `~/.bashrc`, then decide whether to set the exports for the current session and/or append them to `~/.bashrc` (with `# MG5_auto_install` markers).
-   - Otherwise: verify `config.madgraph_path` exists and contains `bin/mg5_aMC`
-   ```python
-       pass  # validation logic inside the block above
-   ```
-3. **CutExperiment**:
+   - Local mode: verify `{config.madgraph_path}/bin/mg5_aMC` or `{config.madgraph_path}/bin/mg5` exists locally.
+   - SSH/WSL2 mode: verify the same path on the target through `remote_exec.py`.
+   - If `config.auto_installed_mg5` is true, also verify `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` on the selected target.
+
+3. **Validate CutExperiment**
    ```python
    with workflow_step(logger, "2", "validate_cutexperiment",
                       inputs={"cutexperiment_path": config.cutexperiment_path}):
    ```
-   - Phase 1 should normally set `config.cutexperiment_path`.
-   - If the path is set: verify it exists and contains usable CutExperiment files.
-   - If the path is missing or the user selected `clone`: run `python scripts/install_cutexperiment.py {config.workdir}/CutExperiment`, parse the printed `CutExperiment path: ...`, update `config.cutexperiment_path`, and write the updated path back to `run_config.json`.
-   - If clone/validation fails, report the script exit code and stderr. This is unrecoverable unless the user provides a valid existing path by rerunning Phase 1.
-   ```python
-       pass  # validation / clone logic inside the block above
-   ```
-4. **Model(s)**:
+   If set, verify it exists on the selected target. If missing or user selected `clone`, run `python scripts/install_cutexperiment.py {config.workdir}/CutExperiment` on the selected target, parse `CutExperiment path: ...`, update `run_config.json`, and continue.
+
+4. **Validate models**
    ```python
    with workflow_step(logger, "2", "validate_models",
                       inputs={"models": config.models}):
    ```
-   `config.models` is a list of model names.
-   - For **each** model in the list:
-     - Check `{config.madgraph_path}/models/{model}` exists
-     - If not, check the skill's `dependency/` directory. If the model exists there, copy it to `{config.madgraph_path}/models/{model}`. If the model is missing in both locations, STOP and report the missing model.
-   - If any model fails validation, STOP and report the missing model.
-   ```python
-       pass  # validation / copy logic inside the block above
-   ```
-5. **Physics inputs**:
+   For each model, check `{config.madgraph_path}/models/{model}` on the target. If absent, check the skill's local `dependency/` directory; if available, copy/sync it into the target MG5 `models/` directory. If the model is missing in both locations, stop with the missing model name.
+
+5. **Validate physics inputs and locked event counts**
    ```python
    with workflow_step(logger, "2", "validate_physics_inputs",
                       inputs={"energy": config.energy, "luminosity": config.luminosity}):
-       for e in config.energy:
-           if e <= 0:
-               raise ValueError(f"energy must be > 0, got {e}")
-       for l in config.luminosity:
-           if l <= 0:
-               raise ValueError(f"luminosity must be > 0, got {l}")
-       if config.event_counts_locked is not True:
-           raise ValueError("event_counts_locked must be true")
-       expected = {
-           False: {"nev_phase3": 10000, "nev_phase4": 10000,
-                   "nev_sm": 500000, "nev_np": 100000, "nev_scan": 1000000},
-           True: {"nev_phase3": 1000, "nev_phase4": 1000,
-                  "nev_sm": 50000, "nev_np": 10000, "nev_scan": 100000},
-       }[bool(config.debug)]
-       if config.locked_event_counts.__dict__ != expected:
-           raise ValueError("locked_event_counts do not match debug mode")
+       assert config.event_counts_locked is True
    ```
-6. **Python virtual environment**:
-   ```python
-   from scripts.workflow_logger import workflow_step
+   Validate positive energy/luminosity values, matching list lengths, and exact locked event counts for the selected `debug` value.
+
+6. **Create Python virtual environment**
+   Create `{config.workdir}/venv/` on the selected target and install required packages directly into that venv:
+   ```bash
+   python -m venv {workdir}/venv
+   {workdir}/venv/bin/pip install numpy scipy scikit-learn joblib matplotlib
    ```
-   Create a local venv under `{config.workdir}/venv/` and install all required packages directly. Do NOT check whether packages exist in the system Python — a fresh venv starts empty.
+   Optional dependencies (`xgboost`, `lightgbm`, `torch`) are installed on demand in Phase 7.
+
+7. **Validate Delphes card**
+   Resolve `config.delphes_card` relative to `{config.madgraph_path}/Delphes/cards/` unless it is already absolute. Validate the resolved card path on the selected target and require `.tcl` or `.dat`.
+
+8. **Working directory guard**
+   In local mode only, if `config.workdir` is inside the skill directory, move it to the skill directory's parent and update `run_config.json`. In SSH/WSL2 mode, skip this local containment guard because target paths are not local paths.
+
+9. **Run directory setup**
+   For each `config.run_configurations` entry, create these directories on the selected target:
+   ```text
+   {workdir}/results/{run_dir}/data
+   {workdir}/results/{run_dir}/plots
+   {workdir}/results/{run_dir}/algorithms
+   {workdir}/results/{run_dir}/mg5_processes
+   {workdir}/results/{run_dir}/orders
+   ```
 
 ```python
-import os, subprocess, sys
-
-venv_dir = os.path.join(config.workdir, "venv")
-python_bin = os.path.join(venv_dir, "bin", "python")
-pip_bin = os.path.join(venv_dir, "bin", "pip")
-
-with workflow_step(logger, "2", "setup_venv", inputs={"venv_dir": venv_dir}):
-    # Create venv if not exists
-    if not os.path.exists(venv_dir):
-        subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
-
-    # Install required packages (always run — idempotent)
-    subprocess.run(
-        [pip_bin, "install", "numpy", "scipy", "scikit-learn", "joblib", "matplotlib"],
-        check=True
-    )
-```
-
-Record `python_bin` in memory (e.g., write to a small metadata file or set an environment variable) so Phases 1–9 know which Python interpreter to use for all subsequent Python operations.
-
-> **Optional dependencies** (`xgboost`, `lightgbm`, `torch`) are **NOT** installed in Phase 2. They are installed on-demand in Phase 7 into the same venv when the corresponding algorithm is selected. See [`phase7-ml-training.md`](phase7-ml-training.md) Section 5.2.1.
-
-7. **Delphes card**:
-   ```python
-   with workflow_step(logger, "2", "validate_delphes_card",
-                      inputs={"delphes_card": config.delphes_card}):
-      if os.path.isabs(config.delphes_card):
-          card_path = config.delphes_card
-      else:
-          card_path = os.path.join(config.madgraph_path, "Delphes", "cards", config.delphes_card)
-      if not os.path.exists(card_path):
-          raise ValueError(f"Delphes card not found: {config.delphes_card}")
-      if not card_path.endswith((".tcl", ".dat")):
-          raise ValueError(f"Delphes card must be .tcl or .dat: {card_path}")
-   ```
-
-8. **Working Directory guard**:
-   ```python
-   with workflow_step(logger, "2", "guard_workdir",
-                      inputs={"workdir": config.workdir}):
-       # Resolve this from the installed skill directory, not from workdir.
-       skill_dir = os.path.abspath("<installed automated-smeft-ml-pheno skill directory>")
-       if config.workdir.startswith(skill_dir):
-           parent = os.path.dirname(skill_dir)
-           config.workdir = parent
-           with open(os.path.join(config.workdir, "results", "run_config.json"), "w") as f:
-               json.dump(config.__dict__, f, indent=2)
-           print(f"Work directory adjusted to {parent} to avoid writing into the skill installation.")
-   ```
-
-9. **Run directory setup**:
-   All `results/` paths are relative to `config.workdir`. For each entry in `config.run_configurations`, create `{config.workdir}/results/{run_dir}/` with subdirectories `data/`, `plots/`, `algorithms/`, `mg5_processes/`, `orders/`. ALL subsequent phases MUST write to these directories, NEVER to bare `results/`.
-
-```python
-import os
-
-run_dirs = []
-with workflow_step(logger, "2", "setup_run_directories",
-                   inputs={"num_runs": len(config.run_configurations)}):
-    for run in config.run_configurations:
-        run_dir = os.path.join(config.workdir, "results", run.run_dir)
-        run_dirs.append(run.run_dir)
-        for sub in ["data", "plots", "algorithms", "mg5_processes", "orders"]:
-            os.makedirs(os.path.join(run_dir, sub), exist_ok=True)
-
 logger.phase_complete("2")
 ```
 
 ## Critical Rules
 
-- **ALWAYS use the venv created in Step 6** (`{workdir}/venv/`) for all Python operations in Phases 1–9. Do NOT fall back to system Python.
-- Do NOT hardcode paths to external virtual environments (e.g., `../example1/venv`)
-- **All file paths MUST be resolved relative to `{workdir}`**. Never assume the current working directory is correct; always use `os.path.join(workdir, "results", ...)` or `os.chdir(workdir)` before file operations.
-
-## MG5 Return Code Checking
-
-Every MG5 subprocess MUST be wrapped by `workflow_step(...)` and MUST check the return code:
-
-```python
-with workflow_step(logger, phase, "mg5_launch", inputs={"order": order_path}):
-    result = subprocess.run(
-        ["./bin/mg5_aMC", order_path],
-        cwd=MG5PATH,
-        capture_output=True,
-        text=True
-    )
-    if result.returncode != 0:
-        print(f"STDOUT:\n{result.stdout}")
-        print(f"STDERR:\n{result.stderr}")
-        raise RuntimeError(f"MG5 failed with exit code {result.returncode}")
-```
+- Always use the venv created in Step 6 for Python operations in later phases.
+- Never fall back to system Python for workflow analysis scripts.
+- All workflow outputs must be written under `{workdir}/results/` on the selected execution target.
+- Every MG5 subprocess must be wrapped by `workflow_step(...)` and must check the return code.
 
 ## Phase Transition
 
 After `logger.phase_complete("2")` is called and run directories are set up:
 
-1. **Check validation rules immediately**: If any critical check failed, abort with red flag.
-2. **If validation passes**: **proceed immediately to Phase 3 without stopping.**
-3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.
-
+1. If any critical validation failed, abort with a concrete red flag.
+2. If validation passes, proceed immediately to Phase 3 without stopping.
+3. Do not summarize results, ask for confirmation, present options, or wait for user input.

@@ -18,6 +18,8 @@ Key contracts:
   or multiple-choice UI tools.
 - `madgraph_path` and `cutexperiment_path` must always be asked, but known paths
   may be shown as suggested defaults.
+- Execution can be local, SSH remote, or WSL2. In SSH/WSL2 mode, paths are paths
+  on the target Linux environment, not Windows host paths.
 - Restart/retest requests reset the physics/run fields and begin again at
   `[1/9]`.
 - After `run_config.json` is written, Phases 2-11 run without user interaction
@@ -35,6 +37,7 @@ Key contracts:
 - `scripts/install_mg5.py` - MG5 installer after the agent resolves the dynamic
   Launchpad URL
 - `scripts/install_cutexperiment.py` - CutExperiment clone/validation helper
+- `scripts/remote_exec.py` - local/SSH/WSL2 command execution helper
 - `scripts/load_run_config.py` - run configuration loader and event-count lock
   validator
 
@@ -43,6 +46,8 @@ Key contracts:
 Phase 1 collects:
 
 - MadGraph5 path or auto-install request
+- Execution target inferred from the MadGraph5 answer: local path,
+  `ssh user@host:/path/to/MG5`, or `wsl2:/path/to/MG5`
 - Work directory
 - Physics process
 - UFO model list

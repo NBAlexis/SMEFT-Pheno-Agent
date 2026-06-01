@@ -44,6 +44,7 @@ Phase 1 must collect and validate:
 
 | Field | Meaning |
 |---|---|
+| `execution` | Where commands run: local, SSH target, or WSL2 target |
 | `madgraph_path` | Absolute path to MadGraph5, or auto-installed path |
 | `workdir` | Directory where all workflow outputs are written |
 | `process` | Physics process only; no `NP=`, `QED=`, or `QCD=` suffix |
@@ -67,6 +68,20 @@ Phase 1 writes these locked event counts to `run_config.json`; every phase must 
 | `nev_scan` | 1000000 | 100000 |
 
 Only `debug=true`, explicitly collected in Phase 1, may select the debug values. No later phase may change them.
+
+## Execution Target Contract
+
+Phase 1 determines where commands execute and writes it to `run_config.json`.
+
+| Mode | Meaning | Path interpretation |
+|---|---|---|
+| `local` | Run commands on the current machine | local filesystem paths |
+| `ssh` | Run commands on a remote Linux host through SSH | paths on the SSH host |
+| `wsl2` | Run commands inside a local WSL2 Linux distro | paths inside WSL2 |
+
+From Phase 2 onward, do not hand-write ad-hoc SSH or WSL command prefixes. Use `scripts/remote_exec.py` for target-aware command execution when `execution.mode` is `ssh` or `wsl2`.
+
+In SSH/WSL2 mode, Phase 1 must write two identical `run_config.json` copies: a local control copy readable by the agent, and the target copy at `{workdir}/results/run_config.json`. The local control copy is used only for orchestration; workflow outputs remain on the selected execution target.
 
 ## Phase Completion Contracts
 
@@ -126,6 +141,7 @@ Prefer bundled scripts for deterministic pieces:
 | `scripts/load_run_config.py` | Load/validate `run_config.json` |
 | `scripts/install_mg5.py` | Install MG5 after the agent dynamically resolves the Launchpad download URL |
 | `scripts/install_cutexperiment.py` | Clone/validate CutExperiment |
+| `scripts/remote_exec.py` | Run commands locally, over SSH, or inside WSL2 |
 | `scripts/run_mg5.py` | Run MG5 order files with return-code checking |
 | `scripts/parse_param_card.py` | Parse coefficient blocks |
 | `scripts/extract_cross_section.py` | Parse MG5 banner cross-sections |
