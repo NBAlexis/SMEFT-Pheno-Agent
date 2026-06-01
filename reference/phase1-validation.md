@@ -58,6 +58,26 @@ Maps global index → operator metadata:
 }
 ```
 
+### `model_status` dictionary
+Records per-model Feynman diagram generation status and detailed coefficient results:
+```python
+model_status = {
+    "nTGC_UFO_11g1": {
+        "has_feynman_diagrams": True,
+        "num_coefficients": 14,
+        "coefficients": {
+            "C1": {"c_default": 1.0, "sigma": 0.0},
+            "C2": {"c_default": 1.0, "sigma": 0.0},
+            ...
+        }
+    },
+    "nTGC_UFO_12g2": {
+        "has_feynman_diagrams": False,
+        "error": "NoDiagramException: ..."
+    }
+}
+```
+
 ### `anchor`
 The first non-zero operator encountered when iterating all models in order:
 ```python
@@ -87,6 +107,8 @@ output {folder_base}_{model_name}_p1_NP
 Run and check return code. Abort on any MG5 error.
 
 ```python
+model_status = {}  # initialize before iterating models
+
 with workflow_step(logger, "1", f"mg5_generate_np_{model_name}",
                    inputs={"model": model_name, "process": config.process}):
     order_path = os.path.join(config.workdir, "results", run_dir, "orders", f"order_{model_name}.txt")
@@ -97,6 +119,9 @@ with workflow_step(logger, "1", f"mg5_generate_np_{model_name}",
         f.write(f"output {folder_base}_{model_name}_p1_NP\n")
     subprocess.run([os.path.join(config.madgraph_path, "bin", "mg5_aMC"), order_path],
                    cwd=config.madgraph_path, check=True)
+
+# Record that this model has Feynman diagrams (generate succeeded)
+model_status[model_name] = {"has_feynman_diagrams": True}
 ```
 
 ### 1.1.2 Extract Coefficients from param_card.dat
@@ -144,7 +169,8 @@ For each coefficient `fi` in this model:
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
 5. Extract `sigma_i` from the run banner using the canonical `extract_cross_section()` function defined in [`madgraph-reference.md`](madgraph-reference.md). **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` (or parse failure) should exclude an operator.
-6. **Deduplication check**:
+6. **Record result in `model_status`**: Always record the coefficient's `c_default` and `sigma_i` under `model_status[model_name]["coefficients"][fi]`, regardless of whether `sigma_i` is zero or non-zero.
+7. **Deduplication check**:
    - If `sigma_i > 0` and `fi` NOT in `claimed`: 
      - Assign next global index `g_idx`
      - `claimed[fi] = model_name`
@@ -156,7 +182,7 @@ For each coefficient `fi` in this model:
      - Log: "Operator `{fi}` already claimed by `{claimed[fi]}`. Skipping duplicate from `{model_name}`."
      - Do NOT assign a global index
    - If `sigma_i == 0`: exclude (no claim)
-7. **Immediately proceed to the next coefficient. Do NOT pause, do NOT branch to other tasks.**
+8. **Immediately proceed to the next coefficient. Do NOT pause, do NOT branch to other tasks.**
 
 ```python
 for idx, default_val in coefficients.items():
@@ -190,7 +216,8 @@ After all models have been processed:
 
 1. Write `operator_claims.json`
 2. Write `cross_sections.json` (includes all tested operators, not just claimed ones)
-3. Write `anchor.json`:
+3. Write `model_status.json` (per-model Feynman diagram status and full coefficient–cross-section table)
+4. Write `anchor.json`:
 ```json
 {
   "global_idx": 1,
@@ -212,6 +239,8 @@ with workflow_step(logger, "1", "write_global_metadata",
         json.dump(operator_claims, f, indent=2)
     with open(os.path.join(phase1_dir, "cross_sections.json"), "w") as f:
         json.dump(cross_sections, f, indent=2)
+    with open(os.path.join(phase1_dir, "model_status.json"), "w") as f:
+        json.dump(model_status, f, indent=2)
     with open(os.path.join(phase1_dir, "anchor.json"), "w") as f:
         json.dump(anchor if anchor else {}, f, indent=2)
 
@@ -226,6 +255,7 @@ logger.phase_complete("1")
 results/data/phase1/
   operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
   cross_sections.json        # {fi: {sigma, c_default, model, global_idx}} for all tested
+  model_status.json          # {model: {has_feynman_diagrams, num_coefficients, coefficients: {fi: {c_default, sigma}}}}
   anchor.json                # {global_idx, model, anoinput_idx, name}
 ```
 
@@ -234,8 +264,46 @@ results/data/phase1/
 | Check | Action on Failure |
 |-------|-------------------|
 | `generate` succeeds for every model | Abort and report MG5 error |
-| At least one operator claimed globally | Abort: process insensitive to all provided models |
-| `anchor` is set | Abort: no non-zero operators found |
+| At least one operator claimed globally | Abort: process insensitive to all provided models. **Before aborting, emit a full `model_status` report** (see below). |
+| `anchor` is set | Abort: no non-zero operators found. **Before aborting, emit a full `model_status` report** (see below). |
+
+## Zero Cross-Section Report (Required)
+
+If **all** tested operators return `sigma = 0` (or if `anchor` is not set), the workflow MUST abort with a red flag. **Before aborting**, output a detailed report that includes:
+
+1. **Per-model Feynman diagram status** (from `model_status.json`):
+   - Model name
+   - `has_feynman_diagrams`: `True` / `False`
+   - If `False`, the MG5 error / exception that caused the failure
+
+2. **For every model with `has_feynman_diagrams = True`**: a complete table of **all** coefficients tested, showing:
+   - Operator name (e.g., `C1`, `C2`)
+   - `c_default` value used
+   - `sigma` (pb) — even if `0.0`
+
+Example report format:
+
+```
+Phase 1 Complete — Zero Non-Zero Operators Found
+==================================================
+
+Model: nTGC_UFO_11g1
+  has_feynman_diagrams: True
+  num_coefficients: 14
+  Results:
+    C1   c_default=1.0e-12   sigma=0.0 pb
+    C2   c_default=1.0e-12   sigma=0.0 pb
+    ...
+    C14  c_default=1.0e-12   sigma=0.0 pb
+
+Model: nTGC_UFO_12g2
+  has_feynman_diagrams: False
+  error: NoDiagramException: No diagram found for mu+ mu- > a j j NP>0
+
+RED FLAG: No operator claimed. Process is insensitive to all provided models.
+```
+
+This report is written to the log and to a file `results/data/phase1/phase1_report.txt` so the user can inspect the full result without re-running MG5.
 
 ## Prohibited Behaviors During Phase 1 (CRITICAL)
 
