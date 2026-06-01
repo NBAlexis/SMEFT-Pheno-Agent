@@ -168,7 +168,19 @@ For each coefficient `fi` in this model:
    - `block_name` is obtained from `parse_param_card.py` output (`block_name` field), e.g., `anoinputs` or `dim8`.
 3. Run MG5, check return code
 4. Post-process: find latest `run_XX`, convert ROOT→LHCO, validate
-5. Extract `sigma_i` from the run banner using the canonical `extract_cross_section()` function defined in [`madgraph-reference.md`](madgraph-reference.md). **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` (or parse failure) should exclude an operator.
+5. Extract `sigma_i` from the run banner:
+   - **Use the script** (do NOT reimplement):
+     ```bash
+     python scripts/extract_cross_section.py {banner_path}
+     ```
+     Or import in Python:
+     ```python
+     from scripts.extract_cross_section import extract_cross_section
+     sigma_i = extract_cross_section(banner_path)
+     ```
+   - The script handles both MG5 v3.x (`Integrated weight (pb)`) and older formats.
+   - **Do NOT silently return `0.0` on parse failure.** The script raises `ValueError` so failures are visible.
+   - **Any positive cross-section** — even `1e-10 pb` — indicates the operator couples to the process. Only `sigma_i == 0` should exclude an operator.
 6. **Record result in `model_status`**: Always record the coefficient's `c_default` and `sigma_i` under `model_status[model_name]["coefficients"][fi]`, regardless of whether `sigma_i` is zero or non-zero.
 7. **Deduplication check**:
    - If `sigma_i > 0` and `fi` NOT in `claimed`: 
@@ -316,6 +328,7 @@ The following behaviors constitute a **critical violation** of the Execution Con
 | **Skipping remaining coefficients because "the process seems insensitive"** | Insensitivity can only be determined after ALL coefficients are tested. | Test every coefficient in every model. No exceptions. |
 | **Switching to the next model before finishing the current model** | Model order is preserved for deduplication. Incomplete testing corrupts the claimed operator list. | Finish all coefficients in the current model before moving to the next. |
 | **Reporting red flags or asking the user mid-phase** | Red flags are checked **only after the phase completes**. | Complete the phase silently. Report findings at the phase boundary. |
+| **Reimplementing `extract_cross_section()` instead of using `scripts/extract_cross_section.py`** | The canonical script handles MG5 v3.x `Integrated weight (pb)` and older formats correctly. A handwritten regex will miss v3.x banners, silently corrupt all cross-section data, and produce false zero-cross-section reports. | Always call `scripts/extract_cross_section.py` (or import `extract_cross_section` from it). Never write your own parser. |
 
 > **执行锁 — 最高优先级规则：**
 > 如果有 10 个算符，哪怕 9 个为 0 也必须测完 10 个算符。中途停止是严格禁止的。
