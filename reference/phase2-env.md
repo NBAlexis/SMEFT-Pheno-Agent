@@ -59,7 +59,14 @@ logger.assert_ready()
 logger.phase_start("2")
 ```
 
-If `{workdir}/EOF` or `{workdir}/results/EOF` exists, treat it as evidence that a heredoc or shell redirection was used incorrectly. Do not continue with that shell-writing pattern. Initialize `workflow.log`, record the anomaly with `logger.step(...)`, and use Python file APIs or bundled scripts for subsequent file writes.
+If `{workdir}/EOF`, `{workdir}/!`, `{workdir}/results/EOF`, or `{workdir}/results/!` exists, treat it as evidence that heredoc, shell redirection, or shell clobber syntax was used incorrectly. Do not continue with that shell-writing pattern. Initialize `workflow.log`, record the anomaly with `logger.step(...)`, and use Python file APIs or bundled scripts for subsequent file writes.
+
+Bug-report logging requirements:
+- A phase is not adequately logged unless it contains `level="step"` records for the major operations in that phase.
+- For every subprocess, log the executable/script, arguments, target cwd, return code, stdout/stderr log path, and produced output paths.
+- Prefer `run_logged_subprocess(...)` from `scripts/workflow_logger.py` over bare `subprocess.run(...)`.
+- For every recovery attempt, log the failed unit, reason, cleanup action, renamed/broken directory, retry attempt number, and final success/failure.
+- For every exception, preserve the exception type and traceback in `workflow.log`.
 
 ## Resume / Checkpoint Behaviour
 

@@ -27,8 +27,12 @@ Resume logic (called in Phase 2):
 import functools
 import json
 import os
+import platform
+import socket
+import subprocess
 import sys
 import time
+import traceback
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any, Dict, Generator, Optional
@@ -44,6 +48,7 @@ class WorkflowLogger:
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
         open(self.log_path, "a", encoding="utf-8").close()
         self._step_start_times: Dict[str, float] = {}
+        self._sequence = 0
 
     @staticmethod
     def _log_path(workdir: str, run_dir: Optional[str]) -> str:
@@ -52,46 +57,98 @@ class WorkflowLogger:
         return os.path.join(workdir, "results", "workflow.log")
 
     def _append(self, record: Dict[str, Any]) -> None:
+        self._sequence += 1
+        record.setdefault("schema_version", "1.1")
+        record.setdefault("sequence", self._sequence)
+        record.setdefault("pid", os.getpid())
+        record.setdefault("cwd", os.getcwd())
+        record.setdefault("workdir", self.workdir)
+        record.setdefault("log_path", self.log_path)
+        if self.run_dir:
+            record.setdefault("run_dir", self.run_dir)
         record["timestamp"] = datetime.now(timezone.utc).isoformat()
         with open(self.log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
             f.flush()
             os.fsync(f.fileno())
 
-    def meta(self, event: str, message: str = "") -> None:
-        self._append({"level": "meta", "event": event, "message": message})
+    def meta(self, event: str, message: str = "", details: Optional[Dict[str, Any]] = None) -> None:
+        record = {"level": "meta", "event": event, "message": message}
+        if details is not None:
+            record["details"] = details
+        self._append(record)
+
+    def runtime_context(self) -> Dict[str, Any]:
+        return {
+            "hostname": socket.gethostname(),
+            "platform": platform.platform(),
+            "python": sys.version,
+            "python_executable": sys.executable,
+            "argv": sys.argv,
+            "environment": {
+                "PATH": os.environ.get("PATH", ""),
+                "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
+                "VIRTUAL_ENV": os.environ.get("VIRTUAL_ENV", ""),
+            },
+        }
 
     def assert_ready(self) -> None:
-        """Verify workflow.log exists, is writable, and no stray EOF file exists."""
-        self.meta("logger_ready", "workflow log initialized")
+        """Verify workflow.log exists, is writable, and no stray shell artifact exists."""
+        self.meta("logger_ready", "workflow log initialized", details=self.runtime_context())
         if not os.path.exists(self.log_path):
             raise RuntimeError(f"workflow.log was not created: {self.log_path}")
-        eof_candidates = [
-            os.path.join(self.workdir, "EOF"),
-            os.path.join(self.workdir, "results", "EOF"),
-        ]
+        bad_names = ("EOF", "!")
+        candidate_dirs = [self.workdir, os.path.join(self.workdir, "results")]
         if self.run_dir:
-            eof_candidates.append(os.path.join(self.workdir, "results", self.run_dir, "EOF"))
-        found = [path for path in eof_candidates if os.path.exists(path)]
+            candidate_dirs.append(os.path.join(self.workdir, "results", self.run_dir))
+        found = []
+        for directory in candidate_dirs:
+            for name in bad_names:
+                path = os.path.join(directory, name)
+                if os.path.exists(path):
+                    found.append(path)
         if found:
             self.meta(
                 "logging_anomaly",
-                "Stray EOF file detected; do not use heredoc/shell EOF redirection for workflow files: "
+                "Stray shell artifact detected; do not use heredoc or shell clobber/redirection for workflow files: "
                 + ", ".join(found),
+                details={"paths": found, "forbidden_names": list(bad_names)},
             )
 
     # ------------------------------------------------------------------
     # Phase-level (coarse-grained, for checkpoint / resume)
     # ------------------------------------------------------------------
 
-    def phase_start(self, phase: str, message: str = "") -> None:
-        self._append({"level": "phase", "phase": phase, "event": "started", "message": message})
+    def phase_start(self, phase: str, message: str = "", details: Optional[Dict[str, Any]] = None) -> None:
+        latest = self.latest_phase_event(phase)
+        if latest == "started":
+            self.meta(
+                "logging_anomaly",
+                f"Phase {phase} was started again before a completion/failure record",
+                details={"phase": phase, "latest_phase_event": latest},
+            )
+        record = {"level": "phase", "phase": phase, "event": "started", "message": message}
+        if details is not None:
+            record["details"] = details
+        self._append(record)
 
-    def phase_complete(self, phase: str, message: str = "") -> None:
-        self._append({"level": "phase", "phase": phase, "event": "completed", "message": message})
+    def phase_complete(self, phase: str, message: str = "", details: Optional[Dict[str, Any]] = None) -> None:
+        if not self.has_step_records(phase):
+            self.meta(
+                "logging_anomaly",
+                f"Phase {phase} completed without any step records",
+                details={"phase": phase},
+            )
+        record = {"level": "phase", "phase": phase, "event": "completed", "message": message}
+        if details is not None:
+            record["details"] = details
+        self._append(record)
 
-    def phase_fail(self, phase: str, error: str) -> None:
-        self._append({"level": "phase", "phase": phase, "event": "failed", "error": error})
+    def phase_fail(self, phase: str, error: str, details: Optional[Dict[str, Any]] = None) -> None:
+        record = {"level": "phase", "phase": phase, "event": "failed", "error": error}
+        if details is not None:
+            record["details"] = details
+        self._append(record)
 
     # ------------------------------------------------------------------
     # Step-level (fine-grained, for debugging and auditing)
@@ -167,6 +224,18 @@ class WorkflowLogger:
                 return str(record.get("phase"))
         return None
 
+    def latest_phase_event(self, phase: str) -> Optional[str]:
+        for record in self._read_records():
+            if record.get("level") == "phase" and str(record.get("phase")) == str(phase):
+                return str(record.get("event"))
+        return None
+
+    def has_step_records(self, phase: str) -> bool:
+        for record in self._read_records():
+            if record.get("level") == "step" and str(record.get("phase")) == str(phase):
+                return True
+        return False
+
     def is_phase_completed(self, phase: str) -> bool:
         for record in self._read_records():
             if (record.get("level") == "phase" and
@@ -240,7 +309,13 @@ class _WorkflowStepContext:
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
         if exc_type is not None:
             self.logger.step_fail(
-                self.phase, self.step_name, error=str(exc_val)
+                self.phase,
+                self.step_name,
+                error=f"{exc_type.__name__}: {exc_val}",
+                outputs={
+                    "exception_type": exc_type.__name__,
+                    "traceback": "".join(traceback.format_exception(exc_type, exc_val, exc_tb)),
+                },
             )
         else:
             self.logger.step_complete(
@@ -293,6 +368,78 @@ def workflow_step(
     ctx = _WorkflowStepContext(logger, phase, step_name, inputs)
     with ctx:
         yield ctx
+
+
+def run_logged_subprocess(
+    logger: WorkflowLogger,
+    phase: str,
+    step_name: str,
+    command,
+    cwd: Optional[str] = None,
+    stdout_path: Optional[str] = None,
+    stderr_path: Optional[str] = None,
+    check: bool = True,
+    inputs: Optional[Dict[str, Any]] = None,
+):
+    """Run a subprocess and log enough detail for bug reports.
+
+    Prefer this helper over bare ``subprocess.run`` whenever a workflow command
+    may fail, produce external logs, or create files used by later phases.
+    """
+    command_list = list(command)
+    merged_inputs = dict(inputs or {})
+    merged_inputs.update({
+        "command": command_list,
+        "cwd": cwd,
+        "stdout_path": stdout_path,
+        "stderr_path": stderr_path,
+    })
+    logger.step_start(phase, step_name, inputs=merged_inputs)
+    start_t = time.perf_counter()
+    stdout_f = open(stdout_path, "a", encoding="utf-8") if stdout_path else subprocess.PIPE
+    stderr_f = open(stderr_path, "a", encoding="utf-8") if stderr_path else subprocess.PIPE
+    try:
+        result = subprocess.run(
+            command_list,
+            cwd=cwd,
+            stdout=stdout_f,
+            stderr=stderr_f,
+            text=True,
+            check=False,
+        )
+    finally:
+        if stdout_path:
+            stdout_f.close()
+        if stderr_path:
+            stderr_f.close()
+
+    duration_ms = round((time.perf_counter() - start_t) * 1000, 1)
+    outputs = {
+        "returncode": result.returncode,
+        "duration_ms": duration_ms,
+        "stdout_path": stdout_path,
+        "stderr_path": stderr_path,
+    }
+    if not stdout_path:
+        outputs["stdout_tail"] = (result.stdout or "")[-4000:]
+    if not stderr_path:
+        outputs["stderr_tail"] = (result.stderr or "")[-4000:]
+
+    if result.returncode == 0:
+        logger.step_complete(phase, step_name, outputs=outputs)
+        return result
+
+    logger.step_fail(
+        phase,
+        step_name,
+        error=f"subprocess exited with return code {result.returncode}",
+        outputs=outputs,
+    )
+    if check:
+        raise RuntimeError(
+            f"{step_name} failed with return code {result.returncode}: {command_list}"
+        )
+    return result
 
 
 def logged_step(
@@ -358,7 +505,15 @@ def logged_step(
                 logger.step_complete(phase, actual_step_name, outputs=outputs)
                 return result
             except Exception as e:
-                logger.step_fail(phase, actual_step_name, error=str(e))
+                logger.step_fail(
+                    phase,
+                    actual_step_name,
+                    error=f"{type(e).__name__}: {e}",
+                    outputs={
+                        "exception_type": type(e).__name__,
+                        "traceback": traceback.format_exc(),
+                    },
+                )
                 raise
 
         return wrapper
@@ -374,6 +529,7 @@ def main():
     parser.add_argument("--last", action="store_true", help="Last completed phase")
     parser.add_argument("--resume", action="store_true", help="Phase to resume from")
     parser.add_argument("--steps", metavar="PHASE", help="List all steps for a phase")
+    parser.add_argument("--has-steps", metavar="PHASE", help="Print true if a phase has step records")
     parser.add_argument("--touch", action="store_true", help="Create and validate workflow.log")
     parser.add_argument("--start", metavar="PHASE", help="Append a phase-start record")
     parser.add_argument("--complete", metavar="PHASE", help="Append a phase-complete record")
@@ -401,6 +557,8 @@ def main():
     elif args.steps:
         for rec in logger.get_phase_steps(args.steps):
             print(json.dumps(rec, ensure_ascii=False, default=str))
+    elif args.has_steps:
+        print("true" if logger.has_step_records(args.has_steps) else "false")
     else:
         if os.path.exists(logger.log_path):
             with open(logger.log_path) as f:

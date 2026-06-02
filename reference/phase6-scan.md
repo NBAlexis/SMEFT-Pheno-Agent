@@ -186,7 +186,7 @@ For each new run, convert the Delphes ROOT output to LHCO format:
 
 **Use the script** (do not reimplement):
 ```bash
-python scripts/convert_root_to_lhco.py {mg5path}/{folder_base}_{model_name}_p6/Events/{run}/ {run}.root
+python scripts/convert_root_to_lhco.py {mg5path} {folder_base}_{model_name}_p6 {run}
 ```
 
 Or in Python:
@@ -194,8 +194,7 @@ Or in Python:
 from scripts.convert_root_to_lhco import convert_root_to_lhco
 
 for run in new_runs:
-    root_file = os.path.join(events_dir, run, f"{run}_tag_1_delphes_events.root")
-    convert_root_to_lhco(root_file)
+    convert_root_to_lhco(mg5path, f"{folder_base}_{model_name}_p6", run)
 ```
 
 
@@ -275,6 +274,7 @@ results/data/phase6/
 | Hardcoding `tag_1` in root2lhco call | Check which tag actually exists |
 | Stopping because the estimate is 4-8 hours, weeks, or months | Start durable execution and continue/resume from `phase6_progress.json` |
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
+| File named `!` containing `convert_root_to_lhco.py` usage text | The conversion script was called with wrong arguments and output was redirected with shell clobber syntax. Use `python scripts/convert_root_to_lhco.py {mg5path} {process_folder} {run_folder}` and log stdout/stderr paths instead of `> !` |
 
 ## Phase Transition
 

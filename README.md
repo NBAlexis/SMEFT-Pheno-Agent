@@ -32,8 +32,9 @@ Key contracts:
   whether to continue or reducing statistics.
 - On Windows hosts, use WSL2 or SSH for long MG5/Delphes jobs instead of native
   Windows local background execution.
-- `results/workflow.log` is mandatory from Phase 2 onward. Do not use heredoc
-  `EOF` shell patterns to create workflow files.
+- `results/workflow.log` is mandatory from Phase 2 onward and doubles as the
+  bug-report log. Do not use heredoc `EOF` or shell `!` clobber patterns to
+  create workflow files.
 
 ## Important Files
 

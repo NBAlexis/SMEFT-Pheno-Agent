@@ -61,9 +61,13 @@ Rules:
 - The first action in Phase 2 must initialize and validate the log with `scripts/workflow_logger.py {workdir} --touch`, or the target-aware equivalent through `scripts/remote_exec.py`.
 - Every phase must append `phase_start` before any filesystem, subprocess, download, install, or analysis operation.
 - Every phase must append `phase_complete` only after its completion unit is satisfied, or `phase_fail` only for a proven unrecoverable failure.
-- Do not create workflow files with heredoc markers or shell EOF redirection. Forbidden patterns include `cat <<EOF`, `python <<EOF`, `python - <<EOF`, `> EOF`, and `>> EOF`.
-- A file literally named `EOF` in `{workdir}` or `{workdir}/results` is a logging/bootstrap violation. Stop the current shell-writing approach, initialize `workflow.log`, record the anomaly, and continue using Python file APIs or bundled scripts.
+- Every execution phase must contain step records. A phase with only `phase_start`/`phase_complete` and no `level="step"` records is an invalid bug-report log, even if resume technically works.
+- Repeated `phase_start` for the same phase before a completion/failure record must be logged as a recovery/resume anomaly with the reason.
+- Do not create workflow files with heredoc markers, shell EOF redirection, or shell clobber redirection. Forbidden patterns include `cat <<EOF`, `python <<EOF`, `python - <<EOF`, `> EOF`, `>> EOF`, `> !`, and `>!`.
+- A file literally named `EOF` or `!` in `{workdir}` or `{workdir}/results` is a logging/bootstrap violation. Stop the current shell-writing approach, initialize `workflow.log`, record the anomaly, and continue using Python file APIs or bundled scripts.
 - Do not rely on conversation text as a log. The JSONL `workflow.log` is the resume source of truth.
+- `workflow.log` is also the bug-report source of truth. Records must include enough detail to diagnose failures after publication: commands or script arguments, target paths, return codes, output paths, retry attempts, exception type, traceback, and relevant stdout/stderr log paths.
+- Prefer `run_logged_subprocess(...)` from `scripts/workflow_logger.py` for subprocesses so command arguments, cwd, return code, duration, stdout/stderr paths, and output tails are recorded consistently.
 
 ## Required Inputs
 
