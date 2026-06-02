@@ -5,6 +5,25 @@
 ## Purpose
 Generate 11 scan points per **globally claimed operator** across the coefficient range `[-c_{n_{scan}}, c_{n_{scan}}]`. Each operator is scanned in its **source model** (the model that claimed it). Output filenames use **global numbering** (`o_1`, `o_2`, ...) to maintain consistency across all phases.
 
+## Long-Run Lock
+
+Phase 6 is expected to be expensive. Runs lasting 4-8 hours, several days, several weeks, or more than two months are acceptable and must not be treated as abnormal.
+
+Forbidden behavior:
+- Do not stop with messages such as "impractical in an interactive session", "too long", or "estimated runtime is unacceptable".
+- Do not ask whether to continue, split the scan, reduce event counts, enable debug mode, drop operators, or reduce the 11-point scan grid because of runtime.
+- Do not treat slow MG5 convergence, large HEPMC/ROOT files, or long Delphes/root2lhco conversion as a red flag.
+- Do not summarize partial progress and wait for user input.
+
+Required behavior when the foreground session is not suitable:
+1. Start or continue a durable job on the selected execution target with `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or the local batch scheduler.
+   On native Windows, switch to the configured WSL2/SSH target for long MG5/Delphes jobs instead of relying on native Windows background execution.
+2. Write a durable progress state under `results/data/phase6/`:
+   - `scan_manifest.json`: all required `(operator, model, scan_index, coefficient)` units.
+   - `phase6_progress.json`: completed, running, failed/retrying, and pending units.
+3. Continue monitoring or resume from the manifest. Partial completion is a checkpoint, not a stop condition.
+4. Log time estimates only as diagnostics. They must not alter `nev_scan`, operators, models, scan points, or transitions.
+
 ## Prerequisite
 
 Load the configuration:
@@ -24,6 +43,17 @@ logger.phase_start("6")
 Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
 
 From `coefficient_ranges.json`, read the unified range: `c_{scan} = coefficient_ranges["global"][1]` (the positive bound). The same `c_{n_{scan}} = c_{scan}` applies to all operators.
+
+Before launching the first scan, create the manifest:
+
+```python
+phase6_dir = os.path.join(config.workdir, "results", "data", "phase6")
+os.makedirs(phase6_dir, exist_ok=True)
+manifest_path = os.path.join(phase6_dir, "scan_manifest.json")
+progress_path = os.path.join(phase6_dir, "phase6_progress.json")
+```
+
+`scan_manifest.json` must include every globally claimed operator and all 11 scan coefficients. `phase6_progress.json` must be updated after each scan point conversion/copy, and after each retry.
 
 ## Critical Rules — Prevent tag_2 Corruption
 
@@ -117,28 +147,28 @@ new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operator scan:
 
 1. **Log the failure** with the operator name and error reason.
-2. **Clean temporary files** in the process directory:
+2. **Update `phase6_progress.json`** marking the current operator/scan unit as `failed_retrying`.
+3. **Clean temporary files** in the process directory:
    ```bash
    find {mg5path}/{folder_base}_{model_name}_p6/Events/run_*/ \
        \( -name "*.root" -o -name "*.lhe.gz" -o -name "*.hepmc.gz" \) -delete
    ```
-3. **Rename the process directory** to a broken suffix (preserve it for debugging):
+4. **Rename the process directory** to a broken suffix (preserve it for debugging):
    ```python
    import time
    broken_name = f"{folder_base}_{model_name}_p6_broken_{int(time.time())}"
    os.rename(f"{mg5path}/{folder_base}_{model_name}_p6",
              f"{mg5path}/{broken_name}")
    ```
-4. **Report to the user** (but do NOT stop):
-   > "Scan generation failed for operator `{name}` (model `{model_name}`). Error: `{reason}`. Retrying with a fresh process directory. Reply `stop` to abort the entire workflow."
-5. **Recreate the process directory** from scratch:
+5. **Do not ask the user what to do.** Do not print a stop prompt. The failure is handled by the retry loop unless an explicit user stop command was already received outside this phase logic.
+6. **Recreate the process directory** from scratch:
    ```
    import model {model_name}
    generate {process_name}
    output {folder_base}_{model_name}_p6
    ```
-6. **Re-run the scan launch** for the same operator.
-7. **Repeat from step 1 until success.** Only a user message containing `stop` aborts the retry loop.
+7. **Re-run the scan launch** for the same operator.
+8. **Repeat from step 1 until success.** Runtime length and repeated recoverable failures do not convert into a request for user input.
 
 ```python})
 ```
@@ -216,6 +246,8 @@ logger.phase_complete("6")
 
 ```
 results/data/phase6/
+  scan_manifest.json
+  phase6_progress.json
   np_o_1_f0_banner.txt    np_o_1_f0.lhco
   np_o_1_f1_banner.txt    np_o_1_f1.lhco
   np_o_1_f2_banner.txt    np_o_1_f2.lhco
@@ -241,11 +273,13 @@ results/data/phase6/
 | Creating one process dir per operator | Create one per **model** (operators from the same model share a directory) |
 | tag_2 ROOT files | Only happens if existing runs were modified and re-launched |
 | Hardcoding `tag_1` in root2lhco call | Check which tag actually exists |
+| Stopping because the estimate is 4-8 hours, weeks, or months | Start durable execution and continue/resume from `phase6_progress.json` |
+| Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
 
 ## Phase Transition
 
 After all operators are scanned and all LHCO files are copied:
 
-1. **Check validation rules immediately**: If any scan point is missing, abort.
+1. **Check validation rules immediately**: If any scan point is missing, continue/resume/retry from `phase6_progress.json`; abort only if the missing output is caused by a concrete unrecoverable filesystem or physics-generation error.
 2. **If validation passes**: **proceed immediately to Phase 7 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

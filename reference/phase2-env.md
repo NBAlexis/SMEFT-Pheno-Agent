@@ -33,6 +33,34 @@ python scripts/remote_exec.py --config {local_run_config} --cwd {target_cwd} -- 
 
 Do not hand-write ad-hoc SSH or WSL prefixes in later phases. In SSH and WSL2 modes, do not validate target paths with local `os.path.exists`.
 
+## Long-Run Setup
+
+Create `{workdir}/results/jobs/` on the selected execution target. Later phases may use this directory for durable PID, stdout, stderr, and status files when a command may outlive the foreground agent session.
+
+Runtime duration is not a validation failure. Do not reject a configuration because a later MG5/Delphes phase may take hours, days, weeks, or months.
+
+## Log Bootstrap
+
+This is the first executable action in Phase 2. It must happen before dependency checks, downloads, installs, or MG5 commands:
+
+```bash
+python scripts/workflow_logger.py {workdir} --touch
+```
+
+In SSH/WSL2 mode, run the same command on the selected target through `scripts/remote_exec.py`.
+
+Then start Phase 2:
+
+```python
+from scripts.workflow_logger import WorkflowLogger
+
+logger = WorkflowLogger(config.workdir)
+logger.assert_ready()
+logger.phase_start("2")
+```
+
+If `{workdir}/EOF` or `{workdir}/results/EOF` exists, treat it as evidence that a heredoc or shell redirection was used incorrectly. Do not continue with that shell-writing pattern. Initialize `workflow.log`, record the anomaly with `logger.step(...)`, and use Python file APIs or bundled scripts for subsequent file writes.
+
 ## Resume / Checkpoint Behaviour
 
 Before starting any work, check whether a previous workflow run was interrupted:

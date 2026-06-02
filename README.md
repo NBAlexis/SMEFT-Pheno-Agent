@@ -27,6 +27,13 @@ Key contracts:
   occurs.
 - Event counts are locked in `run_config.json`; later phases must not resize
   them for speed.
+- Long MadGraph/Delphes runtimes are normal. Hours, days, weeks, or months are
+  not stop conditions; use durable execution and status files instead of asking
+  whether to continue or reducing statistics.
+- On Windows hosts, use WSL2 or SSH for long MG5/Delphes jobs instead of native
+  Windows local background execution.
+- `results/workflow.log` is mandatory from Phase 2 onward. Do not use heredoc
+  `EOF` shell patterns to create workflow files.
 
 ## Important Files
 
@@ -38,6 +45,9 @@ Key contracts:
   Launchpad URL
 - `scripts/install_cutexperiment.py` - CutExperiment clone/validation helper
 - `scripts/remote_exec.py` - local/SSH/WSL2 command execution helper
+- `scripts/durable_exec.py` - start/status helper for jobs that may outlive the
+  current agent session
+- `scripts/workflow_logger.py` - JSONL phase/step logger and log bootstrap
 - `scripts/load_run_config.py` - run configuration loader and event-count lock
   validator
 

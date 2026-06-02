@@ -28,15 +28,42 @@ Execution Mode begins only after Phase 1 writes a valid `run_config.json`. From 
 
 ## SUPREME RULE: Execution Continuity
 
-Once Execution Mode starts, keep running until the workflow reaches a valid phase-completion boundary, an unrecoverable error, a documented red flag after phase completion, or an explicit user stop command.
+Once Execution Mode starts, keep running until Phase 11 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
 
 Rules:
 - Do not ask whether to continue.
 - Do not ask whether to reduce event counts.
 - Do not ask what to do with zero cross-sections.
 - Do not stop because a command is slow.
+- Do not stop because the estimated runtime is hours, days, weeks, or months.
+- Do not declare a phase "impractical for an interactive session".
 - Do not alter physical parameters for speed or convenience.
 - Recover from MG5, Delphes, ROOT, root2lhco, filesystem, and parsing issues when a conservative recovery is possible; otherwise stop only with concrete evidence of an unrecoverable error.
+
+## Long-Run Execution Contract
+
+MadGraph/Delphes scans are allowed to run for 4-8 hours, several days, several weeks, or more than two months. Runtime length is normal physics-workflow behavior, not a red flag.
+
+Hard rules:
+- Time estimates may be written to logs, but they must never change the physics plan, event counts, operator list, scan grid, algorithms, or phase transitions.
+- "Interactive session impracticality" is not a stop condition. If the foreground session is unsuitable for the expected duration, switch to durable execution instead of halting.
+- Do not ask the user whether to continue, split the scan, reduce `nev_scan`, enable debug mode, drop operators, or run fewer scan points because of runtime.
+- If a command may outlive the current agent session, start it with a durable mechanism on the selected execution target: `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or a site batch scheduler when available.
+- On native Windows, use WSL2 or SSH as the execution target for long MG5/Delphes jobs; do not rely on native Windows local background execution for multi-day physics runs.
+- Durable execution must write enough state to resume: job name, PID/job id, command, working directory, stdout/stderr paths, and a phase progress manifest under `{workdir}/results/`.
+- Storage pressure may trigger documented cleanup of intermediate ROOT/LHE/HEPMC files after required outputs are copied. Storage pressure must not trigger event-count reduction.
+
+## Workflow Logging Contract
+
+`{workdir}/results/workflow.log` is mandatory from Phase 2 onward.
+
+Rules:
+- The first action in Phase 2 must initialize and validate the log with `scripts/workflow_logger.py {workdir} --touch`, or the target-aware equivalent through `scripts/remote_exec.py`.
+- Every phase must append `phase_start` before any filesystem, subprocess, download, install, or analysis operation.
+- Every phase must append `phase_complete` only after its completion unit is satisfied, or `phase_fail` only for a proven unrecoverable failure.
+- Do not create workflow files with heredoc markers or shell EOF redirection. Forbidden patterns include `cat <<EOF`, `python <<EOF`, `python - <<EOF`, `> EOF`, and `>> EOF`.
+- A file literally named `EOF` in `{workdir}` or `{workdir}/results` is a logging/bootstrap violation. Stop the current shell-writing approach, initialize `workflow.log`, record the anomaly, and continue using Python file APIs or bundled scripts.
+- Do not rely on conversation text as a log. The JSONL `workflow.log` is the resume source of truth.
 
 ## Required Inputs
 
@@ -93,7 +120,7 @@ Every phase has a completion unit. Red flags are evaluated only after that unit 
 | 3 | Every coefficient in every requested model is tested | No. Individual `sigma=0` is a valid result |
 | 4 | SM baseline and coefficient range are written | Only `cs_sm=0` or MG5 failure |
 | 5 | Pure SM and anchor NP samples are generated | Only unrecoverable generation/conversion failure |
-| 6 | All 11 scan points for all claimed operators are processed | No partial scan red flag |
+| 6 | All 11 scan points for all claimed operators are processed | No partial scan red flag; no runtime red flag |
 | 7 | All selected ML algorithms are trained and recorded | No early algorithm filtering |
 | 8 | Threshold optimization and fits are attempted for required algorithms/operators | Fit issues are recorded unless unrecoverable |
 | 9 | Constraints are computed for S=2,3,5 where mathematically possible | Numerical red flags are recorded |
@@ -142,6 +169,7 @@ Prefer bundled scripts for deterministic pieces:
 | `scripts/install_mg5.py` | Install MG5 after the agent dynamically resolves the Launchpad download URL |
 | `scripts/install_cutexperiment.py` | Clone/validate CutExperiment |
 | `scripts/remote_exec.py` | Run commands locally, over SSH, or inside WSL2 |
+| `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
 | `scripts/run_mg5.py` | Run MG5 order files with return-code checking |
 | `scripts/parse_param_card.py` | Parse coefficient blocks |
 | `scripts/extract_cross_section.py` | Parse MG5 banner cross-sections |

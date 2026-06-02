@@ -6,7 +6,7 @@ Records start/end times for each phase and sub-step, then reports
 a summary table with durations and cumulative progress.
 
 Usage as context manager:
-    with timing_tracker.phase_timer("Phase 4: Scan"):
+    with timing_tracker.phase_timer("Phase 4: Range Estimation"):
         # ... run phase 4 ...
 
 Usage for MG5 sub-steps (integrated into run_mg5):
@@ -37,7 +37,7 @@ class TimingTracker:
         "Phase 3: Validation",
         "Phase 4: Range Estimation",
         "Phase 5: Pure Samples",
-        "Phase 6: Coefficient Scan",
+        "Phase 6: Coefficient Scans",
         "Phase 7: ML Training",
         "Phase 8: Selection Optimization",
         "Phase 9: Constraints",
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     tracker = TimingTracker()
     with tracker.phase_timer("Phase 3: Validation"):
         time.sleep(0.1)
-    with tracker.phase_timer("Phase 4: Range"):
+    with tracker.phase_timer("Phase 4: Range Estimation"):
         time.sleep(0.05)
         tracker.record_mg5_step("madgraph", time.time() - 0.04, time.time() - 0.01)
     tracker.print_report()

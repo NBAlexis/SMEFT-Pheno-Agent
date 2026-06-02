@@ -38,8 +38,11 @@ class WorkflowLogger:
     """Append-only logger for workflow events."""
 
     def __init__(self, workdir: str, run_dir: Optional[str] = None):
+        self.workdir = workdir
+        self.run_dir = run_dir
         self.log_path = self._log_path(workdir, run_dir)
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
+        open(self.log_path, "a", encoding="utf-8").close()
         self._step_start_times: Dict[str, float] = {}
 
     @staticmethod
@@ -52,6 +55,30 @@ class WorkflowLogger:
         record["timestamp"] = datetime.now(timezone.utc).isoformat()
         with open(self.log_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+
+    def meta(self, event: str, message: str = "") -> None:
+        self._append({"level": "meta", "event": event, "message": message})
+
+    def assert_ready(self) -> None:
+        """Verify workflow.log exists, is writable, and no stray EOF file exists."""
+        self.meta("logger_ready", "workflow log initialized")
+        if not os.path.exists(self.log_path):
+            raise RuntimeError(f"workflow.log was not created: {self.log_path}")
+        eof_candidates = [
+            os.path.join(self.workdir, "EOF"),
+            os.path.join(self.workdir, "results", "EOF"),
+        ]
+        if self.run_dir:
+            eof_candidates.append(os.path.join(self.workdir, "results", self.run_dir, "EOF"))
+        found = [path for path in eof_candidates if os.path.exists(path)]
+        if found:
+            self.meta(
+                "logging_anomaly",
+                "Stray EOF file detected; do not use heredoc/shell EOF redirection for workflow files: "
+                + ", ".join(found),
+            )
 
     # ------------------------------------------------------------------
     # Phase-level (coarse-grained, for checkpoint / resume)
@@ -156,9 +183,15 @@ class WorkflowLogger:
         last = self.last_completed_phase()
         if last is None:
             return None
-        if last == "-1":
-            return "0"
-        return str(int(last) + 1)
+        if str(last).lower() == "cleanup":
+            return "11"
+        try:
+            phase_number = int(last)
+        except ValueError:
+            return None
+        if phase_number >= 11:
+            return "11"
+        return str(phase_number + 1)
 
     def get_phase_steps(self, phase: str) -> list:
         """Return all step-level records for a given phase (oldest first)."""
@@ -341,10 +374,27 @@ def main():
     parser.add_argument("--last", action="store_true", help="Last completed phase")
     parser.add_argument("--resume", action="store_true", help="Phase to resume from")
     parser.add_argument("--steps", metavar="PHASE", help="List all steps for a phase")
+    parser.add_argument("--touch", action="store_true", help="Create and validate workflow.log")
+    parser.add_argument("--start", metavar="PHASE", help="Append a phase-start record")
+    parser.add_argument("--complete", metavar="PHASE", help="Append a phase-complete record")
+    parser.add_argument("--fail", nargs=2, metavar=("PHASE", "ERROR"), help="Append a phase-fail record")
     args = parser.parse_args()
 
     logger = WorkflowLogger(args.workdir, args.run_dir)
-    if args.last:
+    if args.touch:
+        logger.assert_ready()
+        print(logger.log_path)
+    elif args.start:
+        logger.assert_ready()
+        logger.phase_start(args.start)
+        print(logger.log_path)
+    elif args.complete:
+        logger.phase_complete(args.complete)
+        print(logger.log_path)
+    elif args.fail:
+        logger.phase_fail(args.fail[0], args.fail[1])
+        print(logger.log_path)
+    elif args.last:
         print(logger.last_completed_phase() or "None")
     elif args.resume:
         print(logger.get_resume_phase() or "None")
