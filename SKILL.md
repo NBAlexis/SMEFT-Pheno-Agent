@@ -36,6 +36,14 @@ Forbidden reasons: runtime estimate; repeated work; capability already validated
 
 If the reason is forbidden, continue automatically. Do not ask the user.
 
+#### Serial Phase Artifact Rule
+
+During Phase N, do not create, modify, or execute artifacts for Phase N+1 or later.
+
+Allowed waiting work: monitor current phase jobs, update current phase progress manifests, inspect current phase logs, retry current phase failures, and clean current phase intermediates after required outputs are secured.
+
+Future-phase code, result files, plots, models, reports, or audit artifacts may be created only after the current phase completes.
+
 ## SUPREME RULE: Execution Continuity
 
 Once Execution Mode starts, keep running until Phase 11 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
