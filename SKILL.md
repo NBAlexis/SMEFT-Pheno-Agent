@@ -26,6 +26,16 @@ Rules:
 
 Execution Mode begins only after Phase 1 writes a valid `run_config.json`. From Phase 2 onward, user interaction is disabled.
 
+#### Stop / Pause Gate
+
+In Execution Mode, before stopping, pausing, or asking the user any question, classify the reason.
+
+Allowed reasons only: explicit user stop; proven unrecoverable error; red flag after a phase completion unit; durable handoff with no user decision required.
+
+Forbidden reasons: runtime estimate; repeated work; capability already validated; asking whether to continue.
+
+If the reason is forbidden, continue automatically. Do not ask the user.
+
 ## SUPREME RULE: Execution Continuity
 
 Once Execution Mode starts, keep running until Phase 11 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
