@@ -135,6 +135,10 @@ def load_run_config(path):
         raise ValueError(
             f"execution.mode must be one of {sorted(VALID_EXECUTION_MODES)}, got {mode!r}"
         )
+    if mode == "local" and os.name == "nt":
+        raise ValueError(
+            "execution.mode='local' is invalid on native Windows; use 'wsl2' or 'ssh'"
+        )
     data["execution"]["mode"] = mode
     if mode == "ssh" and not data["execution"].get("ssh_target"):
         raise ValueError("execution.ssh_target is required when execution.mode is 'ssh'")

@@ -55,9 +55,6 @@ for alg_name, alg_info in alg_data["anchor"].items():
 
 Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 7 (Step 7.2.3) and handles normalization automatically for all algorithm types.
 
-```python)})
-```
-
 ## Step 8.3: Optimize Threshold Per Algorithm (using anchor operator)
 
 ### Reference Operator Selection
@@ -96,19 +93,28 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
    ```
    where `cs_x` from banner (use canonical parser in [`madgraph-reference.md`](madgraph-reference.md)) and `nev_scan` from configuration.
 3. Fit quadratic: `csfit(f) = csfit_sm + f*csfit_int + f^2*csfit_np`
-4. Solve `S_stat = 2` with physics luminosity `L = luminosity * 1000`
+4. Solve `S_stat = 2` with physical luminosity converted to the inverse unit
+   matching the fitted cross-section. In the default workflow, `csfit_*` is in
+   pb and `config.luminosity` is in fb^-1, so use
+   `L_pb_inv = config.luminosity * 1000`. The factor `1000` is only the
+   `fb^-1 -> pb^-1` unit conversion; if cross-sections are stored in another
+   unit, convert accordingly.
 
-   **Significance formula (Asimov, preferred):**
+   Use [`significance-reference.md`](significance-reference.md):
    ```
-   N_bg = L * csfit_sm
-   N_sig = L * (f * csfit_int + f^2 * csfit_np)
+   N_bg = L_pb_inv * csfit_sm
+   N_sig = L_pb_inv * (f * csfit_int + f^2 * csfit_np)
    S_stat = sqrt(2 * [(N_bg + N_sig) * ln(1 + N_sig/N_bg) - N_sig])
    ```
 
-   Solve `S_stat(f) = 2` for `f`. The constraint interval is `[-c_{n_{s=2}}, c_{n_{s=2}}]` where `c_{n_{s=2}}` is the positive bound.
-5. Record constraint width: `2 * c_{n_{s=2}}` (full interval width)
+   Solve `S_stat(f) = 2` for `f`. The coefficient interval is defined by the
+   real roots of this equation. Filter out complex roots using
+   [`significance-reference.md`](significance-reference.md). The upper bound is
+   the smallest positive real root; the lower bound is the largest negative
+   real root.
+5. Record constraint width: `upper_bound - lower_bound` (full interval width)
 
-Select the threshold that **minimizes the constraint width `2 * c_{n_{s=2}}`** for each algorithm individually.
+Select the threshold that **minimizes the full real-root constraint width** for each algorithm individually.
 
 
 Record per algorithm:
@@ -151,9 +157,6 @@ For each operator `o_{g_idx}`:
 - Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
 - Apply the algorithm's threshold
 - Fit quadratic and record coefficients
-
-```python * len(alg_data["anchor"])})
-```
 
 ## Step 8.5: Plot
 

@@ -28,14 +28,14 @@ During **Phase 1** (Input Collection), after the user provides the model name:
    - Scan `dependency/` at runtime (do **not** hardcode the list)
    - If `{skill_dir}/dependency/{model}` exists:
      > "[4/9] Model `{model}` was not found in `{madgraph_path}/models/`. The skill has this model in its dependency folder. Copy it to `{mg5path}/models/`? (Type `yes` to copy, or provide an alternative model name:)"
-   - If the user answers `yes`: copy the model directory recursively
+   - If the user answers `yes`: copy the model directory recursively. In SSH/WSL2 mode, use `scripts/sync_to_target.py --config {local_run_config} {skill_dir}/dependency/{model} {madgraph_path}/models/{model}`.
    - If the user provides a different model name: repeat the check
    - If the model is not in `dependency/` either: report missing and ask again
 
 ## Important Rules
 
 - **Never hardcode the model list.** The `dependency/` folder may be updated at any time. The LLM must scan the directory at runtime.
-- **Copy, do not move.** Always use `cp -r` (or `shutil.copytree`) to copy from `dependency/` to `mg5path/models/`. Never modify the source files in `dependency/`.
+- **Copy, do not move.** Always use `scripts/sync_to_target.py`, `cp -r`, or `shutil.copytree` to copy from `dependency/` to `mg5path/models/`. Never modify the source files in `dependency/`.
 - **Model name matching.** The subdirectory name in `dependency/` must exactly match the model name the user provides (e.g. `AQGCm_UFO`).
 
 ## Runtime Scan
@@ -62,4 +62,4 @@ To add a new UFO model to the skill:
 
 ## Phase 2 Validation
 
-Phase 2 verifies that every model in `config.models` exists under `{config.madgraph_path}/models/`. If a model is missing, Phase 2 attempts to copy it from the skill's `dependency/` directory (see Phase 1 Step 4). If copying fails or the model is not in `dependency/`, report: "Model `{model}` not found in MG5 and not available in skill dependencies. Re-run Phase 1 or install manually."
+Phase 2 verifies that every model in `config.models` exists under `{config.madgraph_path}/models/`. If a model is missing, Phase 2 attempts to copy it from the skill's `dependency/` directory with `scripts/sync_to_target.py` for SSH/WSL2 targets or local copy for Linux local targets. If copying fails or the model is not in `dependency/`, report: "Model `{model}` not found in MG5 and not available in skill dependencies. Re-run Phase 1 or install manually."

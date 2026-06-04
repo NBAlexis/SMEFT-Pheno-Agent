@@ -1,208 +1,204 @@
 # Phase 10: Generate Publication-Quality Report
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Compile all results into a single consolidated report covering **all globally claimed operators** from **all models**.
+
+Generate a self-contained HEP phenomenology paper from structured evidence. The
+paper may be LaTeX/PDF or HTML. HTML is a valid final format when LaTeX is not
+available.
+
+Phase 10 must not write a loose workflow summary. It must first build evidence,
+then draft, validate, revise with a bounded loop, and archive remaining issues.
 
 ## Prerequisite
 
 Load the configuration:
+
 ```python
 from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
-from scripts.normalize_process_name import normalize_process_name
-folder_base = normalize_process_name(config.process)
-
-# Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("10")
 ```
 
-## Step 10.1: Output Format Selection
+Read the report guides in this order:
 
-```bash
-which pdflatex
-```
+1. [`report-writing-guide.md`](report-writing-guide.md)
+2. [`report-evidence-guide.md`](report-evidence-guide.md)
+3. [`report-sections-guide.md`](report-sections-guide.md)
+4. [`report-comparison-guide.md`](report-comparison-guide.md)
+5. [`report-citation-guide.md`](report-citation-guide.md)
+6. [`report-literature-bank.md`](report-literature-bank.md)
+7. [`significance-reference.md`](significance-reference.md)
+8. [`report-validation-guide.md`](report-validation-guide.md)
 
-| Condition | Format |
-|-----------|--------|
-| `pdflatex` exists | LaTeX → PDF |
-| Not available | HTML (self-contained, MathJax + base64 images) |
-
-### HTML Fallback
-
-If LaTeX is unavailable, generate a self-contained HTML file:
-- Use MathJax CDN for formula rendering: `<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>`
-- Embed all figures as base64-encoded PDFs (or regenerate as PNG for HTML): `<img src="data:image/png;base64,...">`
-- Include all tables inline
-- Structure with `<h1>`–`<h3>` matching the section numbering in Step 10.2
-- CSS: minimal, readable, print-friendly
-
-## Step 10.2: Report Structure
+## Step 10.1: Select Output Format
 
 ```python
-with workflow_step(logger, "10", "generate_report",
-                   inputs={"format": "latex" if pdflatex_exists else "html", "num_operators": len(operator_claims)}):
+with workflow_step(logger, "10", "select_report_format", inputs={}):
 ```
 
-Follow the structure in [`reference/report-writing-guide.md`](reference/report-writing-guide.md):
+Use LaTeX/PDF when `pdflatex` is available. Otherwise generate HTML.
 
-1. **Abstract**: one-paragraph summary
-2. **Introduction**: motivation, process, collider at `energy` TeV, `luminosity` fb⁻¹, models used
-3. **Theoretical Framework**: effective Lagrangian, operator definitions, unitarity bounds
-   - **Model Summary Table**: List all models used and their claimed operators
-     | Model | Claimed Operators (global indices) |
-     |-------|-----------------------------------|
-     | AQGCm_UFO | o_1, o_2 |
-     | AQGCs_UFO | o_3, o_4, o_5 |
-4. **Event Generation & Data Preparation**: MC setup, dataset composition, event counts, scan points, feature list
-   - Note: ML training uses the anchor operator (`o_1` from `{anchor_model}`)
-   - Include **Feynman diagrams** (see Step 10.6 below)
-5. **Machine Learning Methodology**: algorithms, score functions, training setup, AUC comparison, score distributions
-   - Training performed on anchor operator only; algorithms applied universally
-6. **Event Selection Optimization**: per-algorithm threshold optimization (using anchor operator), fit plots, threshold comparison
-7. **Numerical Results & Expected Constraints**: cross-section fitting, significance formula, final constraint table (best algorithm only, ALL operators), algorithm comparison band plot
-   - **Constraint table must include ALL globally claimed operators** with their source models
-8. **Conclusions**: summary, physical interpretation, outlook
-9. **References**: mandatory toolchain citations with DOI and arXiv
+HTML requirements:
 
-## Step 10.3: Required Figures (PDF Vector Format)
+- render formulas with MathJax or equivalent
+- use readable paper-style CSS
+- reference figures clearly with captions
+- prefer linked/copied local figure files over enormous base64 blobs when possible
+- include bibliography and section numbering
 
-**All figures must be generated as PDF for vector quality.** Use `plt.savefig(..., format='pdf')`.
+## Step 10.2: Build Paper Evidence
 
-| Figure | Source |
-|--------|--------|
-| ROC curves | `results/plots/roc_anchor.pdf` |
-| Score distributions | `results/plots/score_dist_anchor_*alg*.pdf` (all algorithms) |
-| Threshold optimization comparison | `results/plots/threshold_comparison.pdf` |
-| Cross-section fits | `results/plots/csfit_plot_o_*_{alg}*.pdf` (all algorithms, all operators) |
-| Algorithm comparison | `results/plots/algorithm_comparison.pdf` |
+```python
+with workflow_step(logger, "10", "build_paper_evidence",
+                   inputs={"source": "results/data"}):
+```
 
-## Step 10.4: Algorithm Comparison Section (Required)
+Create:
 
-### AUC Comparison Table (All Trained Algorithms)
+```
+results/data/phase10/paper_evidence.json
+```
 
-**The report presents all trained algorithms.** In Phase 7, exactly 3 algorithms are randomly selected from the pool (or user-specified algorithms if `config.algorithms` is set). The full pool is recorded in `algorithm_comparison.json`. Since training is done on the anchor operator only, there is a single AUC value per algorithm:
+Follow [`report-evidence-guide.md`](report-evidence-guide.md). The evidence must
+include exact event counts, final-state cuts, ordered features with units,
+preprocessing, algorithm metadata, fit coefficients, constraints, figures, and
+citations.
 
-| Algorithm | Anchor AUC |
-|-----------|-----------|
-| Algorithm 1 | 0.987 |
-| Algorithm 2 | 0.954 |
-| Algorithm 3 | 0.912 |
+If a required value is unavailable, record `null` and `missing_reason`. Do not
+write approximate values into the evidence as exact facts.
 
-### Best Algorithm Selection
+## Step 10.3: Build Reference-Paper and Literature Plans
 
-| Operator | Source Model | Best Algorithm | Selection Criterion | S=2 Width |
-|----------|-------------|---------------|---------------------|-----------|
-| o_1 | AQGCm_UFO | Algorithm 1 | Narrowest constraint width | 0.045 |
-| o_2 | AQGCm_UFO | Algorithm 2 | Narrowest constraint width | 0.078 |
-| o_3 | AQGCs_UFO | Algorithm 1 | Narrowest constraint width | 0.052 |
-| ... | ... | ... | ... | ... |
+```python
+with workflow_step(logger, "10", "build_reference_and_literature_plans",
+                   inputs={"reference_papers": True}):
+```
 
-**Important**: The best algorithm is selected by **narrowest constraint width at S=2**, NOT highest AUC. Report when these differ.
+Create both files:
 
-### Algorithm Comparison Plot (All Trained Algorithms)
+```
+results/data/phase10/reference_paper_plan.json
+results/data/phase10/literature_plan.json
+```
 
-**Band plot** showing the constraint intervals $[-c_{n_{s=2}}, c_{n_{s=2}}]$ for all trained algorithms side-by-side. For each algorithm, draw a horizontal band from $-c_{n_{s=2}}$ to $c_{n_{s=2}}$. The best algorithm (narrowest band) should be highlighted.
+Follow [`report-comparison-guide.md`](report-comparison-guide.md) for
+`reference_paper_plan.json`. User-list papers are writing/comparison references,
+not default citations.
 
-One plot per operator, or a combined plot showing all operators.
+Follow [`report-citation-guide.md`](report-citation-guide.md) for
+`literature_plan.json`. Include mandatory toolchain citations and foundational
+SMEFT/aQGC/nTGC/ML-in-HEP citations. Add user-list papers only under
+`comparison_citations` when the final report directly compares with that paper
+or relies on a specific claim from it.
 
-## Step 10.5: Required Formulas (LaTeX)
+## Step 10.4: Draft the Paper
 
-All formulas must be rendered in LaTeX. `L` denotes physics luminosity in pb⁻¹.
+```python
+with workflow_step(logger, "10", "draft_report",
+                   inputs={"format": report_format}):
+```
 
-$$
-N_{\mathrm{SM}} = L \cdot cs_{\mathrm{sm}}
-$$
+Write `report_draft_v1.html` or `report_draft_v1.tex` from:
 
-$$
-N_{\mathrm{NP}}(c) = \frac{c^2}{c_{n_{\mathrm{default}}}^2} \cdot L \cdot cs_{\mathrm{np}}
-$$
+- `paper_evidence.json`
+- `reference_paper_plan.json`
+- `literature_plan.json`
+- the section rules in [`report-sections-guide.md`](report-sections-guide.md)
 
-$$
-S_{\mathrm{stat}} = \sqrt{2 \left[ (N_{\mathrm{bg}} + N_{\mathrm{sig}}) \ln\left(1 + \frac{N_{\mathrm{sig}}}{N_{\mathrm{bg}}}\right) - N_{\mathrm{sig}} \right]}
-$$
+Mandatory paper content:
 
-$$
-\sigma(f) = \sigma_{\mathrm{SM}} + f \cdot \sigma_{\mathrm{int}} + f^{2} \cdot \sigma_{\mathrm{NP}}
-$$
+- exact generated event counts
+- exact final-state particle cut
+- exact surviving event counts after the cut
+- ordered feature table with units
+- preprocessing/standardization statement
+- self-contained descriptions of all trained algorithms
+- threshold optimization and efficiencies
+- numeric fit coefficients with units
+- final constraints using the anchor-selected algorithm from Phase 9
+- adequate references
 
-## Step 10.6: Feynman Diagrams (Required)
+Do not use text such as `~2500` for event counts. Do not choose a different
+final algorithm per operator unless the user requested that mode.
 
-Include representative Feynman diagrams from both the SM (`NP=0`) and NP (`NP>0`) process directories to illustrate the physics process. Use the **anchor model's** process directories.
+## Step 10.5: Validate and Revise
 
-### Collecting Diagrams
+```python
+with workflow_step(logger, "10", "validate_and_revise_report",
+                   inputs={"max_revisions": 2}):
+```
 
-MG5 stores Feynman diagrams in each process directory under `SubProcesses/`:
+Follow [`report-validation-guide.md`](report-validation-guide.md).
 
-| Process Type | Location | Files |
-|--------------|----------|-------|
-| SM baseline | `{mg5path}/{folder_base}_{anchor_model}_p4_SM/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
-| NP (EFT) | `{mg5path}/{folder_base}_{anchor_model}_p5_NP/SubProcesses/P*/` | `matrix*.jpg`, `matrix*.png`, `matrix*.eps`, or `matrix*.ps` |
+Bounded loop:
 
-The `diagrams.html` file in each `SubProcesses/P*/` directory is an index that lists all diagrams with their process labels (e.g., `e+ e- > a u u~ NP=0 @1`).
+1. Validate draft v1.
+2. If validation fails, revise to draft v2.
+3. Validate draft v2.
+4. If validation fails, revise once more and write the final report.
+5. Validate the final report and archive remaining issues.
 
-### Selection Criteria
+Maximum revisions after the first draft: `2`.
 
-Select **2–4 representative diagrams per channel** (SM and NP):
+Validation failures do not block cleanup or Phase 11 after the revision limit.
+Write:
 
-1. Open `diagrams.html` in the SM process directory to see the list of subprocesses
-2. Pick one subprocess (e.g., `e+ e- > a u u~`) and copy its first 2–3 `matrix*.jpg` files
-3. Repeat for the NP process directory — pick the same or a similar subprocess
-4. Convert to PDF if needed for LaTeX reports: `convert matrix11.jpg matrix11.pdf` or embed JPG directly in HTML
+```
+results/data/phase10/report_validation.json
+```
 
-### Report Placement
+with `status: "pass"` or `status: "issues_remaining"`.
 
-Place the diagrams in **Section 4 (Event Generation & Data Preparation)** of the report:
+## Feynman Diagram Evidence
 
-- Label SM diagrams as "SM process: $e^+ e^- \\to \\gamma j j$ (NP=0)"
-- Label NP diagrams as "NP process: $e^+ e^- \\to \\gamma j j$ (NP>0)"
-- Include a brief caption explaining that the NP diagrams include the EFT vertices from the `{anchor_model}` model
+Collect representative diagrams during Step 10.2 before drafting, when available
+from the anchor model process directories:
 
-### File Collection
+| Process type | Location |
+|---|---|
+| SM baseline | `{mg5path}/{folder_base}_{anchor_model}_p4_SM/SubProcesses/P*/` |
+| NP sample | `{mg5path}/{folder_base}_{anchor_model}_p5_NP/SubProcesses/P*/` |
 
-Copy selected diagrams to the results directory for archival:
+Copy selected diagrams to:
 
 ```
 results/data/feynman_diagrams/
-  sm_matrix11.jpg      # SM diagram 1
-  sm_matrix12.jpg      # SM diagram 2
-  np_matrix11.jpg      # NP diagram 1
-  np_matrix12.jpg      # NP diagram 2
 ```
+
+If diagrams are unavailable, document the missing reason in `paper_evidence.json`
+and `report_validation.json`; do not block report generation.
 
 ## Output
 
 > **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/report.pdf`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ```
-results/report.pdf   # if pdflatex available
-results/report.html  # otherwise
+results/report.pdf       # if LaTeX succeeds
+results/report.tex       # if LaTeX is used
+results/report.html      # if HTML fallback is used
+results/data/phase10/
+  paper_evidence.json
+  reference_paper_plan.json
+  literature_plan.json
+  report_validation.json
+  report_draft_v1.*
+  report_draft_v2.*      # if needed
+  report_draft_v3.*      # if the second revision is needed
 ```
-
-Each report covers only its own `(energy, luminosity)` combination.
 
 ```python
 logger.phase_complete("10")
 ```
 
-## Validation
-
-- Report event counts must match actual debug-adjusted counts
-- Report constraint table must match Phase 9 `constraint_table.json`
-- Report must include ALL globally claimed operators with their source models
-- Algorithm comparison data must match Phase 9 `algorithm_selection.json`
-- All algorithms trained in Phase 7 must appear in the comparison section
-- All figures in report must be PDF vector format
-- All formulas must be LaTeX-rendered
-
 ## Phase Transition
 
-After `logger.phase_complete("10")` is called and the HTML report is written:
+After the final report and validation file are written:
 
-1. **Check validation rules immediately**: If report is missing required sections, flag warning but continue.
-2. **If validation passes**: run Cleanup, then proceed immediately to Phase 11 without stopping.
-3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.
+1. Log remaining validation issues, if any.
+2. Proceed immediately to cleanup and then Phase 11.
+3. Do not ask for confirmation, present options, or wait for user input.

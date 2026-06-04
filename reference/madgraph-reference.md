@@ -19,9 +19,14 @@ This document defines the standardized way to invoke MadGraph5 within the SMEFT-
 
 **Energy conversion (symmetric colliders):**
 ```
-ebeam_value = energy * 1000 / 2
+tev_to_gev = 1000.0
+ebeam_value = energy_tev * tev_to_gev / 2
 ```
 Example: `energy = 13.6` TeV → `ebeam_value = 6800.0` GeV.
+
+The factor `1000.0` is only the unit conversion `1 TeV = 1000 GeV`. MG5 run
+cards use beam energies in GeV, while Phase 1 collects the center-of-mass energy
+in TeV.
 
 ## Optional Variables
 
@@ -263,10 +268,12 @@ set nevents = {event_number}
 
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |
 |---------------|----------|----------|------------|
-| Symmetric (ee, pp, mu-mu) | `ebeam_value` | `ebeam_value` | `ebeam_value = energy * 1000 / 2` |
+| Symmetric (ee, pp, mu-mu) | `ebeam_value` | `ebeam_value` | Convert `energy_tev` to GeV with `tev_to_gev = 1000.0`, then divide by 2 |
 | Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is read from **`run_config.json`** (field `ebeam_proton`) |
 
-**Note:** The center-of-mass energy is `2 * ebeam_value` for symmetric colliders.
+**Note:** The center-of-mass energy is `2 * ebeam_value` for symmetric
+colliders after both quantities are expressed in GeV. Do not use an unexplained
+literal `1000`; name it as the TeV-to-GeV conversion factor.
 
 ### Coefficient Block
 

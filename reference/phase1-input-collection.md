@@ -6,6 +6,8 @@ In local mode, `{workdir}/results/run_config.json` is both the control config an
 - a local control copy readable by the agent for `scripts/remote_exec.py --config ...`;
 - the target copy at `{workdir}/results/run_config.json` on the SSH/WSL2 target.
 
+Native Windows is not a valid local execution target for this workflow. If the agent is running on Windows, Phase 1 must use `wsl2` or `ssh`.
+
 ## Core Rule
 
 Ask exactly the next question indicated by the intake cursor. After asking, stop and wait for the user's reply.
@@ -17,7 +19,7 @@ Do not ask future questions early. Do not skip a question. Do not summarize the 
 If the latest user message clearly requests a restart/retest/new study, including `restart`, `start over`, `rerun`, `重新开始`, `重新测试`, `重来`, or `换一个过程`, reset the intake cursor to `[1/9]`.
 
 On restart:
-- Discard all prior target/physics/run fields: `execution`, `process`, `models`, `energy`, `luminosity`, `ebeam_proton`, `delphes_card`, `preferences`, `debug`, `algorithms`, `polarization`.
+- Discard all prior target/physics/run fields: `execution`, `process`, `models`, `energy`, `luminosity`, `ebeam_proton`, `delphes_card`, `debug`, `algorithms`, `polarization`, `analysis_notes`.
 - Ignore old `run_config.json` values for target/physics/run fields.
 - Keep known `madgraph_path` and `cutexperiment_path` only as suggested defaults.
 - Still ask `[1/9]` and `[7/9]`; never silently accept remembered paths.
@@ -28,7 +30,7 @@ Every intake question must be emitted exactly as:
 
 ```text
 [N/9] English question...
-中文问题……
+中文问题...
 ```
 
 Allowed exception: `[3a/9]` for `ebeam_proton` when the process is an electron-proton collider.
@@ -47,7 +49,7 @@ Maintain these fields during Phase 1:
 ```json
 {
   "cursor": "1",
-  "execution": {"mode": "local"},
+  "execution": {"mode": null},
   "madgraph_path": null,
   "workdir": null,
   "process": null,
@@ -60,6 +62,7 @@ Maintain these fields during Phase 1:
   "debug": false,
   "algorithms": null,
   "polarization": null,
+  "analysis_notes": null,
   "auto_installed_mg5": false
 }
 ```
@@ -75,30 +78,31 @@ This cursor determines both where commands run and where MadGraph5 lives. Keep t
 before_ask:
 - Determine whether a known MG5 installation path exists from local/default context.
 - If a known path exists, show it only as a suggested default.
+- If the agent is running on native Windows, do not offer a bare local path as an accepted answer. Offer `wsl2:/path/to/MG5`, the WSL2 discovery subflow, SSH, or install on WSL2/SSH.
 - If WSL2 is installed on Windows and no MG5 default is known, mention the `wsl2:/path/to/MG5` form.
 - Do not validate or accept a default until the user types `yes`.
 
 ask, with default:
 
 ```text
-[1/9] Where should MadGraph5 run, and what is its absolute path? Suggested default: `{default_path}`. Type `yes` to use it, provide a local path, provide `ssh user@host:/absolute/MG5/path`, provide `wsl2:/absolute/MG5/path`, or type `install`.
-MadGraph5 应该在哪里运行，它的绝对路径是什么？建议默认：`{default_path}`。输入 `yes` 使用默认值，提供本地路径，提供 `ssh user@host:/absolute/MG5/path`，提供 `wsl2:/absolute/MG5/path`，或输入 `install`。
+[1/9] Where should MadGraph5 run, and what is its absolute path? Suggested default: `{default_path}`. Type `yes` to use it, provide a Linux local path, provide `ssh user@host:/absolute/MG5/path`, provide `wsl2:/absolute/MG5/path`, or type `install`.
+MadGraph5 应该在哪里运行，它的绝对路径是什么？建议默认值：`{default_path}`。输入 `yes` 使用默认值，提供 Linux 本地路径，提供 `ssh user@host:/absolute/MG5/path`，提供 `wsl2:/absolute/MG5/path`，或输入 `install`。
 ```
 
 ask, without default:
 
 ```text
-[1/9] Where should MadGraph5 run, and what is its absolute path? Provide a local path, `ssh user@host:/absolute/MG5/path`, `wsl2:/absolute/MG5/path`, `wsl2` to use a WSL2 subquestion, or `install`.
-MadGraph5 应该在哪里运行，它的绝对路径是什么？请提供本地路径、`ssh user@host:/absolute/MG5/path`、`wsl2:/absolute/MG5/path`，输入 `wsl2` 进入 WSL2 子问题，或输入 `install`。
+[1/9] Where should MadGraph5 run, and what is its absolute path? Provide a Linux local path, `ssh user@host:/absolute/MG5/path`, `wsl2:/absolute/MG5/path`, `wsl2` to use a WSL2 subquestion, or `install`.
+MadGraph5 应该在哪里运行，它的绝对路径是什么？请提供 Linux 本地路径、`ssh user@host:/absolute/MG5/path`、`wsl2:/absolute/MG5/path`，输入 `wsl2` 进入 WSL2 子问题，或输入 `install`。
 ```
 
 handle:
 - `yes`: valid only if a suggested default was shown; validate `{default_path}/bin/mg5_aMC` or `{default_path}/bin/mg5` on the selected target.
-- local path: set `execution={"mode":"local"}`, expand `~`, resolve absolute path, validate `bin/mg5_aMC` or `bin/mg5`.
+- Linux local path: set `execution={"mode":"local"}`, expand `~`, resolve absolute path, validate `bin/mg5_aMC` or `bin/mg5`. Reject Windows paths such as `C:\...` or `E:\...` and re-ask for WSL2/SSH.
 - `ssh user@host:/absolute/MG5/path`: set `execution={"mode":"ssh","ssh_target":"user@host"}` and `madgraph_path="/absolute/MG5/path"`. Validate with `scripts/remote_exec.py --mode ssh --ssh-target user@host -- test -x /absolute/MG5/path/bin/mg5_aMC -o -x /absolute/MG5/path/bin/mg5`.
 - `wsl2:/absolute/MG5/path`: set `execution={"mode":"wsl2"}` and `madgraph_path="/absolute/MG5/path"`. Validate with `scripts/remote_exec.py --mode wsl2 -- test -x /absolute/MG5/path/bin/mg5_aMC -o -x /absolute/MG5/path/bin/mg5`.
 - `wsl2`: run the WSL2 discovery subflow below.
-- `install`: run the MG5 auto-install flow below on the selected target. If no target was selected, default to local mode.
+- `install`: run the MG5 auto-install flow below on the selected target. If no target was selected and the agent is on Windows, first ask the WSL2 discovery subflow or ask for SSH target details; otherwise default to local Linux mode.
 - invalid: report the concrete failure and re-ask `[1/9]`.
 
 WSL2 discovery subflow:
@@ -129,7 +133,7 @@ MG5 auto-install flow:
 ### [2/9] `workdir`
 
 before_ask:
-- In local mode, suggested default is the shell working directory where the user started the workflow.
+- In local Linux mode, suggested default is the shell working directory where the user started the workflow.
 - In SSH mode, `workdir` must be an absolute directory on the SSH host.
 - In WSL2 mode, `workdir` must be an absolute Linux path inside WSL2.
 
@@ -137,23 +141,21 @@ ask:
 
 ```text
 [2/9] Where should results be saved on the selected execution target? Suggested default: the current target working directory. Type `yes` to use it, or provide a different absolute path.
-结果应保存到所选执行目标的哪里？建议默认：当前目标工作目录。输入 `yes` 使用默认目录，或提供其他绝对路径。
+结果应该保存到所选执行目标的哪里？建议默认值：当前目标工作目录。输入 `yes` 使用默认目录，或提供其他绝对路径。
 ```
 
 handle:
 - `yes` or blank: use current target working directory.
-- local path: expand and resolve absolute path.
+- local path: expand and resolve absolute path. Reject Windows paths if the selected target is WSL2/SSH.
 - SSH/WSL2 path: require an absolute Linux path and validate/create it on the target with `scripts/remote_exec.py`.
 - If local `workdir` is inside the skill directory, use the skill directory's parent instead and tell the user in one sentence.
 - Create the directory if needed after validation on the selected target.
 
 ### [3/9] `process`
 
-ask:
-
 ```text
 [3/9] What collider process should be studied? Provide the physics process only, without `NP=`, `QED=`, or `QCD=` suffixes.
-要研究哪一个对撞过程？只提供物理过程，不要包含 `NP=`、`QED=` 或 `QCD=` 后缀。
+要研究哪个对撞过程？只提供物理过程，不要包含 `NP=`、`QED=` 或 `QCD=` 后缀。
 ```
 
 handle:
@@ -165,7 +167,7 @@ handle:
 
 ```text
 [3a/9] Your process is an electron-proton collider process. What is the proton beam energy in GeV?
-您的过程是电子-质子对撞过程。质子束流能量是多少 GeV？
+你的过程是电子-质子对撞过程。质子束流能量是多少 GeV？
 ```
 
 ### [4/9] `models`
@@ -178,7 +180,7 @@ before_ask:
 
 ```text
 [4/9] What SMEFT model name(s) should be used? Provide one model or a list, for example `AQGCm_UFO` or `[AQGCm_UFO, AQGCs_UFO]`. Bundled models found in the skill dependency folder: {dependency_models}. You may also use models already installed in `{madgraph_path}/models/`.
-使用哪些 SMEFT 模型？提供一个模型或列表，例如 `AQGCm_UFO` 或 `[AQGCm_UFO, AQGCs_UFO]`。skill 依赖目录中找到的内置模型：{dependency_models}。也可以使用已经安装在 `{madgraph_path}/models/` 中的模型。
+要使用哪些 SMEFT 模型？请提供一个模型或一个列表，例如 `AQGCm_UFO` 或 `[AQGCm_UFO, AQGCs_UFO]`。skill 依赖目录中发现的内置模型：{dependency_models}。也可以使用已经安装在 `{madgraph_path}/models/` 中的模型。
 ```
 
 handle:
@@ -186,14 +188,14 @@ handle:
 - Do not accept `all`; the user must explicitly list models.
 - Preserve user order.
 - For each model, validate `{madgraph_path}/models/{model}` on the target or `{skill_dir}/dependency/{model}` locally.
-- If found only in dependency, ask whether to copy it into MadGraph5.
+- If found only in dependency, ask whether to copy it into MadGraph5. Use `scripts/sync_to_target.py` for SSH/WSL2 targets.
 - If the model is missing everywhere, report that and re-ask `[4/9]`.
 
 ### [5/9] `energy`
 
 ```text
 [5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, for example `10` or `[10, 14, 30]`.
-质心能量是多少 TeV？提供单个值或列表，例如 `10` 或 `[10, 14, 30]`。
+质心能量是多少 TeV？请提供单个值或列表，例如 `10` 或 `[10, 14, 30]`。
 ```
 
 Parse into a non-empty list of positive floats.
@@ -202,7 +204,7 @@ Parse into a non-empty list of positive floats.
 
 ```text
 [6/9] What is the integrated luminosity in fb^-1? Provide a single value or a list matching the energy length, for example `3000` or `[1000, 3000, 10000]`.
-积分亮度是多少 fb^-1？提供单个值或与能量列表长度匹配的列表，例如 `3000` 或 `[1000, 3000, 10000]`。
+积分亮度是多少 fb^-1？请提供单个值或与能量列表长度匹配的列表，例如 `3000` 或 `[1000, 3000, 10000]`。
 ```
 
 Parse into a non-empty list of positive floats. If `energy` and `luminosity` lengths differ, report the mismatch and re-ask `[6/9]`.
@@ -216,7 +218,7 @@ before_ask:
 
 ```text
 [7/9] Do you already have CutExperiment installed on the selected execution target? Suggested default: `{default_path}`. Type `yes` to use it, provide a different path, or type `clone` to clone it from `https://gitee.com/NBAlexis/CutExperiment.git`.
-所选执行目标上是否已经安装 CutExperiment？建议默认：`{default_path}`。输入 `yes` 使用默认路径，提供其他路径，或输入 `clone` 从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。
+所选执行目标上是否已经安装 CutExperiment？建议默认值：`{default_path}`。输入 `yes` 使用默认路径，提供其他路径，或输入 `clone` 从 `https://gitee.com/NBAlexis/CutExperiment.git` 克隆。
 ```
 
 handle:
@@ -236,7 +238,7 @@ before_ask:
 
 ```text
 [8/9] Scanning detector cards in `{madgraph_path}/Delphes/cards/` found this recommendation for `{process}` at `{energy}` TeV: `{recommended_card}`. Other matching cards: {matched_cards}. Type `yes` to use the recommendation, provide another card name, or provide an absolute path to a custom card.
-在 `{madgraph_path}/Delphes/cards/` 中扫描探测器卡片后，针对 `{process}`、`{energy}` TeV 的推荐卡片是：`{recommended_card}`。其他匹配卡片：{matched_cards}。输入 `yes` 使用推荐卡片，提供其他卡片名，或提供自定义卡片的绝对路径。
+扫描 `{madgraph_path}/Delphes/cards/` 中的探测器卡片后，针对 `{process}`、`{energy}` TeV 的推荐卡片是：`{recommended_card}`。其他匹配卡片：{matched_cards}。输入 `yes` 使用推荐卡片，提供其他卡片名，或提供自定义卡片的绝对路径。
 ```
 
 handle:
@@ -245,7 +247,7 @@ handle:
 - absolute path: validate it on the selected execution target and store the absolute path directly as `delphes_card`.
 - invalid: report and re-ask `[8/9]`.
 
-### [9/9] `preferences`
+### [9/9] `analysis_notes` and optional preferences
 
 This question is a preferences gateway. It exists so the user can personalize the run before execution. Do not mention Delphes card here because it was already selected in `[8/9]`.
 
@@ -265,6 +267,7 @@ handle:
 
 Before writing `run_config.json`, validate:
 - `execution.mode` is `local`, `ssh`, or `wsl2`.
+- If the agent is running on native Windows, `execution.mode` is `ssh` or `wsl2`.
 - `execution.ssh_target` is present for SSH mode.
 - `madgraph_path` contains `bin/mg5_aMC` or `bin/mg5` on the selected execution target.
 - `workdir` is absolute on the selected execution target and not inside the skill directory in local mode.
@@ -286,7 +289,7 @@ Write `run_config.json` with this schema. In SSH/WSL2 mode, write both the local
   "version": "1.0",
   "collected_at": "2026-06-01T10:00:00Z",
   "execution": {
-    "mode": "local",
+    "mode": "wsl2",
     "ssh_target": null,
     "ssh_port": null,
     "wsl_distro": null

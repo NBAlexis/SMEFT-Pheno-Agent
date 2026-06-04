@@ -113,7 +113,7 @@ anchor = {
 
 For each `model_name` in the user-provided model list (in order):
 
-### 1.1.1 Create NP Process Directory
+### Step 3.1.1 Create NP Process Directory
 
 Order file:
 ```
@@ -144,7 +144,7 @@ with workflow_step(logger, "3", f"mg5_generate_np_{model_name}",
 model_status[model_name] = {"has_feynman_diagrams": True}
 ```
 
-### 1.1.2 Extract Coefficients from param_card.dat
+### Step 3.1.2 Extract Coefficients from param_card.dat
 
 Read the coefficient block from `{mg5path}/{folder_base}_{model_name}_p3_NP/Cards/param_card.dat`.
 
@@ -173,7 +173,7 @@ The script handles case-insensitive Block matching, scan syntax retention, and B
 
 **Validation:** If parsed names include `MZ`, `MW`, `WT` or values ~90, the parser leaked into `Block mass`. Report this as a parser bug.
 
-### 1.1.3 Test Each Coefficient Individually
+### Step 3.1.3 Test Each Coefficient Individually
 
 **执行锁 — 严禁中途停止：**
 

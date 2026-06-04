@@ -21,7 +21,7 @@ Read `config.execution.mode` before running any command:
 
 | Mode | Meaning | Path semantics |
 |---|---|---|
-| `local` | Run commands on the current machine | local filesystem paths |
+| `local` | Run commands in the current Linux/Unix environment; invalid on native Windows | local filesystem paths |
 | `ssh` | Run commands on `config.execution.ssh_target` | Linux paths on the SSH host |
 | `wsl2` | Run commands inside WSL2 | Linux paths inside the WSL2 distro |
 
@@ -32,6 +32,8 @@ python scripts/remote_exec.py --config {local_run_config} --cwd {target_cwd} -- 
 ```
 
 Do not hand-write ad-hoc SSH or WSL prefixes in later phases. In SSH and WSL2 modes, do not validate target paths with local `os.path.exists`.
+
+Native Windows is not a valid `local` execution target for MG5. If `config.execution.mode == "local"` on Windows, `load_run_config.py` must fail and Phase 1 must be rerun with WSL2 or SSH.
 
 ## Long-Run Setup
 
@@ -120,7 +122,11 @@ When resuming, still run all Phase 2 validation steps every time.
    with workflow_step(logger, "2", "validate_models",
                       inputs={"models": config.models}):
    ```
-   For each model, check `{config.madgraph_path}/models/{model}` on the target. If absent, check the skill's local `dependency/` directory; if available, copy/sync it into the target MG5 `models/` directory. If the model is missing in both locations, stop with the missing model name.
+   For each model, check `{config.madgraph_path}/models/{model}` on the target. If absent, check the skill's local `dependency/` directory; if available, copy/sync it into the target MG5 `models/` directory with:
+   ```bash
+   python scripts/sync_to_target.py --config {local_run_config} {skill_dir}/dependency/{model} {madgraph_path}/models/{model}
+   ```
+   Then re-check the model path on the selected target. If the model is missing in both locations or sync fails, stop with the missing model name and the sync stderr path.
 
 5. **Validate physics inputs and locked event counts**
    ```python
@@ -142,7 +148,7 @@ When resuming, still run all Phase 2 validation steps every time.
    Resolve `config.delphes_card` relative to `{config.madgraph_path}/Delphes/cards/` unless it is already absolute. Validate the resolved card path on the selected target and require `.tcl` or `.dat`.
 
 8. **Working directory guard**
-   In local mode only, if `config.workdir` is inside the skill directory, move it to the skill directory's parent and update `run_config.json`. In SSH/WSL2 mode, skip this local containment guard because target paths are not local paths.
+   In local Linux/Unix mode only, if `config.workdir` is inside the skill directory, move it to the skill directory's parent and update `run_config.json`. In SSH/WSL2 mode, skip this local containment guard because target paths are not local paths.
 
 9. **Run directory setup**
    For each `config.run_configurations` entry, create these directories on the selected target:

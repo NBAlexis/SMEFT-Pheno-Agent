@@ -44,8 +44,8 @@ results/data/phase5/sm.lhco
 with workflow_step(logger, "5", "generate_sm_sample",
                    inputs={"anchor_model": anchor_model,
                            "nevents": config.locked_event_counts.nev_sm}):
-    # Write order, run MG5, post-process, copy results
-    pass  # implementation here
+    # Required actions: write the MG5 order, run MG5, post-process ROOT to LHCO,
+    # validate outputs, copy results, and log subprocess stdout/stderr paths.
 ```
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
@@ -74,8 +74,8 @@ with workflow_step(logger, "5", "generate_np_anchor",
                            "anchor_operator": anchor_name,
                            "c_scan": c_scan,
                            "nevents": config.locked_event_counts.nev_np}):
-    # Write order, run MG5, post-process, copy results
-    pass  # implementation here
+    # Required actions: write the MG5 order, run MG5, post-process ROOT to LHCO,
+    # validate outputs, copy results, and log subprocess stdout/stderr paths.
 
 logger.phase_complete("5")
 ```

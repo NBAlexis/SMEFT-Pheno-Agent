@@ -49,7 +49,7 @@ Hard rules:
 - "Interactive session impracticality" is not a stop condition. If the foreground session is unsuitable for the expected duration, switch to durable execution instead of halting.
 - Do not ask the user whether to continue, split the scan, reduce `nev_scan`, enable debug mode, drop operators, or run fewer scan points because of runtime.
 - If a command may outlive the current agent session, start it with a durable mechanism on the selected execution target: `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or a site batch scheduler when available.
-- On native Windows, use WSL2 or SSH as the execution target for long MG5/Delphes jobs; do not rely on native Windows local background execution for multi-day physics runs.
+- Native Windows is not a local execution mode for this workflow. On Windows, use WSL2 or SSH as the execution target.
 - Durable execution must write enough state to resume: job name, PID/job id, command, working directory, stdout/stderr paths, and a phase progress manifest under `{workdir}/results/`.
 - Storage pressure may trigger documented cleanup of intermediate ROOT/LHE/HEPMC files after required outputs are copied. Storage pressure must not trigger event-count reduction.
 
@@ -75,7 +75,7 @@ Phase 1 must collect and validate:
 
 | Field | Meaning |
 |---|---|
-| `execution` | Where commands run: local, SSH target, or WSL2 target |
+| `execution` | Where commands run: current Linux/Unix shell, SSH target, or WSL2 target |
 | `madgraph_path` | Absolute path to MadGraph5, or auto-installed path |
 | `workdir` | Directory where all workflow outputs are written |
 | `process` | Physics process only; no `NP=`, `QED=`, or `QCD=` suffix |
@@ -84,7 +84,7 @@ Phase 1 must collect and validate:
 | `luminosity` | Integrated luminosity in fb^-1; scalar or list matching energy length |
 | `cutexperiment_path` | Existing or cloned CutExperiment path |
 | `delphes_card` | Recommended or user-selected detector card |
-| `preferences` | Optional settings from `[9/9]` |
+| `debug`, `algorithms`, `polarization`, `analysis_notes` | Optional settings from `[9/9]` |
 
 ## Locked Runtime Contract
 
@@ -106,7 +106,7 @@ Phase 1 determines where commands execute and writes it to `run_config.json`.
 
 | Mode | Meaning | Path interpretation |
 |---|---|---|
-| `local` | Run commands on the current machine | local filesystem paths |
+| `local` | Run commands in the current Linux/Unix environment; unavailable on native Windows | local filesystem paths |
 | `ssh` | Run commands on a remote Linux host through SSH | paths on the SSH host |
 | `wsl2` | Run commands inside a local WSL2 Linux distro | paths inside WSL2 |
 
@@ -173,6 +173,7 @@ Prefer bundled scripts for deterministic pieces:
 | `scripts/install_mg5.py` | Install MG5 after the agent dynamically resolves the Launchpad download URL |
 | `scripts/install_cutexperiment.py` | Clone/validate CutExperiment |
 | `scripts/remote_exec.py` | Run commands locally, over SSH, or inside WSL2 |
+| `scripts/sync_to_target.py` | Copy local files/directories such as `run_config.json` or bundled UFO models to SSH/WSL2 targets |
 | `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
 | `scripts/run_mg5.py` | Run MG5 order files with return-code checking |
 | `scripts/parse_param_card.py` | Parse coefficient blocks |

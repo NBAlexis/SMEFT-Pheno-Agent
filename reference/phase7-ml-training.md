@@ -82,14 +82,11 @@ sm.lhco → sm.csv
 np_anchor.lhco → np_anchor.csv
 ```
 
-```python else None})
-```
-
 **Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for the full pipeline.
 
 ## Step 7.2: Algorithm Pool and Selection Strategy
 
-### 5.2.1 Define the Algorithm Pool
+### Step 7.2.1 Define the Algorithm Pool
 
 Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scikit-learn and compatible libraries):
 
@@ -127,7 +124,7 @@ except ImportError:
     from xgboost import XGBClassifier
 ```
 
-### 5.2.2 Random Initial Selection
+### Step 7.2.2 Random Initial Selection
 
 Use a random seed (e.g., hash of `process_name + anchor_model + anchor_name`) to randomly select **3 algorithms** from the pool.
 
@@ -137,7 +134,7 @@ rng = random.Random(hash(process_name + anchor_model + anchor_name) % (2**32))
 selected = rng.sample(algorithm_pool, 3)
 ```
 
-### 5.2.3 Write `compute_scores` Function
+### Step 7.2.3 Write `compute_scores` Function
 
 Before training, write a unified score-computation function. This function is used in Phase 7 (ROC/AUC) and Phase 8 (threshold optimization). Save it to `{workdir}/results/algorithms/compute_scores.py`:
 
@@ -162,7 +159,7 @@ def compute_scores(clf, X):
     return (raw - min_val) / (max_val - min_val + 1e-10)
 ```
 
-### 5.2.4 Train
+### Step 7.2.4 Train
 
 ```python
 with workflow_step(logger, "7", "train_algorithms",
@@ -179,10 +176,7 @@ Train on the **anchor operator's** SM and NP samples:
 6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 — **this is for report plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-```python}})
-```
-
-> **Algorithm selection is deferred to Phase 8.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. The best algorithm is determined by the narrowest `S_stat = 2` constraint width in Phase 8.
+> **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 selects the single production algorithm from the anchor operator by the narrowest `S_stat = 2` constraint width.
 
 ## Step 7.3: Score Distribution Histograms
 

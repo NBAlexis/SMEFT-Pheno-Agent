@@ -17,7 +17,7 @@ Forbidden behavior:
 
 Required behavior when the foreground session is not suitable:
 1. Start or continue a durable job on the selected execution target with `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or the local batch scheduler.
-   On native Windows, switch to the configured WSL2/SSH target for long MG5/Delphes jobs instead of relying on native Windows background execution.
+   Native Windows is not a valid local MG5 target. Use the configured WSL2/SSH target for long MG5/Delphes jobs.
 2. Write a durable progress state under `results/data/phase6/`:
    - `scan_manifest.json`: all required `(operator, model, scan_index, coefficient)` units.
    - `phase6_progress.json`: completed, running, failed/retrying, and pending units.
@@ -120,7 +120,10 @@ set nevents = {nev_scan}
 0
 ```
 
-- `ebeam_value = energy * 1000 / 2` (GeV). See [`madgraph-reference.md`](madgraph-reference.md) Energy Assignment.
+- Compute `ebeam_value` in GeV using the named conversion
+  `tev_to_gev = 1000.0`: `ebeam_value = energy_tev * tev_to_gev / 2`.
+  The factor is only `1 TeV = 1000 GeV`. See
+  [`madgraph-reference.md`](madgraph-reference.md) Energy Assignment.
 - Use `set {block_name} {lha_code} scan:[v1, v2, ...]` (not bare `set {number} = scan:[...]`, which MG5 silently ignores). The `{block_name}` is obtained from `parse_param_card.py` output.
 - The scan syntax tells MG5 to generate one run per value.
 - The trailing `0` confirms run card settings and starts generation.
@@ -169,9 +172,6 @@ If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operat
    ```
 7. **Re-run the scan launch** for the same operator.
 8. **Repeat from step 1 until success.** Runtime length and repeated recoverable failures do not convert into a request for user input.
-
-```python})
-```
 
 > **Critical**: This retry applies per-operator. An earlier operator's success does NOT protect a later operator from needing its own retry. Each operator scan is an independent retry scope.
 
@@ -226,9 +226,6 @@ for i, run in enumerate(new_runs):
     dest_banner = f"np_o_{g_idx}_f{i}_banner.txt"
     dest_lhco   = f"np_o_{g_idx}_f{i}.lhco"
     # Copy banner and lhco to results/data/phase6/
-```
-
-```python)]})
 ```
 
 > **Important**: The output uses **global operator index** (`o_{g_idx}`), NOT the model-internal anoinput index. This ensures all downstream phases reference operators consistently.

@@ -72,7 +72,7 @@ def local_running(pid: int) -> bool:
 def start_local(command_parts: List[str], cwd: Optional[str], job_dir: str, name: str) -> int:
     if os.name == "nt":
         raise RuntimeError(
-            "Native Windows local durable execution is not supported. "
+            "Native Windows execution is not supported for this workflow. "
             "Use execution.mode=wsl2 or execution.mode=ssh for long MG5/Delphes jobs."
         )
     job_dir = os.path.abspath(job_dir)
@@ -180,7 +180,7 @@ def start_remote(execution: dict, command_parts: List[str], cwd: Optional[str], 
 def status_local(job_dir: str, name: str) -> int:
     if os.name == "nt":
         raise RuntimeError(
-            "Native Windows local durable execution is not supported. "
+            "Native Windows execution is not supported for this workflow. "
             "Use execution.mode=wsl2 or execution.mode=ssh for long MG5/Delphes jobs."
         )
     paths = job_paths(job_dir, name)

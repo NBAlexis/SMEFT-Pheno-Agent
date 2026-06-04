@@ -43,6 +43,8 @@ def _with_cwd(command: str, cwd: Optional[str]) -> str:
 
 
 def run_local(command_parts: List[str], cwd: Optional[str]) -> int:
+    if os.name == "nt":
+        raise RuntimeError("Native Windows execution is invalid for this workflow; use WSL2 or SSH")
     if len(command_parts) == 1:
         return subprocess.run(command_parts[0], cwd=cwd, shell=True).returncode
     return subprocess.run(command_parts, cwd=cwd).returncode
