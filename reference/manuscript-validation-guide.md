@@ -31,7 +31,9 @@ limit.
 Mark these as `major` if they fail:
 
 - manuscript uses approximate event counts such as `~2500`
-- generated event counts are missing or inconsistent with evidence
+- requested event counts or actual loaded LHCO event counts are missing or inconsistent with evidence
+- manuscript uses banner event counts as actual event counts
+- selection efficiencies do not state or use actual LHCO loaded counts as denominators
 - final-state particle cut is missing
 - events after final-state cuts are missing
 - feature table lacks ordering

@@ -38,15 +38,16 @@ Mandatory content:
 
 - MG5, UFO, Pythia/Delphes/root2lhco/CutExperiment tool chain with citations
 - detector card and collider setup
-- exact generated event counts
+- exact requested event counts and actual loaded LHCO event counts
 - exact final-state particle cut
 - exact surviving event counts after that cut
+- threshold-passing counts and efficiency denominators for selected samples
 - dataset composition table for SM, anchor NP, and scans
 - scan coefficient table with all 11 points
 - representative Feynman diagrams when available
 
-Final-state cuts and event counts must be written in the main text or tables,
-not only implied by feature names.
+Final-state cuts, event counts, and efficiency denominators must be written in
+the main text or tables, not only implied by feature names.
 
 ## Machine Learning Methodology
 

@@ -12,7 +12,7 @@ Required top-level keys:
 |---|---|
 | `run` | process, collider, energy, luminosity, debug mode, detector card, tool versions |
 | `model_description` | models, claimed operators, UFO parameters, anchor operator |
-| `datasets` | generated events, final-state cuts, surviving events, cross-sections |
+| `datasets` | requested events, actual LHCO events, final-state cuts, surviving events, cross-sections |
 | `features` | ordered ML feature list with units and preprocessing |
 | `algorithms` | trained algorithms, hyperparameters, AUC, score interpretation |
 | `selection` | threshold scan, selected threshold, efficiencies |
@@ -28,15 +28,22 @@ For every SM, anchor NP, and scan dataset, record:
 
 - dataset id and purpose
 - model and operator, if applicable
-- generated event count as an integer
+- requested event count from `run_config.json` as an integer
+- actual loaded LHCO event count from `LoadLHCOlympics(...).GetEventCount()` as an integer
 - final-state particle multiplicity cut, for example `N_gamma >= 1, N_j >= 2`
 - surviving event count after the final-state cut as an integer
+- ML/selection passing event count when a threshold is applied
+- efficiencies with denominators stated explicitly
 - cross-section before and after selection, with units
 - composition: `SM only`, `SM + NP`, or `SM + NP + interference`
 
 Approximate counts are invalid in the final paper. If only an approximate count is
 available, write the exact evidence field as `null`, record the approximation in
 `notes`, and let validation request a revision or flag a residual issue.
+
+Do not use event counts from MG5 banners. Banner event counts may be requested
+targets, not actual LHCO output. Selection efficiencies and selected
+cross-sections must be normalized by actual loaded LHCO counts.
 
 ## Feature Evidence
 

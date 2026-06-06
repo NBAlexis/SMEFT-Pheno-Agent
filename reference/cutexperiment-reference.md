@@ -88,14 +88,22 @@ from CutAndExport.CutEvent import CutEvents
 from CutAndExport.CutFunctions import PhotonNumberCut, JetNumberCut
 
 events = LoadLHCOlympics(lhco_file_path)
+loaded_event_count = events.GetEventCount()
 
 # Default cut: retain only events with at least the required number
 # of final-state particles. Example for 3-photon final state:
 photon_cut = PhotonNumberCut(1, [3])  # at least 3 photons
 CutEvents(events, photon_cut)
+surviving_event_count = events.GetEventCount()
 ```
 
 **Default behavior:** If the user does not specify custom cuts, always apply the multiplicity cut matching the final state.
+
+**Event-count rule:** `loaded_event_count` must be taken immediately after
+`LoadLHCOlympics`. It is the denominator for total selection efficiencies and
+cut cross-sections. `surviving_event_count` is the count after final-state
+multiplicity cuts. Do not use banner event counts for either value; MG5 banners
+may report the requested event target rather than the actual LHCO events.
 
 ### Step 3: Select Final-State Particles
 
@@ -128,7 +136,7 @@ If the final state includes neutrinos (invisible particles), append the missing 
 
 Each event becomes one row in a 2D NumPy array, saved as CSV.
 
-Example for 10,000 input events where 9,000 survive the cut:
+Example for 9,850 loaded LHCO events where 9,000 survive the cut:
 - Output shape: `9000 x 12` (3 photons x 4 components each)
 - CSV header: none (plain numeric data)
 - Row format: `e1, p1x, p1y, p1z, e2, p2x, p2y, p2z, e3, p3x, p3y, p3z`
@@ -169,3 +177,5 @@ After the pipeline:
 - [ ] Output CSV file exists and is non-empty
 - [ ] Row count equals `events.GetEventCount()` after cuts
 - [ ] Column count matches `4 * n_visible + 2 * n_missing_xy`
+- [ ] `loaded_event_count` was recorded before cuts
+- [ ] Total efficiencies use `loaded_event_count`, not requested `nevents`

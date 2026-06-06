@@ -402,6 +402,10 @@ The script supports both MG5_aMC v3.x (`Integrated weight (pb) : X.XXXX`) and ol
 - Any positive value — even `1e-10 pb` — is a valid cross-section. Only `0.0` (or parse failure) is invalid.
 - Do NOT silently return `0.0` on parse failure. Raise an error so the failure is visible.
 - All phases that read banner cross-sections must use the script (or an equivalent).
+- Use banners for cross-sections only. Do not read event counts from banners for
+  efficiencies or normalization; banner event counts may be requested targets,
+  not actual LHCO output. Actual event counts must come from
+  `LoadLHCOlympics(...).GetEventCount()`.
 
 ## Validation Checklist
 

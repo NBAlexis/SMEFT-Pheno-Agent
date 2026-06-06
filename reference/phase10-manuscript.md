@@ -95,9 +95,9 @@ results/data/phase10/manuscript_evidence.json
 ```
 
 Follow [`manuscript-evidence-guide.md`](manuscript-evidence-guide.md). The
-evidence must include exact event counts, final-state cuts, ordered features
-with units, preprocessing, algorithm metadata, fit coefficients, constraints,
-figures, and citations.
+evidence must include exact requested event counts, actual LHCO event counts,
+final-state cuts, ordered features with units, preprocessing, algorithm
+metadata, fit coefficients, constraints, figures, and citations.
 
 If a required value is unavailable, record `null` and `missing_reason`. Do not
 write approximate values into the evidence as exact facts.
@@ -142,9 +142,10 @@ Write `manuscript_draft_v1.html` or `manuscript_draft_v1.tex` from:
 
 Mandatory manuscript content:
 
-- exact generated event counts
+- exact requested event counts and actual loaded LHCO event counts
 - exact final-state particle cut
 - exact surviving event counts after the cut
+- threshold-passing counts and explicit efficiency denominators
 - ordered feature table with units
 - preprocessing/standardization statement
 - self-contained descriptions of all trained algorithms
@@ -153,8 +154,9 @@ Mandatory manuscript content:
 - final constraints using the anchor-selected algorithm from Phase 9
 - adequate references
 
-Do not use text such as `~2500` for event counts. Do not choose a different
-final algorithm per operator unless the user requested that mode.
+Do not use text such as `~2500` for event counts. Do not use event counts from
+MG5 banners as actual generated counts. Do not choose a different final
+algorithm per operator unless the user requested that mode.
 
 ## Step 10.5: Validate and Revise
 

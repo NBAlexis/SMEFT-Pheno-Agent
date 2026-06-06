@@ -36,7 +36,16 @@ with workflow_step(logger, "8", "convert_scan_lhco_to_csv",
                    inputs={"num_operators": len(operator_claims), "points_per_operator": 11}):
 ```
 
-Convert all Phase 6 `.lhco` files to `.csv` using same feature extraction as Phase 7.
+Convert all Phase 6 `.lhco` files to `.csv` using same feature extraction as
+Phase 7. For every scan point, record:
+
+- `requested_event_count`: locked `nev_scan` from `run_config.json`
+- `loaded_lhco_event_count`: `LoadLHCOlympics(lhco).GetEventCount()` immediately after loading
+- `surviving_final_state_event_count`: feature-row count after final-state cuts
+- `count_source`: `CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner`
+
+Banner files may be used for cross-sections only. Do not use banner event counts
+for efficiencies, denominators, or manuscript evidence.
 
 
 ## Step 8.2: Score All Scan Points (Per Algorithm)
@@ -77,15 +86,19 @@ ref_op = "o_1"
 
 Load the anchor operator's scan data: `np_o_1_f0.lhco` through `np_o_1_f10.lhco`.
 
-### Event Count
+### Event Counts
 
-Read `nev_scan` from `sm_baseline.json` (field `n_scan`). **Do NOT hardcode.**
+Read the requested scan count only as metadata. The denominator for efficiencies
+and selected cross-sections is the actual LHCO event count for that scan point:
 
 ```python
-from scripts.read_results import read_sm_baseline
-baseline = read_sm_baseline(config.workdir)
-nev_scan = baseline["n_scan"]
+events = LoadLHCOlympics(lhco_path)
+loaded_event_count = events.GetEventCount()
+assert loaded_event_count > 0
 ```
+
+Never replace `loaded_event_count` with `nev_scan`, and never use event counts
+from the MG5 banner.
 
 ### Threshold Scan Per Algorithm
 
@@ -98,9 +111,14 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
 1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x`. Reconstruct `c_x` from the operator's Phase 6 manifest `c_scan` using `[-c_scan + 0.2 * c_scan * n for n in range(11)]`.
 2. Compute cut cross-section:
    ```
-   cs_cut_x = cs_x * m_x / nev_scan
+   cs_cut_x = cs_x * m_x / loaded_event_count_x
    ```
-   where `cs_x` from banner (use canonical parser in [`madgraph-reference.md`](madgraph-reference.md)) and `nev_scan` from configuration.
+   where `cs_x` is the banner cross-section parsed with the canonical parser in
+   [`madgraph-reference.md`](madgraph-reference.md), and
+   `loaded_event_count_x` is the actual LHCO event count from CutExperiment.
+   The total selection efficiency is `m_x / loaded_event_count_x`. If useful,
+   also record conditional ML efficiency as
+   `m_x / surviving_final_state_event_count_x`.
 3. Fit quadratic: `csfit(f) = csfit_sm + f*csfit_int + f^2*csfit_np`
 4. Solve `S_stat = 2` with physical luminosity converted to the inverse unit
    matching the fitted cross-section. In the default workflow, `csfit_*` is in
@@ -135,6 +153,24 @@ Record per algorithm:
 }
 ```
 
+Record per scan point:
+
+```json
+{
+  "operator": "o_1",
+  "point": 0,
+  "coefficient": -0.12,
+  "requested_event_count": 1000000,
+  "loaded_lhco_event_count": 998412,
+  "surviving_final_state_event_count": 972300,
+  "passing_event_count": 18520,
+  "total_selection_efficiency": 0.01855,
+  "conditional_ml_efficiency": 0.01905,
+  "cs_x_pb": 0.034,
+  "cs_cut_x_pb": 0.000631
+}
+```
+
 ### Parameter Passing Safety
 
 When calling `fit_and_solve`, add type assertions to prevent silent swaps:
@@ -161,11 +197,8 @@ For each operator `o_{g_idx}`:
 - Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
 - Apply the algorithm's threshold
 - Fit quadratic and record coefficients
-
-For each operator `o_{g_idx}`:
-- Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
-- Apply the algorithm's threshold
-- Fit quadratic and record coefficients
+- Use each scan point's own `loaded_lhco_event_count` as the denominator for
+  `cs_cut_x`. Do not use the anchor denominator for non-anchor operators.
 
 ## Step 8.5: Plot
 
@@ -189,6 +222,7 @@ logger.phase_complete("8")
 ```
 results/data/phase8/
   threshold_optimization.json    # per-algorithm optimal thresholds (from anchor)
+  scan_event_counts.json         # requested, loaded, surviving, and passing counts
   csfit_o_1_{alg1}.json, csfit_o_1_{alg2}.json, ...
   csfit_o_2_{alg1}.json, csfit_o_2_{alg2}.json, ...
   ...
@@ -205,6 +239,8 @@ results/plots/
 
 - `csfit_sm > 0`
 - `csfit_np >= 0`
+- Every scan point has positive `loaded_lhco_event_count`
+- No efficiency or `cs_cut_x` denominator is requested `nev_scan` or a banner event count
 - Residual: `|cs_cut_x - csfit(f_x)| / csfit(f_x) < 0.5` for all points
 
 ## Phase Transition

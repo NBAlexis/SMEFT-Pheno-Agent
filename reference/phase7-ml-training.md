@@ -1,6 +1,6 @@
 # Phase 7: Train ML Event Selection Strategy
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE â€?once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE ï¿½?once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
 Train and compare ML algorithms to distinguish SM from NP events. In multi-model mode, training is performed **once** using the **anchor operator's** SM and NP samples. The trained algorithms are then applied to ALL globally claimed operators in later phases.
@@ -27,7 +27,7 @@ with workflow_step(logger, "7", "convert_lhco_to_csv",
                    inputs={"sm": "sm.lhco", "np": "np_anchor.lhco"}):
 ```
 
-Use CutExperiment to load `.lhco` files and extract feature vectors:
+Use CutExperiment to load `.lhco` files, record actual event counts, and extract feature vectors:
 
 ```python
 from Interfaces.LHCOlympics import LoadLHCOlympics
@@ -45,6 +45,7 @@ def lhco_to_features(lhco_path, process_name=config.process):
     from DataStructure.Particles import ParticleType
 
     events = LoadLHCOlympics(lhco_path)
+    loaded_event_count = events.GetEventCount()
 
     # Determine expected particle types from process_name
     # (right-hand side of '>', excluding QED=/QCD=/NP= suffixes)
@@ -73,14 +74,47 @@ def lhco_to_features(lhco_path, process_name=config.process):
             vec.extend([-vis_px, -vis_py])  # missing momentum
 
         features.append(vec)
-    return np.array(features)
+    feature_array = np.array(features)
+    metadata = {
+        "lhco_path": lhco_path,
+        "loaded_lhco_event_count": int(loaded_event_count),
+        "surviving_final_state_event_count": int(len(features)),
+        "final_state_cut": describe_final_state_cut(process_name),
+    }
+    return feature_array, metadata
 ```
 
 Save as `.csv`:
 ```
-sm.lhco â†?sm.csv
-np_anchor.lhco â†?np_anchor.csv
+sm.lhco ï¿½?sm.csv
+np_anchor.lhco ï¿½?np_anchor.csv
 ```
+
+Also write exact event-count metadata:
+
+```json
+{
+  "sm": {
+    "requested_event_count": 500000,
+    "loaded_lhco_event_count": 498732,
+    "surviving_final_state_event_count": 482109,
+    "final_state_cut": "N_gamma >= 3"
+  },
+  "np_anchor": {
+    "requested_event_count": 100000,
+    "loaded_lhco_event_count": 99481,
+    "surviving_final_state_event_count": 96740,
+    "final_state_cut": "N_gamma >= 3"
+  },
+  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+}
+```
+
+`requested_event_count` comes from `run_config.json`. The actual loaded count
+must come from CutExperiment after loading the LHCO file. Never use banner event
+counts for this metadata. `describe_final_state_cut(process_name)` is a small
+string helper built from the same final-state parse as `parse_final_state`, for
+example `N_gamma >= 3` or `N_mu >= 2, N_j >= 2`.
 
 **Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for the full pipeline.
 
@@ -92,18 +126,18 @@ Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scik
 
 | # | Algorithm | Type | Extra Dependency |
 |---|-----------|------|------------------|
-| 1 | GradientBoostingClassifier | Ensemble | â€?|
-| 2 | RandomForestClassifier | Ensemble | â€?|
+| 1 | GradientBoostingClassifier | Ensemble | ï¿½?|
+| 2 | RandomForestClassifier | Ensemble | ï¿½?|
 | 3 | XGBClassifier | Ensemble | `xgboost` |
 | 4 | LGBMClassifier | Ensemble | `lightgbm` |
-| 5 | SVC (RBF kernel) | Kernel | â€?|
-| 6 | SVC (poly kernel) | Kernel | â€?|
-| 7 | LogisticRegression | Linear | â€?|
-| 8 | MLPClassifier | Neural Network | â€?|
-| 9 | IsolationForest | Anomaly Detection | â€?|
-| 10 | ExtraTreesClassifier | Ensemble | â€?|
-| 11 | AdaBoostClassifier | Ensemble | â€?|
-| 12 | KNeighborsClassifier | Distance-based | â€?|
+| 5 | SVC (RBF kernel) | Kernel | ï¿½?|
+| 6 | SVC (poly kernel) | Kernel | ï¿½?|
+| 7 | LogisticRegression | Linear | ï¿½?|
+| 8 | MLPClassifier | Neural Network | ï¿½?|
+| 9 | IsolationForest | Anomaly Detection | ï¿½?|
+| 10 | ExtraTreesClassifier | Ensemble | ï¿½?|
+| 11 | AdaBoostClassifier | Ensemble | ï¿½?|
+| 12 | KNeighborsClassifier | Distance-based | ï¿½?|
 | 13 | PyTorch NN (custom) | Neural Network | `torch` |
 
 If `config.algorithms` is set in `run_config.json`, use those instead of the pool.
@@ -173,7 +207,7 @@ Train on the **anchor operator's** SM and NP samples:
 3. Stack: `X = np.vstack([sm[:n], np_data[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
-6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 â€?**this is for manuscript plotting only, NOT for algorithm selection**
+6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 ï¿½?**this is for manuscript plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
 > **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 selects the single production algorithm from the anchor operator by the narrowest `S_stat = 2` constraint width.
@@ -233,6 +267,7 @@ logger.phase_complete("7")
 ```
 results/data/phase7/
   sm.csv, np_anchor.csv
+  event_counts.json
   algorithm_comparison.json
 results/plots/
   roc_anchor.pdf
@@ -244,6 +279,7 @@ results/algorithms/
 ## Validation
 
 - `0.5 < AUC <= 1.0` for anchor training
+- `event_counts.json` exists and every `loaded_lhco_event_count` is positive
 
 ## Phase Transition
 

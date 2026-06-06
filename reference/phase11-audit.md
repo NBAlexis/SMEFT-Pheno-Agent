@@ -99,7 +99,7 @@ with workflow_step(logger, "11", "check_cross_phase_consistency"):
 | Phase 7 algorithms == Phase 8 algorithms | Same trained algorithm set | Abort |
 | Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
 | Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |
-| Actual scan events == locked `nev_scan` | Match | Abort if modified outside debug |
+| Phase 8 event denominators | Actual loaded LHCO counts from CutExperiment, positive for every scan point | Abort if missing, zero, equal-by-assumption to `nev_scan`, or taken from banner |
 | Manuscript table == Phase 9 table | Match | Warn and record in manuscript validation |
 | `reference_paper_plan.papers_to_cite` entries are included in `literature_plan.comparison_citations` | Same comparison-citation set | Warn |
 | `anchor.json` model matches Phase 4/5 SM model | Same model | Abort |

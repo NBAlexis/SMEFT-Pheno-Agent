@@ -71,6 +71,11 @@ def read_algorithm_comparison(workdir: str, run_dir: Optional[str] = None) -> Di
     return _load_json(_result_path(workdir, run_dir, "data/phase7/algorithm_comparison.json"))
 
 
+def read_phase7_event_counts(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Read event_counts.json with requested, loaded, and surviving LHCO counts."""
+    return _load_json(_result_path(workdir, run_dir, "data/phase7/event_counts.json"))
+
+
 # ---------------------------------------------------------------------------
 # Phase 8
 # ---------------------------------------------------------------------------
@@ -85,6 +90,11 @@ def read_csfit(workdir: str, operator: str, algorithm: str,
     """Read csfit_{operator}_{algorithm}.json: quadratic fit coefficients."""
     fname = f"data/phase8/csfit_{operator}_{algorithm}.json"
     return _load_json(_result_path(workdir, run_dir, fname))
+
+
+def read_phase8_scan_event_counts(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Read scan_event_counts.json with actual LHCO denominators per scan point."""
+    return _load_json(_result_path(workdir, run_dir, "data/phase8/scan_event_counts.json"))
 
 
 # ---------------------------------------------------------------------------
