@@ -1,4 +1,4 @@
-# Report Comparison Guide
+# Manuscript Comparison Guide
 
 Use this guide before drafting Phase 10 when the user has provided `List.txt` or
 reference-paper PDFs. These papers are writing and comparison references, not
@@ -31,7 +31,7 @@ comparison references.
 }
 ```
 
-`papers_to_cite` must stay empty unless the report directly compares with,
+`papers_to_cite` must stay empty unless the manuscript directly compares with,
 quotes, or relies on a specific paper. If a paper is added to `papers_to_cite`,
 also add it to `literature_plan.json` under `comparison_citations`.
 

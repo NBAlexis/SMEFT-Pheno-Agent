@@ -34,8 +34,8 @@ N_sig(f) = L * (f * sigma_int + f^2 * sigma_NP)
 
 Do not use `N_sig / sqrt(N_bg + N_sig)` or
 `N_sig / sqrt(N_bg)` unless the user explicitly selects a standard
-approximation. Phase 4, Phase 8, Phase 9, and the report must all use the same
-formula above by default.
+approximation. Phase 4, Phase 8, Phase 9, and the manuscript must all use the
+same formula above by default.
 
 ## Solving Constraints
 

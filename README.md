@@ -3,7 +3,7 @@
 Reusable skill for automated SMEFT collider phenomenology studies with MadGraph5,
 Delphes/root2lhco processing, CutExperiment feature extraction, ML event
 selection, coefficient scans, expected Wilson-coefficient constraints, and a
-publication-style report.
+publication-style manuscript.
 
 ## Agent Contract
 
@@ -67,7 +67,7 @@ Phase 1 collects:
 - CutExperiment path or clone request
 - Delphes card name or absolute path
 - Optional preferences such as debug mode, polarization, algorithms, focused
-  operators, and report preferences
+  operators, and manuscript preferences
 
 ## Notes
 

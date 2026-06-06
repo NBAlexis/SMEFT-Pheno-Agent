@@ -5,9 +5,9 @@
 ## Purpose
 
 Systematically validate all preceding phases before declaring completion. Phase 11
-must distinguish data/workflow failures from report-writing quality warnings.
-Remaining report validation issues do not undo cleanup and do not block delivery
-when the report file exists and the issues are archived.
+must distinguish data/workflow failures from manuscript-writing quality warnings.
+Remaining manuscript validation issues do not undo cleanup and do not block
+delivery when the manuscript file exists and the issues are archived.
 
 ## Prerequisite
 
@@ -54,13 +54,13 @@ Verify expected files exist and have size greater than zero.
 | `results/data/phase8/csfit_o_*_{alg}.json` | 8 | Abort |
 | `results/data/phase9/constraint_table.json` | 9 | Abort |
 | `results/data/phase9/algorithm_selection.json` | 9 | Warn |
-| `results/data/phase10/paper_evidence.json` | 10 | Warn |
+| `results/data/phase10/manuscript_evidence.json` | 10 | Warn |
 | `results/data/phase10/reference_paper_plan.json` | 10 | Warn |
 | `results/data/phase10/literature_plan.json` | 10 | Warn |
-| `results/data/phase10/report_validation.json` | 10 | Warn |
+| `results/data/phase10/manuscript_validation.json` | 10 | Warn |
 | `results/plots/roc_anchor.pdf` | 7 | Warn |
 | `results/plots/threshold_comparison.pdf` | 8 | Warn |
-| `results/report.html` or `results/report.pdf` | 10 | Abort |
+| `results/manuscript.html` or `results/manuscript.pdf` | 10 | Abort |
 | `results/mg5_processes/cleanup_log.json` | Cleanup | Warn |
 | `results/mg5_processes/` non-empty | Cleanup | Warn |
 | `results/orders/` non-empty | Cleanup | Warn |
@@ -78,11 +78,11 @@ with workflow_step(logger, "11", "check_numerical_sanity"):
 | Phase | Checks |
 |---|---|
 | 3 | At least one operator claimed globally; `anchor` is set |
-| 4 | `cs_sm > 0`, `c_scan > 0`, `c_scan < 1e3`, finite values |
+| 4 | `cs_sm > 0`; `coefficient_ranges.json` has one finite two-significant-digit `c_scan` in `(0, 1e3)` for every claimed operator |
 | 7 | All selected algorithms trained; AUC and model paths recorded |
 | 8 | `csfit_sm > 0`, `csfit_np >= 0`, residual warnings recorded |
 | 9 | `fmin < 0 < fmax`; one anchor-selected algorithm is used for all final constraints |
-| 10 | `report_validation.json` status is `pass` or `issues_remaining`; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups |
+| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups |
 
 Do not require `S=5` intervals to be narrower than `S=3` or `S=2`; larger
 significance thresholds can require larger coefficient deviations.
@@ -98,9 +98,9 @@ with workflow_step(logger, "11", "check_cross_phase_consistency"):
 | Phase 3 claimed ops == Phase 6 scanned ops == Phase 8 fitted ops == Phase 9 constrained ops | Same global operator list | Abort |
 | Phase 7 algorithms == Phase 8 algorithms | Same trained algorithm set | Abort |
 | Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
-| Phase 9 selected algorithm == report final algorithm | Same algorithm for all final constraints | Warn |
+| Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |
 | Actual scan events == locked `nev_scan` | Match | Abort if modified outside debug |
-| Report table == Phase 9 table | Match | Warn and record in report validation |
+| Manuscript table == Phase 9 table | Match | Warn and record in manuscript validation |
 | `reference_paper_plan.papers_to_cite` entries are included in `literature_plan.comparison_citations` | Same comparison-citation set | Warn |
 | `anchor.json` model matches Phase 4/5 SM model | Same model | Abort |
 
@@ -129,7 +129,7 @@ Format:
   },
   "abort_reasons": [],
   "warnings": [],
-  "report_validation_status": "pass | issues_remaining | missing"
+  "manuscript_validation_status": "pass | issues_remaining | missing"
 }
 ```
 
@@ -139,8 +139,8 @@ logger.phase_complete("11")
 
 | Status | Condition | Action |
 |---|---|---|
-| PASS | No abort, no warnings | Deliver report and audit log |
-| WARN | No abort, has warnings or report issues remaining | Deliver report and audit log |
+| PASS | No abort, no warnings | Deliver manuscript and audit log |
+| WARN | No abort, has warnings or manuscript issues remaining | Deliver manuscript and audit log |
 | FAIL | Any abort condition | Return audit log; do not claim workflow success |
 
 ## Phase Transition
@@ -148,6 +148,6 @@ logger.phase_complete("11")
 After `logger.phase_complete("11")` is called and `audit_report.json` is written:
 
 1. Check final status immediately.
-2. If PASS or WARN, deliver the report and audit log to the user.
+2. If PASS or WARN, deliver the manuscript and audit log to the user.
 3. If FAIL, return the audit log to the user.
 4. This is the final phase.

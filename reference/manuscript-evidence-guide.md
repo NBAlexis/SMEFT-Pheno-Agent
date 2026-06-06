@@ -1,7 +1,7 @@
-# Report Evidence Guide
+# Manuscript Evidence Guide
 
-Build `results/data/phase10/paper_evidence.json` before writing prose. This file is
-the source of truth for the report. If a value is unavailable, record `null` and a
+Build `results/data/phase10/manuscript_evidence.json` before writing prose. This file is
+the source of truth for the manuscript. If a value is unavailable, record `null` and a
 `missing_reason`; do not fill it with guesses.
 
 ## Evidence Schema
@@ -61,7 +61,7 @@ Record preprocessing separately:
 Do not require a closed-form operator expression for arbitrary user UFOs.
 Use the best available level:
 
-| Level | Available information | Report content |
+| Level | Available information | Manuscript content |
 |---|---|---|
 | `formula` | trusted operator formula exists in references | formula and coefficient definition |
 | `ufo_parameter` | param card block/index/name are known | UFO model, block, index, name, scan coefficient |
@@ -90,7 +90,7 @@ Record citation IDs from `literature_plan.json` by role:
 
 - `toolchain`: tools actually used
 - `foundational`: SMEFT/aQGC/nTGC/ML-in-HEP background references
-- `comparison_citations`: user-list papers cited only because the report makes a direct comparison or uses a specific claim
+- `comparison_citations`: user-list papers cited only because the manuscript makes a direct comparison or uses a specific claim
 - `section_usage`: section-to-reference mapping
 
 Do not put style-only reference papers into `citations`; record them under

@@ -53,12 +53,12 @@ def read_anchor(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def read_coefficient_ranges(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Read coefficient_ranges.json: {"global": [-c_scan, c_scan]}."""
+    """Read coefficient_ranges.json: per-operator scan ranges."""
     return _load_json(_result_path(workdir, run_dir, "data/phase4/coefficient_ranges.json"))
 
 
 def read_sm_baseline(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Read sm_baseline.json: {cs_sm, n_scan, L_prime, anchor_model, c_scan}."""
+    """Read sm_baseline.json: {cs_sm, n_scan, L_prime, anchor_model, range_scope}."""
     return _load_json(_result_path(workdir, run_dir, "data/phase4/sm_baseline.json"))
 
 
@@ -105,9 +105,17 @@ def read_algorithm_selection(workdir: str, run_dir: Optional[str] = None) -> Dic
 # Convenience accessors for single fields (never reimplement inline)
 # ---------------------------------------------------------------------------
 
-def get_c_scan(workdir: str, run_dir: Optional[str] = None) -> float:
-    """Return the unified scan range positive bound (c_scan)."""
+def get_operator_c_scan(workdir: str, operator: str, run_dir: Optional[str] = None) -> float:
+    """Return one operator's positive scan bound, e.g. operator='o_1'."""
     data = read_coefficient_ranges(workdir, run_dir)
+    return float(data["operators"][operator]["c_scan"])
+
+
+def get_c_scan(workdir: str, run_dir: Optional[str] = None) -> float:
+    """Return legacy global c_scan only for old result folders."""
+    data = read_coefficient_ranges(workdir, run_dir)
+    if "global" not in data:
+        raise ValueError("coefficient_ranges.json is per-operator; use get_operator_c_scan(..., operator='o_N')")
     return float(data["global"][1])
 
 

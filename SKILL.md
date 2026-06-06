@@ -1,11 +1,11 @@
 ---
 name: automated-smeft-ml-pheno
-description: Use when the user wants an automated SMEFT phenomenology study with MadGraph5, Delphes/root2lhco processing, CutExperiment feature extraction, machine-learning event selection, coefficient scans, expected Wilson-coefficient constraints, or a publication-style report. Trigger even when required inputs are missing: Phase 1 must collect them interactively before execution. Supports single or multiple UFO models and single or multiple (energy, luminosity) run pairs.
+description: Use when the user wants an automated SMEFT phenomenology study with MadGraph5, Delphes/root2lhco processing, CutExperiment feature extraction, machine-learning event selection, coefficient scans, expected Wilson-coefficient constraints, or a publication-style manuscript. Trigger even when required inputs are missing: Phase 1 must collect them interactively before execution. Supports single or multiple UFO models and single or multiple (energy, luminosity) run pairs.
 ---
 
 # Automated SMEFT Phenomenology with Machine Learning
 
-Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a report, clean up MG5 process folders, and audit consistency.
+Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a publication-style manuscript, clean up MG5 process folders, and audit consistency.
 
 ## Operating Modes
 
@@ -42,7 +42,7 @@ During Phase N, do not create, modify, or execute artifacts for Phase N+1 or lat
 
 Allowed waiting work: monitor current phase jobs, update current phase progress manifests, inspect current phase logs, retry current phase failures, and clean current phase intermediates after required outputs are secured.
 
-Future-phase code, result files, plots, models, reports, or audit artifacts may be created only after the current phase completes.
+Future-phase code, result files, plots, models, manuscripts, or audit artifacts may be created only after the current phase completes.
 
 ## SUPREME RULE: Execution Continuity
 
@@ -146,9 +146,9 @@ Every phase has a completion unit. Red flags are evaluated only after that unit 
 | 7 | All selected ML algorithms are trained and recorded | No early algorithm filtering |
 | 8 | Threshold optimization and fits are attempted for required algorithms/operators | Fit issues are recorded unless unrecoverable |
 | 9 | Constraints are computed for S=2,3,5 where mathematically possible | Numerical red flags are recorded |
-| 10 | Report is generated | Use HTML fallback if PDF generation fails |
+| 10 | Manuscript is generated | Use HTML fallback only if no usable local or target LaTeX exists |
 | Cleanup | MG5 process folders/orders are moved into results | Only filesystem failure |
-| 11 | Audit file is written | Final report only |
+| 11 | Audit file is written | Final manuscript only |
 
 ### Phase 3 Loop Lock
 
@@ -175,11 +175,11 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | 7 | ML training | [`reference/phase7-ml-training.md`](reference/phase7-ml-training.md) |
 | 8 | Selection and fitting | [`reference/phase8-selection.md`](reference/phase8-selection.md) |
 | 9 | Constraints | [`reference/phase9-constraints.md`](reference/phase9-constraints.md) |
-| 10 | Report | [`reference/phase10-report.md`](reference/phase10-report.md) |
+| 10 | Manuscript | [`reference/phase10-manuscript.md`](reference/phase10-manuscript.md) |
 | Cleanup | Process-folder collection | [`reference/cleanup.md`](reference/cleanup.md) |
 | 11 | Audit | [`reference/phase11-audit.md`](reference/phase11-audit.md) |
 
-Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and report guidance in [`reference/report-writing-guide.md`](reference/report-writing-guide.md).
+Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
 
 ## Scripts
 
@@ -192,6 +192,7 @@ Prefer bundled scripts for deterministic pieces:
 | `scripts/install_cutexperiment.py` | Clone/validate CutExperiment |
 | `scripts/remote_exec.py` | Run commands locally, over SSH, or inside WSL2 |
 | `scripts/sync_to_target.py` | Copy local files/directories such as `run_config.json` or bundled UFO models to SSH/WSL2 targets |
+| `scripts/sync_from_target.py` | Copy target files/directories back to local disk for local-only tooling such as LaTeX |
 | `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
 | `scripts/run_mg5.py` | Run MG5 order files with return-code checking |
 | `scripts/parse_param_card.py` | Parse coefficient blocks |
@@ -214,7 +215,7 @@ results/
   algorithms/
   mg5_processes/
   orders/
-  report.html or report.pdf
+  manuscript.html or manuscript.pdf
 ```
 
 Multi-run:
@@ -229,7 +230,7 @@ results/
     algorithms/
     mg5_processes/
     orders/
-    report.html or report.pdf
+    manuscript.html or manuscript.pdf
   E14_L3000/
     ...
 ```

@@ -42,7 +42,9 @@ logger.phase_start("6")
 
 Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
 
-From `coefficient_ranges.json`, read the unified range: `c_{scan} = coefficient_ranges["global"][1]` (the positive bound). The same `c_{n_{scan}} = c_{scan}` applies to all operators.
+From `coefficient_ranges.json`, read each operator's own range:
+`coefficient_ranges["operators"][f"o_{g_idx}"]["c_scan"]`. Do not use the
+anchor operator's range for any other operator.
 
 Before launching the first scan, create the manifest:
 
@@ -96,13 +98,24 @@ with workflow_step(logger, "6", f"scan_operator_o_{g_idx}",
 
 1. Look up its source model and anoinput index from `operator_claims.json`
 2. Use the process directory `{folder_base}_{model_name}_p6`
-3. Generate 11 scan points programmatically — **do not hand-compute the values**:
+3. Read this operator's own Phase 4 range and generate 11 scan points programmatically — **do not hand-compute the values**:
 
 ```python
-c_scan = coefficient_ranges["global"][1]  # positive bound from Phase 4
-coefficient_list = [-c_scan + 0.2 * c_scan * n for n in range(11)]
-scan_values = ",".join(str(v) for v in coefficient_list)
+import math
+
+def round_sig(x, digits=2):
+    if x == 0:
+        return 0.0
+    return round(x, digits - 1 - int(math.floor(math.log10(abs(x)))))
+
+op_key = f"o_{g_idx}"
+c_scan = coefficient_ranges["operators"][op_key]["c_scan"]  # this operator's positive bound from Phase 4
+coefficient_list = [round_sig(-c_scan + 0.2 * c_scan * n, 2) for n in range(11)]
+scan_values = ",".join(f"{v:.2g}" for v in coefficient_list)
 ```
+
+The scan range and emitted scan values use two significant digits. Preserve the
+full per-operator mapping in `scan_manifest.json`.
 
 Launch order (follows [`madgraph-reference.md`](madgraph-reference.md) Event Generation Order template):
 

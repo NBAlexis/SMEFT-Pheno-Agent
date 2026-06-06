@@ -1,19 +1,19 @@
-# Report Citation Guide
+# Manuscript Citation Guide
 
 Build `results/data/phase10/literature_plan.json` before drafting citations and
 bibliography entries. The plan records which citation objects are used in which
 section and why.
 
-Read [`report-literature-bank.md`](report-literature-bank.md) before selecting
+Read [`manuscript-literature-bank.md`](manuscript-literature-bank.md) before selecting
 domain citations. It contains:
 
 - a reusable SMEFT/aQGC/nTGC/ML-in-HEP citation warehouse
 - user-list paper metadata only when a paper is actually cited because the
-  report directly compares with it or relies on a method from it
+  manuscript directly compares with it or relies on a method from it
 
 Do not treat the user's `List.txt` papers as default bibliography entries. Those
 papers are primarily writing/comparison references; use
-[`report-comparison-guide.md`](report-comparison-guide.md) for that role.
+[`manuscript-comparison-guide.md`](manuscript-comparison-guide.md) for that role.
 
 ## Mandatory Toolchain References
 
@@ -50,11 +50,11 @@ citation.
 ```
 
 `comparison_citations` is normally empty. Add a user-list paper there only when
-the final report explicitly compares with that paper's result or describes that
+the final manuscript explicitly compares with that paper's result or describes that
 paper's method as part of the study's motivation.
 
 Do not invent arXiv identifiers. Use the identifiers in
-[`report-literature-bank.md`](report-literature-bank.md) or explicit user input.
+[`manuscript-literature-bank.md`](manuscript-literature-bank.md) or explicit user input.
 
 ## Citation Density
 

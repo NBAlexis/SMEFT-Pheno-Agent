@@ -1,6 +1,6 @@
 # Cleanup: Collect MG5 Process Folders
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE â€” once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE â€?once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
 After all event generation is complete and results have been extracted to `results/data/`, move the MG5 process directories from `mg5path` to the working directory to prevent `mg5path` from accumulating unmanaged folders across multiple runs.
@@ -18,7 +18,7 @@ folder_base = normalize_process_name(config.process)
 
 ## When to Run
 
-Execute **after Phase 10 (report generation)** and **before Phase 11 (audit)**. At this point, all required files (banners, LHCO, CSV, plots, report) have already been copied to `results/`.
+Execute **after Phase 10 (manuscript generation)** and **before Phase 11 (audit)**. At this point, all required files (banners, LHCO, CSV, plots, manuscript) have already been copied to `results/`.
 
 ## Critical Rule
 

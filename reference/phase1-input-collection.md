@@ -252,7 +252,7 @@ handle:
 This question is a preferences gateway. It exists so the user can personalize the run before execution. Do not mention Delphes card here because it was already selected in `[8/9]`.
 
 ```text
-[9/9] Are there any other requirements or preferences? You may specify `debug=true`, `polarization=polbeam1,polbeam2`, `algorithms=[...]`, focused operators, report format preferences, or additional analysis notes. Type `skip` to use defaults.
+[9/9] Are there any other requirements or preferences? You may specify `debug=true`, `polarization=polbeam1,polbeam2`, `algorithms=[...]`, focused operators, manuscript format preferences, or additional analysis notes. Type `skip` to use defaults.
 还有其他要求或偏好吗？可以指定 `debug=true`、`polarization=polbeam1,polbeam2`、`algorithms=[...]`、重点关注的算符、报告格式偏好或其他分析说明。输入 `skip` 使用默认设置。
 ```
 

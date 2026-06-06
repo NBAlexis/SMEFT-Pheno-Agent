@@ -6,7 +6,7 @@ Use this bank for two distinct tasks:
 - build `literature_plan.json` from the foundational citation warehouse
 
 Do not cite user-list entries automatically. They are comparison/style
-references unless the report directly compares with them or relies on a specific
+references unless the manuscript directly compares with them or relies on a specific
 claim.
 
 ## User-List Comparison Reference Map
@@ -41,7 +41,7 @@ claim.
 Use these references for background claims that should not rely only on the
 user's own papers.
 
-| ID | Topic | Reference | arXiv/DOI | Use in report |
+| ID | Topic | Reference | arXiv/DOI | Use in manuscript |
 |---|---|---|---|---|
 | F-SMEFT-1 | SMEFT origin | S. Weinberg, Phys. Rev. Lett. 43, 1566 (1979) | DOI: 10.1103/PhysRevLett.43.1566 | effective-operator expansion motivation |
 | F-SMEFT-2 | Warsaw basis | B. Grzadkowski et al., JHEP 10, 085 (2010) | arXiv:1008.4884; DOI: 10.1007/JHEP10(2010)085 | dimension-six SMEFT basis context |
@@ -65,9 +65,9 @@ user's own papers.
 - For nTGC processes, use P18, P21, and P41 as comparison references when relevant.
 - For ML/anomaly-detection method comparison, prefer P16, P21, P27, P31, P32, P34, P36, or P40 based on the algorithm family.
 - For CutExperiment/feature extraction, cite P29.
-- For quantum or quantum-accelerable ML claims, cite P34, P36, or P42 only when the report actually discusses those algorithms.
+- For quantum or quantum-accelerable ML claims, cite P34, P36, or P42 only when the manuscript actually discusses those algorithms.
 - For general SMEFT/aQGC definitions, include at least one foundational entry
-  from F-SMEFT-* or F-AQGC-* unless the report contains only UFO-parameter
+  from F-SMEFT-* or F-AQGC-* unless the manuscript contains only UFO-parameter
   descriptions and no SMEFT/aQGC theory claims.
 - For generic ML-in-HEP motivation, include F-MLHEP-1 or F-AD-1 in addition
   to any user-list method paper used for comparison.
@@ -76,7 +76,7 @@ user's own papers.
 
 ## Reusable Citation Claims
 
-Use these as claim templates. Select foundational citations for broad SMEFT/ML claims. Use user-list comparison references only when they are cited through `comparison_citations` because the report directly compares with them or relies on a specific claim.
+Use these as claim templates. Select foundational citations for broad SMEFT/ML claims. Use user-list comparison references only when they are cited through `comparison_citations` because the manuscript directly compares with them or relies on a specific claim.
 
 - New-physics signals can be rare and kinematically different from SM backgrounds; anomaly-detection methods exploit this structure.
 - Dimension-8 operators are important in aQGC phenomenology, especially in channels where lower-dimensional contributions are absent or suppressed.

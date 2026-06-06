@@ -22,6 +22,9 @@ logger.phase_start("5")
 ```
 
 Read `anchor.json` from Phase 3 to determine the anchor model and anchor operator.
+Read `coefficient_ranges.json` from Phase 4 and use only the anchor operator's
+own range for the anchor NP training sample:
+`anchor_c_scan = coefficient_ranges["operators"][f"o_{anchor_global_idx}"]["c_scan"]`.
 
 ## Step 5.1: Pure SM Sample
 
@@ -60,7 +63,7 @@ Generate the NP sample **only for the anchor operator**:
    generate {process_name} NP>0
    output {folder_base}_{anchor_model}_p5_NP
    ```
-2. Launch with `set {block_name} {anchor_anoinput_idx} {c_{n_{scan}}}` for the anchor operator (from Phase 4 range `c_{scan}`), `set {block_name} {other_idx} 0.0` for all others, `nevents = {nev_np}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+2. Launch with `set {block_name} {anchor_anoinput_idx} {anchor_c_scan}` for the anchor operator, where `anchor_c_scan` is read from the anchor operator's own Phase 4 range. Set `{block_name} {other_idx} 0.0` for all others, and use `nevents = {nev_np}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 3. Post-process
 4. Copy to results:
 ```
@@ -72,7 +75,7 @@ results/data/phase5/np_anchor.lhco
 with workflow_step(logger, "5", "generate_np_anchor",
                    inputs={"anchor_model": anchor_model,
                            "anchor_operator": anchor_name,
-                           "c_scan": c_scan,
+                           "anchor_c_scan": anchor_c_scan,
                            "nevents": config.locked_event_counts.nev_np}):
     # Required actions: write the MG5 order, run MG5, post-process ROOT to LHCO,
     # validate outputs, copy results, and log subprocess stdout/stderr paths.

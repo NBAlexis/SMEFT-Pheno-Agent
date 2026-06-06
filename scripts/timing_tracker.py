@@ -41,7 +41,7 @@ class TimingTracker:
         "Phase 7: ML Training",
         "Phase 8: Selection Optimization",
         "Phase 9: Constraints",
-        "Phase 10: Report",
+        "Phase 10: Manuscript",
         "Cleanup",
         "Phase 11: Audit",
     ]

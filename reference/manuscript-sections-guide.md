@@ -1,4 +1,4 @@
-# Report Sections Guide
+# Manuscript Sections Guide
 
 Write a self-contained paper. The reader should understand the physics process,
 dataset construction, ML method, event selection, fit, and constraints without
@@ -67,7 +67,7 @@ State that algorithms are evaluated on the first non-zero anchor operator.
 The selected production algorithm is the anchor algorithm with the narrowest
 S=2 constraint width after threshold optimization.
 
-Report:
+Manuscript:
 
 - threshold scan range
 - selected threshold for each algorithm
@@ -91,7 +91,7 @@ Include:
 
 When discussing constraint intervals, state that the upper bound is the smallest
 positive real root and the lower bound is the largest negative real root of the
-significance equation. Do not report complex roots.
+significance equation. Do not present complex roots as physical constraints.
 
 For significance thresholds, larger S generally requires a larger coefficient
 deviation to reach discovery/evidence. Do not enforce a monotonicity rule that

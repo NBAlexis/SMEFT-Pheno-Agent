@@ -1,23 +1,23 @@
-# Report Validation Guide
+# Manuscript Validation Guide
 
-Validate the report after every draft. Write validation output to
-`results/data/phase10/report_validation.json`.
+Validate the manuscript after every draft. Write validation output to
+`results/data/phase10/manuscript_validation.json`.
 
 ## Revision Loop
 
 Use a bounded loop:
 
-1. Draft `report_draft_v1`.
+1. Draft `manuscript_draft_v1`.
 2. Validate.
-3. If validation fails, revise and write `report_draft_v2`.
+3. If validation fails, revise and write `manuscript_draft_v2`.
 4. Validate.
-5. If validation still fails, revise once more and write the final report.
-6. Validate the final report and archive remaining issues.
+5. If validation still fails, revise once more and write the final manuscript.
+6. Validate the final manuscript and archive remaining issues.
 
 Maximum revisions after the first draft: `2`.
 
-Never block cleanup or Phase 11 because the report remains imperfect. After the
-revision limit, write `report_validation.json` with `status: "issues_remaining"`
+Never block cleanup or Phase 11 because the manuscript remains imperfect. After the
+revision limit, write `manuscript_validation.json` with `status: "issues_remaining"`
 and continue to cleanup and audit.
 
 ## Blocking During Phase 10
@@ -30,7 +30,7 @@ limit.
 
 Mark these as `major` if they fail:
 
-- report uses approximate event counts such as `~2500`
+- manuscript uses approximate event counts such as `~2500`
 - generated event counts are missing or inconsistent with evidence
 - final-state particle cut is missing
 - events after final-state cuts are missing
@@ -44,7 +44,7 @@ Mark these as `major` if they fail:
 - final constraints use per-operator best algorithms without explicit user request
 - numeric fit coefficients are missing
 - significance formula symbols are undefined
-- report uses a significance formula inconsistent with `significance-reference.md`
+- manuscript uses a significance formula inconsistent with `significance-reference.md`
 - constraint bounds are not described as real roots with upper = smallest positive
   real root and lower = largest negative real root
 - required toolchain citations are missing
@@ -62,7 +62,7 @@ Mark these as `minor`:
 
 ## Output Requirements
 
-`report_validation.json` must include:
+`manuscript_validation.json` must include:
 
 ```json
 {
@@ -75,5 +75,5 @@ Mark these as `minor`:
 }
 ```
 
-The final report may be delivered with remaining issues only when the revision
+The final manuscript may be delivered with remaining issues only when the revision
 limit has been reached and the issues are archived.
