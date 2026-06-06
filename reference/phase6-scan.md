@@ -1,32 +1,55 @@
 # Phase 6: Generate SM+NP Coefficient Scan Samples
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Generate 11 scan points per **globally claimed operator** across the coefficient range `[-c_{n_{scan}}, c_{n_{scan}}]`. Each operator is scanned in its **source model** (the model that claimed it). Output filenames use **global numbering** (`o_1`, `o_2`, ...) to maintain consistency across all phases.
+
+Generate one MG5 scan launch per globally claimed operator. Each operator uses
+its own Phase 4 `c_scan` and is scanned in its source model. Output filenames
+use global numbering (`o_1`, `o_2`, ...) to keep all downstream phases aligned.
+
+Do not precompute the 11 coefficient values. Use MG5 scan syntax:
+
+```text
+scan:[-c_scan + 0.2 * c_scan * n for n in range(11)]
+```
+
+where `c_scan` is replaced by the operator-specific numeric value from Phase 4.
 
 ## Long-Run Lock
 
-Phase 6 is expected to be expensive. Runs lasting 4-8 hours, several days, several weeks, or more than two months are acceptable and must not be treated as abnormal.
+Phase 6 is expected to be expensive. Runs lasting 4-8 hours, several days,
+several weeks, or more than two months are acceptable and must not be treated as
+abnormal.
 
 Forbidden behavior:
-- Do not stop with messages such as "impractical in an interactive session", "too long", or "estimated runtime is unacceptable".
-- Do not ask whether to continue, split the scan, reduce event counts, enable debug mode, drop operators, or reduce the 11-point scan grid because of runtime.
-- Do not treat slow MG5 convergence, large HEPMC/ROOT files, or long Delphes/root2lhco conversion as a red flag.
+- Do not stop with messages such as "impractical in an interactive session",
+  "too long", or "estimated runtime is unacceptable".
+- Do not ask whether to continue, split the scan, reduce event counts, enable
+  debug mode, drop operators, or reduce the scan grid because of runtime.
+- Do not treat slow MG5 convergence, large HEPMC/ROOT files, or long
+  Delphes/root2lhco conversion as a red flag.
 - Do not summarize partial progress and wait for user input.
 
 Required behavior when the foreground session is not suitable:
-1. Start or continue a durable job on the selected execution target with `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or the local batch scheduler.
-   Native Windows is not a valid local MG5 target. Use the configured WSL2/SSH target for long MG5/Delphes jobs.
-2. Write a durable progress state under `results/data/phase6/`:
-   - `scan_manifest.json`: all required `(operator, model, scan_index, coefficient)` units.
-   - `phase6_progress.json`: completed, running, failed/retrying, and pending units.
-3. Continue monitoring or resume from the manifest. Partial completion is a checkpoint, not a stop condition.
-4. Log time estimates only as diagnostics. They must not alter `nev_scan`, operators, models, scan points, or transitions.
+1. Start or continue a durable job on the selected execution target with
+   `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or the
+   local batch scheduler. Native Windows is not a valid local MG5 target.
+2. Write durable progress state under `results/data/phase6/`:
+   - `scan_manifest.json`: every required operator, model, `c_scan`, exact MG5
+     scan expression, expected point count `11`, and expected output labels
+     `f0` through `f10`.
+   - `phase6_progress.json`: completed, running, failed/retrying, and pending
+     units.
+3. Continue monitoring or resume from the manifest. Partial completion is a
+   checkpoint, not a stop condition.
+4. Log time estimates only as diagnostics. They must not alter `nev_scan`,
+   operators, models, scan expressions, or transitions.
 
 ## Prerequisite
 
 Load the configuration:
+
 ```python
 from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
@@ -34,19 +57,28 @@ config = load_run_config("{workdir}/results/run_config.json")
 from scripts.normalize_process_name import normalize_process_name
 folder_base = normalize_process_name(config.process)
 
-# Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("6")
 ```
 
-Read `operator_claims.json` and `coefficient_ranges.json` from previous phases.
+Read:
+
+```text
+results/data/phase3/operator_claims.json
+results/data/phase4/coefficient_ranges.json
+```
 
 From `coefficient_ranges.json`, read each operator's own range:
-`coefficient_ranges["operators"][f"o_{g_idx}"]["c_scan"]`. Do not use the
-anchor operator's range for any other operator.
 
-Before launching the first scan, create the manifest:
+```python
+op_key = f"o_{g_idx}"
+c_scan = coefficient_ranges["operators"][op_key]["c_scan"]
+```
+
+Do not use the anchor operator's range for any other operator.
+
+Before launching the first scan, create:
 
 ```python
 phase6_dir = os.path.join(config.workdir, "results", "data", "phase6")
@@ -55,40 +87,42 @@ manifest_path = os.path.join(phase6_dir, "scan_manifest.json")
 progress_path = os.path.join(phase6_dir, "phase6_progress.json")
 ```
 
-`scan_manifest.json` must include every globally claimed operator and all 11 scan coefficients. `phase6_progress.json` must be updated after each scan point conversion/copy, and after each retry.
+`scan_manifest.json` records scan expressions and expected labels; it does not
+need the 11 numeric coefficient values.
 
-## Critical Rules — Prevent tag_2 Corruption
+## Critical Rules: Prevent tag_2 Corruption
 
-- **NEVER** delete files from an existing `run_XX` and re-launch
-- **NEVER** run `launch` on a process directory with partially processed runs
-- **If the entire process directory must be re-run** (e.g., scan corrupted, too many bad runs):
-  1. Remove large temporary files across all runs to free disk: `find Events/run_*/ -name "*.root" -o -name "*.lhe.gz" -o -name "*.hepmc.gz" | xargs rm -f`
-  2. Rename the process directory: `mv {folder_name} {folder_name}_broken`
-  3. Create a fresh process directory and re-run from scratch
-- Do **NOT** rename individual `run_XX` folders — this breaks run-number tracking
-- If `tag_2` appears, you violated this rule
+- Never delete files from an existing `run_XX` and re-launch.
+- Never run `launch` on a process directory with partially processed runs.
+- If the entire process directory must be re-run:
+  1. Remove large temporary files across all runs after required outputs are secured.
+  2. Rename the process directory to a `_broken_{timestamp}` suffix.
+  3. Create a fresh process directory and re-run from scratch.
+- Do not rename individual `run_XX` folders; this breaks run-number tracking.
+- If `tag_2` appears, the process directory was reused incorrectly.
 
 ## Step 6.1: Create Scan Process Directories
 
-For each **unique model** that has at least one claimed operator, create ONE scan process directory:
+For each unique model that has at least one claimed operator, create one scan
+process directory:
 
 ```python
 with workflow_step(logger, "6", f"create_scan_dir_{model_name}",
                    inputs={"model": model_name}):
 ```
 
-```
+```text
 import model {model_name}
 generate {process_name}
 output {folder_base}_{model_name}_p6
 ```
 
+Multiple operators from the same model share the same
+`{folder_base}_{model_name}_p6` directory.
 
-> **Process directory naming**: `{folder_base}_{model_name}_p6` ensures each model has its own directory. Multiple operators from the same model share one directory.
+## Step 6.2: Launch Scan Per Operator
 
-## Step 6.2: Generate Scan Points Per Operator
-
-For each globally claimed operator `o_{g_idx}` (from `operator_claims.json`):
+For each globally claimed operator `o_{g_idx}`:
 
 ```python
 with workflow_step(logger, "6", f"scan_operator_o_{g_idx}",
@@ -96,35 +130,26 @@ with workflow_step(logger, "6", f"scan_operator_o_{g_idx}",
                            "anoinput_idx": anoinput_idx, "c_scan": c_scan}):
 ```
 
-1. Look up its source model and anoinput index from `operator_claims.json`
-2. Use the process directory `{folder_base}_{model_name}_p6`
-3. Read this operator's own Phase 4 range and generate 11 scan points programmatically — **do not hand-compute the values**:
+1. Look up its source model and anoinput index from `operator_claims.json`.
+2. Use the process directory `{folder_base}_{model_name}_p6`.
+3. Read this operator's own Phase 4 `c_scan`.
+4. Build the MG5 scan expression without expanding the 11 values:
 
 ```python
-import math
-
-def round_sig(x, digits=2):
-    if x == 0:
-        return 0.0
-    return round(x, digits - 1 - int(math.floor(math.log10(abs(x)))))
-
 op_key = f"o_{g_idx}"
-c_scan = coefficient_ranges["operators"][op_key]["c_scan"]  # this operator's positive bound from Phase 4
-coefficient_list = [round_sig(-c_scan + 0.2 * c_scan * n, 2) for n in range(11)]
-scan_values = ",".join(f"{v:.2g}" for v in coefficient_list)
+c_scan = coefficient_ranges["operators"][op_key]["c_scan"]
+c_scan_text = f"{c_scan:.2g}"  # Phase 4 already rounded c_scan to two significant digits.
+scan_expression = f"[-{c_scan_text} + 0.2 * {c_scan_text} * n for n in range(11)]"
 ```
 
-The scan range and emitted scan values use two significant digits. Preserve the
-full per-operator mapping in `scan_manifest.json`.
+Launch order:
 
-Launch order (follows [`madgraph-reference.md`](madgraph-reference.md) Event Generation Order template):
-
-```
+```text
 launch {folder_base}_{model_name}_p6
 detector = Delphes
 analysis = OFF
 0
-set {block_name} {anoinput_idx} scan:[{scan_values}]
+set {block_name} {anoinput_idx} scan:{scan_expression}
 set {block_name} {other_idx} 0.0
 ...
 set ebeam1 = {ebeam_value}
@@ -133,76 +158,81 @@ set nevents = {nev_scan}
 0
 ```
 
+Rules:
+- Use `set {block_name} {lha_code} scan:[-c_scan + 0.2 * c_scan * n for n in range(11)]`, with the actual rounded Phase 4 `c_scan` substituted into the expression.
+- Do not use bare `set {number} = scan:[...]`; MG5 silently ignores it.
+- The coefficient block name is obtained from `parse_param_card.py`.
+- The scan expression tells MG5 to generate the 11 runs.
 - Compute `ebeam_value` in GeV using the named conversion
   `tev_to_gev = 1000.0`: `ebeam_value = energy_tev * tev_to_gev / 2`.
-  The factor is only `1 TeV = 1000 GeV`. See
-  [`madgraph-reference.md`](madgraph-reference.md) Energy Assignment.
-- Use `set {block_name} {lha_code} scan:[v1, v2, ...]` (not bare `set {number} = scan:[...]`, which MG5 silently ignores). The `{block_name}` is obtained from `parse_param_card.py` output.
-- The scan syntax tells MG5 to generate one run per value.
-- The trailing `0` confirms run card settings and starts generation.
+  The factor is only `1 TeV = 1000 GeV`.
+- The trailing `0` confirms run-card settings and starts generation.
 
-### Run Tracking (Critical)
+Record in `scan_manifest.json`:
 
-**Do NOT use `runs[-11:]`.** Use set-difference to track exactly which runs were created:
+```json
+{
+  "o_1": {
+    "model": "AQGCm_UFO",
+    "anoinput_idx": 1,
+    "c_scan": 1.2e-12,
+    "scan_expression": "[-1.2e-12 + 0.2 * 1.2e-12 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10"]
+  }
+}
+```
+
+## Run Tracking
+
+Do not use `runs[-11:]`. Use set-difference to track exactly which runs were
+created by the current launch:
 
 ```python
 events_dir = os.path.join(MG5PATH, PROC_SCAN, "Events")
 existing = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
 
 with workflow_step(logger, "6", f"scan_launch_o_{g_idx}",
-                   inputs={"order": order_path}):
-    subprocess.run([...])  # MG5 launch command
+                   inputs={"order": order_path, "scan_expression": scan_expression}):
+    subprocess.run([...])
 
 all_runs = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
 new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
-# new_runs contains exactly the runs from this launch
 ```
 
-### Failure Recovery — Infinite Retry
+`new_runs` must contain exactly 11 runs.
 
-If MG5 fails (non-zero exit code) or ROOT→LHCO conversion fails for any operator scan:
+## Failure Recovery: Retry Per Operator
 
-1. **Log the failure** with the operator name and error reason.
-2. **Update `phase6_progress.json`** marking the current operator/scan unit as `failed_retrying`.
-3. **Clean temporary files** in the process directory:
-   ```bash
-   find {mg5path}/{folder_base}_{model_name}_p6/Events/run_*/ \
-       \( -name "*.root" -o -name "*.lhe.gz" -o -name "*.hepmc.gz" \) -delete
-   ```
-4. **Rename the process directory** to a broken suffix (preserve it for debugging):
-   ```python
-   import time
-   broken_name = f"{folder_base}_{model_name}_p6_broken_{int(time.time())}"
-   os.rename(f"{mg5path}/{folder_base}_{model_name}_p6",
-             f"{mg5path}/{broken_name}")
-   ```
-5. **Do not ask the user what to do.** Do not print a stop prompt. The failure is handled by the retry loop unless an explicit user stop command was already received outside this phase logic.
-6. **Recreate the process directory** from scratch:
-   ```
-   import model {model_name}
-   generate {process_name}
-   output {folder_base}_{model_name}_p6
-   ```
-7. **Re-run the scan launch** for the same operator.
-8. **Repeat from step 1 until success.** Runtime length and repeated recoverable failures do not convert into a request for user input.
+If MG5 fails or ROOT-to-LHCO conversion fails for any operator scan:
 
-> **Critical**: This retry applies per-operator. An earlier operator's success does NOT protect a later operator from needing its own retry. Each operator scan is an independent retry scope.
+1. Log the failure with operator name, model, process folder, return code, and
+   stdout/stderr paths.
+2. Update `phase6_progress.json` marking the current operator as
+   `failed_retrying`.
+3. Clean temporary ROOT/LHE/HEPMC files in the process directory after required
+   debug outputs are secured.
+4. Rename the process directory to `{folder_base}_{model_name}_p6_broken_{timestamp}`.
+5. Recreate the process directory from scratch.
+6. Re-run the scan launch for the same operator.
+7. Repeat until success unless a proven unrecoverable error or explicit user
+   stop occurs.
+
+Each operator scan is an independent retry scope. An earlier operator's success
+does not protect a later operator from needing its own retry.
 
 ## Step 6.3: Convert ROOT to LHCO
 
-```python
-with workflow_step(logger, "6", f"root_to_lhco_o_{g_idx}",
-                   inputs={"num_runs": len(new_runs)}):
-```
+For each new run, convert the Delphes ROOT output to LHCO format.
 
-For each new run, convert the Delphes ROOT output to LHCO format:
+Use the script; do not reimplement conversion:
 
-**Use the script** (do not reimplement):
 ```bash
 python scripts/convert_root_to_lhco.py {mg5path} {folder_base}_{model_name}_p6 {run}
 ```
 
 Or in Python:
+
 ```python
 from scripts.convert_root_to_lhco import convert_root_to_lhco
 
@@ -210,38 +240,29 @@ for run in new_runs:
     convert_root_to_lhco(mg5path, f"{folder_base}_{model_name}_p6", run)
 ```
 
+This produces `{run}.lhco` in the same Events directory.
 
-This produces `{run}.lhco` in the same Events directory. See [`madgraph-reference.md`](madgraph-reference.md) ROOT→LHCO Conversion for details.
+## Step 6.4: Rename Output Files
 
-## Step 6.4: Rename Output Files (Global Numbering)
+Map each new run to `np_o_{g_idx}_f{index}` by run order:
 
-```python
-with workflow_step(logger, "6", f"rename_outputs_o_{g_idx}",
-                   inputs={"num_runs": len(new_runs)}):
-```
-
-Map each new run to `np_o_{g_idx}_f{index}` by run order (sorted by run number):
-
-```
-run_XX → np_o_1_f0_banner.txt,  np_o_1_f0.lhco   (coefficient = -c_{n_{scan}})
-run_YY → np_o_1_f1_banner.txt,  np_o_1_f1.lhco   (coefficient = -c_{n_{scan}} + 0.2*c_{n_{scan}})
-run_ZZ → np_o_1_f2_banner.txt,  np_o_1_f2.lhco   (coefficient = -c_{n_{scan}} + 0.4*c_{n_{scan}})
+```text
+new_runs[0]  -> np_o_{g_idx}_f0_banner.txt,  np_o_{g_idx}_f0.lhco
+new_runs[1]  -> np_o_{g_idx}_f1_banner.txt,  np_o_{g_idx}_f1.lhco
 ...
+new_runs[10] -> np_o_{g_idx}_f10_banner.txt, np_o_{g_idx}_f10.lhco
 ```
 
-Use set-difference to identify `new_runs`, then sort by run number:
+Use global operator index `o_{g_idx}`, not model-internal anoinput index.
 
 ```python
-new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
 for i, run in enumerate(new_runs):
     banner_path = os.path.join(events_dir, run, f"{run}_tag_1_banner.txt")
     run_lhco = os.path.join(events_dir, run, f"{run}.lhco")
     dest_banner = f"np_o_{g_idx}_f{i}_banner.txt"
-    dest_lhco   = f"np_o_{g_idx}_f{i}.lhco"
-    # Copy banner and lhco to results/data/phase6/
+    dest_lhco = f"np_o_{g_idx}_f{i}.lhco"
+    # Copy banner and LHCO to results/data/phase6/.
 ```
-
-> **Important**: The output uses **global operator index** (`o_{g_idx}`), NOT the model-internal anoinput index. This ensures all downstream phases reference operators consistently.
 
 After all operators have been processed:
 
@@ -253,43 +274,37 @@ logger.phase_complete("6")
 
 > **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase6/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
-```
+```text
 results/data/phase6/
   scan_manifest.json
   phase6_progress.json
   np_o_1_f0_banner.txt    np_o_1_f0.lhco
-  np_o_1_f1_banner.txt    np_o_1_f1.lhco
-  np_o_1_f2_banner.txt    np_o_1_f2.lhco
   ...
   np_o_1_f10_banner.txt   np_o_1_f10.lhco
   np_o_2_f0_banner.txt    np_o_2_f0.lhco
-  np_o_2_f1_banner.txt    np_o_2_f1.lhco
-  ...
-  np_o_2_f10_banner.txt   np_o_2_f10.lhco
-  ...
-  np_o_N_f0_banner.txt    np_o_N_f0.lhco
   ...
   np_o_N_f10_banner.txt   np_o_N_f10.lhco
 ```
 
-## Common Mistakes for This Phase
+## Common Mistakes
 
 | Mistake | Fix |
-|---------|-----|
+|---|---|
+| Expanding 11 coefficient values in Python before launch | Use the MG5 `scan:[-c_scan + 0.2 * c_scan * n for n in range(11)]` expression |
+| Using the anchor range for all operators | Read `coefficient_ranges["operators"][op_key]["c_scan"]` per operator |
 | `runs[-11:]` heuristic | Use set-difference to identify new runs |
-| Re-launching on existing runs | Remove large temps, rename the **process directory** (not individual runs), create fresh |
+| Re-launching on existing runs | Remove large temps, rename the process directory, create fresh |
 | Using model-internal index in filename | Always use global index `o_{g_idx}` |
-| Creating one process dir per operator | Create one per **model** (operators from the same model share a directory) |
-| tag_2 ROOT files | Only happens if existing runs were modified and re-launched |
-| Hardcoding `tag_1` in root2lhco call | Check which tag actually exists |
-| Stopping because the estimate is 4-8 hours, weeks, or months | Start durable execution and continue/resume from `phase6_progress.json` |
+| Creating one process dir per operator | Create one per model |
+| `tag_2` ROOT files | Indicates an existing run was modified and re-launched |
+| Stopping because runtime is hours, weeks, or months | Start durable execution and continue/resume |
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
-| File named `!` containing `convert_root_to_lhco.py` usage text | The conversion script was called with wrong arguments and output was redirected with shell clobber syntax. Use `python scripts/convert_root_to_lhco.py {mg5path} {process_folder} {run_folder}` and log stdout/stderr paths instead of `> !` |
+| File named `!` containing conversion usage text | Call `convert_root_to_lhco.py` with correct args and log stdout/stderr instead of shell clobber redirection |
 
 ## Phase Transition
 
 After all operators are scanned and all LHCO files are copied:
 
-1. **Check validation rules immediately**: If any scan point is missing, continue/resume/retry from `phase6_progress.json`; abort only if the missing output is caused by a concrete unrecoverable filesystem or physics-generation error.
-2. **If validation passes**: **proceed immediately to Phase 7 without stopping.**
-3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.
+1. Check validation immediately. If any scan point is missing, continue/resume/retry from `phase6_progress.json`; abort only for concrete unrecoverable filesystem or physics-generation errors.
+2. If validation passes, proceed immediately to Phase 7 without stopping.
+3. Do not summarize results, ask for confirmation, present options, or wait for user input.

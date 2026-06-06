@@ -15,7 +15,7 @@ folder name. The anchor range must never be reused for non-anchor operators.
 Hard rules:
 - Compute one `c_scan` per globally claimed operator.
 - Store ranges under `coefficient_ranges.json["operators"]["o_N"]`.
-- Round each stored `c_scan` and each endpoint to two significant digits.
+- Round each stored `c_scan` to two significant digits.
 - Do not write a `"global"` range for new runs.
 
 ## Prerequisite
@@ -179,7 +179,7 @@ with workflow_step(logger, "4", "compute_operator_scan_ranges",
 
         c_scan = round_sig(hi, 2)
         operator_ranges[op_key] = {
-            "range": [round_sig(-c_scan, 2), round_sig(c_scan, 2)],
+            "range": [-c_scan, c_scan],
             "c_scan": c_scan,
             "model": claim["model"],
             "anoinput_idx": claim["anoinput_idx"],
@@ -237,7 +237,7 @@ results/data/phase4/
 - `cs_sm > 0`
 - every claimed operator has exactly one entry in `coefficient_ranges.json`
 - every `c_scan` is finite, positive, and `< 1e3`
-- every stored `c_scan` and endpoint is rounded to two significant digits
+- every stored `c_scan` is rounded to two significant digits
 - no new-run `coefficient_ranges.json` contains a `"global"` range
 
 ## Phase Transition

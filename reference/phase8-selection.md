@@ -20,6 +20,15 @@ logger.phase_start("8")
 
 Read `anchor.json` from Phase 3. The anchor operator (`o_1` by convention) provides the scan data for threshold optimization.
 
+Read `results/data/phase6/scan_manifest.json`. Phase 6 launches MG5 with a
+scan expression and does not need to precompute the 11 numeric coefficients.
+Phase 8 may reconstruct `scan_coeffs` from each operator's manifest `c_scan`
+for fitting and plotting:
+
+```python
+scan_coeffs = [-c_scan + 0.2 * c_scan * n for n in range(11)]
+```
+
 ## Step 8.1: Convert Scan LHCO to CSV
 
 ```python
@@ -86,7 +95,7 @@ For **each algorithm**, for each threshold in 51 points on [0, 1]:
 with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
                    inputs={"algorithm": alg_name, "num_thresholds": 51}):
 ```
-1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x` (11 points from `-c_{n_{scan}}` to `+c_{n_{scan}}`, including c=0)
+1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x`. Reconstruct `c_x` from the operator's Phase 6 manifest `c_scan` using `[-c_scan + 0.2 * c_scan * n for n in range(11)]`.
 2. Compute cut cross-section:
    ```
    cs_cut_x = cs_x * m_x / nev_scan
