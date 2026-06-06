@@ -38,12 +38,49 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Generator, Optional
 
 
+def _skill_root() -> str:
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _read_skill_version(skill_root: str) -> Optional[str]:
+    version_path = os.path.join(skill_root, "VERSION")
+    try:
+        with open(version_path, "r", encoding="utf-8") as f:
+            version = f.read().strip()
+        return version or None
+    except OSError:
+        return None
+
+
+def _read_skill_commit(skill_root: str) -> Dict[str, Optional[str]]:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=skill_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except Exception:
+        return {"skill_commit": None, "skill_commit_source": "unavailable"}
+
+    commit = (result.stdout or "").strip()
+    if result.returncode == 0 and commit:
+        return {"skill_commit": commit, "skill_commit_source": "git"}
+    return {"skill_commit": None, "skill_commit_source": "unavailable"}
+
+
 class WorkflowLogger:
     """Append-only logger for workflow events."""
 
     def __init__(self, workdir: str, run_dir: Optional[str] = None):
         self.workdir = workdir
         self.run_dir = run_dir
+        self.skill_root = _skill_root()
+        self.skill_version = _read_skill_version(self.skill_root)
+        self.skill_commit_info = _read_skill_commit(self.skill_root)
         self.log_path = self._log_path(workdir, run_dir)
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
         open(self.log_path, "a", encoding="utf-8").close()
@@ -64,6 +101,9 @@ class WorkflowLogger:
         record.setdefault("cwd", os.getcwd())
         record.setdefault("workdir", self.workdir)
         record.setdefault("log_path", self.log_path)
+        record.setdefault("skill_version", self.skill_version)
+        record.setdefault("skill_commit", self.skill_commit_info["skill_commit"])
+        record.setdefault("skill_commit_source", self.skill_commit_info["skill_commit_source"])
         if self.run_dir:
             record.setdefault("run_dir", self.run_dir)
         record["timestamp"] = datetime.now(timezone.utc).isoformat()

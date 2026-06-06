@@ -77,6 +77,7 @@ Hard rules:
 
 Rules:
 - The first action in Phase 2 must initialize and validate the log with `scripts/workflow_logger.py {workdir} --touch`, or the target-aware equivalent through `scripts/remote_exec.py`.
+- Every `workflow.log` record must include `skill_version`, `skill_commit`, and `skill_commit_source`. `skill_version` is read from the skill `VERSION` file as a string; `skill_commit` is read dynamically from `git rev-parse --short HEAD` when `.git` is available.
 - Every phase must append `phase_start` before any filesystem, subprocess, download, install, or analysis operation.
 - Every phase must append `phase_complete` only after its completion unit is satisfied, or `phase_fail` only for a proven unrecoverable failure.
 - Every execution phase must contain step records. A phase with only `phase_start`/`phase_complete` and no `level="step"` records is an invalid bug-report log, even if resume technically works.
