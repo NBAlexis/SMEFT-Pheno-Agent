@@ -199,7 +199,7 @@ from the anchor model process directories:
 | Process type | Location |
 |---|---|
 | SM baseline | `{mg5path}/{folder_base}_{anchor_model}_p4_SM/SubProcesses/P*/` |
-| NP sample | `{mg5path}/{folder_base}_{anchor_model}_p5_NP/SubProcesses/P*/` |
+| NP sample | `{mg5path}/{folder_base}_{anchor_model}_p5_NP_o_{anchor_global_idx}/SubProcesses/P*/` |
 
 Copy selected diagrams to:
 

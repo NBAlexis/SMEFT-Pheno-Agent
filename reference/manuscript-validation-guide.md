@@ -43,7 +43,7 @@ Mark these as `major` if they fail:
 - hyperparameter table is missing
 - anchor operator is missing
 - final algorithm is not selected by the first non-zero operator
-- final constraints use per-operator best algorithms without explicit user request
+- final constraints use per-operator best algorithms or thresholds
 - numeric fit coefficients are missing
 - significance formula symbols are undefined
 - manuscript uses a significance formula inconsistent with `significance-reference.md`

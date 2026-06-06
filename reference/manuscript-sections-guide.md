@@ -77,8 +77,8 @@ Manuscript:
 - constraint-width comparison on the anchor operator
 - final anchor-selected algorithm
 
-Do not choose a different best algorithm separately for each operator unless the
-user explicitly requested per-operator selection.
+Do not choose a different best algorithm or threshold separately for each
+operator.
 
 ## Numerical Results and Expected Constraints
 

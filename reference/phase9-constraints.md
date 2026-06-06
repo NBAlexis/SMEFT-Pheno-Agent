@@ -8,8 +8,7 @@ Compute expected Wilson-coefficient constraints at significance levels `S = 2, 3
 for **all globally claimed operators**. The production algorithm is selected once
 from the first non-zero anchor operator, then applied to every operator.
 
-Do not select a different final algorithm for each operator unless the user
-explicitly requested per-operator algorithm selection in Phase 1 optional settings.
+Do not select a different final algorithm or threshold for each operator.
 
 ## Prerequisite
 
