@@ -3,7 +3,10 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Generate high-statistics pure samples for ML training. In multi-model mode, ML training is performed **once** using the **anchor operator only**. Therefore, only the anchor model's SM sample and the anchor operator's NP sample are needed.
+Generate high-statistics pure samples. In multi-model mode, ML training is
+performed **once** using the **anchor operator only**, but pure NP samples for
+all globally claimed operators are still required for publication data and score
+distribution plots.
 
 ## Prerequisite
 
@@ -21,10 +24,14 @@ logger = WorkflowLogger(config.workdir)
 logger.phase_start("5")
 ```
 
-Read `anchor.json` from Phase 3 to determine the anchor model and anchor operator.
-Read `coefficient_ranges.json` from Phase 4 and use only the anchor operator's
-own range for the anchor NP training sample:
-`anchor_c_scan = coefficient_ranges["operators"][f"o_{anchor_global_idx}"]["c_scan"]`.
+Read `anchor.json` from Phase 3 to determine the anchor model and anchor
+operator. Read `operator_claims.json` from Phase 3 and
+`coefficient_ranges.json` from Phase 4. Each claimed operator uses its own
+Phase 4 range:
+
+```python
+c_scan = coefficient_ranges["operators"][f"o_{global_idx}"]["c_scan"]
+```
 
 ## Step 5.1: Pure SM Sample
 
@@ -53,49 +60,79 @@ with workflow_step(logger, "5", "generate_sm_sample",
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
-## Step 5.2: Pure NP Sample (Anchor Operator Only)
+## Step 5.2: Pure NP Samples for All Claimed Operators
 
-Generate the NP sample **only for the anchor operator**:
+Generate one pure NP sample for **every globally claimed operator**. The anchor
+operator's sample is used for ML training. Non-anchor pure NP samples are not
+used for training or algorithm selection; they are publication artifacts for
+CSV release, score-distribution histograms, and manuscript evidence.
 
-1. **Create NP process directory using the anchor model:**
+For each operator `o_{g_idx}`:
+
+1. **Create NP process directory using that operator's source model:**
    ```
-   import model {anchor_model}
+   import model {operator_model}
    generate {process_name} NP>0
-   output {folder_base}_{anchor_model}_p5_NP
+   output {folder_base}_{operator_model}_p5_NP_o_{g_idx}
    ```
-2. Launch with `set {block_name} {anchor_anoinput_idx} {anchor_c_scan}` for the anchor operator, where `anchor_c_scan` is read from the anchor operator's own Phase 4 range. Set `{block_name} {other_idx} 0.0` for all others, and use `nevents = {nev_np}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
+2. Launch with `set {block_name} {anoinput_idx} {c_scan}` for that operator,
+   where `c_scan` is read from that operator's own Phase 4 range. Set all other
+   Wilson coefficients in the same UFO coefficient block to `0.0`, and use
+   `nevents = {nev_np}`. The `{block_name}` is obtained from
+   `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md)
+   Coefficient Block for syntax.
 3. Post-process
 4. Copy to results:
+```
+results/data/phase5/np_o_{g_idx}_banner.txt
+results/data/phase5/np_o_{g_idx}.lhco
+```
+
+For compatibility with Phase 7 training, also write an anchor alias:
+
 ```
 results/data/phase5/np_anchor_banner.txt
 results/data/phase5/np_anchor.lhco
 ```
 
+The alias must point to the same physics sample as
+`np_o_{anchor_global_idx}.lhco`; do not launch a duplicate anchor run merely to
+create the alias.
+
 ```python
-with workflow_step(logger, "5", "generate_np_anchor",
-                   inputs={"anchor_model": anchor_model,
-                           "anchor_operator": anchor_name,
-                           "anchor_c_scan": anchor_c_scan,
-                           "nevents": config.locked_event_counts.nev_np}):
-    # Required actions: write the MG5 order, run MG5, post-process ROOT to LHCO,
-    # validate outputs, copy results, and log subprocess stdout/stderr paths.
+for op_key, claim in operator_claims.items():
+    with workflow_step(logger, "5", f"generate_np_{op_key}",
+                       inputs={"model": claim["model"],
+                               "operator": claim["name"],
+                               "c_scan": coefficient_ranges["operators"][op_key]["c_scan"],
+                               "nevents": config.locked_event_counts.nev_np}):
+        # Required actions: write the MG5 order, run MG5, post-process ROOT to
+        # LHCO, validate outputs, copy results, and log subprocess stdout/stderr
+        # paths.
 
 logger.phase_complete("5")
 ```
 
-> **Note**: The NP sample is named `np_anchor` (not `np_o1`) to make it clear this is the anchor-specific training sample. The ML algorithms trained on this sample will be applied to ALL operators in later phases.
+> **Note**: `np_anchor` is an alias for the anchor operator's `np_o_{g_idx}`
+sample. Training uses only this anchor alias. Histogram and public-data outputs
+must include every `np_o_{g_idx}` sample.
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
 
 ## Validation
 
+Relevant invariants:
+[`workflow-invariants.md`](workflow-invariants.md) Publication Data and
+Execution Continuity.
+
 - `sm.lhco` must exist and be non-empty (abort if missing)
-- `np_anchor.lhco` must exist and be non-empty (abort if missing)
+- `np_o_{g_idx}.lhco` must exist and be non-empty for every globally claimed operator (abort if missing)
+- `np_anchor.lhco` must exist and be non-empty, and must match the anchor operator sample (abort if missing)
 
 ## Phase Transition
 
 After `logger.phase_complete("5")` is called and all LHCO files are copied:
 
-1. **Check validation rules immediately**: If either LHCO file is missing, abort.
+1. **Check validation rules immediately**: If any required LHCO file is missing, abort.
 2. **If validation passes**: **proceed immediately to Phase 6 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

@@ -39,7 +39,7 @@ Use glob patterns to match both conventions:
 | 3 | `{folder_base}_p3_*_NP` or `{folder_base}_*_p3_NP` |
 | 4 | `{folder_base}_p4_*_SM` or `{folder_base}_*_p4_SM` |
 | 5 SM | `{folder_base}_p5_*_SM` or `{folder_base}_*_p5_SM` |
-| 5 NP | `{folder_base}_p5_*_NP` or `{folder_base}_*_p5_NP` |
+| 5 NP | `{folder_base}_p5_*_NP*` or `{folder_base}_*_p5_NP*` |
 | 6 | `{folder_base}_p6_*` or `{folder_base}_*_p6` |
 
 > **Note**: The glob patterns use `*` to match either the timestamp suffix (single-model) or the model name (multi-model).
@@ -86,8 +86,8 @@ Examples: `order_p3_20260525_01.txt`, `order_p4_20260525_01.txt`, etc.
        f"{folder_base}_*_p6",         # Phase 6 scan (multi-model)
        f"{folder_base}_p5_*_SM",      # Phase 5 SM (single-model)
        f"{folder_base}_*_p5_SM",      # Phase 5 SM (multi-model)
-       f"{folder_base}_p5_*_NP",      # Phase 5 NP (single-model)
-       f"{folder_base}_*_p5_NP",      # Phase 5 NP (multi-model)
+       f"{folder_base}_p5_*_NP*",     # Phase 5 NP (single-model)
+       f"{folder_base}_*_p5_NP*",     # Phase 5 NP (multi-model)
    ]
 
    moved_dirs = []

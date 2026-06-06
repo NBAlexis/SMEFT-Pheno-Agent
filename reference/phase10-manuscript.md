@@ -83,6 +83,10 @@ HTML requirements:
 
 ## Step 10.2: Build Manuscript Evidence
 
+Relevant invariants:
+[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+Publication Data, and Actual Event Counts.
+
 ```python
 with workflow_step(logger, "10", "build_manuscript_evidence",
                    inputs={"source": "results/data"}):
@@ -146,6 +150,7 @@ Mandatory manuscript content:
 - exact final-state particle cut
 - exact surviving event counts after the cut
 - threshold-passing counts and explicit efficiency denominators
+- public CSV and score CSV data-release paths for SM, pure NP, and scan samples
 - ordered feature table with units
 - preprocessing/standardization statement
 - self-contained descriptions of all trained algorithms

@@ -44,6 +44,13 @@ Allowed waiting work: monitor current phase jobs, update current phase progress 
 
 Future-phase code, result files, plots, models, manuscripts, or audit artifacts may be created only after the current phase completes.
 
+#### Phase-End Invariant Self-Check
+
+Before `logger.phase_complete("N")` in any execution phase, read
+[`reference/workflow-invariants.md`](reference/workflow-invariants.md), check the
+invariants relevant to that phase, fix violating artifacts, log the correction,
+and continue without asking the user.
+
 ## SUPREME RULE: Execution Continuity
 
 Once Execution Mode starts, keep running until Phase 11 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.

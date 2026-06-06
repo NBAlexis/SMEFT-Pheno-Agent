@@ -35,6 +35,7 @@ For every SM, anchor NP, and scan dataset, record:
 - ML/selection passing event count when a threshold is applied
 - efficiencies with denominators stated explicitly
 - cross-section before and after selection, with units
+- public CSV path and score CSV path, when available
 - composition: `SM only`, `SM + NP`, or `SM + NP + interference`
 
 Approximate counts are invalid in the final paper. If only an approximate count is

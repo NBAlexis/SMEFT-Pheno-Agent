@@ -3,7 +3,10 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE �?once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
-Train and compare ML algorithms to distinguish SM from NP events. In multi-model mode, training is performed **once** using the **anchor operator's** SM and NP samples. The trained algorithms are then applied to ALL globally claimed operators in later phases.
+Train and compare ML algorithms to distinguish SM from NP events. In multi-model
+mode, training is performed **once** using the **anchor operator's** SM and NP
+samples. Pure NP samples for all globally claimed operators are converted to
+CSV and scored for publication data and score-distribution plots.
 
 ## Prerequisite
 
@@ -24,7 +27,7 @@ Read `anchor.json` from Phase 3. The anchor operator defines the SM vs NP discri
 
 ```python
 with workflow_step(logger, "7", "convert_lhco_to_csv",
-                   inputs={"sm": "sm.lhco", "np": "np_anchor.lhco"}):
+                   inputs={"sm": "sm.lhco", "np": "np_o_*.lhco"}):
 ```
 
 Use CutExperiment to load `.lhco` files, record actual event counts, and extract feature vectors:
@@ -84,12 +87,16 @@ def lhco_to_features(lhco_path, process_name=config.process):
     return feature_array, metadata
 ```
 
-Save as `.csv`:
+Save every converted dataset as publication data. These CSV files are not
+temporary files and must not be deleted during cleanup:
 ```
-sm.lhco �?sm.csv
-np_anchor.lhco �?np_anchor.csv
+sm.lhco -> sm.csv
+np_o_1.lhco -> np_o_1.csv
+np_o_2.lhco -> np_o_2.csv
+...
+np_o_N.lhco -> np_o_N.csv
+np_anchor.lhco -> np_anchor.csv  # alias for the anchor operator training sample
 ```
-
 Also write exact event-count metadata:
 
 ```json
@@ -100,11 +107,15 @@ Also write exact event-count metadata:
     "surviving_final_state_event_count": 482109,
     "final_state_cut": "N_gamma >= 3"
   },
-  "np_anchor": {
+  "np_o_1": {
     "requested_event_count": 100000,
     "loaded_lhco_event_count": 99481,
     "surviving_final_state_event_count": 96740,
     "final_state_cut": "N_gamma >= 3"
+  },
+  "...": {},
+  "np_anchor": {
+    "alias_for": "np_o_1"
   },
   "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
 }
@@ -219,12 +230,32 @@ with workflow_step(logger, "7", "plot_score_distributions",
                    inputs={"num_algorithms": len(fitted_clfs)}):
 ```
 
-For **every trained algorithm**, plot training-set score distributions:
+For **every trained algorithm**, compute and save per-event scores for `sm.csv`
+and every pure-NP operator CSV (`np_o_1.csv` through `np_o_N.csv`):
+
+```
+results/data/phase7/scores/{alg}_sm_scores.csv
+results/data/phase7/scores/{alg}_np_o_1_scores.csv
+...
+results/data/phase7/scores/{alg}_np_o_N_scores.csv
+```
+
+Each score CSV must contain at least:
+
+```
+event_index, score, label, source_csv
+```
+
+Use `label=0` for SM and `label=1` for NP. Scores must be normalized in
+`[0, 1]`, where higher is more NP-like.
+
+For **every trained algorithm**, plot score distributions for SM and every
+pure-NP operator:
 - Style: `plt.hist(..., histtype='step')`
-- Colors: SM=blue, NP=red
+- Colors: SM=blue; use distinct colors or line styles for each `np_o_{g_idx}`
 - Bins: 31 equal-width on [0, 1]
 - y-axis: log scale if peak counts differ by >10x
-- Filename: `score_dist_anchor_{alg}.pdf`
+- Filename: `score_dist_all_pure_np_{alg}.pdf`
 
 
 ## Step 7.4: Save All Algorithms
@@ -267,19 +298,28 @@ logger.phase_complete("7")
 ```
 results/data/phase7/
   sm.csv, np_anchor.csv
+  np_o_1.csv, np_o_2.csv, ..., np_o_N.csv
   event_counts.json
   algorithm_comparison.json
+  scores/{alg}_sm_scores.csv
+  scores/{alg}_np_o_1_scores.csv, ..., scores/{alg}_np_o_N_scores.csv
 results/plots/
   roc_anchor.pdf
-  score_dist_anchor_{alg1}.pdf, score_dist_anchor_{alg2}.pdf, ...
+  score_dist_all_pure_np_{alg1}.pdf, score_dist_all_pure_np_{alg2}.pdf, ...
 results/algorithms/
   anchor_{alg1}.pkl, anchor_{alg2}.pkl, anchor_{alg3}.pkl, ...
 ```
 
 ## Validation
 
+Relevant invariants:
+[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+Publication Data, Actual Event Counts, and Execution Continuity.
+
 - `0.5 < AUC <= 1.0` for anchor training
 - `event_counts.json` exists and every `loaded_lhco_event_count` is positive
+- `sm.csv`, `np_anchor.csv`, and every `np_o_{g_idx}.csv` exist and are non-empty
+- Per-event score CSVs exist for SM and every pure-NP operator for every trained algorithm
 
 ## Phase Transition
 

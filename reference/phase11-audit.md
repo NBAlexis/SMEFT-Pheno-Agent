@@ -44,13 +44,18 @@ Verify expected files exist and have size greater than zero.
 | `results/data/phase4/sm_baseline.json` | 4 | Abort |
 | `results/data/phase5/sm.lhco` | 5 | Abort |
 | `results/data/phase5/np_anchor.lhco` | 5 | Abort |
+| `results/data/phase5/np_o_*.lhco` | 5 | Abort |
 | `results/data/phase6/np_o_*_f*.lhco` | 6 | Abort |
 | `results/data/phase7/sm.csv` | 7 | Abort |
 | `results/data/phase7/np_anchor.csv` | 7 | Abort |
+| `results/data/phase7/np_o_*.csv` | 7 | Abort |
+| `results/data/phase7/scores/*_scores.csv` | 7 | Abort |
 | `results/data/phase7/algorithm_comparison.json` | 7 | Abort |
 | `results/algorithms/anchor_*.pkl` | 7 | Abort |
 | `results/algorithms/compute_scores.py` | 7 | Abort |
 | `results/data/phase8/threshold_optimization.json` | 8 | Abort |
+| `results/data/phase8/csv/np_o_*_f*.csv` | 8 | Abort |
+| `results/data/phase8/scores/*/np_o_*_f*_scores.csv` | 8 | Abort |
 | `results/data/phase8/csfit_o_*_{alg}.json` | 8 | Abort |
 | `results/data/phase9/constraint_table.json` | 9 | Abort |
 | `results/data/phase9/algorithm_selection.json` | 9 | Warn |
@@ -89,6 +94,10 @@ significance thresholds can require larger coefficient deviations.
 
 ## Step 11.3: Cross-Phase Consistency
 
+Relevant invariants:
+[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+Publication Data, and Actual Event Counts.
+
 ```python
 with workflow_step(logger, "11", "check_cross_phase_consistency"):
 ```
@@ -97,6 +106,8 @@ with workflow_step(logger, "11", "check_cross_phase_consistency"):
 |---|---|---|
 | Phase 3 claimed ops == Phase 6 scanned ops == Phase 8 fitted ops == Phase 9 constrained ops | Same global operator list | Abort |
 | Phase 7 algorithms == Phase 8 algorithms | Same trained algorithm set | Abort |
+| Phase 5 claimed pure NP ops == Phase 7 pure NP CSV ops | Same global operator list | Abort |
+| Phase 6 scanned points == Phase 8 scan CSV points | Same operator/point list | Abort |
 | Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
 | Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |
 | Phase 8 event denominators | Actual loaded LHCO counts from CutExperiment, positive for every scan point | Abort if missing, zero, equal-by-assumption to `nev_scan`, or taken from banner |

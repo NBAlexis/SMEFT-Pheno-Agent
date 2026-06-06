@@ -67,6 +67,9 @@ formula. Do not use the older `N_sig / sqrt(N_bg + N_sig)` or
 
 ## Step 9.1: Select the Anchor Algorithm
 
+Relevant invariant:
+[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy.
+
 ```python
 with workflow_step(logger, "9", "select_anchor_algorithm",
                    inputs={"anchor": anchor, "num_algorithms": len(alg_data["anchor"])}):

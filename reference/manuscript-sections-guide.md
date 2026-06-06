@@ -42,6 +42,7 @@ Mandatory content:
 - exact final-state particle cut
 - exact surviving event counts after that cut
 - threshold-passing counts and efficiency denominators for selected samples
+- public CSV data paths for SM, pure NP, and scan samples
 - dataset composition table for SM, anchor NP, and scans
 - scan coefficient table with all 11 points
 - representative Feynman diagrams when available

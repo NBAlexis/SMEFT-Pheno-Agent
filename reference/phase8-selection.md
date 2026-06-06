@@ -47,6 +47,15 @@ Phase 7. For every scan point, record:
 Banner files may be used for cross-sections only. Do not use banner event counts
 for efficiencies, denominators, or manuscript evidence.
 
+The scan CSV files are publication data, not temporary files. Save them under:
+
+```
+results/data/phase8/csv/np_o_{g_idx}_f{i}.csv
+```
+
+for every globally claimed operator `o_{g_idx}` and every scan point
+`i = 0, ..., 10`.
+
 
 ## Step 8.2: Score All Scan Points (Per Algorithm)
 
@@ -72,6 +81,21 @@ for alg_name, alg_info in alg_data["anchor"].items():
 ```
 
 Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 7 (Step 7.2.3) and handles normalization automatically for all algorithm types.
+
+Save per-event scan scores for every algorithm:
+
+```
+results/data/phase8/scores/{alg}/np_o_{g_idx}_f{i}_scores.csv
+```
+
+Each score CSV must contain at least:
+
+```
+event_index, score, source_csv
+```
+
+After the optimal threshold is known, it may also include
+`pass_optimal_threshold`.
 
 ## Step 8.3: Optimize Threshold Per Algorithm (using anchor operator)
 
@@ -221,6 +245,8 @@ logger.phase_complete("8")
 
 ```
 results/data/phase8/
+  csv/np_o_1_f0.csv, ..., csv/np_o_N_f10.csv
+  scores/{alg}/np_o_1_f0_scores.csv, ..., scores/{alg}/np_o_N_f10_scores.csv
   threshold_optimization.json    # per-algorithm optimal thresholds (from anchor)
   scan_event_counts.json         # requested, loaded, surviving, and passing counts
   csfit_o_1_{alg1}.json, csfit_o_1_{alg2}.json, ...
@@ -237,10 +263,17 @@ results/plots/
 
 ## Validation
 
+Relevant invariants:
+[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+Publication Data, Actual Event Counts, and Execution Continuity.
+
 - `csfit_sm > 0`
 - `csfit_np >= 0`
 - Every scan point has positive `loaded_lhco_event_count`
 - No efficiency or `cs_cut_x` denominator is requested `nev_scan` or a banner event count
+- Every Phase 6 LHCO scan point has a corresponding public CSV under `results/data/phase8/csv/`
+- Every algorithm has per-event scan score CSVs under `results/data/phase8/scores/{alg}/`
+- Scan CSV row counts match `surviving_final_state_event_count`
 - Residual: `|cs_cut_x - csfit(f_x)| / csfit(f_x) < 0.5` for all points
 
 ## Phase Transition
