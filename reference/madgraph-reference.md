@@ -290,6 +290,91 @@ The MG5 config runner validates that the UFO model already exists under
 belongs to Phase 1/2 target setup. The runner copies only the Delphes card and
 Delphes card dependencies into the generated process folder.
 
+### Config-Driven Runner Examples
+
+Phase 5 SM attempt:
+
+```json
+{
+  "mg5path": "/opt/MG5_aMC",
+  "model": "AQGCm_UFO",
+  "process": "mu+ mu- > a j j",
+  "process_mode": "pure_sm",
+  "energy_tev": 10,
+  "nevents": 500000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/opt/CutExperiment",
+  "output_label": "sm",
+  "output_dir": "/work/results/data/phase5",
+  "result_json": "/work/results/data/phase5/sm_mg5_result.json"
+}
+```
+
+Phase 5 pure NP attempt:
+
+```json
+{
+  "mg5path": "/opt/MG5_aMC",
+  "model": "AQGCm_UFO",
+  "process": "mu+ mu- > a j j",
+  "process_mode": "pure_np",
+  "operator": "o_3",
+  "target_coefficient": {"index": 3},
+  "coefficient_mode": "c_scan",
+  "c_scan": 1.2e-12,
+  "energy_tev": 10,
+  "nevents": 100000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/opt/CutExperiment",
+  "output_dir": "/work/results/data/phase5",
+  "result_json": "/work/results/data/phase5/np_o_3_mg5_result.json"
+}
+```
+
+Phase 6 scan attempt:
+
+```json
+{
+  "mg5path": "/opt/MG5_aMC",
+  "model": "AQGCm_UFO",
+  "process": "mu+ mu- > a j j",
+  "process_mode": "scan",
+  "operator": "o_3",
+  "target_coefficient": {"index": 3},
+  "c_scan": 1.2e-12,
+  "energy_tev": 10,
+  "nevents": 1000000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/opt/CutExperiment",
+  "output_dir": "/work/results/data/phase6",
+  "result_json": "/work/results/data/phase6/np_o_3_scan_mg5_result.json"
+}
+```
+
+Recovery wrapper for the Phase 6 scan above:
+
+```json
+{
+  "requested_event_count": 1000000,
+  "attempt_root": "/work/results/data/phase6/recovery_attempts/np_o_3",
+  "merged_output_dir": "/work/results/data/phase6",
+  "metadata_path": "/work/results/data/phase6/event_count_recovery_np_o_3.json",
+  "base_mg5_config": {
+    "mg5path": "/opt/MG5_aMC",
+    "model": "AQGCm_UFO",
+    "process": "mu+ mu- > a j j",
+    "process_mode": "scan",
+    "operator": "o_3",
+    "target_coefficient": {"index": 3},
+    "c_scan": 1.2e-12,
+    "energy_tev": 10,
+    "nevents": 1000000,
+    "delphes_card": "delphes_card_MuonColliderDet.tcl",
+    "cutexperiment_path": "/opt/CutExperiment"
+  }
+}
+```
+
 ### Energy Assignment
 
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |

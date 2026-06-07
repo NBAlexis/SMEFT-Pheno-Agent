@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import shutil
 import sys
 import time
+import traceback
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from convert_root_to_lhco import convert_root_to_lhco
@@ -166,6 +168,62 @@ def _scan_expression_from_c_scan(cfg: Dict[str, Any]) -> str:
         raise ValueError("scan mode requires c_scan")
     c_scan_text = str(cfg["c_scan"])
     return f"[-{c_scan_text} + 0.2 * {c_scan_text} * n for n in range(11)]"
+
+
+def _positive_finite(value: Any, name: str) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} must be numeric, got {value!r}")
+    if not math.isfinite(parsed) or parsed <= 0:
+        raise ValueError(f"{name} must be positive and finite, got {value!r}")
+    return parsed
+
+
+def validate_config(cfg: Dict[str, Any]) -> None:
+    """Validate runner config before MG5 is started."""
+    required = ["mg5path", "model", "process", "process_mode", "nevents"]
+    missing = [key for key in required if key not in cfg]
+    if missing:
+        raise ValueError(f"Missing required MG5 runner config fields: {missing}")
+
+    process_mode = cfg["process_mode"]
+    if process_mode not in PROCESS_MODES:
+        raise ValueError(f"process_mode must be one of {sorted(PROCESS_MODES)}")
+    if int(cfg["nevents"]) <= 0:
+        raise ValueError("nevents must be a positive integer")
+    survey_profile = cfg.get("survey_profile", "default")
+    if survey_profile not in SURVEY_PROFILES:
+        raise ValueError(f"Unknown survey_profile {survey_profile!r}")
+
+    labels = cfg.get("output_labels")
+    if labels is not None and not isinstance(labels, list):
+        raise ValueError("output_labels must be a list when provided")
+
+    coefficient_mode = cfg.get("coefficient_mode")
+    if coefficient_mode is not None and coefficient_mode not in {"default", "c_scan", "explicit"}:
+        raise ValueError("coefficient_mode must be one of default, c_scan, explicit")
+
+    if process_mode == "scan":
+        _positive_finite(cfg.get("c_scan"), "c_scan")
+        if not (cfg.get("operator") or cfg.get("output_prefix") or cfg.get("output_labels")):
+            raise ValueError("scan mode requires operator, output_prefix, or output_labels")
+        if labels is not None and len(labels) != 11:
+            raise ValueError("scan mode output_labels must have length exactly 11")
+        target = cfg.get("target_coefficient") or {}
+        if "index" not in target:
+            raise ValueError("scan mode requires target_coefficient.index")
+    else:
+        if labels is not None and len(labels) != 1:
+            raise ValueError("non-scan output_labels must have length exactly 1")
+        if coefficient_mode == "c_scan":
+            _positive_finite(cfg.get("c_scan"), "c_scan")
+        if process_mode != "pure_sm":
+            target = cfg.get("target_coefficient") or {}
+            if "index" not in target:
+                raise ValueError(f"{process_mode} requires target_coefficient.index")
+            if coefficient_mode == "explicit" and "value" not in target:
+                raise ValueError("coefficient_mode='explicit' requires target_coefficient.value")
 
 
 def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
@@ -342,92 +400,118 @@ def _labels_for_runs(cfg: Dict[str, Any], run_count: int) -> List[str]:
 def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """Execute one MG5 config and return a result manifest."""
     cfg = dict(config)
-    mg5path = os.path.abspath(os.path.expanduser(cfg["mg5path"]))
-    cfg["mg5path"] = mg5path
-    process_mode = cfg["process_mode"]
-    if process_mode not in PROCESS_MODES:
-        raise ValueError(f"process_mode must be one of {sorted(PROCESS_MODES)}")
-    model_dir = _validate_model_exists(mg5path, cfg["model"])
-
-    process_folder = cfg.get("process_folder") or _default_process_folder(
-        mg5path, cfg["process"], cfg["model"], process_mode
-    )
-    process_dir = os.path.join(mg5path, process_folder)
-    create_process = bool(cfg.get("create_process", not os.path.isdir(process_dir)))
-
+    stage = "config_validation"
     result: Dict[str, Any] = {
         "schema_version": "1.0",
-        "mg5path": mg5path,
-        "process_folder": process_folder,
-        "process_dir": process_dir,
-        "process_mode": process_mode,
-        "model": cfg["model"],
-        "model_dir": model_dir,
-        "process": cfg["process"],
+        "status": "started",
+        "mg5path": cfg.get("mg5path"),
+        "process_folder": cfg.get("process_folder"),
+        "process_mode": cfg.get("process_mode"),
+        "model": cfg.get("model"),
+        "process": cfg.get("process"),
         "operator": cfg.get("operator"),
         "target_coefficient": cfg.get("target_coefficient"),
         "coefficient_mode": cfg.get("coefficient_mode"),
         "c_scan": cfg.get("c_scan"),
-        "scan_expression": _scan_expression_from_c_scan(cfg) if process_mode == "scan" else None,
         "survey_profile": cfg.get("survey_profile", "default"),
-        "nevents": int(cfg["nevents"]),
-        "created_process": create_process,
         "outputs": [],
         "cleanup_candidates": [],
     }
+    try:
+        validate_config(cfg)
+        mg5path = os.path.abspath(os.path.expanduser(cfg["mg5path"]))
+        cfg["mg5path"] = mg5path
+        process_mode = cfg["process_mode"]
+        result["mg5path"] = mg5path
+        result["nevents"] = int(cfg["nevents"])
+        result["scan_expression"] = _scan_expression_from_c_scan(cfg) if process_mode == "scan" else None
 
-    if create_process:
-        result["create_process"] = _create_process(cfg, process_folder)
-    if not os.path.isdir(process_dir):
-        raise RuntimeError(f"Process directory not found after creation: {process_dir}")
+        stage = "model_validation"
+        model_dir = _validate_model_exists(mg5path, cfg["model"])
+        result["model_dir"] = model_dir
 
-    copied_delphes_card = None
-    if cfg.get("delphes_card"):
-        copied_delphes_card = setup_delphes_card(mg5path, cfg["delphes_card"], process_folder)
-    result["copied_delphes_card"] = copied_delphes_card
-
-    param_card = os.path.join(process_dir, "Cards", "param_card.dat")
-    parsed = parse_coefficients(param_card, block_name=cfg.get("coefficient_block"))
-    result["coefficient_block"] = parsed["block_name"]
-    result["available_coefficients"] = parsed["coefficients"]
-
-    launch_result, new_runs = _launch_process(cfg, process_folder, parsed)
-    result["launch"] = launch_result
-    result["run_folders"] = new_runs
-
-    labels = _labels_for_runs(cfg, len(new_runs))
-    output_dir = cfg.get("output_dir")
-    for label, run in zip(labels, new_runs):
-        lhco_path = convert_root_to_lhco(mg5path, process_folder, run)
-        banner_path = _banner_path(mg5path, process_folder, run)
-        cross_section_pb = extract_cross_section(banner_path)
-        count_record = count_lhco_events(
-            lhco_path,
-            requested_event_count=int(cfg["nevents"]),
-            dataset_id=label,
-            count_context="mg5_output",
-            cutexperiment_path=cfg.get("cutexperiment_path"),
+        stage = "process_folder_resolution"
+        process_folder = cfg.get("process_folder") or _default_process_folder(
+            mg5path, cfg["process"], cfg["model"], process_mode
         )
-        final_lhco = _copy_optional_outputs(lhco_path, output_dir, f"{label}.lhco")
-        final_banner = _copy_optional_outputs(banner_path, output_dir, f"{label}_banner.txt")
-        result["outputs"].append({
-            "label": label,
-            "run_folder": run,
-            "lhco_path": os.path.abspath(final_lhco),
-            "banner_path": os.path.abspath(final_banner),
-            "source_lhco_path": os.path.abspath(lhco_path),
-            "source_banner_path": os.path.abspath(banner_path),
-            "cross_section_pb": cross_section_pb,
-            "count_record": count_record,
-            "loaded_lhco_event_count": count_record["loaded_lhco_event_count"],
-        })
+        process_dir = os.path.join(mg5path, process_folder)
+        create_process = bool(cfg.get("create_process", not os.path.isdir(process_dir)))
+        result["process_folder"] = process_folder
+        result["process_dir"] = process_dir
+        result["created_process"] = create_process
 
-    result["cleanup_candidates"] = _cleanup_candidates(mg5path, process_folder, new_runs)
+        if create_process:
+            stage = "create_process"
+            result["create_process"] = _create_process(cfg, process_folder)
+        if not os.path.isdir(process_dir):
+            raise RuntimeError(f"Process directory not found after creation: {process_dir}")
 
-    result_json = cfg.get("result_json")
-    if result_json:
-        _write_json(result_json, result)
-    return result
+        stage = "setup_delphes"
+        copied_delphes_card = None
+        if cfg.get("delphes_card"):
+            copied_delphes_card = setup_delphes_card(mg5path, cfg["delphes_card"], process_folder)
+        result["copied_delphes_card"] = copied_delphes_card
+
+        stage = "parse_param_card"
+        param_card = os.path.join(process_dir, "Cards", "param_card.dat")
+        parsed = parse_coefficients(param_card, block_name=cfg.get("coefficient_block"))
+        result["coefficient_block"] = parsed["block_name"]
+        result["available_coefficients"] = parsed["coefficients"]
+
+        stage = "launch"
+        launch_result, new_runs = _launch_process(cfg, process_folder, parsed)
+        result["launch"] = launch_result
+        result["run_folders"] = new_runs
+
+        stage = "postprocess"
+        labels = _labels_for_runs(cfg, len(new_runs))
+        output_dir = cfg.get("output_dir")
+        for label, run in zip(labels, new_runs):
+            lhco_path = convert_root_to_lhco(mg5path, process_folder, run)
+            banner_path = _banner_path(mg5path, process_folder, run)
+            cross_section_pb = extract_cross_section(banner_path)
+            count_record = count_lhco_events(
+                lhco_path,
+                requested_event_count=int(cfg["nevents"]),
+                dataset_id=label,
+                count_context="mg5_output",
+                cutexperiment_path=cfg.get("cutexperiment_path"),
+            )
+            final_lhco = _copy_optional_outputs(lhco_path, output_dir, f"{label}.lhco")
+            final_banner = _copy_optional_outputs(banner_path, output_dir, f"{label}_banner.txt")
+            result["outputs"].append({
+                "label": label,
+                "run_folder": run,
+                "lhco_path": os.path.abspath(final_lhco),
+                "banner_path": os.path.abspath(final_banner),
+                "source_lhco_path": os.path.abspath(lhco_path),
+                "source_banner_path": os.path.abspath(banner_path),
+                "cross_section_pb": cross_section_pb,
+                "count_record": count_record,
+                "loaded_lhco_event_count": count_record["loaded_lhco_event_count"],
+            })
+
+        result["cleanup_candidates"] = _cleanup_candidates(mg5path, process_folder, new_runs)
+        result["status"] = "completed"
+        result_json = cfg.get("result_json")
+        if result_json:
+            _write_json(result_json, result)
+        return result
+    except Exception as exc:
+        result["status"] = "failed"
+        result["failure_stage"] = stage
+        result["error"] = f"{type(exc).__name__}: {exc}"
+        result["traceback"] = traceback.format_exc()
+        try:
+            result["failure_log_path"] = _write_text(
+                os.path.join(_log_dir(cfg), f"failed_{stage}.log"),
+                result["traceback"],
+            )
+        except Exception:
+            result["failure_log_path"] = None
+        if cfg.get("result_json"):
+            _write_json(cfg["result_json"], result)
+        raise
 
 
 def main() -> int:

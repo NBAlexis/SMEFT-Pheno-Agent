@@ -109,6 +109,107 @@ def _expected_files(root: str) -> List[Dict[str, Any]]:
     return expected
 
 
+def _recovery_metadata_checks(root: str) -> List[Dict[str, Any]]:
+    checks: List[Dict[str, Any]] = []
+    for phase in ("phase5", "phase6"):
+        rel_path = os.path.join("data", phase, "event_count_recovery.json")
+        path = os.path.join(root, rel_path)
+        if not os.path.exists(path):
+            continue
+        try:
+            data = _load_json(path)
+        except Exception as exc:
+            checks.append({
+                "rel_path": rel_path,
+                "severity": "abort",
+                "source": "recovery_metadata",
+                "path": path,
+                "ok": False,
+                "error": f"Could not parse recovery metadata: {exc}",
+            })
+            continue
+
+        status = data.get("status")
+        if status not in {"accepted", "zero_event_failure", "exhausted_recovery_red_flag"}:
+            checks.append({
+                "rel_path": rel_path,
+                "severity": "abort",
+                "source": "recovery_metadata",
+                "path": path,
+                "ok": False,
+                "error": f"Unexpected recovery status: {status!r}",
+            })
+
+        if status == "accepted":
+            merged_outputs = data.get("merged_outputs")
+            if not isinstance(merged_outputs, list) or not merged_outputs:
+                checks.append({
+                    "rel_path": rel_path,
+                    "severity": "abort",
+                    "source": "recovery_metadata",
+                    "path": path,
+                    "ok": False,
+                    "error": "accepted recovery metadata has no merged_outputs",
+                })
+                continue
+            for item in merged_outputs:
+                label = item.get("label", "<missing>")
+                lhco_path = item.get("lhco_path")
+                count = int(item.get("loaded_lhco_event_count", 0))
+                requested = int(item.get("requested_event_count", data.get("requested_event_count", 0)) or 0)
+                source_banners = item.get("source_banners_retained") or []
+                merged_cross_section = item.get("merged_cross_section_pb")
+                ok = True
+                errors = []
+                if not lhco_path or not os.path.exists(lhco_path):
+                    ok = False
+                    errors.append("merged LHCO path missing")
+                if count <= 0:
+                    ok = False
+                    errors.append("merged loaded count is not positive")
+                if requested > 0 and count < 0.1 * requested:
+                    ok = False
+                    errors.append("merged loaded count is below 10% requested")
+                missing_banners = [p for p in source_banners if p and not os.path.exists(p)]
+                if missing_banners:
+                    ok = False
+                    errors.append(f"missing source banners: {missing_banners}")
+                if len(source_banners) > 1 and merged_cross_section is None:
+                    ok = False
+                    errors.append("missing merged cross-section for multi-attempt merge")
+                checks.append({
+                    "rel_path": f"{rel_path}:{label}",
+                    "severity": "abort",
+                    "source": "recovery_metadata",
+                    "path": path,
+                    "ok": ok,
+                    "errors": errors,
+                })
+
+            for warning in data.get("warnings", []):
+                fraction = warning.get("fraction")
+                if fraction is None or not (0.1 <= float(fraction) < 0.9):
+                    checks.append({
+                        "rel_path": rel_path,
+                        "severity": "abort",
+                        "source": "recovery_metadata",
+                        "path": path,
+                        "ok": False,
+                        "error": f"Invalid warning fraction: {warning}",
+                    })
+
+        if status == "zero_event_failure" and not data.get("zero_event_failure"):
+            checks.append({
+                "rel_path": rel_path,
+                "severity": "abort",
+                "source": "recovery_metadata",
+                "path": path,
+                "ok": False,
+                "error": "zero_event_failure status missing zero_event_failure details",
+            })
+    return checks
+
+
 def audit_expected_outputs(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
     root = _result_root(os.path.abspath(os.path.expanduser(workdir)), run_dir)
     expected = _expected_files(root)
@@ -118,6 +219,7 @@ def audit_expected_outputs(workdir: str, run_dir: Optional[str] = None) -> Dict[
         rec = dict(item)
         rec.update(_exists_nonempty(path))
         checks.append(rec)
+    checks.extend(_recovery_metadata_checks(root))
 
     manuscript_candidates = [
         os.path.join(root, "manuscript.pdf"),
@@ -166,4 +268,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -26,6 +26,9 @@ For each generated sample or scan point:
 
 Recovery must not change physics parameters, coefficients, beam energy,
 polarization, cuts, algorithms, locked event targets, or scan grids.
+If a produced LHCO loads successfully but contains zero events, stop the normal
+hard-survey recovery ladder for that unit and require inspection of
+Delphes/root2lhco/card/output generation before rerunning.
 
 ## Recovery Execution
 

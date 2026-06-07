@@ -50,6 +50,20 @@ def _usable_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     return usable
 
 
+def _zero_event_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
+    zeros = []
+    for out in result.get("outputs", []):
+        count_record = out.get("count_record") or {}
+        if count_record.get("status") == "zero_events" or int(out.get("loaded_lhco_event_count", 0)) == 0:
+            zeros.append({
+                "label": out.get("label"),
+                "lhco_path": out.get("lhco_path"),
+                "banner_path": out.get("banner_path"),
+                "count_record": count_record,
+            })
+    return zeros
+
+
 def _expected_labels(base: Dict[str, Any]) -> List[str]:
     if base.get("output_labels"):
         return list(base["output_labels"])
@@ -96,18 +110,30 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
     labels = _expected_labels(base)
     attempts: List[Dict[str, Any]] = []
     totals: Dict[str, int] = {}
+    zero_event_failure = None
 
     for attempt_index, profile in enumerate(profiles):
         cfg = _attempt_config(base, profile, attempt_index, attempt_root)
         try:
             result = run_from_config(cfg)
-            attempts.append({
+            attempt_record = {
                 "attempt_index": attempt_index,
                 "survey_profile": profile,
                 "status": "completed",
                 "config": cfg,
                 "result": result,
-            })
+            }
+            zeros = _zero_event_outputs(result)
+            if zeros:
+                attempt_record["status"] = "zero_event_failure"
+                attempt_record["zero_event_outputs"] = zeros
+                zero_event_failure = {
+                    "attempt_index": attempt_index,
+                    "survey_profile": profile,
+                    "zero_event_outputs": zeros,
+                    "action": "inspect/fix Delphes, root2lhco, card, or output generation before rerunning",
+                }
+            attempts.append(attempt_record)
         except Exception as exc:
             attempts.append({
                 "attempt_index": attempt_index,
@@ -117,11 +143,31 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
                 "error": f"{type(exc).__name__}: {exc}",
                 "result": {"outputs": []},
             })
+        if zero_event_failure is not None:
+            break
         totals = _group_counts(attempts)
         if _all_labels_reached(totals, labels, requested):
             break
 
     merged_outputs = []
+    if zero_event_failure is not None:
+        metadata = {
+            "schema_version": "1.0",
+            "requested_event_count": requested,
+            "requested_event_count_definition": "original target dataset size, not sum of attempts",
+            "recovery_profiles": profiles,
+            "attempts": attempts,
+            "merged_outputs": [],
+            "final_loaded_counts": {},
+            "threshold_fraction": 0.1,
+            "threshold_reached": False,
+            "warnings": [],
+            "zero_event_failure": zero_event_failure,
+            "status": "zero_event_failure",
+        }
+        _write_json(metadata_path, metadata)
+        return metadata
+
     for label in labels:
         sources = []
         banners = []
