@@ -3,6 +3,10 @@
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
+Phase 5 can be long-running because it produces pure NP samples for every
+globally claimed operator. Runtime length is not a reason to ask whether to
+continue, reduce event counts, or skip non-anchor samples.
+
 Generate high-statistics pure samples. In multi-model mode, ML training is
 performed **once** using the **anchor operator only**, but pure NP samples for
 all globally claimed operators are still required for publication data and score
@@ -44,7 +48,7 @@ c_scan = coefficient_ranges["operators"][f"o_{global_idx}"]["c_scan"]
 2. Copy Delphes card and dependencies
 3. Launch with `set {block_name} {idx} 0.0` for all coefficients, `nevents = {nev_sm}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
 4. Post-process (ROOT→LHCO, validate, apply event-count recovery from
-   [`madgraph-reference.md`](madgraph-reference.md), clean large files)
+   [`event-count-recovery.md`](event-count-recovery.md), clean large files)
 5. Copy to results:
 ```
 results/data/phase5/sm_banner.txt
@@ -83,7 +87,7 @@ For each operator `o_{g_idx}`:
    `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md)
    Coefficient Block for syntax.
 3. Post-process and apply event-count recovery from
-   [`madgraph-reference.md`](madgraph-reference.md)
+   [`event-count-recovery.md`](event-count-recovery.md)
 4. Copy to results:
 ```
 results/data/phase5/np_o_{g_idx}_banner.txt
@@ -100,7 +104,8 @@ results/data/phase5/event_count_recovery.json
 
 The alias must point to the same physics sample as
 `np_o_{anchor_global_idx}.lhco`; do not launch a duplicate anchor run merely to
-create the alias.
+create the alias. Record `alias_for`, the source path, and the alias path in
+Phase 5 metadata, and verify the aliased LHCO with the count helper.
 
 ```python
 for op_key, claim in operator_claims.items():
@@ -132,7 +137,7 @@ Execution Continuity.
 - `np_o_{g_idx}.lhco` must exist and be non-empty for every globally claimed operator (abort if missing)
 - `np_anchor.lhco` must exist and be non-empty, and must match the anchor operator sample (abort if missing)
 - `event_count_recovery.json` records requested and actual LHCO counts, recovery attempts, and selected output paths for SM and every pure-NP sample
-- No sample with actual LHCO count below `10%` of requested `nevents` may pass validation unless the full recovery ladder has been attempted and the remaining deficiency is recorded as a red flag
+- Apply [`event-count-recovery.md`](event-count-recovery.md): no sample with actual LHCO count below `10%` of requested `nevents` may pass validation unless recovery has been attempted and the remaining deficiency is recorded as a red flag
 
 ## Phase Transition
 

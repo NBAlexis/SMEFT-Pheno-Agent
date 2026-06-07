@@ -19,6 +19,8 @@ without asking the user during Execution Mode.
 - Actual LHCO counts below the requested target are not failures by themselves.
   Counts below `10%` of the requested target trigger automatic MG5 run-card
   recovery before a red flag is allowed.
+- If recovery produces multiple parseable attempts, downstream analysis uses the
+  merged LHCO and merged metadata defined in `event-count-recovery.md`.
 - Selection efficiencies and selected cross-sections use
   `LoadLHCOlympics(...).GetEventCount()` as the LHCO denominator.
 - Banner files may be used for cross-sections only, never for actual event

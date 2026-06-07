@@ -30,7 +30,7 @@ For every SM, anchor NP, and scan dataset, record:
 - model and operator, if applicable
 - requested event count from `run_config.json` as an integer
 - actual loaded LHCO event count from `LoadLHCOlympics(...).GetEventCount()` as an integer
-- event-count recovery attempts and selected attempt, if recovery was triggered
+- event-count recovery attempts, merged outputs, and merged cross-sections, if recovery was triggered
 - final-state particle multiplicity cut, for example `N_gamma >= 1, N_j >= 2`
 - surviving event count after the final-state cut as an integer
 - ML/selection passing event count when a threshold is applied

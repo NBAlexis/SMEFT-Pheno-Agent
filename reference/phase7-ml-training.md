@@ -1,6 +1,6 @@
-# Phase 7: Train ML Event Selection Strategy
+﻿# Phase 7: Train ML Event Selection Strategy
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE �?once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
 Train and compare ML algorithms to distinguish SM from NP events. In multi-model
@@ -30,7 +30,8 @@ with workflow_step(logger, "7", "convert_lhco_to_csv",
                    inputs={"sm": "sm.lhco", "np": "np_o_*.lhco"}):
 ```
 
-Use CutExperiment to load `.lhco` files, record actual event counts, and extract feature vectors:
+Use CutExperiment to load `.lhco` files, record actual event counts according
+to [`event-count-recovery.md`](event-count-recovery.md), and extract feature vectors:
 
 ```python
 from Interfaces.LHCOlympics import LoadLHCOlympics
@@ -137,18 +138,18 @@ Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scik
 
 | # | Algorithm | Type | Extra Dependency |
 |---|-----------|------|------------------|
-| 1 | GradientBoostingClassifier | Ensemble | �?|
-| 2 | RandomForestClassifier | Ensemble | �?|
+| 1 | GradientBoostingClassifier | Ensemble | - |
+| 2 | RandomForestClassifier | Ensemble | - |
 | 3 | XGBClassifier | Ensemble | `xgboost` |
 | 4 | LGBMClassifier | Ensemble | `lightgbm` |
-| 5 | SVC (RBF kernel) | Kernel | �?|
-| 6 | SVC (poly kernel) | Kernel | �?|
-| 7 | LogisticRegression | Linear | �?|
-| 8 | MLPClassifier | Neural Network | �?|
-| 9 | IsolationForest | Anomaly Detection | �?|
-| 10 | ExtraTreesClassifier | Ensemble | �?|
-| 11 | AdaBoostClassifier | Ensemble | �?|
-| 12 | KNeighborsClassifier | Distance-based | �?|
+| 5 | SVC (RBF kernel) | Kernel | - |
+| 6 | SVC (poly kernel) | Kernel | - |
+| 7 | LogisticRegression | Linear | - |
+| 8 | MLPClassifier | Neural Network | - |
+| 9 | IsolationForest | Anomaly Detection | - |
+| 10 | ExtraTreesClassifier | Ensemble | - |
+| 11 | AdaBoostClassifier | Ensemble | - |
+| 12 | KNeighborsClassifier | Distance-based | - |
 | 13 | PyTorch NN (custom) | Neural Network | `torch` |
 
 If `config.algorithms` is set in `run_config.json`, use those instead of the pool.
@@ -218,7 +219,7 @@ Train on the **anchor operator's** SM and NP samples:
 3. Stack: `X = np.vstack([sm[:n], np_data[:n]])`, `y = [0]*n + [1]*n`
 4. Train/test split: 80/20
 5. Train the selected algorithms
-6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 �?**this is for manuscript plotting only, NOT for algorithm selection**
+6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 - **this is for manuscript plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
 > **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 selects the single production algorithm from the anchor operator by the narrowest `S_stat = 2` constraint width.

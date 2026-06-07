@@ -33,7 +33,16 @@ for example `results/E10_L1000/data/phase3/operator_claims.json`.
 with workflow_step(logger, "11", "check_file_existence"):
 ```
 
-Verify expected files exist and have size greater than zero.
+Use the manifest-driven audit helper first:
+
+```bash
+python scripts/audit_expected_outputs.py {workdir} --json-out results/audit_expected_outputs.json
+```
+
+Then verify any additional run-specific files exist and have size greater than
+zero. The helper builds the expected operator/scan/algorithm matrix from
+`operator_claims.json`, `scan_manifest.json`, and `algorithm_comparison.json`.
+Do not rely only on wildcards when a manifest is available.
 
 | File | Phase | Action if missing |
 |---|---|---|

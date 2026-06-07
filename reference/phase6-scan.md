@@ -267,20 +267,11 @@ for i, run in enumerate(new_runs):
 ## Step 6.5: Event Count Recovery
 
 After copying the 11 LHCO files for one operator, apply the event-count recovery
-policy in [`madgraph-reference.md`](madgraph-reference.md).
+policy in [`event-count-recovery.md`](event-count-recovery.md).
 
-For Phase 6, the recovery unit is the full operator scan:
-
-1. Count actual LHCO events for all 11 scan points with
-   `LoadLHCOlympics(...).GetEventCount()`.
-2. If every point has `actual >= 0.1 * nev_scan`, accept the scan and record
-   warnings for points below `0.9 * nev_scan`.
-3. If any point has `actual < 0.1 * nev_scan`, retry the whole operator scan
-   with the next recovery run-card setting:
-   `sde_strategy = 0`, then `hard_survey = 0`, `1`, and at most `2`.
-4. Select the first accepted attempt. If no attempt reaches the `10%` floor for
-   every point, keep the best attempt, record a red flag, and stop only after the
-   full recovery ladder has been exhausted.
+For Phase 6, the recovery unit is the full operator scan. Use the recovery
+orchestrator so attempts are grouped by scan-point label and mergeable LHCO
+events are combined. Do not manually choose a "best" attempt.
 
 Write:
 
@@ -288,8 +279,9 @@ Write:
 results/data/phase6/event_count_recovery.json
 ```
 
-with requested counts, actual LHCO counts, fractions, recovery settings, attempt
-numbers, selected attempt, and selected output paths.
+with requested counts, actual LHCO counts, fractions, recovery profile enum,
+attempt numbers, merged output paths, all source banners, and merged
+cross-sections.
 
 After all operators have been processed:
 

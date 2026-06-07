@@ -187,7 +187,7 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | Cleanup | Process-folder collection | [`reference/cleanup.md`](reference/cleanup.md) |
 | 11 | Audit | [`reference/phase11-audit.md`](reference/phase11-audit.md) |
 
-Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
+Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), event-count/recovery rules in [`reference/event-count-recovery.md`](reference/event-count-recovery.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
 
 ## Scripts
 
@@ -203,12 +203,17 @@ Prefer bundled scripts for deterministic pieces:
 | `scripts/sync_from_target.py` | Copy target files/directories back to local disk for local-only tooling such as LaTeX |
 | `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
 | `scripts/run_mg5.py` | Run MG5 order files with return-code checking |
+| `scripts/run_mg5_config.py` | Run one MG5 job from JSON, including order generation, Delphes conversion, banner parsing, and loaded-count metadata |
+| `scripts/count_lhco_events.py` | Count actual LHCO events with CutExperiment |
+| `scripts/merge_lhco.py` | Merge LHCO recovery attempts and compute loaded-count-weighted merged cross-sections |
+| `scripts/recover_lhco_count.py` | Orchestrate event-count recovery across survey-profile attempts |
 | `scripts/parse_param_card.py` | Parse coefficient blocks |
 | `scripts/extract_cross_section.py` | Parse MG5 banner cross-sections |
 | `scripts/setup_delphes_card.py` | Copy Delphes cards/dependencies |
 | `scripts/convert_root_to_lhco.py` | Convert ROOT outputs to LHCO |
 | `scripts/workflow_logger.py` | Append-only phase/step log |
 | `scripts/read_results.py` | Typed JSON result readers |
+| `scripts/audit_expected_outputs.py` | Build Phase 11 expected-output checks from manifests |
 
 ## Output Layout
 

@@ -27,6 +27,11 @@ Key contracts:
   occurs.
 - Event counts are locked in `run_config.json`; later phases must not resize
   them for speed.
+- Actual LHCO counts must come from CutExperiment
+  `LoadLHCOlympics(...).GetEventCount()`. Banner event counts and planned
+  `nevents` are not valid efficiency denominators.
+- Event-count recovery, LHCO merging, and merged cross-section weighting are
+  centralized in `reference/event-count-recovery.md`.
 - Long MadGraph/Delphes runtimes are normal. Hours, days, weeks, or months are
   not stop conditions; use durable execution and status files instead of asking
   whether to continue or reducing statistics.
@@ -51,6 +56,11 @@ Key contracts:
 - `scripts/workflow_logger.py` - JSONL phase/step logger and log bootstrap
 - `scripts/load_run_config.py` - run configuration loader and event-count lock
   validator
+- `scripts/run_mg5_config.py` - config-driven MG5 attempt runner
+- `scripts/count_lhco_events.py` - CutExperiment-backed LHCO event counter
+- `scripts/merge_lhco.py` - LHCO merge helper with weighted cross-sections
+- `scripts/recover_lhco_count.py` - event-count recovery orchestrator
+- `scripts/audit_expected_outputs.py` - manifest-driven Phase 11 audit helper
 
 ## Runtime Inputs
 

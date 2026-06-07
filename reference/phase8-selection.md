@@ -36,8 +36,10 @@ with workflow_step(logger, "8", "convert_scan_lhco_to_csv",
                    inputs={"num_operators": len(operator_claims), "points_per_operator": 11}):
 ```
 
-Convert all Phase 6 `.lhco` files to `.csv` using same feature extraction as
-Phase 7. For every scan point, record:
+Convert all Phase 6 `.lhco` files to `.csv` using the same feature extraction as
+Phase 7 and the event-count rules in
+[`event-count-recovery.md`](event-count-recovery.md). For every scan point,
+record:
 
 - `requested_event_count`: locked `nev_scan` from `run_config.json`
 - `loaded_lhco_event_count`: `LoadLHCOlympics(lhco).GetEventCount()` immediately after loading
@@ -94,8 +96,10 @@ Each score CSV must contain at least:
 event_index, score, source_csv
 ```
 
-After the optimal threshold is known, it may also include
-`pass_optimal_threshold`.
+Before final Phase 9 selection, candidate score CSVs may include
+`pass_algorithm_optimal_threshold`. After the single final production strategy
+is selected, final-strategy score CSVs may include `pass_final_strategy`. Do not
+write any generic or ambiguous optimal-threshold pass flag.
 
 ## Step 8.3: Optimize Threshold Per Algorithm (using anchor operator)
 
