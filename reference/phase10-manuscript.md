@@ -147,6 +147,7 @@ Write `manuscript_draft_v1.html` or `manuscript_draft_v1.tex` from:
 Mandatory manuscript content:
 
 - exact requested event counts and actual loaded LHCO event counts
+- event-count recovery attempts when actual LHCO counts required recovery
 - exact final-state particle cut
 - exact surviving event counts after the cut
 - threshold-passing counts and explicit efficiency denominators

@@ -264,6 +264,33 @@ for i, run in enumerate(new_runs):
     # Copy banner and LHCO to results/data/phase6/.
 ```
 
+## Step 6.5: Event Count Recovery
+
+After copying the 11 LHCO files for one operator, apply the event-count recovery
+policy in [`madgraph-reference.md`](madgraph-reference.md).
+
+For Phase 6, the recovery unit is the full operator scan:
+
+1. Count actual LHCO events for all 11 scan points with
+   `LoadLHCOlympics(...).GetEventCount()`.
+2. If every point has `actual >= 0.1 * nev_scan`, accept the scan and record
+   warnings for points below `0.9 * nev_scan`.
+3. If any point has `actual < 0.1 * nev_scan`, retry the whole operator scan
+   with the next recovery run-card setting:
+   `sde_strategy = 0`, then `hard_survey = 0`, `1`, and at most `2`.
+4. Select the first accepted attempt. If no attempt reaches the `10%` floor for
+   every point, keep the best attempt, record a red flag, and stop only after the
+   full recovery ladder has been exhausted.
+
+Write:
+
+```text
+results/data/phase6/event_count_recovery.json
+```
+
+with requested counts, actual LHCO counts, fractions, recovery settings, attempt
+numbers, selected attempt, and selected output paths.
+
 After all operators have been processed:
 
 ```python
@@ -278,6 +305,7 @@ logger.phase_complete("6")
 results/data/phase6/
   scan_manifest.json
   phase6_progress.json
+  event_count_recovery.json
   np_o_1_f0_banner.txt    np_o_1_f0.lhco
   ...
   np_o_1_f10_banner.txt   np_o_1_f10.lhco
@@ -300,11 +328,13 @@ results/data/phase6/
 | Stopping because runtime is hours, weeks, or months | Start durable execution and continue/resume |
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
 | File named `!` containing conversion usage text | Call `convert_root_to_lhco.py` with correct args and log stdout/stderr instead of shell clobber redirection |
+| Treating LHCO count below requested `nevents` as fatal | Use event-count recovery; only counts below `10%` after the full ladder are red flags |
+| Using `hard_survey > 2` | Do not exceed `hard_survey = 2`; it is too slow for this workflow |
 
 ## Phase Transition
 
 After all operators are scanned and all LHCO files are copied:
 
-1. Check validation immediately. If any scan point is missing, continue/resume/retry from `phase6_progress.json`; abort only for concrete unrecoverable filesystem or physics-generation errors.
+1. Check validation immediately. If any scan point is missing, continue/resume/retry from `phase6_progress.json`; if any scan point has actual LHCO count below `10%` of `nev_scan`, complete the event-count recovery ladder before declaring a red flag. Abort only for concrete unrecoverable filesystem, physics-generation, or exhausted-recovery errors.
 2. If validation passes, proceed immediately to Phase 7 without stopping.
 3. Do not summarize results, ask for confirmation, present options, or wait for user input.

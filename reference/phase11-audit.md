@@ -45,7 +45,9 @@ Verify expected files exist and have size greater than zero.
 | `results/data/phase5/sm.lhco` | 5 | Abort |
 | `results/data/phase5/np_anchor.lhco` | 5 | Abort |
 | `results/data/phase5/np_o_*.lhco` | 5 | Abort |
+| `results/data/phase5/event_count_recovery.json` | 5 | Abort |
 | `results/data/phase6/np_o_*_f*.lhco` | 6 | Abort |
+| `results/data/phase6/event_count_recovery.json` | 6 | Abort |
 | `results/data/phase7/sm.csv` | 7 | Abort |
 | `results/data/phase7/np_anchor.csv` | 7 | Abort |
 | `results/data/phase7/np_o_*.csv` | 7 | Abort |
@@ -108,6 +110,7 @@ with workflow_step(logger, "11", "check_cross_phase_consistency"):
 | Phase 7 algorithms == Phase 8 algorithms | Same trained algorithm set | Abort |
 | Phase 5 claimed pure NP ops == Phase 7 pure NP CSV ops | Same global operator list | Abort |
 | Phase 6 scanned points == Phase 8 scan CSV points | Same operator/point list | Abort |
+| Event-count recovery records | No selected sample below `10%` requested unless exhausted recovery red flag is recorded | Abort |
 | Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
 | Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |
 | Phase 8 event denominators | Actual loaded LHCO counts from CutExperiment, positive for every scan point | Abort if missing, zero, equal-by-assumption to `nev_scan`, or taken from banner |

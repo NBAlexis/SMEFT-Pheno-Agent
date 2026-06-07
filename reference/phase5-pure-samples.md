@@ -43,7 +43,8 @@ c_scan = coefficient_ranges["operators"][f"o_{global_idx}"]["c_scan"]
    ```
 2. Copy Delphes card and dependencies
 3. Launch with `set {block_name} {idx} 0.0` for all coefficients, `nevents = {nev_sm}`. The `{block_name}` is obtained from `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md) Coefficient Block for syntax.
-4. Post-process (ROOT→LHCO, validate, clean large files)
+4. Post-process (ROOT→LHCO, validate, apply event-count recovery from
+   [`madgraph-reference.md`](madgraph-reference.md), clean large files)
 5. Copy to results:
 ```
 results/data/phase5/sm_banner.txt
@@ -81,7 +82,8 @@ For each operator `o_{g_idx}`:
    `nevents = {nev_np}`. The `{block_name}` is obtained from
    `parse_param_card.py` output. See [`madgraph-reference.md`](madgraph-reference.md)
    Coefficient Block for syntax.
-3. Post-process
+3. Post-process and apply event-count recovery from
+   [`madgraph-reference.md`](madgraph-reference.md)
 4. Copy to results:
 ```
 results/data/phase5/np_o_{g_idx}_banner.txt
@@ -93,6 +95,7 @@ For compatibility with Phase 7 training, also write an anchor alias:
 ```
 results/data/phase5/np_anchor_banner.txt
 results/data/phase5/np_anchor.lhco
+results/data/phase5/event_count_recovery.json
 ```
 
 The alias must point to the same physics sample as
@@ -128,6 +131,8 @@ Execution Continuity.
 - `sm.lhco` must exist and be non-empty (abort if missing)
 - `np_o_{g_idx}.lhco` must exist and be non-empty for every globally claimed operator (abort if missing)
 - `np_anchor.lhco` must exist and be non-empty, and must match the anchor operator sample (abort if missing)
+- `event_count_recovery.json` records requested and actual LHCO counts, recovery attempts, and selected output paths for SM and every pure-NP sample
+- No sample with actual LHCO count below `10%` of requested `nevents` may pass validation unless the full recovery ladder has been attempted and the remaining deficiency is recorded as a red flag
 
 ## Phase Transition
 

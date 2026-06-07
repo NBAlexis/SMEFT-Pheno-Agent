@@ -16,6 +16,9 @@ without asking the user during Execution Mode.
 ## Actual Event Counts
 
 - `nev_*` values are requested generation targets, not actual event counts.
+- Actual LHCO counts below the requested target are not failures by themselves.
+  Counts below `10%` of the requested target trigger automatic MG5 run-card
+  recovery before a red flag is allowed.
 - Selection efficiencies and selected cross-sections use
   `LoadLHCOlympics(...).GetEventCount()` as the LHCO denominator.
 - Banner files may be used for cross-sections only, never for actual event

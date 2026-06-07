@@ -264,6 +264,56 @@ set nevents = {event_number}
 | `set nevents` | Total number of events to generate |
 | Second `0` | Confirms run card settings and starts generation |
 
+### Event Count Recovery
+
+MG5 may produce fewer LHCO events than the requested `nevents`. This is not a
+serious problem unless the actual LHCO count is clearly insufficient.
+
+After every Phase 5 sample and every Phase 6 scan attempt, load the produced
+LHCO with CutExperiment and compute:
+
+```python
+actual = LoadLHCOlympics(lhco_path).GetEventCount()
+requested = locked_nevents
+fraction = actual / requested
+```
+
+Decision rules:
+
+- `fraction >= 0.9`: accept normally.
+- `0.1 <= fraction < 0.9`: accept and log a warning; do not ask the user.
+- `fraction < 0.1`: run automatic recovery before any red flag is allowed.
+
+Recovery changes only run-card integration/survey settings. It must not change
+physics parameters, coefficients, beam energy, polarization, cuts, algorithms,
+event targets, or scan grids.
+
+Retry ladder:
+
+| Attempt | `sde_strategy` | `hard_survey` |
+|---:|---:|---:|
+| 0 | default | default |
+| 1 | 0 | 0 |
+| 2 | 0 | 1 |
+| 3 | 0 | 2 |
+
+`hard_survey = 2` is the maximum; do not use larger values because they are too
+slow for this workflow.
+
+Add the recovery settings in the launch order's run-card setting stage, next to
+`ebeam`, `nevents`, and polarization:
+
+```text
+set sde_strategy = 0
+set hard_survey = {0_or_1_or_2}
+```
+
+For Phase 5, retry only the deficient SM or pure-NP sample. For Phase 6, retry
+the deficient operator scan as a unit and choose the accepted or best attempt
+for all 11 scan points. Every attempt must be logged with requested count,
+actual LHCO count, fraction, `sde_strategy`, `hard_survey`, and selected output
+paths.
+
 ### Energy Assignment
 
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |
