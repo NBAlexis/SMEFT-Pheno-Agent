@@ -6,8 +6,9 @@
 
 ## Problem
 
-Phase 8 score CSVs may include `pass_optimal_threshold`, but each candidate
-algorithm has its own optimal threshold while Phase 9 selects one final strategy.
+Phase 8 score CSVs may include an ambiguous generic threshold-pass flag, but
+each candidate algorithm has its own optimal threshold while Phase 9 selects one
+final strategy.
 
 ## Risk
 

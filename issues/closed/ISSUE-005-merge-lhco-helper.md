@@ -6,9 +6,9 @@
 
 ## Problem
 
-Phase 6 currently talks about selecting a best attempt. CutExperiment supports
-merging LHCO event sets, so the agent should not need to choose a best attempt
-manually.
+Phase 6 recovery should merge all recovery attempts by scan-point label.
+CutExperiment supports merging LHCO event sets, so the agent should not choose
+one attempt over another.
 
 ## Evidence
 
@@ -18,8 +18,8 @@ calls `AddEventSet`, writes with `SaveToLHCO`, and verifies the merged count.
 
 ## Risk
 
-Without a bundled merge helper, agents may pick an arbitrary attempt, drop useful
-generated events, or merge incorrectly.
+Without a bundled merge helper, agents may choose one attempt over another, drop
+useful generated events, or merge incorrectly.
 
 ## Candidate Script
 

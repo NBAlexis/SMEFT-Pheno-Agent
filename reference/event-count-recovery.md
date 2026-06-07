@@ -29,8 +29,8 @@ polarization, cuts, algorithms, locked event targets, or scan grids.
 
 ## Recovery Execution
 
-Phase 5 and Phase 6 should call the recovery orchestrator rather than manually
-choosing among attempts.
+Phase 5 and Phase 6 should call the recovery orchestrator. Do not choose one
+attempt over another.
 
 The recovery orchestrator runs the MG5 config runner with survey profiles:
 
@@ -45,7 +45,7 @@ The recovery orchestrator runs the MG5 config runner with survey profiles:
 
 ## LHCO Merge Rule
 
-Merge parseable non-empty recovery attempts with the LHCO merge helper.
+Merge recovery attempts with the LHCO merge helper.
 
 - Keep all source banners; banners are not merged.
 - Count each source with CutExperiment before merging.
@@ -58,8 +58,9 @@ Merge parseable non-empty recovery attempts with the LHCO merge helper.
 ## Phase Use
 
 - Phase 5: apply recovery per SM or pure-NP sample.
-- Phase 6: apply recovery per operator scan; group attempts by scan-point label
-  before merging.
+- Phase 6: apply recovery per operator scan. For each scan point, merge all
+  attempts with the same label: all `f0` outputs together, all `f1` outputs
+  together, through `f10`.
 - Phase 7: when converting pure samples to CSV, record loaded counts from the
   exact LHCO file being converted.
 - Phase 8: when computing `cs_cut`, use each scan point's loaded count as the

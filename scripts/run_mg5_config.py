@@ -59,6 +59,13 @@ def _write_json(path: str, data: Dict[str, Any]) -> None:
         f.write("\n")
 
 
+def _write_text(path: str, text: str) -> str:
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text or "")
+    return os.path.abspath(path)
+
+
 def _timestamp() -> str:
     return time.strftime("%Y%m%d_%H%M%S")
 
@@ -118,6 +125,49 @@ def _write_order(mg5path: str, name: str, lines: Iterable[str]) -> str:
     return path
 
 
+def _log_dir(cfg: Dict[str, Any]) -> str:
+    return os.path.abspath(
+        os.path.expanduser(
+            cfg.get("log_dir")
+            or os.path.join(cfg.get("output_dir") or cfg["mg5path"], "logs")
+        )
+    )
+
+
+def _record_mg5_logs(cfg: Dict[str, Any], stem: str, result: Dict[str, Any]) -> Dict[str, str]:
+    log_dir = _log_dir(cfg)
+    return {
+        "stdout_path": _write_text(os.path.join(log_dir, f"{stem}.stdout.log"), result.get("stdout", "")),
+        "stderr_path": _write_text(os.path.join(log_dir, f"{stem}.stderr.log"), result.get("stderr", "")),
+    }
+
+
+def _validate_model_exists(mg5path: str, model: str) -> str:
+    model_dir = os.path.join(mg5path, "models", model)
+    if not os.path.isdir(model_dir):
+        raise RuntimeError(
+            f"UFO model not found on MG5 target: {model_dir}. "
+            "Sync or install the model before running MG5."
+        )
+    return os.path.abspath(model_dir)
+
+
+def _sort_coefficient_keys(keys: Iterable[str]) -> List[str]:
+    def key_fn(value: str):
+        try:
+            return (0, int(value))
+        except ValueError:
+            return (1, value)
+    return sorted(keys, key=key_fn)
+
+
+def _scan_expression_from_c_scan(cfg: Dict[str, Any]) -> str:
+    if "c_scan" not in cfg:
+        raise ValueError("scan mode requires c_scan")
+    c_scan_text = str(cfg["c_scan"])
+    return f"[-{c_scan_text} + 0.2 * {c_scan_text} * n for n in range(11)]"
+
+
 def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
     mg5path = cfg["mg5path"]
     process_mode = cfg["process_mode"]
@@ -132,9 +182,11 @@ def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
     ]
     order_path = _write_order(mg5path, order_name, lines)
     result = run_mg5(mg5path, order_name)
+    logs = _record_mg5_logs(cfg, f"create_{process_folder}", result)
     return {
         "order_file_path": order_path,
         "order_filename": order_name,
+        **logs,
         "stdout_tail": result["stdout"][-4000:],
         "stderr_tail": result["stderr"][-4000:],
         "returncode": result["returncode"],
@@ -149,17 +201,33 @@ def _coefficient_lines(cfg: Dict[str, Any], parsed: Dict[str, Any]) -> List[str]
     target_index = str(target.get("index", "")) if target else ""
 
     if cfg["process_mode"] == "pure_sm":
-        return [f"set {block} {idx} 0.0" for idx in sorted(coefficients, key=int)]
+        return [f"set {block} {idx} 0.0" for idx in _sort_coefficient_keys(coefficients)]
 
     lines = []
-    for idx in sorted(coefficients, key=int):
+    for idx in _sort_coefficient_keys(coefficients):
         value = "0.0"
         if idx == target_index:
             if cfg["process_mode"] == "scan":
-                scan_expression = cfg["scan_expression"]
+                scan_expression = _scan_expression_from_c_scan(cfg)
                 value = f"scan:{scan_expression}"
             else:
-                value = str(target.get("value", coefficients[idx] or 1.0))
+                coefficient_mode = cfg.get("coefficient_mode")
+                if coefficient_mode is None:
+                    coefficient_mode = "explicit" if "value" in target else "default"
+                if coefficient_mode == "default":
+                    value = str(coefficients[idx] or 1.0)
+                elif coefficient_mode == "c_scan":
+                    if "c_scan" not in cfg:
+                        raise ValueError("coefficient_mode='c_scan' requires c_scan")
+                    value = str(cfg["c_scan"])
+                elif coefficient_mode == "explicit":
+                    if "value" not in target:
+                        raise ValueError("coefficient_mode='explicit' requires target_coefficient.value")
+                    value = str(target["value"])
+                else:
+                    raise ValueError(
+                        "coefficient_mode must be one of default, c_scan, explicit"
+                    )
         lines.append(f"set {block} {idx} {value}")
     return lines
 
@@ -209,15 +277,19 @@ def _launch_process(cfg: Dict[str, Any], process_folder: str, parsed: Dict[str, 
 
     order_path = _write_order(mg5path, order_name, lines)
     result = run_mg5(mg5path, order_name)
+    logs = _record_mg5_logs(cfg, f"launch_{process_folder}_{survey_profile}", result)
     after = _run_dirs(events_dir)
     new_runs = sorted(after - before, key=_run_sort_key)
     if not new_runs:
         raise RuntimeError(f"No new run folders created in {events_dir}")
+    if cfg["process_mode"] == "scan" and len(new_runs) != 11:
+        raise RuntimeError(f"Expected 11 scan runs, got {len(new_runs)} in {events_dir}")
 
     return {
         "order_file_path": order_path,
         "order_filename": order_name,
         "survey_profile": survey_profile,
+        **logs,
         "stdout_tail": result["stdout"][-4000:],
         "stderr_tail": result["stderr"][-4000:],
         "returncode": result["returncode"],
@@ -253,8 +325,18 @@ def _labels_for_runs(cfg: Dict[str, Any], run_count: int) -> List[str]:
             raise ValueError("output_labels length must match created run count")
         return labels
     if cfg["process_mode"] == "scan":
-        return [f"f{i}" for i in range(run_count)]
-    return [cfg.get("output_label", "sample")]
+        prefix = cfg.get("output_prefix")
+        if not prefix:
+            operator = cfg.get("operator")
+            prefix = f"np_{operator}" if operator else "scan"
+        return [f"{prefix}_f{i}" for i in range(run_count)]
+    if "output_label" in cfg:
+        return [cfg["output_label"]]
+    if cfg["process_mode"] == "pure_sm":
+        return ["sm"]
+    if cfg["process_mode"] == "pure_np" and cfg.get("operator"):
+        return [f"np_{cfg['operator']}"]
+    return ["sample"]
 
 
 def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -265,6 +347,7 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
     process_mode = cfg["process_mode"]
     if process_mode not in PROCESS_MODES:
         raise ValueError(f"process_mode must be one of {sorted(PROCESS_MODES)}")
+    model_dir = _validate_model_exists(mg5path, cfg["model"])
 
     process_folder = cfg.get("process_folder") or _default_process_folder(
         mg5path, cfg["process"], cfg["model"], process_mode
@@ -279,10 +362,13 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "process_dir": process_dir,
         "process_mode": process_mode,
         "model": cfg["model"],
+        "model_dir": model_dir,
         "process": cfg["process"],
         "operator": cfg.get("operator"),
         "target_coefficient": cfg.get("target_coefficient"),
-        "scan_expression": cfg.get("scan_expression"),
+        "coefficient_mode": cfg.get("coefficient_mode"),
+        "c_scan": cfg.get("c_scan"),
+        "scan_expression": _scan_expression_from_c_scan(cfg) if process_mode == "scan" else None,
         "survey_profile": cfg.get("survey_profile", "default"),
         "nevents": int(cfg["nevents"]),
         "created_process": create_process,
@@ -361,4 +447,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

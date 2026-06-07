@@ -285,6 +285,11 @@ python scripts/run_mg5_config.py run_config_for_one_attempt.json
 python scripts/recover_lhco_count.py recovery_config.json
 ```
 
+The MG5 config runner validates that the UFO model already exists under
+`{mg5path}/models/{model_name}`. It does not copy UFO models; model sync/install
+belongs to Phase 1/2 target setup. The runner copies only the Delphes card and
+Delphes card dependencies into the generated process folder.
+
 ### Energy Assignment
 
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |

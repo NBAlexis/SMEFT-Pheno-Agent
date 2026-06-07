@@ -35,8 +35,8 @@ scan-point metadata, and cross-section fitting.
   - `<10%`: run recovery
   - zero-event or unparsable LHCO: classify as likely Delphes/root2lhco/card
     failure, not normal hard-survey recovery success
-- define that Phase 5/6 call the recovery orchestrator instead of manually
-  selecting a best attempt
+- define that Phase 5/6 call the recovery orchestrator instead of choosing one
+  attempt over another
 - define LHCO merge behavior:
   - merge parseable non-empty attempts
   - keep all source banners

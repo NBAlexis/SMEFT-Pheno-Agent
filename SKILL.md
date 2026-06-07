@@ -150,7 +150,7 @@ Every phase has a completion unit. Red flags are evaluated only after that unit 
 | 3 | Every coefficient in every requested model is tested | No. Individual `sigma=0` is a valid result |
 | 4 | SM baseline and coefficient range are written | Only `cs_sm=0` or MG5 failure |
 | 5 | Pure SM and anchor NP samples are generated | Only unrecoverable generation/conversion failure |
-| 6 | All 11 scan points for all claimed operators are processed | No partial scan red flag; no runtime red flag |
+| 6 | All 11 scan points for all claimed operators are processed | No runtime or progress-only red flag |
 | 7 | All selected ML algorithms are trained and recorded | No early algorithm filtering |
 | 8 | Threshold optimization and fits are attempted for required algorithms/operators | Fit issues are recorded unless unrecoverable |
 | 9 | Constraints are computed for S=2,3,5 where mathematically possible | Numerical red flags are recorded |

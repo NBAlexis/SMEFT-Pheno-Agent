@@ -43,7 +43,7 @@ working folder and compile the manuscript locally.
 - polarization
 - `nevents`
 - Delphes card
-- model dependency paths
+- model name already synced/installed under `{mg5path}/models/`
 - output labels
 - survey profile enum
 
@@ -54,8 +54,11 @@ working folder and compile the manuscript locally.
 - `sm_np`: `generate {process}` with no NP suffix
 - `scan`: coefficient scan for one operator using MG5 `scan:[...]`
 
-The runner must copy required Delphes card and model/dependency files into the
-process directory before launch.
+The runner must validate that the UFO model already exists under
+`{mg5path}/models/{model_name}`. UFO/model sync belongs to Phase 1/2 target
+setup, not the MG5 runner. The runner must copy the required Delphes card and
+Delphes card dependencies into the process directory after process creation and
+before launch.
 
 ## Coefficient Modes
 
@@ -91,7 +94,7 @@ The runner should write a result JSON containing:
 - banner paths
 - parsed cross-sections from `scripts/extract_cross_section.py`
 - exact loaded LHCO event counts from `scripts/count_lhco_events.py`
-- copied Delphes/dependency paths
+- copied Delphes card/dependency paths
 - cleanup candidates: ROOT, LHE, HEPMC, and other large intermediate files
 - stdout/stderr/log paths and return codes
 - manifest fields needed by workflow logging and recovery metadata

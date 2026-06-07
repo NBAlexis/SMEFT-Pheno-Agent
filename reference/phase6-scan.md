@@ -29,7 +29,7 @@ Forbidden behavior:
   debug mode, drop operators, or reduce the scan grid because of runtime.
 - Do not treat slow MG5 convergence, large HEPMC/ROOT files, or long
   Delphes/root2lhco conversion as a red flag.
-- Do not summarize partial progress and wait for user input.
+- Do not summarize intermediate progress and wait for user input.
 
 Required behavior when the foreground session is not suitable:
 1. Start or continue a durable job on the selected execution target with
@@ -93,7 +93,7 @@ need the 11 numeric coefficient values.
 ## Critical Rules: Prevent tag_2 Corruption
 
 - Never delete files from an existing `run_XX` and re-launch.
-- Never run `launch` on a process directory with partially processed runs.
+- Never run `launch` on a process directory with already processed or modified runs.
 - If the entire process directory must be re-run:
   1. Remove large temporary files across all runs after required outputs are secured.
   2. Rename the process directory to a `_broken_{timestamp}` suffix.
@@ -141,6 +141,9 @@ c_scan = coefficient_ranges["operators"][op_key]["c_scan"]
 c_scan_text = f"{c_scan:.2g}"  # Phase 4 already rounded c_scan to two significant digits.
 scan_expression = f"[-{c_scan_text} + 0.2 * {c_scan_text} * n for n in range(11)]"
 ```
+
+When using `scripts/run_mg5_config.py`, pass `c_scan` and let the script build
+this expression. Do not pass a precomputed list of 11 coefficients.
 
 Launch order:
 
@@ -270,8 +273,9 @@ After copying the 11 LHCO files for one operator, apply the event-count recovery
 policy in [`event-count-recovery.md`](event-count-recovery.md).
 
 For Phase 6, the recovery unit is the full operator scan. Use the recovery
-orchestrator so attempts are grouped by scan-point label and mergeable LHCO
-events are combined. Do not manually choose a "best" attempt.
+orchestrator so every attempt is merged by scan-point label: all `f0` outputs
+together, all `f1` outputs together, through `f10`. Do not choose one attempt
+over another.
 
 Write:
 

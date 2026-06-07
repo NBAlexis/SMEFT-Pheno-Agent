@@ -50,6 +50,24 @@ def _usable_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     return usable
 
 
+def _expected_labels(base: Dict[str, Any]) -> List[str]:
+    if base.get("output_labels"):
+        return list(base["output_labels"])
+    if base.get("process_mode") == "scan":
+        prefix = base.get("output_prefix")
+        if not prefix:
+            operator = base.get("operator")
+            prefix = f"np_{operator}" if operator else "scan"
+        return [f"{prefix}_f{i}" for i in range(11)]
+    if base.get("output_label"):
+        return [base["output_label"]]
+    if base.get("process_mode") == "pure_sm":
+        return ["sm"]
+    if base.get("process_mode") == "pure_np" and base.get("operator"):
+        return [f"np_{base['operator']}"]
+    return ["sample"]
+
+
 def _group_counts(attempts: List[Dict[str, Any]]) -> Dict[str, int]:
     totals: Dict[str, int] = {}
     for attempt in attempts:
@@ -75,7 +93,7 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
     os.makedirs(attempt_root, exist_ok=True)
     os.makedirs(merged_output_dir, exist_ok=True)
 
-    labels = list(base.get("output_labels") or [base.get("output_label", "sample")])
+    labels = _expected_labels(base)
     attempts: List[Dict[str, Any]] = []
     totals: Dict[str, int] = {}
 
@@ -136,6 +154,8 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
             "lhco_path": output_lhco,
             "merge_metadata_path": output_meta,
             "loaded_lhco_event_count": merge_meta["merged_loaded_lhco_event_count"],
+            "requested_event_count": requested,
+            "fraction": merge_meta["merged_loaded_lhco_event_count"] / float(requested),
             "merged_cross_section_pb": merge_meta["merged_cross_section_pb"],
             "source_banners_retained": merge_meta["source_banners_retained"],
         })
@@ -145,6 +165,15 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
         for item in merged_outputs
     }
     threshold_reached = _all_labels_reached(final_totals, labels, requested)
+    warnings = []
+    for item in merged_outputs:
+        fraction = item.get("fraction")
+        if fraction is not None and 0.1 <= float(fraction) < 0.9:
+            warnings.append({
+                "label": item["label"],
+                "warning": "loaded LHCO count is below 90% of requested count but above the 10% recovery floor",
+                "fraction": fraction,
+            })
     metadata = {
         "schema_version": "1.0",
         "requested_event_count": requested,
@@ -155,6 +184,7 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
         "final_loaded_counts": final_totals,
         "threshold_fraction": 0.1,
         "threshold_reached": threshold_reached,
+        "warnings": warnings,
         "status": "accepted" if threshold_reached else "exhausted_recovery_red_flag",
     }
     _write_json(metadata_path, metadata)
@@ -177,4 +207,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
