@@ -35,6 +35,12 @@ Delphes/root2lhco/card/output generation before rerunning.
 Phase 5 and Phase 6 should call the recovery orchestrator. Do not choose one
 attempt over another.
 
+This recovery is only for successful MG5 runs whose loaded LHCO event count is
+below the requested threshold. It is not the same as crash/output-corruption
+retry. Do not rename a successful low-count process folder to `_broken_*`, do
+not abandon it, and do not delete its LHCO/banner outputs. Run another attempt
+with the next survey profile and merge compatible LHCO outputs by label.
+
 The recovery orchestrator runs the MG5 config runner with survey profiles:
 
 | Profile | Meaning |

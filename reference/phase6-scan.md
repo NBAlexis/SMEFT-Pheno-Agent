@@ -1,4 +1,4 @@
-# Phase 6: Generate SM+NP Coefficient Scan Samples
+﻿# Phase 6: Generate SM+NP Coefficient Scan Samples
 
 > **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
@@ -90,35 +90,29 @@ progress_path = os.path.join(phase6_dir, "phase6_progress.json")
 `scan_manifest.json` records scan expressions and expected labels; it does not
 need the 11 numeric coefficient values.
 
-## Critical Rules: Prevent tag_2 Corruption
+## Critical Rules: Fresh Retry After Failure
 
 - Never delete files from an existing `run_XX` and re-launch.
 - Never run `launch` on a process directory with already processed or modified runs.
-- If the entire process directory must be re-run:
+- If a scan attempt fails, treat that process directory as abandoned:
   1. Remove large temporary files across all runs after required outputs are secured.
   2. Rename the process directory to a `_broken_{timestamp}` suffix.
   3. Create a fresh process directory and re-run from scratch.
+- "Abandoned" means renamed for later cleanup/audit, not deleted. Do not delete
+  the process directory; deleting directories can trigger approval prompts and
+  break unattended execution.
+- Event-count recovery is different: if MG5 succeeds but LHCO count is low,
+  run another compatible attempt and merge LHCO outputs. Do not mark successful
+  low-count attempts as `_broken_*`.
 - Do not rename individual `run_XX` folders; this breaks run-number tracking.
-- If `tag_2` appears, the process directory was reused incorrectly.
 
 ## Step 6.1: Create Scan Process Directories
 
-For each unique model that has at least one claimed operator, create one scan
-process directory:
-
-```python
-with workflow_step(logger, "6", f"create_scan_dir_{model_name}",
-                   inputs={"model": model_name}):
-```
-
-```text
-import model {model_name}
-generate {process_name}
-output {folder_base}_{model_name}_p6
-```
-
-Multiple operators from the same model share the same
-`{folder_base}_{model_name}_p6` directory.
+Do not create scan process directories by hand. For each operator scan, write a
+runner JSON and call `scripts/run_mg5_config.py` or
+`scripts/recover_lhco_count.py`. The runner creates the process directory,
+writes MG5 orders internally, captures stdout/stderr, and records the chosen
+process folder in the result JSON.
 
 ## Step 6.2: Launch Scan Per Operator
 
@@ -131,7 +125,8 @@ with workflow_step(logger, "6", f"scan_operator_o_{g_idx}",
 ```
 
 1. Look up its source model and anoinput index from `operator_claims.json`.
-2. Use the process directory `{folder_base}_{model_name}_p6`.
+2. Do not choose or reuse a process directory manually; the runner records the
+   created process directory in its result JSON.
 3. Read this operator's own Phase 4 `c_scan`.
 4. Build the MG5 scan expression without expanding the 11 values:
 
@@ -145,31 +140,35 @@ scan_expression = f"[-{c_scan_text} + 0.2 * {c_scan_text} * n for n in range(11)
 When using `scripts/run_mg5_config.py`, pass `c_scan` and let the script build
 this expression. Do not pass a precomputed list of 11 coefficients.
 
-Launch order:
+Runner config:
 
-```text
-launch {folder_base}_{model_name}_p6
-detector = Delphes
-analysis = OFF
-0
-set {block_name} {anoinput_idx} scan:{scan_expression}
-set {block_name} {other_idx} 0.0
-...
-set ebeam1 = {ebeam_value}
-set ebeam2 = {ebeam_value}
-set nevents = {nev_scan}
-0
+```json
+{
+  "mg5path": "/opt/MG5_aMC",
+  "model": "AQGCm_UFO",
+  "process": "mu+ mu- > a j j",
+  "process_mode": "scan",
+  "operator": "o_3",
+  "target_coefficient": {"index": 3},
+  "c_scan": 1.2e-12,
+  "energy_tev": 10,
+  "nevents": 1000000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/opt/CutExperiment",
+  "output_prefix": "np_o_3",
+  "output_dir": "/work/results/data/phase6",
+  "result_json": "/work/results/data/phase6/np_o_3_scan_result.json"
+}
 ```
 
 Rules:
-- Use `set {block_name} {lha_code} scan:[-c_scan + 0.2 * c_scan * n for n in range(11)]`, with the actual rounded Phase 4 `c_scan` substituted into the expression.
-- Do not use bare `set {number} = scan:[...]`; MG5 silently ignores it.
-- The coefficient block name is obtained from `parse_param_card.py`.
-- The scan expression tells MG5 to generate the 11 runs.
-- Compute `ebeam_value` in GeV using the named conversion
-  `tev_to_gev = 1000.0`: `ebeam_value = energy_tev * tev_to_gev / 2`.
-  The factor is only `1 TeV = 1000 GeV`.
-- The trailing `0` confirms run-card settings and starts generation.
+- Pass only the operator-specific rounded Phase 4 `c_scan`; the runner builds the MG5 scan expression internally.
+- Do not pass a precomputed list of 11 coefficients.
+- The runner validates that scan mode creates exactly 11 runs and maps them to `f0` through `f10`.
+- The runner computes beam energies in GeV using `tev_to_gev = 1000.0`, the unit conversion `1 TeV = 1000 GeV`.
+- Phase 6 scans contain only operators already confirmed non-zero in Phase 3.
+  A missing scan banner, a zero scan banner cross-section, or fewer than 11
+  scan runs is a run-output failure to retry, not a physics zero to accept.
 
 Record in `scan_manifest.json`:
 
@@ -188,22 +187,10 @@ Record in `scan_manifest.json`:
 
 ## Run Tracking
 
-Do not use `runs[-11:]`. Use set-difference to track exactly which runs were
-created by the current launch:
-
-```python
-events_dir = os.path.join(MG5PATH, PROC_SCAN, "Events")
-existing = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
-
-with workflow_step(logger, "6", f"scan_launch_o_{g_idx}",
-                   inputs={"order": order_path, "scan_expression": scan_expression}):
-    subprocess.run([...])
-
-all_runs = set(d for d in os.listdir(events_dir) if d.startswith("run_"))
-new_runs = sorted(all_runs - existing, key=lambda x: int(x.split("_")[1]))
-```
-
-`new_runs` must contain exactly 11 runs.
+Do not use `runs[-11:]` or handwritten run-folder discovery in phase code. The
+runner records `run_folders`, output labels, copied LHCO paths, copied banner
+paths, stdout/stderr paths, and loaded LHCO counts in the result JSON. Scan
+mode is valid only when the runner reports exactly 11 runs.
 
 ## Failure Recovery: Retry Per Operator
 
@@ -214,9 +201,11 @@ If MG5 fails or ROOT-to-LHCO conversion fails for any operator scan:
 2. Update `phase6_progress.json` marking the current operator as
    `failed_retrying`.
 3. Clean temporary ROOT/LHE/HEPMC files in the process directory after required
-   debug outputs are secured.
-4. Rename the process directory to `{folder_base}_{model_name}_p6_broken_{timestamp}`.
-5. Recreate the process directory from scratch.
+   debug outputs are secured; keep logs, cards, banners, metadata, and the
+   directory itself.
+4. Rename the runner-created process directory to a `_broken_{timestamp}` suffix
+   if the runner has not already done so.
+5. Recreate a fresh process directory through the runner.
 6. Re-run the scan launch for the same operator.
 7. Repeat until success unless a proven unrecoverable error or explicit user
    stop occurs.
@@ -224,50 +213,25 @@ If MG5 fails or ROOT-to-LHCO conversion fails for any operator scan:
 Each operator scan is an independent retry scope. An earlier operator's success
 does not protect a later operator from needing its own retry.
 
-## Step 6.3: Convert ROOT to LHCO
+## Step 6.3: Use Runner Outputs
 
-For each new run, convert the Delphes ROOT output to LHCO format.
+Do not infer run folders, banner filenames, ROOT filenames, or LHCO filenames.
+For a successful scan, read these fields from the runner result JSON:
 
-Use the script; do not reimplement conversion:
+- `run_folders`: exactly 11 run folders
+- `outputs[*].label`: `np_o_{g_idx}_f0` through `np_o_{g_idx}_f10`
+- `outputs[*].lhco_path`
+- `outputs[*].banner_path`
+- `outputs[*].cross_section_pb`
+- `outputs[*].loaded_lhco_event_count`
+- `launch.stdout_path` / `launch.stderr_path`
 
-```bash
-python scripts/convert_root_to_lhco.py {mg5path} {folder_base}_{model_name}_p6 {run}
-```
+The runner converts ROOT to LHCO, copies banners/LHCO files to `output_dir`,
+parses cross-sections, and records actual LHCO counts. Use global operator
+index `o_{g_idx}` in `output_prefix`; do not use model-internal anoinput index
+in filenames.
 
-Or in Python:
-
-```python
-from scripts.convert_root_to_lhco import convert_root_to_lhco
-
-for run in new_runs:
-    convert_root_to_lhco(mg5path, f"{folder_base}_{model_name}_p6", run)
-```
-
-This produces `{run}.lhco` in the same Events directory.
-
-## Step 6.4: Rename Output Files
-
-Map each new run to `np_o_{g_idx}_f{index}` by run order:
-
-```text
-new_runs[0]  -> np_o_{g_idx}_f0_banner.txt,  np_o_{g_idx}_f0.lhco
-new_runs[1]  -> np_o_{g_idx}_f1_banner.txt,  np_o_{g_idx}_f1.lhco
-...
-new_runs[10] -> np_o_{g_idx}_f10_banner.txt, np_o_{g_idx}_f10.lhco
-```
-
-Use global operator index `o_{g_idx}`, not model-internal anoinput index.
-
-```python
-for i, run in enumerate(new_runs):
-    banner_path = os.path.join(events_dir, run, f"{run}_tag_1_banner.txt")
-    run_lhco = os.path.join(events_dir, run, f"{run}.lhco")
-    dest_banner = f"np_o_{g_idx}_f{i}_banner.txt"
-    dest_lhco = f"np_o_{g_idx}_f{i}.lhco"
-    # Copy banner and LHCO to results/data/phase6/.
-```
-
-## Step 6.5: Event Count Recovery
+## Step 6.4: Event Count Recovery
 
 After copying the 11 LHCO files for one operator, apply the event-count recovery
 policy in [`event-count-recovery.md`](event-count-recovery.md).
@@ -320,7 +284,7 @@ results/data/phase6/
 | Re-launching on existing runs | Remove large temps, rename the process directory, create fresh |
 | Using model-internal index in filename | Always use global index `o_{g_idx}` |
 | Creating one process dir per operator | Create one per model |
-| `tag_2` ROOT files | Indicates an existing run was modified and re-launched |
+| Reusing a failed process folder | Rename it to `_broken_{timestamp}` and create a fresh process folder |
 | Stopping because runtime is hours, weeks, or months | Start durable execution and continue/resume |
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
 | File named `!` containing conversion usage text | Call `convert_root_to_lhco.py` with correct args and log stdout/stderr instead of shell clobber redirection |

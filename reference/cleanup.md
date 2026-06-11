@@ -1,6 +1,6 @@
 # Cleanup: Collect MG5 Process Folders
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE â€?once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Purpose
 After all event generation is complete and results have been extracted to `results/data/`, move the MG5 process directories from `mg5path` to the working directory to prevent `mg5path` from accumulating unmanaged folders across multiple runs.
@@ -28,31 +28,29 @@ Use **`mv`** (move), not `cp` (copy). The process directories are large and no l
 
 Identify all process directories created during this workflow.
 
-**Single-model mode:** Directory names follow the pattern `{folder_base}_p{phase}_{timestamp}_*{suffix}` (per `madgraph-reference.md` convention).
+The config runner names process directories with the normalized process base, model name, mode suffix (`SM`, `NP`, `SMNP`, or `SCAN`), and timestamp. Failed runner-owned directories may have an additional `_broken_{timestamp}` suffix.
+Keep `_broken_*` process directories until cleanup. They may have had large
+ROOT/LHE/HEPMC files removed already, but the directory itself must be moved
+into the project results for audit/debugging rather than deleted during the
+workflow.
 
-**Multi-model mode:** Directory names include the model name: `{folder_base}_{model}_p{phase}` (no timestamp needed since model names prevent collisions).
+Use glob patterns that match runner-created folders for the current process:
 
-Use glob patterns to match both conventions:
-
-| Phase | Process Directory Pattern |
-|-------|---------------------------|
-| 3 | `{folder_base}_p3_*_NP` or `{folder_base}_*_p3_NP` |
-| 4 | `{folder_base}_p4_*_SM` or `{folder_base}_*_p4_SM` |
-| 5 SM | `{folder_base}_p5_*_SM` or `{folder_base}_*_p5_SM` |
-| 5 NP | `{folder_base}_p5_*_NP*` or `{folder_base}_*_p5_NP*` |
-| 6 | `{folder_base}_p6_*` or `{folder_base}_*_p6` |
-
-> **Note**: The glob patterns use `*` to match either the timestamp suffix (single-model) or the model name (multi-model).
+| Mode | Process Directory Pattern |
+|------|---------------------------|
+| SM | `{folder_base}_*_SM_*` |
+| NP | `{folder_base}_*_NP_*` |
+| SM+NP | `{folder_base}_*_SMNP_*` |
+| Scan | `{folder_base}_*_SCAN_*` |
 
 ## Order Files to Collect
 
-All order files written to `mg5path/` during this workflow must also be moved. Order file naming follows the pattern:
+All order files written to `mg5path/` during this workflow must also be moved. Runner order files follow these patterns:
 
 ```
-order_p{phase}_{timestamp}_{random_suffix}.txt
+order_create_{folder_base}_*.txt
+order_launch_{folder_base}_*.txt
 ```
-
-Examples: `order_p3_20260525_01.txt`, `order_p4_20260525_01.txt`, etc.
 
 ## Collection Procedure
 
@@ -76,20 +74,13 @@ Examples: `order_p3_20260525_01.txt`, `order_p4_20260525_01.txt`, etc.
    os.makedirs(mg5_processes_dir, exist_ok=True)
    os.makedirs(orders_dir, exist_ok=True)
 
-   # Use glob to match both single-model (timestamped) and multi-model (model-named) directories
+   # Match runner-created process directories, including failed _broken_ folders.
    process_dir_patterns = [
-       f"{folder_base}_p3_*_NP",      # Phase 3 NP (single-model timestamped)
-       f"{folder_base}_*_p3_NP",      # Phase 3 NP (multi-model)
-       f"{folder_base}_p4_*_SM",      # Phase 4 SM (single-model)
-       f"{folder_base}_*_p4_SM",      # Phase 4 SM (multi-model)
-       f"{folder_base}_p6_*",         # Phase 6 scan (single-model)
-       f"{folder_base}_*_p6",         # Phase 6 scan (multi-model)
-       f"{folder_base}_p5_*_SM",      # Phase 5 SM (single-model)
-       f"{folder_base}_*_p5_SM",      # Phase 5 SM (multi-model)
-       f"{folder_base}_p5_*_NP*",     # Phase 5 NP (single-model)
-       f"{folder_base}_*_p5_NP*",     # Phase 5 NP (multi-model)
+       f"{folder_base}_*_SM_*",
+       f"{folder_base}_*_NP_*",
+       f"{folder_base}_*_SMNP_*",
+       f"{folder_base}_*_SCAN_*",
    ]
-
    moved_dirs = []
    for pattern in process_dir_patterns:
        for src in glob.glob(os.path.join(mg5path, pattern)):
@@ -103,10 +94,13 @@ Examples: `order_p3_20260525_01.txt`, `order_p4_20260525_01.txt`, etc.
 
 3. Move all order files created during this run:
    ```python
-   # Match order files created by this workflow
-   order_pattern = os.path.join(mg5path, "order_p*.txt")
-   order_files = glob.glob(order_pattern)
-
+   order_patterns = [
+       os.path.join(mg5path, f"order_create_{folder_base}_*.txt"),
+       os.path.join(mg5path, f"order_launch_{folder_base}_*.txt"),
+   ]
+   order_files = []
+   for pattern in order_patterns:
+       order_files.extend(glob.glob(pattern))
    moved_orders = []
    for src in order_files:
        dst = os.path.join(orders_dir, os.path.basename(src))
@@ -121,8 +115,8 @@ Examples: `order_p3_20260525_01.txt`, `order_p4_20260525_01.txt`, etc.
      "source": "/home/user/MG5_aMC_v3_5_6",
      "destination_processes": "/home/user/work/results/E10_L1000/mg5_processes",
      "destination_orders": "/home/user/work/results/E10_L1000/orders",
-     "moved_directories": ["mup_mum_to_ll_vlvl_p3_20260525_01_NP", "mup_mum_to_ll_vlvl_AQGCm_UFO_p3_NP", ...],
-     "moved_order_files": ["order_p3_20260525_01.txt", "order_p4_20260525_01.txt", ...],
+     "moved_directories": ["mup_mum_to_ll_vlvl_AQGCm_UFO_NP_20260526_100000", ...],
+     "moved_order_files": ["order_create_mup_mum_to_ll_vlvl_AQGCm_UFO_NP_20260526_100000_01.txt", ...],
      "total_moved_dirs": 5,
      "total_moved_orders": 8
    }
@@ -141,5 +135,5 @@ Before moving, verify:
 
 After cleanup:
 - `mg5path` should contain **no** process directories from this workflow
-- `mg5path` should contain **no** order files matching `order_p*.txt` from this workflow
+- `mg5path` should contain **no** runner order files matching `order_create_{folder_base}_*.txt` or `order_launch_{folder_base}_*.txt`
 - Phase 11 audit should verify the cleanup log exists and records both directories and order files

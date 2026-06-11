@@ -2,6 +2,20 @@
 """
 Run a MadGraph5 order file, check the return code, and track internal step timings.
 
+Workflow agents should normally call run_mg5_config.py rather than hand-writing
+order files. This lower-level helper documents the direct MG5 convention for
+debugging and for maintaining the config runner:
+
+1. Write the order file directly under the MG5 installation directory.
+2. Invoke MG5 from that directory as `./bin/mg5_aMC order_file.txt`; if that
+   binary is absent, fall back to `./bin/mg5 order_file.txt`.
+3. A minimal process-creation order is:
+      import model MODEL_NAME
+      generate PROCESS [NP=0 | NP>0]
+      output PROCESS_FOLDER
+4. A launch order starts with `launch PROCESS_FOLDER`, then MG5 run-card and
+   param-card settings, and ends with the final confirmation line `0`.
+
 Tries ./bin/mg5_aMC first, falls back to ./bin/mg5.
 Parses MG5 stdout in real time to detect stage boundaries:
   - MadGraph (event generation / parton level)
@@ -12,7 +26,7 @@ Usage:
     python run_mg5.py <mg5path> <order_filename>
 
 Example:
-    python run_mg5.py /opt/MG5_aMC_v3_5_6 order_p3_20260525_01.txt
+    python run_mg5.py /opt/MG5_aMC_v3_5_6 order_file.txt
 
 Exit codes:
     0  success
@@ -30,6 +44,14 @@ STAGE_MARKERS = {
     "pythia8": re.compile(r"Running\s+Pythia8?", re.IGNORECASE),
     "delphes": re.compile(r"Running\s+Delphes", re.IGNORECASE),
 }
+
+
+class MG5RunError(RuntimeError):
+    """MG5 failed after producing a structured execution result."""
+
+    def __init__(self, message, result):
+        super().__init__(message)
+        self.result = result
 
 
 def run_mg5(mg5path, order_filename, timing_tracker=None):
@@ -164,10 +186,11 @@ def run_mg5(mg5path, order_filename, timing_tracker=None):
     }
 
     if returncode != 0:
-        raise RuntimeError(
+        raise MG5RunError(
             f"MG5 failed with exit code {returncode}\n"
             f"STDOUT (last 3000 chars):\n{stdout[-3000:]}\n"
-            f"STDERR:\n{stderr}"
+            f"STDERR:\n{stderr}",
+            result,
         )
 
     return result

@@ -1,6 +1,6 @@
 # MadGraph Reference
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
 
 ## Overview
 
@@ -22,7 +22,7 @@ This document defines the standardized way to invoke MadGraph5 within the SMEFT-
 tev_to_gev = 1000.0
 ebeam_value = energy_tev * tev_to_gev / 2
 ```
-Example: `energy = 13.6` TeV → `ebeam_value = 6800.0` GeV.
+Example: `energy = 13.6` TeV -> `ebeam_value = 6800.0` GeV.
 
 The factor `1000.0` is only the unit conversion `1 TeV = 1000 GeV`. MG5 run
 cards use beam energies in GeV, while Phase 1 collects the center-of-mass energy
@@ -36,9 +36,12 @@ in TeV.
 | `polbeam1` | Beam 1 polarization, range [-1, 1] | User requests polarization |
 | `polbeam2` | Beam 2 polarization, range [-1, 1] | User requests polarization |
 
-## Order File Convention
+## MG5 Config Runner Convention
 
-MG5 is invoked via a text-based "order file" rather than interactive commands.
+All workflow phases that generate MG5 events must call `scripts/run_mg5_config.py`
+with a JSON configuration. Do not hand-write MG5 order files or call `mg5_aMC`
+directly from phase logic. If the runner itself needs maintenance, see the
+implementation notes in `scripts/run_mg5.py`.
 
 ### Process Name Normalization
 
@@ -65,112 +68,37 @@ Rules:
 | `>` | `to` |
 | Other special chars | Remove |
 
-Example: `e+ e- > a a` → `ep_em_to_a_a`
+Example: `e+ e- > a a` -> `ep_em_to_a_a`
 
-### File Naming
+### Runner-Owned Files
 
-The order file name and the output folder name **must be auto-generated** by the skill. Do not ask the user to provide them. The folder name is based on the **normalized process name**:
-
-```
-order_{phase}_{timestamp}_{random_suffix}.txt
-{folder_base}_{phase}_{timestamp}_{random_suffix}
-```
-
-Where `folder_base` is the normalized `process_name`.
-
-Example:
-```
-order_p3_20260525_01.txt
-ep_em_to_a_a_p3_20260525_01
-```
-
-**Collision avoidance:** Before creating the file or folder, check if a name already exists in `mg5path/`. If so, increment the suffix until unique.
-
-### File Location
-
-The order file is placed **directly under `mg5path/`**:
-```
-{mg5path}/order_p3_20260525_01.txt
-```
-
-The output folder is also placed under `mg5path/`:
-```
-{mg5path}/{folder_name}/
-```
+The runner owns order-file creation, process-folder naming, run tracking, banner
+parsing, stdout/stderr log capture, and LHCO count metadata. Phase code should
+provide only JSON fields such as `mg5path`, `model`, `process`,
+`process_mode`, `target_coefficient`, `c_scan`, `energy_tev`, `nevents`,
+`output_dir`, and `result_json`.
 
 ## Process Generation Modes
 
-Depending on the Phase task, there are **three generation modes**. The `generate` line in the order file and the folder naming differ:
+Depending on the Phase task, use one of these `process_mode` values:
 
-| Mode | Order file `generate` line | Folder suffix | Used by |
-|------|---------------------------|---------------|---------|
-| Default | `generate {process_name}` | (none) | Phase 6 scan |
-| Pure SM (NP off) | `generate {process_name} NP=0` | `_SM` | Phase 4 baseline, Phase 5 SM |
-| New Physics on | `generate {process_name} NP>0` | `_NP` | Phase 3 validation, Phase 5 NP |
+| Mode | Meaning | Used by |
+|------|---------|---------|
+| `create_np` | Create NP process and parse coefficients without launching events | Phase 3 coefficient discovery |
+| `pure_sm` | Generate pure SM sample with NP disabled | Phase 4 baseline, Phase 5 SM |
+| `pure_np` | Generate one pure NP sample for one target operator | Phase 3 validation, Phase 5 NP |
+| `sm_np` | Generate SM+NP sample without scan syntax | Reserved diagnostic path |
+| `scan` | Generate 11 MG5 scan points from one `c_scan` value | Phase 6 scan |
 
-**Folder naming rule:**
-- Default: `{folder_base}_{phase}_{timestamp}_{suffix}`
-- SM mode: `{folder_base}_{phase}_{timestamp}_{suffix}_SM`
-- NP mode: `{folder_base}_{phase}_{timestamp}_{suffix}_NP`
-
-**Phase directory examples (single-model mode):**
-- Phase 3: `ep_em_to_a_a_p3_20260525_01_NP`
-- Phase 4: `ep_em_to_a_a_p4_20260525_01_SM`
-- Phase 5 SM: `ep_em_to_a_a_p5_20260525_01_SM`
-- Phase 5 NP: `ep_em_to_a_a_p5_20260525_01_NP`
-- Phase 6: `ep_em_to_a_a_p6_20260525_01`
-
-**Multi-model mode:** When multiple models are used, insert the model name to avoid collisions. The timestamp suffix is omitted because model names provide uniqueness:
-- Phase 3: `ep_em_to_a_a_AQGCm_UFO_p3_NP`
-- Phase 4 SM: `ep_em_to_a_a_AQGCm_UFO_p4_SM`
-- Phase 6: `ep_em_to_a_a_AQGCm_UFO_p6`
-
-### Minimum Order File for Process Creation
-
-```
-import model {model_name}
-generate {process_name} [NP=0 | NP>0]
-output {folder_name}
-```
-
-Example (SM mode):
-```
-import model gQGC_UFO
-generate e+ e- > a a NP=0
-output ep_em_to_a_a_p4_20260525_01_SM
-```
-
-## Running MadGraph
-
-**Use the script** (do not reimplement):
+Run a config with:
 
 ```bash
-python scripts/run_mg5.py {mg5path} {order_filename}
+python scripts/run_mg5_config.py mg5_attempt.json
 ```
 
-The script:
-1. Tries `./bin/mg5_aMC` first, falls back to `./bin/mg5`
-2. Checks return code; on failure prints stdout/stderr and exits with error
-3. **Parses MG5 stdout in real time** to detect stage transitions (MadGraph → Pythia8 → Delphes) and records internal step timings
+The runner generates unique order/process names internally, checks MG5 return
+codes, and records stdout/stderr log paths in the result JSON.
 
-Or import in Python:
-```python
-from scripts.run_mg5 import run_mg5
-from scripts.timing_tracker import TimingTracker
-
-tracker = TimingTracker()
-result = run_mg5(mg5path, order_filename, timing_tracker=tracker)
-# result["mg5_steps"] contains timing for madgraph, pythia8, delphes
-```
-
-**Execution Logic:**
-```
-1. Write order file to {mg5path}/{order_filename}
-2. Attempt: cd {mg5path} && ./bin/mg5_aMC {order_filename}
-3. If step 2 fails (exit code != 0 or binary not found):
-   Attempt: cd {mg5path} && ./bin/mg5 {order_filename}
-4. If both fail: abort and report MG5 invocation error
-```
 
 ## Pre-Run Preparation (Mandatory Before Event Generation)
 
@@ -178,7 +106,7 @@ After the process directory is created (`output` step completed), the following 
 
 ### Step 1: Prepare Delphes Card
 
-The Delphes detector card is read from **`run_config.json`** (field `delphes_card`), which was determined during Phase 1 — either user-specified or auto-recommended. See [`reference/phase1-input-collection.md`](phase1-input-collection.md) for the selection logic.
+The Delphes detector card is read from **`run_config.json`** (field `delphes_card`), which was determined during Phase 1 - either user-specified or auto-recommended. See [`reference/phase1-input-collection.md`](phase1-input-collection.md) for the selection logic.
 
 **(1.1) Use the script:**
 
@@ -187,7 +115,7 @@ python scripts/setup_delphes_card.py {mg5path} {delphes_card} {folder_name}
 ```
 
 The script:
-1. Copies `{mg5path}/Delphes/cards/{delphes_card}` → `{mg5path}/{folder_name}/Cards/delphes_card.dat`
+1. Copies `{mg5path}/Delphes/cards/{delphes_card}` -> `{mg5path}/{folder_name}/Cards/delphes_card.dat`
 2. Reads the `.tcl` file to find `source` / `include` dependencies
 3. Locates dependency folders under `{mg5path}/Delphes/cards/` and copies them into `Cards/`
 
@@ -225,44 +153,27 @@ coefficients = result["coefficients"]   # {"1": 1.0e-12, "2": 0.0, ...}
 ```
 
 The script handles all edge cases:
-- Case-insensitive `Block` matching (`Block`, `BLOCK` — MG5 may rewrite in uppercase)
+- Case-insensitive `Block` matching (`Block`, `BLOCK` - MG5 may rewrite in uppercase)
 - `scan:[v1,v2,...]` syntax retained after MG5 scan
 - Block boundary detection (prevents leaking into `Block mass`, etc.)
 
 Save the mapping for downstream use (e.g., as `operator_coefficients.json`).
 
-## Event Generation Order
+## Event Generation Through Runner JSON
 
-After the process directory is created and pre-run preparation is complete, write a **second order file** to launch event generation.
+After process setup is complete, phase code launches event generation only by
+calling `scripts/run_mg5_config.py` or `scripts/recover_lhco_count.py` with JSON
+configuration. The runner writes the MG5 order internally.
 
-### Order File Template
+Agent-controlled fields:
+- `process_mode`: `pure_sm`, `pure_np`, `sm_np`, or `scan`
+- `target_coefficient`: required for target-operator NP runs and scans
+- `coefficient_mode`: `default`, `c_scan`, or `explicit` for non-scan NP runs
+- `c_scan`: required for `scan` and `coefficient_mode="c_scan"`
+- `energy_tev`, optional `ebeam_proton`, optional `polarization`, and `nevents`
 
-```
-launch {folder_name}
-detector = Delphes
-analysis = OFF
-0
-{coefficient_block}
-set ebeam1 = {ebeam1_value}
-set ebeam2 = {ebeam2_value}
-{polarization_block}
-set nevents = {event_number}
-0
-```
-
-### Field Rules
-
-| Line | Rule |
-|------|------|
-| `launch {folder_name}` | Must match the folder created in the `output` step |
-| `detector = Delphes` | Fixed; Delphes fast simulation is always used |
-| `analysis = OFF` | Fixed; no built-in analysis histograms |
-| First `0` | Confirms detector/analysis selection in MG5 interactive menu |
-| `{coefficient_block}` | See Coefficient Block section below |
-| `set ebeam1` / `set ebeam2` | Beam energy in GeV; see Energy Assignment below |
-| `{polarization_block}` | Optional; see Polarization section below |
-| `set nevents` | Total number of events to generate |
-| Second `0` | Confirms run card settings and starts generation |
+The runner handles coefficient-block syntax, beam-energy conversion, Delphes
+selection, launch confirmation, run-folder tracking, and output labels.
 
 ### Event Count Recovery
 
@@ -271,12 +182,8 @@ serious problem unless the actual LHCO count is clearly insufficient. Follow
 [`event-count-recovery.md`](event-count-recovery.md) for thresholds, recovery
 profiles, LHCO merging, and efficiency denominators.
 
-When writing a launch order directly, the recovery profile lines are:
-
-```text
-set sde_strategy = 0
-set hard_survey = {0_or_1_or_2}
-```
+The recovery orchestrator applies survey profiles through the runner. Agents
+select only the recovery wrapper; do not write recovery launch-order lines.
 
 Prefer the config-driven runner and recovery orchestrator:
 
@@ -465,7 +372,7 @@ lhco_path = convert_root_to_lhco(mg5path, folder_name, run_folder)
 
 **Validation rules:**
 - `.lhco` must exist and be non-empty
-- If `.lhco` < 1 KB but `.root` > 1 MB → `root2lhco` failed silently; **check the log**
+- If `.lhco` < 1 KB but `.root` > 1 MB -> `root2lhco` failed silently; **check the log**
 - Do NOT proceed to cleanup if `.lhco` is invalid
 
 ### Step 3: Retain and Clean Files
@@ -486,20 +393,26 @@ cd {mg5path}/{folder_name}/Events/{run_folder}
 rm unweighted_events.lhe.gz tag_1_pythia8_events.hepmc.gz tag_1_delphes_events.root
 ```
 
-## Cross-Section Extraction from Banner
+## Cross-Section Extraction
+
+For normal workflow event generation, read cross-sections from
+`scripts/run_mg5_config.py` result JSON (`outputs[*].cross_section_pb`). The
+runner uses the canonical banner parser internally and records stdout/stderr
+paths for debugging.
+
+The lower-level banner parser is for runner maintenance and diagnostics only.
+If you need it, pass the banner path recorded in the runner result JSON:
+
+```bash
+python scripts/extract_cross_section.py /path/from/runner_result_banner_path.txt
+```
 
 The cross-section is recorded in the banner text file produced after each MadGraph run:
 ```
 {mg5path}/{folder_name}/Events/{run_folder}/{run_folder}_tag_1_banner.txt
 ```
 
-**Use the script** (do not reimplement):
-
-```bash
-python scripts/extract_cross_section.py {banner_path}
-```
-
-Or import in Python:
+Do not infer banner filenames in phase logic. If importing inside a script:
 
 ```python
 from scripts.extract_cross_section import extract_cross_section
@@ -510,9 +423,22 @@ cs = extract_cross_section(banner_path)  # returns float in pb
 The script supports both MG5_aMC v3.x (`Integrated weight (pb) : X.XXXX`) and older (`X +/- Y pb`) formats. Raises `ValueError` on parse failure.
 
 **Critical rules:**
-- Any positive value — even `1e-10 pb` — is a valid cross-section. Only `0.0` (or parse failure) is invalid.
+- Any positive value, even `1e-10 pb`, is a valid cross-section.
 - Do NOT silently return `0.0` on parse failure. Raise an error so the failure is visible.
-- All phases that read banner cross-sections must use the script (or an equivalent).
+- All phases that read cross-sections must use the runner result JSON. Low-level
+  scripts may import `extract_cross_section()`.
+- A parsed `0.0` banner cross-section, or a missing banner, is not enough to
+  prove a true zero cross section. Run `scripts/double_check_zero_cross_section.py`
+  or use `scripts/run_mg5_config.py`, which calls it automatically. Accept zero
+  cross section only when all three conditions hold: banner evidence is exactly
+  `0.0` or missing, MG5 stdout/stderr contains `zero cross section`,
+  `zero crosssection`, or `zero cross-section`, and the run directory contains
+  no substantial LHE-like event payload (`.lhe`, `.lhe.gz`, or tar archives
+  containing `.lhe`).
+- During Phase 3 process creation, MG5 "no Feynman diagrams" is a separate,
+  explicit zero-contribution result for that model/process. Record it in
+  `model_status` and continue to the next model; do not require banner/LHE
+  evidence because no event run was launched.
 - Use banners for cross-sections only. Do not read event counts from banners for
   efficiencies or normalization; banner event counts may be requested targets,
   not actual LHCO output. Actual event counts must come from
@@ -520,13 +446,13 @@ The script supports both MG5_aMC v3.x (`Integrated weight (pb) : X.XXXX`) and ol
 
 ## Validation Checklist
 
-Before writing an order file:
+Before writing/running a runner config:
 - [ ] `mg5path` exists and is an absolute path
 - [ ] `{mg5path}/bin/mg5_aMC` or `{mg5path}/bin/mg5` exists
 - [ ] `{mg5path}/models/{model_name}` exists
 - [ ] `process_name` uses valid MG5 syntax
 - [ ] `energy` > 0 and `luminosity` > 0
-- [ ] Auto-generated `folder_name` does not already exist in `mg5path/`
+- [ ] `process_mode`, `target_coefficient`, `c_scan`, and `nevents` match the phase task
 
 After process creation (`output` step), before event generation:
 - [ ] Collider type is identified; default applied if user did not specify

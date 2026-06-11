@@ -191,7 +191,10 @@ Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/ma
 
 ## Scripts
 
-Prefer bundled scripts for deterministic pieces:
+Use bundled scripts for deterministic pieces. For any MG5 event-generation
+operation, use `scripts/run_mg5_config.py` or the recovery wrapper around it;
+do not hand-write shell snippets, MG5 order files, or direct `mg5_aMC` calls in
+phase code.
 
 | Script | Purpose |
 |---|---|
@@ -202,8 +205,9 @@ Prefer bundled scripts for deterministic pieces:
 | `scripts/sync_to_target.py` | Copy local files/directories such as `run_config.json` or bundled UFO models to SSH/WSL2 targets |
 | `scripts/sync_from_target.py` | Copy target files/directories back to local disk for local-only tooling such as LaTeX |
 | `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
-| `scripts/run_mg5.py` | Run MG5 order files with return-code checking |
+| `scripts/run_mg5.py` | Low-level MG5 order-file helper for maintaining/debugging the config runner |
 | `scripts/run_mg5_config.py` | Run one MG5 job from JSON, including order generation, Delphes conversion, banner parsing, and loaded-count metadata |
+| `scripts/double_check_zero_cross_section.py` | Confirm zero cross-section claims from banner, MG5 logs, and LHE-like outputs |
 | `scripts/count_lhco_events.py` | Count actual LHCO events with CutExperiment |
 | `scripts/merge_lhco.py` | Merge LHCO recovery attempts and compute loaded-count-weighted merged cross-sections |
 | `scripts/recover_lhco_count.py` | Orchestrate event-count recovery across survey-profile attempts |

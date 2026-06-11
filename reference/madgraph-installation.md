@@ -70,13 +70,9 @@ Result: `{install_dir}/MG5_aMC_v3_5_15/` with `bin/mg5_aMC` inside.
 
 ### Step 3: Install MG5 Internal Dependencies
 
-Run MG5 with an order file containing the `install` commands:
-
-```
-install pythia8
-install lhapdf6
-install delphes
-```
+Use `scripts/install_mg5.py` to install MG5 internal dependencies. The script
+issues the required MG5 `install` commands internally; do not hand-write an
+MG5 order file for this step.
 
 MG5 will:
 - Download and compile Pythia8 under `HEPTools/pythia8/`

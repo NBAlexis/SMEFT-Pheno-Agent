@@ -44,32 +44,27 @@ results/data/phase3/cross_sections.json
 
 ## Step 4.1: Generate SM Baseline
 
-Create the SM process using the anchor model from `anchor.json`:
+Generate the SM baseline through `scripts/run_mg5_config.py` using
+`process_mode="pure_sm"` and `nevents = {nev_phase4}`. Read `cs_sm` from
+`outputs[0].cross_section_pb` in the runner result JSON.
 
-```text
-import model {anchor_model}
-generate {process_name} NP=0
-output {folder_base}_{anchor_model}_p4_SM
+```json
+{
+  "mg5path": "/opt/MG5_aMC",
+  "model": "AQGCm_UFO",
+  "process": "mu+ mu- > a j j",
+  "process_mode": "pure_sm",
+  "energy_tev": 10,
+  "nevents": 10000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/opt/CutExperiment",
+  "output_label": "phase4_sm",
+  "output_dir": "/work/results/data/phase4",
+  "result_json": "/work/results/data/phase4/sm_baseline_result.json"
+}
 ```
 
-Launch with all coefficients set to `0.0` and
-`nevents = {nev_phase4}`. The coefficient block name is obtained from
-`parse_param_card.py`. See [`madgraph-reference.md`](madgraph-reference.md)
-Coefficient Block for syntax.
-
-Extract `cs_sm` from the banner using:
-
-```bash
-python scripts/extract_cross_section.py {banner_path}
-```
-
-```python
-with workflow_step(logger, "4", "generate_sm_baseline",
-                   inputs={"anchor_model": anchor_model,
-                           "nevents": config.locked_event_counts.nev_phase4}):
-    # Write the MG5 order, run MG5, validate the banner, extract cs_sm,
-    # and log command/output paths.
-```
+Do not infer banner names or replace runner/parser failures with `cs_sm = 0`.
 
 ## Step 4.2: Compute Expected Event Counts Per Operator
 

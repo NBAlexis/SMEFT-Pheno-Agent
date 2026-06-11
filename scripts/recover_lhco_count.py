@@ -29,6 +29,15 @@ def _write_json(path: str, data: Dict[str, Any]) -> None:
         f.write("\n")
 
 
+def _read_optional_json(path: str) -> Dict[str, Any]:
+    try:
+        if path and os.path.exists(path):
+            return _read_json(path)
+    except Exception:
+        pass
+    return {}
+
+
 def _attempt_config(base: Dict[str, Any], profile: str, attempt_index: int, attempt_dir: str) -> Dict[str, Any]:
     cfg = copy.deepcopy(base)
     cfg["survey_profile"] = profile
@@ -53,6 +62,9 @@ def _usable_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
 def _zero_event_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     zeros = []
     for out in result.get("outputs", []):
+        zero_check = out.get("zero_cross_section_check") or {}
+        if zero_check.get("confirmed"):
+            continue
         count_record = out.get("count_record") or {}
         if count_record.get("status") == "zero_events" or int(out.get("loaded_lhco_event_count", 0)) == 0:
             zeros.append({
@@ -135,13 +147,14 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
                 }
             attempts.append(attempt_record)
         except Exception as exc:
+            failed_result = _read_optional_json(cfg.get("result_json", ""))
             attempts.append({
                 "attempt_index": attempt_index,
                 "survey_profile": profile,
                 "status": "failed",
                 "config": cfg,
                 "error": f"{type(exc).__name__}: {exc}",
-                "result": {"outputs": []},
+                "result": failed_result or {"outputs": []},
             })
         if zero_event_failure is not None:
             break
