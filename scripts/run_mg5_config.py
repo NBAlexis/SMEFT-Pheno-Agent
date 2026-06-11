@@ -407,10 +407,14 @@ def _launch_process(cfg: Dict[str, Any], process_folder: str, parsed: Dict[str, 
     )
     lines = [
         f"launch {process_folder}",
+    ]
+    if (cfg.get("madspin") or {}).get("enabled"):
+        lines.append("madspin=ON")
+    lines.extend([
         "detector = Delphes",
         "analysis = OFF",
         "0",
-    ]
+    ])
     lines.extend(_coefficient_lines(cfg, parsed))
     lines.extend(_beam_lines(cfg))
     lines.append(f"set nevents = {int(cfg['nevents'])}")
@@ -497,10 +501,12 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "process_mode": cfg.get("process_mode"),
         "model": cfg.get("model"),
         "process": cfg.get("process"),
+        "process_validation": cfg.get("process_validation"),
         "operator": cfg.get("operator"),
         "target_coefficient": cfg.get("target_coefficient"),
         "coefficient_mode": cfg.get("coefficient_mode"),
         "c_scan": cfg.get("c_scan"),
+        "madspin": cfg.get("madspin", {"enabled": False}),
         "survey_profile": cfg.get("survey_profile", "default"),
         "outputs": [],
         "cleanup_candidates": [],

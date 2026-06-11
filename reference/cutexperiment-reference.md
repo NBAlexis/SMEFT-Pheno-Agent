@@ -64,8 +64,6 @@ def parse_final_state(process_name):
         "e-": ParticleType.Electron,
         "mu+": ParticleType.Muon,
         "mu-": ParticleType.Muon,
-        "ta+": ParticleType.Tau,
-        "ta-": ParticleType.Tau,
     }
 
     visible_types = []

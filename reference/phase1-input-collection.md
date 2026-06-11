@@ -53,6 +53,8 @@ Maintain these fields during Phase 1:
   "madgraph_path": null,
   "workdir": null,
   "process": null,
+  "process_validation": null,
+  "madspin": {"enabled": false},
   "ebeam_proton": null,
   "models": null,
   "energy": null,
@@ -160,6 +162,29 @@ handle:
 
 handle:
 - Strip any `NP=`, `QED=`, or `QCD=` suffix and store the cleaned process.
+- The LLM must judge whether the initial and final particles are valid
+  **asymptotic states** for this Delphes/LHCO/CutExperiment workflow. Do not
+  call a hard-coded script for this judgment.
+- Do not accept explicit quarks or gluons such as `g`, `u`, `d`, `s`, `c`,
+  `b` directly in initial or final states: use `p` for hadronic beams and `j`
+  for final-state jets. Do not accept initial-state `w+`, `w-`, or `z`.
+- If every remaining non-asymptotic object is a final-state `t`, `t~`, `w+`,
+  `w-`, or `z`, accept the process, set `madspin.enabled=true`, record the
+  reason in `process_validation`, and continue. Add one short bilingual
+  warning before the next intake question:
+  ```text
+  Warning: final-state t/t~/w+/w-/z are not asymptotic states for this workflow and must decay before analysis, so MadSpin will be enabled automatically.
+  警告：末态 t/t~/w+/w-/z 不是本 workflow 的渐进态，需要在分析前继续衰变，因此将自动开启 MadSpin。
+  ```
+- Otherwise, if any non-asymptotic object remains, do not accept the process.
+  Ask the user to re-enter `[3/9]` with this exact bilingual warning:
+  ```text
+  [3/9] The process `{process}` contains states this Delphes/LHCO workflow cannot directly analyze. Use `p` for hadronic initial states and `j` for final-state jets. Only final-state `t`, `t~`, `w+`, `w-`, `z` can be accepted automatically with MadSpin. Please provide a corrected physics process.
+  [3/9] 过程 `{process}` 含有本 Delphes/LHCO workflow 不能直接分析的对象。强子初态请用 `p`，末态喷注请用 `j`。只有末态 `t`、`t~`、`w+`、`w-`、`z` 可以通过自动开启 MadSpin 接受。请重新提供修正后的物理过程。
+  ```
+- For custom UFO labels or ambiguous multiparticle labels, be conservative:
+  accept only if the label is clearly an asymptotic state that CutExperiment
+  and the selected Delphes card can analyze. Otherwise re-ask `[3/9]`.
 - Inspect the initial state, i.e. particles left of `>`.
 - If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~`, ask `[3a/9]`.
 
@@ -272,6 +297,9 @@ Before writing `run_config.json`, validate:
 - `madgraph_path` contains `bin/mg5_aMC` or `bin/mg5` on the selected execution target.
 - `workdir` is absolute on the selected execution target and not inside the skill directory in local mode.
 - `process` is non-empty and contains no `NP=`, `QED=`, or `QCD=` suffix.
+- `process_validation` records the LLM asymptotic-state judgment. If accepted
+  final-state `t`, `t~`, `w+`, `w-`, or `z` appear as non-asymptotic objects,
+  `madspin.enabled` must be true.
 - `models`, `energy`, `luminosity`, and `run_configurations` are non-empty.
 - `len(energy) == len(luminosity)`.
 - `delphes_card` exists either under `{madgraph_path}/Delphes/cards/` or as an absolute path on the selected execution target.
@@ -297,6 +325,12 @@ Write `run_config.json` with this schema. In SSH/WSL2 mode, write both the local
   "madgraph_path": "/opt/MG5_aMC_v3_5_15",
   "workdir": "/home/user/study",
   "process": "e+ e- > a a",
+  "process_validation": {
+    "status": "ok",
+    "initial": ["e+", "e-"],
+    "final": ["a", "a"]
+  },
+  "madspin": {"enabled": false},
   "models": ["AQGCm_UFO"],
   "energy": [10.0],
   "luminosity": [1000.0],

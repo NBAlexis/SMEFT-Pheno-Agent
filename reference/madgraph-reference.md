@@ -171,9 +171,30 @@ Agent-controlled fields:
 - `coefficient_mode`: `default`, `c_scan`, or `explicit` for non-scan NP runs
 - `c_scan`: required for `scan` and `coefficient_mode="c_scan"`
 - `energy_tev`, optional `ebeam_proton`, optional `polarization`, and `nevents`
+- `madspin`: copied from `run_config.json` after the Phase 1 LLM
+  asymptotic-state judgment
 
 The runner handles coefficient-block syntax, beam-energy conversion, Delphes
-selection, launch confirmation, run-folder tracking, and output labels.
+selection, MadSpin enablement, launch confirmation, run-folder tracking, and
+output labels.
+
+### Detector-Level Process Validation
+
+Phase 1 performs the asymptotic-state judgment by LLM physics reasoning and
+writes `process_validation` plus `madspin` to `run_config.json`. Do not replace
+that judgment with a hard-coded script or particle table.
+
+This workflow uses "asymptotic state" in an operational Delphes/LHCO sense.
+Explicit quarks or gluons such as `g`, `u`, `d`, `s`, `c`, or `b` must not
+appear directly in initial or final states; use `p` for hadronic beams and `j`
+for final-state jets. Initial-state `w+`, `w-`, or `z` must not be accepted.
+Final-state `t`, `t~`, `w+`, `w-`, and `z` are the only non-asymptotic
+exceptions; they require `madspin.enabled=true` so they decay before
+Delphes/LHCO analysis.
+
+`scripts/run_mg5_config.py` does not make this physics judgment. It only reads
+`madspin.enabled` from config and writes `madspin=ON` into the MG5 launch order
+when requested.
 
 ### Event Count Recovery
 
@@ -206,6 +227,7 @@ Phase 5 SM attempt:
   "mg5path": "/opt/MG5_aMC",
   "model": "AQGCm_UFO",
   "process": "mu+ mu- > a j j",
+  "madspin": {"enabled": false},
   "process_mode": "pure_sm",
   "energy_tev": 10,
   "nevents": 500000,
@@ -224,6 +246,7 @@ Phase 5 pure NP attempt:
   "mg5path": "/opt/MG5_aMC",
   "model": "AQGCm_UFO",
   "process": "mu+ mu- > a j j",
+  "madspin": {"enabled": false},
   "process_mode": "pure_np",
   "operator": "o_3",
   "target_coefficient": {"index": 3},
@@ -245,6 +268,7 @@ Phase 6 scan attempt:
   "mg5path": "/opt/MG5_aMC",
   "model": "AQGCm_UFO",
   "process": "mu+ mu- > a j j",
+  "madspin": {"enabled": false},
   "process_mode": "scan",
   "operator": "o_3",
   "target_coefficient": {"index": 3},
@@ -270,6 +294,7 @@ Recovery wrapper for the Phase 6 scan above:
     "mg5path": "/opt/MG5_aMC",
     "model": "AQGCm_UFO",
     "process": "mu+ mu- > a j j",
+    "madspin": {"enabled": false},
     "process_mode": "scan",
     "operator": "o_3",
     "target_coefficient": {"index": 3},
@@ -451,6 +476,9 @@ Before writing/running a runner config:
 - [ ] `{mg5path}/bin/mg5_aMC` or `{mg5path}/bin/mg5` exists
 - [ ] `{mg5path}/models/{model_name}` exists
 - [ ] `process_name` uses valid MG5 syntax
+- [ ] `process_validation` from Phase 1 records the LLM asymptotic-state
+      judgment; explicit quark/gluon states use `p` or `j`, and allowed
+      final-state `t/t~/w+/w-/z` have MadSpin enabled
 - [ ] `energy` > 0 and `luminosity` > 0
 - [ ] `process_mode`, `target_coefficient`, `c_scan`, and `nevents` match the phase task
 

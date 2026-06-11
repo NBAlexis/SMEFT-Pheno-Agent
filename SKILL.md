@@ -105,6 +105,7 @@ Phase 1 must collect and validate:
 | `madgraph_path` | Absolute path to MadGraph5, or auto-installed path |
 | `workdir` | Directory where all workflow outputs are written |
 | `process` | Physics process only; no `NP=`, `QED=`, or `QCD=` suffix |
+| `process_validation`, `madspin` | Asymptotic-state validation; auto-enable MadSpin for final-state `t/t~/w+/w-/z` |
 | `models` | One or more UFO model names, preserving user order |
 | `energy` | Center-of-mass energy in TeV; scalar or list |
 | `luminosity` | Integrated luminosity in fb^-1; scalar or list matching energy length |

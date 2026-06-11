@@ -39,6 +39,8 @@ OPTIONAL_FIELDS = [
     "execution",
     "cutexperiment_path",
     "auto_installed_mg5",
+    "process_validation",
+    "madspin",
     "event_counts_locked",
     "locked_event_counts",
 ]
@@ -126,6 +128,11 @@ def load_run_config(path):
 
     if "debug" not in data:
         data["debug"] = False
+    if "madspin" not in data:
+        data["madspin"] = {"enabled": False}
+    if not isinstance(data["madspin"], dict):
+        raise ValueError("madspin must be an object when provided")
+    data["madspin"]["enabled"] = bool(data["madspin"].get("enabled", False))
     if "execution" not in data:
         data["execution"] = {"mode": "local"}
     if not isinstance(data["execution"], dict):
