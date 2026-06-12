@@ -5,6 +5,13 @@ This runner is intentionally config-driven so agents do not hand-write fragile
 MG5 launch orders. It executes in the same environment that owns the MG5 working
 directory; for SSH/WSL2 workflows, upload this script and its companion scripts
 to the target and run it there.
+
+The ``process`` config field may be one MG5 process string or a list of process
+strings. For lists, the runner writes one process creation order with
+``generate <process_1> <mode_suffix>`` followed by
+``add process <process_i> <mode_suffix>`` for every additional process. The
+mode suffix, e.g. ``NP=0`` or ``NP>0``, belongs on each process line in the MG5
+order and is appended here from ``process_mode``.
 """
 
 from __future__ import annotations
@@ -126,13 +133,40 @@ def _write_zero_cross_section_report(
     return report
 
 
-def _generate_line(process: str, process_mode: str) -> str:
+def _processes_from_config(cfg: Dict[str, Any]) -> List[str]:
+    process = cfg.get("process")
+    if isinstance(process, str):
+        processes = [process]
+    elif isinstance(process, list):
+        processes = process
+    else:
+        raise ValueError("process must be a string or a non-empty list of strings")
+
+    cleaned = []
+    for idx, item in enumerate(processes):
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f"process[{idx}] must be a non-empty string")
+        cleaned.append(item.strip())
+    if not cleaned:
+        raise ValueError("process list must not be empty")
+    return cleaned
+
+
+def _process_label(process: Any) -> str:
+    return " add ".join(process) if isinstance(process, list) else str(process)
+
+
+def _process_order_lines(processes: List[str], process_mode: str) -> List[str]:
     suffix = PROCESS_MODES[process_mode]
-    return f"generate {process} {suffix}".rstrip()
+    lines = []
+    for idx, process in enumerate(processes):
+        command = "generate" if idx == 0 else "add process"
+        lines.append(f"{command} {process} {suffix}".rstrip())
+    return lines
 
 
-def _default_process_folder(mg5path: str, process: str, model: str, process_mode: str) -> str:
-    folder_base = normalize_process_name(process)
+def _default_process_folder(mg5path: str, process: Any, model: str, process_mode: str) -> str:
+    folder_base = normalize_process_name(_process_label(process))
     mode_suffix = {
         "create_np": "NP",
         "pure_sm": "SM",
@@ -261,6 +295,7 @@ def validate_config(cfg: Dict[str, Any]) -> None:
     missing = [key for key in required if key not in cfg]
     if missing:
         raise ValueError(f"Missing required MG5 runner config fields: {missing}")
+    _processes_from_config(cfg)
 
     process_mode = cfg["process_mode"]
     if process_mode not in PROCESS_MODES:
@@ -309,13 +344,14 @@ def validate_config(cfg: Dict[str, Any]) -> None:
 def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
     mg5path = cfg["mg5path"]
     process_mode = cfg["process_mode"]
+    processes = _processes_from_config(cfg)
     order_name = cfg.get(
         "create_order_filename",
         _unique_name(mg5path, f"order_create_{process_folder}", ".txt"),
     )
     lines = [
         f"import model {cfg['model']}",
-        _generate_line(cfg["process"], process_mode),
+        *_process_order_lines(processes, process_mode),
         f"output {process_folder}",
     ]
     order_path = _write_order(mg5path, order_name, lines)

@@ -156,12 +156,16 @@ handle:
 ### [3/9] `process`
 
 ```text
-[3/9] What collider process should be studied? Provide the physics process only, without `NP=`, `QED=`, or `QCD=` suffixes.
-要研究哪个对撞过程？只提供物理过程，不要包含 `NP=`、`QED=` 或 `QCD=` 后缀。
+[3/9] What collider process should be studied? Provide one physics process, or a bracketed list such as `[mu+ mu- > l+ vl j j, mu+ mu- > l- vl~ j j]`. Do not add quotes and do not include `NP=`, `QED=`, or `QCD=` suffixes.
+要研究哪个对撞过程？请提供一个物理过程，或一个方括号列表，例如 `[mu+ mu- > l+ vl j j, mu+ mu- > l- vl~ j j]`。不要加引号，也不要包含 `NP=`、`QED=` 或 `QCD=` 后缀。
 ```
 
 handle:
-- Strip any `NP=`, `QED=`, or `QCD=` suffix and store the cleaned process.
+- Parse either one process string or a bracketed process list into `process`.
+  For a list, split on commas at the top level and preserve user order; do not
+  require or insert quotes around process strings.
+- Strip any `NP=`, `QED=`, or `QCD=` suffix from every process and store the
+  cleaned string or cleaned list.
 - The LLM must judge whether the initial and final particles are valid
   **asymptotic states** for this Delphes/LHCO/CutExperiment workflow. Do not
   call a hard-coded script for this judgment.
@@ -185,8 +189,8 @@ handle:
 - For custom UFO labels or ambiguous multiparticle labels, be conservative:
   accept only if the label is clearly an asymptotic state that CutExperiment
   and the selected Delphes card can analyze. Otherwise re-ask `[3/9]`.
-- Inspect the initial state, i.e. particles left of `>`.
-- If the initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~`, ask `[3a/9]`.
+- Inspect the initial state of every process, i.e. particles left of `>`.
+- If any initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~`, ask `[3a/9]`.
 
 ### [3a/9] `ebeam_proton` only for ep colliders
 
@@ -296,7 +300,8 @@ Before writing `run_config.json`, validate:
 - `execution.ssh_target` is present for SSH mode.
 - `madgraph_path` contains `bin/mg5_aMC` or `bin/mg5` on the selected execution target.
 - `workdir` is absolute on the selected execution target and not inside the skill directory in local mode.
-- `process` is non-empty and contains no `NP=`, `QED=`, or `QCD=` suffix.
+- `process` is a non-empty string or non-empty list of strings. No process
+  entry contains an `NP=`, `QED=`, or `QCD=` suffix.
 - `process_validation` records the LLM asymptotic-state judgment. If accepted
   final-state `t`, `t~`, `w+`, `w-`, or `z` appear as non-asymptotic objects,
   `madspin.enabled` must be true.
@@ -310,7 +315,9 @@ If validation fails, re-ask the field responsible for the failure.
 
 ## Run Configuration
 
-Write `run_config.json` with this schema. In SSH/WSL2 mode, write both the local control copy and the target copy at `{workdir}/results/run_config.json`.
+Write `run_config.json` with this schema. `process` may be a string or a list
+of process strings. In SSH/WSL2 mode, write both the local control copy and the
+target copy at `{workdir}/results/run_config.json`.
 
 ```json
 {

@@ -11,7 +11,7 @@ This document defines the standardized way to invoke MadGraph5 within the SMEFT-
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `mg5path` | Absolute path to MadGraph5 installation | `~/MG5_aMC_v3_5_6` |
-| `process_name` | Physics process in MG5 syntax | `e+ e- > a a` |
+| `process_name` | Physics process in MG5 syntax, or a list of such processes | `e+ e- > a a` |
 | `model_name` | UFO model name (must exist under `mg5path/models/`) | `gQGC_UFO` |
 | `energy` | Center-of-mass energy in TeV | `13.6` |
 | `luminosity` | Integrated luminosity in inverse femtobarns | `3000` |
@@ -70,6 +70,9 @@ Rules:
 
 Example: `e+ e- > a a` -> `ep_em_to_a_a`
 
+For `process` lists, do not call `normalize_process_name(config.process)`.
+Process-folder naming is runner-owned and returned in the runner result JSON.
+
 ### Runner-Owned Files
 
 The runner owns order-file creation, process-folder naming, run tracking, banner
@@ -77,6 +80,20 @@ parsing, stdout/stderr log capture, and LHCO count metadata. Phase code should
 provide only JSON fields such as `mg5path`, `model`, `process`,
 `process_mode`, `target_coefficient`, `c_scan`, `energy_tev`, `nevents`,
 `output_dir`, and `result_json`.
+
+`process` may be a string or a list of strings. For a list, the runner writes
+one MG5 process folder with:
+
+```text
+generate process1 MODE_SUFFIX
+add process process2 MODE_SUFFIX
+add process process3 MODE_SUFFIX
+```
+
+where `MODE_SUFFIX` is owned by the runner, for example `NP=0` for `pure_sm`
+or `NP>0` for `pure_np`. Agents should still provide suffix-free process
+strings in JSON and should not hand-write this order outside runner
+maintenance.
 
 ## Process Generation Modes
 
@@ -236,6 +253,23 @@ Phase 5 SM attempt:
   "output_label": "sm",
   "output_dir": "/work/results/data/phase5",
   "result_json": "/work/results/data/phase5/sm_mg5_result.json"
+}
+```
+
+Equivalent multi-process example:
+
+```json
+{
+  "mg5path": "/opt/MG5_aMC",
+  "model": "AQGCm_UFO",
+  "process": ["mu+ mu- > l+ vl j j", "mu+ mu- > l- vl~ j j"],
+  "madspin": {"enabled": false},
+  "process_mode": "pure_sm",
+  "energy_tev": 10,
+  "nevents": 500000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "output_dir": "/work/results/phase5",
+  "result_json": "/work/results/phase5/sm_attempt.json"
 }
 ```
 

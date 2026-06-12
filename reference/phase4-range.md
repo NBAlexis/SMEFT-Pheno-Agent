@@ -26,9 +26,6 @@ Load the configuration:
 from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
-from scripts.normalize_process_name import normalize_process_name
-folder_base = normalize_process_name(config.process)
-
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("4")

@@ -11,9 +11,6 @@ Load the configuration:
 ```python
 from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
-
-from scripts.normalize_process_name import normalize_process_name
-folder_base = normalize_process_name(config.process)
 ```
 
 ## When to Run
@@ -34,23 +31,15 @@ ROOT/LHE/HEPMC files removed already, but the directory itself must be moved
 into the project results for audit/debugging rather than deleted during the
 workflow.
 
-Use glob patterns that match runner-created folders for the current process:
-
-| Mode | Process Directory Pattern |
-|------|---------------------------|
-| SM | `{folder_base}_*_SM_*` |
-| NP | `{folder_base}_*_NP_*` |
-| SM+NP | `{folder_base}_*_SMNP_*` |
-| Scan | `{folder_base}_*_SCAN_*` |
+Prefer the exact `process_dir` and `broken_process_dir` values recorded in
+runner result JSON files. This is required for multi-process runs, where
+`config.process` may be a list and agents must not hand-compute folder names.
 
 ## Order Files to Collect
 
-All order files written to `mg5path/` during this workflow must also be moved. Runner order files follow these patterns:
-
-```
-order_create_{folder_base}_*.txt
-order_launch_{folder_base}_*.txt
-```
+All order files written to `mg5path/` during this workflow must also be moved.
+Use the exact `create_process.order_file_path` and `launch.order_file_path`
+values recorded in runner result JSON files.
 
 ## Collection Procedure
 
@@ -62,7 +51,7 @@ order_launch_{folder_base}_*.txt
 
 2. Move each process directory:
    ```python
-   import shutil, os, glob
+   import shutil, os, glob, json
 
    # In multi-run mode, prefix with the run subdirectory (e.g., results/E10_L1000/)
    results_prefix = os.path.join(workdir, "results")
@@ -74,35 +63,46 @@ order_launch_{folder_base}_*.txt
    os.makedirs(mg5_processes_dir, exist_ok=True)
    os.makedirs(orders_dir, exist_ok=True)
 
-   # Match runner-created process directories, including failed _broken_ folders.
-   process_dir_patterns = [
-       f"{folder_base}_*_SM_*",
-       f"{folder_base}_*_NP_*",
-       f"{folder_base}_*_SMNP_*",
-       f"{folder_base}_*_SCAN_*",
-   ]
+   def iter_json_objects(obj):
+       if isinstance(obj, dict):
+           yield obj
+           for value in obj.values():
+               yield from iter_json_objects(value)
+       elif isinstance(obj, list):
+           for item in obj:
+               yield from iter_json_objects(item)
+
+   runner_manifests = glob.glob(os.path.join(results_prefix, "data", "**", "*.json"), recursive=True)
+   process_dirs = set()
+   order_files = set()
+   for manifest_path in runner_manifests:
+       try:
+           with open(manifest_path, encoding="utf-8") as f:
+               manifest = json.load(f)
+       except Exception:
+           continue
+       for record in iter_json_objects(manifest):
+           for key in ("process_dir", "broken_process_dir"):
+               value = record.get(key)
+               if value and os.path.isdir(value):
+                   process_dirs.add(value)
+           value = record.get("order_file_path")
+           if value and os.path.exists(value):
+               order_files.add(value)
+
    moved_dirs = []
-   for pattern in process_dir_patterns:
-       for src in glob.glob(os.path.join(mg5path, pattern)):
-           if os.path.isdir(src):
-               dst = os.path.join(mg5_processes_dir, os.path.basename(src))
-               if os.path.exists(dst):
-                   raise RuntimeError(f"Destination already exists: {dst}")
-               shutil.move(src, dst)
-               moved_dirs.append(os.path.basename(src))
+   for src in sorted(process_dirs):
+       dst = os.path.join(mg5_processes_dir, os.path.basename(src))
+       if os.path.exists(dst):
+           raise RuntimeError(f"Destination already exists: {dst}")
+       shutil.move(src, dst)
+       moved_dirs.append(os.path.basename(src))
    ```
 
 3. Move all order files created during this run:
    ```python
-   order_patterns = [
-       os.path.join(mg5path, f"order_create_{folder_base}_*.txt"),
-       os.path.join(mg5path, f"order_launch_{folder_base}_*.txt"),
-   ]
-   order_files = []
-   for pattern in order_patterns:
-       order_files.extend(glob.glob(pattern))
    moved_orders = []
-   for src in order_files:
+   for src in sorted(order_files):
        dst = os.path.join(orders_dir, os.path.basename(src))
        shutil.move(src, dst)
        moved_orders.append(os.path.basename(src))
@@ -135,5 +135,5 @@ Before moving, verify:
 
 After cleanup:
 - `mg5path` should contain **no** process directories from this workflow
-- `mg5path` should contain **no** runner order files matching `order_create_{folder_base}_*.txt` or `order_launch_{folder_base}_*.txt`
+- `mg5path` should contain **no** runner order files recorded in the manifests
 - Phase 11 audit should verify the cleanup log exists and records both directories and order files

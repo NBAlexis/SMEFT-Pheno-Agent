@@ -113,6 +113,17 @@ def load_run_config(path):
         raise ValueError(
             f"run_configurations must be a list, got {type(data['run_configurations'])}"
         )
+    if isinstance(data["process"], str):
+        if not data["process"].strip():
+            raise ValueError("process must not be empty")
+    elif isinstance(data["process"], list):
+        if not data["process"]:
+            raise ValueError("process list must not be empty")
+        for idx, process in enumerate(data["process"]):
+            if not isinstance(process, str) or not process.strip():
+                raise ValueError(f"process[{idx}] must be a non-empty string")
+    else:
+        raise ValueError(f"process must be a string or list of strings, got {type(data['process'])}")
 
     # Cross-check lengths
     if len(data["energy"]) != len(data["luminosity"]):

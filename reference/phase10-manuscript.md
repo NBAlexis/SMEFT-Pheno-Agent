@@ -195,18 +195,26 @@ with `status: "pass"` or `status: "issues_remaining"`.
 ## Feynman Diagram Evidence
 
 Collect representative diagrams during Step 10.2 before drafting, when available
-from the anchor model process directories:
+from the anchor model process directories recorded in runner result manifests:
 
 | Process type | Location |
 |---|---|
-| SM baseline | `{mg5path}/{folder_base}_{anchor_model}_p4_SM/SubProcesses/P*/` |
-| NP sample | `{mg5path}/{folder_base}_{anchor_model}_p5_NP_o_{anchor_global_idx}/SubProcesses/P*/` |
+| SM baseline | `process_dir/SubProcesses/P*/` from the SM runner manifest |
+| NP sample | `process_dir/SubProcesses/P*/` from the anchor NP runner manifest |
 
 Copy selected diagrams to:
 
 ```
 results/data/feynman_diagrams/
 ```
+
+For a multi-process `run_config.process` list, inspect the MG5 process folders
+and diagram filenames/subprocess directories to match diagrams back to each
+input process. Ensure that each requested process has at least one representative
+SM diagram and at least one representative NP diagram when available. If any
+process lacks an SM or NP diagram, record exactly which process and which class
+is missing in `manuscript_evidence.json`; do not silently substitute a diagram
+from another process.
 
 If diagrams are unavailable, document the missing reason in
 `manuscript_evidence.json` and `manuscript_validation.json`; do not block

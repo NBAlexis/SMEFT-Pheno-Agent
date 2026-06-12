@@ -37,8 +37,13 @@ to [`event-count-recovery.md`](event-count-recovery.md), and extract feature vec
 from Interfaces.LHCOlympics import LoadLHCOlympics
 from DataStructure.Particles import ParticleType
 
-def lhco_to_features(lhco_path, process_name=config.process):
-    """Extract features dynamically based on the final-state particles in process_name.
+# A bracketed process list is one combined MG5 process for this workflow. Use a
+# representative expression only to derive the final-state feature definition;
+# the LHCO sample itself is the combined MG5 output.
+representative_process = config.process[0] if isinstance(config.process, list) else config.process
+
+def lhco_to_features(lhco_path, process_name=representative_process):
+    """Extract features dynamically based on the final-state particles.
 
     Follows the CutExperiment pipeline (see reference/cutexperiment-reference.md):
     1. Parse process_name to identify expected final-state particles
@@ -51,10 +56,7 @@ def lhco_to_features(lhco_path, process_name=config.process):
     events = LoadLHCOlympics(lhco_path)
     loaded_event_count = events.GetEventCount()
 
-    # Determine expected particle types from process_name
-    # (right-hand side of '>', excluding QED=/QCD=/NP= suffixes)
-    # Implementation: see reference/cutexperiment-reference.md Step 1
-    visible_types, has_neutrinos = parse_final_state(process_name)  # returns (list[ParticleType], bool)
+    visible_types, has_neutrinos = parse_final_state(process_name)
     n_expected = len(visible_types)
 
     features = []
@@ -128,7 +130,11 @@ counts for this metadata. `describe_final_state_cut(process_name)` is a small
 string helper built from the same final-state parse as `parse_final_state`, for
 example `N_gamma >= 3` or `N_mu >= 2, N_j >= 2`.
 
-**Feature extraction must match the final state.** The `process_name` determines which particles are selected and how many. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for the full pipeline.
+**Feature extraction must match the final state.** The process determines which
+particles are selected and how many. A bracketed process list is one combined
+MG5 process for the workflow; use the same feature extraction for the combined
+LHCO sample. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for
+the full pipeline.
 
 ## Step 7.2: Algorithm Pool and Selection Strategy
 

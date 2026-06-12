@@ -34,7 +34,10 @@ From `process_name`, determine the expected final-state particles.
 | `mu+ mu- > vl vl~ a a` | 2 neutrinos + 2 photons | 2 photons | 1 missing momentum |
 | `p p > l+ l- j j` | 2 leptons + 2 jets | 2 leptons + 2 jets | none |
 
-**Rule:** Parse `process_name` to count each particle type in the final state (right-hand side of `>`). Neutrinos (`vl`, `vl~`, `vm`, `vm~`, `vt`, `vt~`) are treated as invisible; their combined momentum becomes the missing momentum vector.
+**Rule:** Parse one process string to count each particle type in the final
+state (right-hand side of `>`). Neutrinos (`vl`, `vl~`, `vm`, `vm~`, `vt`,
+`vt~`) are treated as invisible; their combined momentum becomes the missing
+momentum vector.
 
 MG5 order parameters (`QED=`, `QCD=`, `NP=`) must be stripped before parsing.
 
