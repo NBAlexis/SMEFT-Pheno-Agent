@@ -127,7 +127,7 @@ values recorded in runner result JSON files.
 ## Safety Checks
 
 Before moving, verify:
-1. All required result files exist in `results/data/` and `results/plots/` (quick spot-check). In multi-run mode, check under `results/E{e}_L{l}/data/` and `results/E{e}_L{l}/plots/`.
+1. All required result files exist in `results/data/` and `results/plots/` (quick spot-check). In multi-run mode, check under `results/{run_dir}/data/` and `results/{run_dir}/plots/`, where `{run_dir}` is copied from `run_configurations[*].run_dir`.
 2. Process directories are not currently being written to by a running MG5 process
 3. The destination does not already contain a directory or file with the same name (if so, abort and report)
 

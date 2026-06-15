@@ -38,7 +38,9 @@ logger = WorkflowLogger(config.workdir)
 logger.phase_start("3")
 ```
 
-All variables (`config.process`, `config.models`, `config.madgraph_path`, `config.energy`, etc.) are read from `config`.
+All variables (`config.process`, `config.models`, `config.madgraph_path`,
+`config.run_configurations`, etc.) are read from `config`. MG5 runner JSON
+uses `ebeam1` and `ebeam2` copied from the active `run_configurations` entry.
 
 ## Global Operator Deduplication Rules
 
@@ -204,7 +206,9 @@ Runner JSON example:
   "operator": "C3",
   "target_coefficient": {"index": 3, "value": 1.0e-12},
   "coefficient_mode": "explicit",
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 10000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "cutexperiment_path": "/opt/CutExperiment",

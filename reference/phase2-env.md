@@ -131,10 +131,13 @@ When resuming, still run all Phase 2 validation steps every time.
 5. **Validate physics inputs and locked event counts**
    ```python
    with workflow_step(logger, "2", "validate_physics_inputs",
-                      inputs={"energy": config.energy, "luminosity": config.luminosity}):
+                      inputs={"run_configurations": config.run_configurations,
+                              "luminosity": config.luminosity}):
        assert config.event_counts_locked is True
    ```
-   Validate positive energy/luminosity values, matching list lengths, and exact locked event counts for the selected `debug` value.
+   Validate positive `run_configurations[*].ebeam1`, `run_configurations[*].ebeam2`,
+   luminosity values, matching list lengths, and exact locked event counts for
+   the selected `debug` value. For ep, `config.energy` may be null.
 
 6. **Create Python virtual environment**
    Create `{config.workdir}/venv/` on the selected target and install required packages directly into that venv:

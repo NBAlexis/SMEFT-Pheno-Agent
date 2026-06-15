@@ -96,12 +96,16 @@ Create:
 
 ```
 results/data/phase10/manuscript_evidence.json
+results/data/phase10/collider_energy.json
 ```
 
 Follow [`manuscript-evidence-guide.md`](manuscript-evidence-guide.md). The
 evidence must include exact requested event counts, actual LHCO event counts,
 final-state cuts, ordered features with units, preprocessing, algorithm
 metadata, fit coefficients, constraints, figures, and citations.
+
+Use `scripts/beam_energy.py` to populate `collider_energy.json` from the active
+`run_config.json`; do not recompute `sqrt(s)` in prose or by hand.
 
 If a required value is unavailable, record `null` and `missing_reason`. Do not
 write approximate values into the evidence as exact facts.

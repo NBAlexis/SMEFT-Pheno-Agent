@@ -148,7 +148,9 @@ Runner config:
   "operator": "o_3",
   "target_coefficient": {"index": 3},
   "c_scan": 1.2e-12,
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 1000000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "cutexperiment_path": "/opt/CutExperiment",
@@ -162,7 +164,11 @@ Rules:
 - Pass only the operator-specific rounded Phase 4 `c_scan`; the runner builds the MG5 scan expression internally.
 - Do not pass a precomputed list of 11 coefficients.
 - The runner validates that scan mode creates exactly 11 runs and maps them to `f0` through `f10`.
-- The runner computes beam energies in GeV using `tev_to_gev = 1000.0`, the unit conversion `1 TeV = 1000 GeV`.
+- For every collider type, pass explicit `ebeam1` and `ebeam2` from the active
+  `run_configurations` entry. Do not pass center-of-mass energy fields to the
+  runner.
+- Pass `run_label` from the active `run_configurations[*].run_dir` so the MG5
+  process folder records the beam/luminosity configuration.
 - Phase 6 scans contain only operators already confirmed non-zero in Phase 3.
   A missing scan banner, a zero scan banner cross-section, or fewer than 11
   scan runs is a run-output failure to retry, not a physics zero to accept.

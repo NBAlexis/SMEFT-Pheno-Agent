@@ -31,6 +31,8 @@ REQUIRED_FIELDS = [
 ]
 
 OPTIONAL_FIELDS = [
+    "collider_type",
+    "ebeam_electron",
     "ebeam_proton",
     "polarization",
     "debug",
@@ -105,14 +107,20 @@ def load_run_config(path):
     # Type checks
     if not isinstance(data["models"], list):
         raise ValueError(f"models must be a list, got {type(data['models'])}")
-    if not isinstance(data["energy"], list):
-        raise ValueError(f"energy must be a list, got {type(data['energy'])}")
     if not isinstance(data["luminosity"], list):
         raise ValueError(f"luminosity must be a list, got {type(data['luminosity'])}")
     if not isinstance(data["run_configurations"], list):
         raise ValueError(
             f"run_configurations must be a list, got {type(data['run_configurations'])}"
         )
+    collider_type = data.get("collider_type")
+    if collider_type is not None and collider_type not in {"ee", "pp", "mumu", "ep"}:
+        raise ValueError("collider_type must be one of ee, pp, mumu, ep when provided")
+    if collider_type == "ep":
+        if data["energy"] is not None:
+            raise ValueError("energy must be null for ep; use explicit ebeam1/ebeam2")
+    elif not isinstance(data["energy"], list):
+        raise ValueError(f"energy must be a list for non-ep colliders, got {type(data['energy'])}")
     if isinstance(data["process"], str):
         if not data["process"].strip():
             raise ValueError("process must not be empty")
@@ -125,17 +133,36 @@ def load_run_config(path):
     else:
         raise ValueError(f"process must be a string or list of strings, got {type(data['process'])}")
 
-    # Cross-check lengths
-    if len(data["energy"]) != len(data["luminosity"]):
+    # Cross-check lengths and beam energies. Event generation uses ebeam1/ebeam2.
+    if len(data["run_configurations"]) != len(data["luminosity"]):
+        raise ValueError(
+            f"run_configurations ({len(data['run_configurations'])}) and luminosity "
+            f"({len(data['luminosity'])}) lengths must match"
+        )
+    if collider_type != "ep" and len(data["energy"]) != len(data["luminosity"]):
         raise ValueError(
             f"energy ({len(data['energy'])}) and luminosity ({len(data['luminosity'])}) "
             "lengths must match"
         )
-    if len(data["run_configurations"]) != len(data["energy"]):
-        raise ValueError(
-            f"run_configurations ({len(data['run_configurations'])}) and energy "
-            f"({len(data['energy'])}) lengths must match"
-        )
+    for idx, run_cfg in enumerate(data["run_configurations"]):
+        if not isinstance(run_cfg, dict):
+            raise ValueError(f"run_configurations[{idx}] must be an object")
+        for key in ("ebeam1", "ebeam2"):
+            if key not in run_cfg or float(run_cfg[key]) <= 0:
+                raise ValueError(f"run_configurations[{idx}].{key} must be positive")
+    if collider_type == "ep":
+        for key in ("ebeam_electron", "ebeam_proton"):
+            values = data.get(key)
+            if not isinstance(values, list) or len(values) != len(data["luminosity"]):
+                raise ValueError(f"{key} must be a list matching luminosity length for ep")
+            for idx, value in enumerate(values):
+                if float(value) <= 0:
+                    raise ValueError(f"{key}[{idx}] must be positive")
+        for idx, run_cfg in enumerate(data["run_configurations"]):
+            if float(run_cfg["ebeam1"]) != float(data["ebeam_electron"][idx]):
+                raise ValueError(f"run_configurations[{idx}].ebeam1 must match ebeam_electron[{idx}]")
+            if float(run_cfg["ebeam2"]) != float(data["ebeam_proton"][idx]):
+                raise ValueError(f"run_configurations[{idx}].ebeam2 must match ebeam_proton[{idx}]")
 
     if "debug" not in data:
         data["debug"] = False

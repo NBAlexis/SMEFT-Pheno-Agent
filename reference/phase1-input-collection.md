@@ -19,7 +19,7 @@ Do not ask future questions early. Do not skip a question. Do not summarize the 
 If the latest user message clearly requests a restart/retest/new study, including `restart`, `start over`, `rerun`, `重新开始`, `重新测试`, `重来`, or `换一个过程`, reset the intake cursor to `[1/9]`.
 
 On restart:
-- Discard all prior target/physics/run fields: `execution`, `process`, `models`, `energy`, `luminosity`, `ebeam_proton`, `delphes_card`, `debug`, `algorithms`, `polarization`, `analysis_notes`.
+- Discard all prior target/physics/run fields: `execution`, `process`, `collider_type`, `models`, `energy`, `luminosity`, `ebeam_electron`, `ebeam_proton`, `delphes_card`, `debug`, `algorithms`, `polarization`, `analysis_notes`.
 - Ignore old `run_config.json` values for target/physics/run fields.
 - Keep known `madgraph_path` and `cutexperiment_path` only as suggested defaults.
 - Still ask `[1/9]` and `[7/9]`; never silently accept remembered paths.
@@ -32,8 +32,6 @@ Every intake question must be emitted exactly as:
 [N/9] English question...
 中文问题...
 ```
-
-Allowed exception: `[3a/9]` for `ebeam_proton` when the process is an electron-proton collider.
 
 Rules:
 - English first, Chinese on the next line.
@@ -53,8 +51,10 @@ Maintain these fields during Phase 1:
   "madgraph_path": null,
   "workdir": null,
   "process": null,
+  "collider_type": null,
   "process_validation": null,
   "madspin": {"enabled": false},
+  "ebeam_electron": null,
   "ebeam_proton": null,
   "models": null,
   "energy": null,
@@ -190,14 +190,9 @@ handle:
   accept only if the label is clearly an asymptotic state that CutExperiment
   and the selected Delphes card can analyze. Otherwise re-ask `[3/9]`.
 - Inspect the initial state of every process, i.e. particles left of `>`.
-- If any initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~`, ask `[3a/9]`.
-
-### [3a/9] `ebeam_proton` only for ep colliders
-
-```text
-[3a/9] Your process is an electron-proton collider process. What is the proton beam energy in GeV?
-你的过程是电子-质子对撞过程。质子束流能量是多少 GeV？
-```
+- If any initial state is `e- p`, `e+ p`, `e- p~`, or `e+ p~`, set
+  `collider_type="ep"` and continue to `[4/9]`. Do not ask a subquestion.
+- Otherwise infer `collider_type` as `ee`, `pp`, or `mumu`.
 
 ### [4/9] `models`
 
@@ -205,7 +200,15 @@ before_ask:
 - Determine `skill_dir` as the directory containing `SKILL.md`.
 - Scan `{skill_dir}/dependency/` for bundled model directories.
 - If `madgraph_path` is valid, scan `{madgraph_path}/models/` on the selected target when feasible.
-- Present bundled models in the question; do not hardcode the list.
+- Present every bundled model directory name in the question. Never abbreviate
+  with `...`, `etc.`, "and more", or a partial list.
+- The bundled dependency list in this skill version is:
+  `AQGCm_UFO`, `AQGCs_UFO`, `AQGCt_UFO`, `gQGC_UFO`, `nTGC_Old`,
+  `nTGC_UFO_01wtw1`, `nTGC_UFO_02wtw2`, `nTGC_UFO_03btb1`,
+  `nTGC_UFO_04btb2`, `nTGC_UFO_05btw1`, `nTGC_UFO_06btw2`,
+  `nTGC_UFO_07wtb`, `nTGC_UFO_08bw`, `nTGC_UFO_09ww`,
+  `nTGC_UFO_10bb`, `nTGC_UFO_11g1`, `nTGC_UFO_12g2`,
+  `nTGC_UFO_13g3`, `nTGC_UFO_14g4`.
 
 ```text
 [4/9] What SMEFT model name(s) should be used? Provide one model or a list, for example `AQGCm_UFO` or `[AQGCm_UFO, AQGCs_UFO]`. Bundled models found in the skill dependency folder: {dependency_models}. You may also use models already installed in `{madgraph_path}/models/`.
@@ -220,23 +223,49 @@ handle:
 - If found only in dependency, ask whether to copy it into MadGraph5. Use `scripts/sync_to_target.py` for SSH/WSL2 targets.
 - If the model is missing everywhere, report that and re-ask `[4/9]`.
 
-### [5/9] `energy`
+### [5/9] beam energies
+
+For non-ep colliders:
 
 ```text
 [5/9] What is the center-of-mass energy in TeV? Provide a single value or a list, for example `10` or `[10, 14, 30]`.
 质心能量是多少 TeV？请提供单个值或列表，例如 `10` 或 `[10, 14, 30]`。
 ```
 
-Parse into a non-empty list of positive floats.
+For ep colliders:
+
+```text
+[5/9] What are the electron and proton beam energies in GeV? Provide one pair `Ee, Ep` or a list of pairs, for example `60, 7000` or `[(60, 7000), (140, 7000)]`.
+电子束流和质子束流能量分别是多少 GeV？请提供一组 `Ee, Ep` 或多组列表，例如 `60, 7000` 或 `[(60, 7000), (140, 7000)]`。
+```
+
+Handle:
+- For non-ep colliders, parse the user-provided center-of-mass energies into
+  `energy`, a non-empty list of positive TeV values. For each value, compute
+  `ebeam1 = ebeam2 = energy * 1000 / 2`, where `1000` is the TeV-to-GeV
+  conversion. Store the beam energies in `run_configurations`; set
+  `ebeam_electron=null` and `ebeam_proton=null`. Event generation uses only
+  the stored `ebeam1`/`ebeam2`; `energy` is metadata for labels and the
+  manuscript.
+- For ep colliders, parse into equal-length positive GeV lists
+  `ebeam_electron` and `ebeam_proton`. Store them directly as
+  `run_configurations[*].ebeam1` and `run_configurations[*].ebeam2`.
+  Do not derive or store `sqrt(s)` during Phase 1; Phase 10 uses
+  `scripts/beam_energy.py` for manuscript-only display metadata.
 
 ### [6/9] `luminosity`
 
 ```text
-[6/9] What is the integrated luminosity in fb^-1? Provide a single value or a list matching the energy length, for example `3000` or `[1000, 3000, 10000]`.
-积分亮度是多少 fb^-1？请提供单个值或与能量列表长度匹配的列表，例如 `3000` 或 `[1000, 3000, 10000]`。
+[6/9] What is the integrated luminosity in fb^-1? Provide a single value or a list matching the number of energy points or ep beam-energy pairs, for example `3000` or `[1000, 3000, 10000]`.
+积分亮度是多少 fb^-1？请提供单个值，或与能量点/ep 束流能量组合数量匹配的列表，例如 `3000` 或 `[1000, 3000, 10000]`。
 ```
 
-Parse into a non-empty list of positive floats. If `energy` and `luminosity` lengths differ, report the mismatch and re-ask `[6/9]`.
+Parse into a non-empty list of positive floats. For non-ep colliders,
+`luminosity` length must match `energy` length. For ep colliders, `luminosity`
+length must match the number of `(ebeam_electron, ebeam_proton)` pairs. After
+luminosity is known, create one `run_configurations` entry per run with
+positive `ebeam1`, `ebeam2`, `luminosity`, and `run_dir`. If lengths differ,
+report the mismatch and re-ask `[6/9]`.
 
 ### [7/9] `cutexperiment_path`
 
@@ -266,8 +295,8 @@ before_ask:
 - Score card filenames by collider keywords: `ee`: `CEPC`, `CLIC`, `Circular`, `ILC`; `pp`: `CMS`, `ATLAS`, `LHC`; `mumu`: `Muon`; `ep`: `FCCeh`, `LHeC`.
 
 ```text
-[8/9] Scanning detector cards in `{madgraph_path}/Delphes/cards/` found this recommendation for `{process}` at `{energy}` TeV: `{recommended_card}`. Other matching cards: {matched_cards}. Type `yes` to use the recommendation, provide another card name, or provide an absolute path to a custom card.
-扫描 `{madgraph_path}/Delphes/cards/` 中的探测器卡片后，针对 `{process}`、`{energy}` TeV 的推荐卡片是：`{recommended_card}`。其他匹配卡片：{matched_cards}。输入 `yes` 使用推荐卡片，提供其他卡片名，或提供自定义卡片的绝对路径。
+[8/9] Scanning detector cards in `{madgraph_path}/Delphes/cards/` found this recommendation for `{process}` with `{beam_summary}`: `{recommended_card}`. Other matching cards: {matched_cards}. Type `yes` to use the recommendation, provide another card name, or provide an absolute path to a custom card.
+扫描 `{madgraph_path}/Delphes/cards/` 中的探测器卡片后，针对 `{process}` 和 `{beam_summary}` 的推荐卡片是：`{recommended_card}`。其他匹配卡片：{matched_cards}。输入 `yes` 使用推荐卡片，提供其他卡片名，或提供自定义卡片的绝对路径。
 ```
 
 handle:
@@ -305,11 +334,15 @@ Before writing `run_config.json`, validate:
 - `process_validation` records the LLM asymptotic-state judgment. If accepted
   final-state `t`, `t~`, `w+`, `w-`, or `z` appear as non-asymptotic objects,
   `madspin.enabled` must be true.
-- `models`, `energy`, `luminosity`, and `run_configurations` are non-empty.
-- `len(energy) == len(luminosity)`.
+- `models`, `luminosity`, and `run_configurations` are non-empty.
+- For non-ep colliders, `energy` is a non-empty list of positive TeV values and
+  `len(energy) == len(luminosity)`.
+- For ep colliders, `energy` is null, `ebeam_electron` and `ebeam_proton` are
+  positive GeV lists with the same length as `luminosity`, and every
+  `run_configurations` entry has `ebeam1=ebeam_electron[i]` and
+  `ebeam2=ebeam_proton[i]`.
 - `delphes_card` exists either under `{madgraph_path}/Delphes/cards/` or as an absolute path on the selected execution target.
 - `cutexperiment_path` exists on the selected execution target.
-- `ebeam_proton` is present for ep colliders.
 
 If validation fails, re-ask the field responsible for the failure.
 
@@ -332,6 +365,7 @@ target copy at `{workdir}/results/run_config.json`.
   "madgraph_path": "/opt/MG5_aMC_v3_5_15",
   "workdir": "/home/user/study",
   "process": "e+ e- > a a",
+  "collider_type": "ee",
   "process_validation": {
     "status": "ok",
     "initial": ["e+", "e-"],
@@ -341,6 +375,7 @@ target copy at `{workdir}/results/run_config.json`.
   "models": ["AQGCm_UFO"],
   "energy": [10.0],
   "luminosity": [1000.0],
+  "ebeam_electron": null,
   "ebeam_proton": null,
   "delphes_card": "delphes_card_CEPC.tcl",
   "cutexperiment_path": "/home/user/study/CutExperiment",
@@ -358,13 +393,41 @@ target copy at `{workdir}/results/run_config.json`.
     "nev_scan": 1000000
   },
   "run_configurations": [
-    {"energy": 10.0, "luminosity": 1000.0, "run_dir": "E10_L1000"}
+    {
+      "energy": 10.0,
+      "luminosity": 1000.0,
+      "ebeam1": 5000.0,
+      "ebeam2": 5000.0,
+      "run_dir": "E10_L1000"
+    }
+  ]
+}
+```
+
+Every `run_configurations` entry must include explicit MG5 beam energies in GeV.
+For ep colliders, `energy` remains null because `sqrt(s)` is not used for
+event generation and is produced only by `scripts/beam_energy.py` in Phase 10:
+
+```json
+{
+  "collider_type": "ep",
+  "energy": null,
+  "ebeam_electron": [60.0],
+  "ebeam_proton": [7000.0],
+  "run_configurations": [
+    {
+      "luminosity": 1000.0,
+      "ebeam1": 60.0,
+      "ebeam2": 7000.0,
+      "run_dir": "Ee60_Ep7000_L1000"
+    }
   ]
 }
 ```
 
 Run directory naming:
-- `run_dir = "E{energy}_L{luminosity}"`
+- Non-ep: `run_dir = "E{energy}_L{luminosity}"`
+- ep: `run_dir = "Ee{ebeam_electron}_Ep{ebeam_proton}_L{luminosity}"`
 - Replace decimal points with underscores.
 - Example: `13.6, 3000` -> `E13_6_L3000`.
 

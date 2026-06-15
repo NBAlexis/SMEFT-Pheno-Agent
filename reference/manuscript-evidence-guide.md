@@ -10,7 +10,7 @@ Required top-level keys:
 
 | Key | Purpose |
 |---|---|
-| `run` | process, collider, energy, luminosity, debug mode, detector card, tool versions |
+| `run` | process, collider, beam energies, displayed sqrt(s), luminosity, debug mode, detector card, tool versions |
 | `model_description` | models, claimed operators, UFO parameters, anchor operator |
 | `datasets` | requested events, actual LHCO events, final-state cuts, surviving events, cross-sections |
 | `features` | ordered ML feature list with units and preprocessing |
@@ -21,6 +21,19 @@ Required top-level keys:
 | `figures` | available figure paths, captions, and section placement |
 | `reference_papers` | user-list papers used for writing style, method comparison, or result comparison |
 | `citations` | mandatory toolchain citations and selected literature citations, grouped by role |
+
+## Collider Energy Evidence
+
+Use `run_configurations[*].ebeam1` and `run_configurations[*].ebeam2` as the
+source of truth for beam energies in GeV. `sqrt(s)` is manuscript-only and must
+be computed with:
+
+```bash
+python scripts/beam_energy.py --run-config {workdir}/results/run_config.json --json-out {workdir}/results/data/phase10/collider_energy.json
+```
+
+Read `sqrt_s_tev` from `collider_energy.json` for prose and tables. Do not
+derive `sqrt(s)` inline and do not treat it as an MG5 runner input.
 
 ## Dataset Evidence
 

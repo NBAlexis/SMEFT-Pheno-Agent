@@ -13,26 +13,25 @@ This document defines the standardized way to invoke MadGraph5 within the SMEFT-
 | `mg5path` | Absolute path to MadGraph5 installation | `~/MG5_aMC_v3_5_6` |
 | `process_name` | Physics process in MG5 syntax, or a list of such processes | `e+ e- > a a` |
 | `model_name` | UFO model name (must exist under `mg5path/models/`) | `gQGC_UFO` |
-| `energy` | Center-of-mass energy in TeV | `13.6` |
 | `luminosity` | Integrated luminosity in inverse femtobarns | `3000` |
-| `ebeam_value` | Single-beam energy in GeV (auto-derived for symmetric colliders) | `6800.0` |
+| `ebeam1`, `ebeam2` | Explicit MG5 beam energies in GeV copied from `run_configurations` | `5000.0`, `5000.0` |
 
-**Energy conversion (symmetric colliders):**
+**Phase 1 beam conversion (symmetric colliders):**
 ```
 tev_to_gev = 1000.0
-ebeam_value = energy_tev * tev_to_gev / 2
+ebeam_value = center_of_mass_energy_in_tev * tev_to_gev / 2
 ```
-Example: `energy = 13.6` TeV -> `ebeam_value = 6800.0` GeV.
+Example: user input `energy = 13.6` TeV -> `ebeam1 = ebeam2 = 6800.0` GeV
+in `run_configurations`.
 
 The factor `1000.0` is only the unit conversion `1 TeV = 1000 GeV`. MG5 run
-cards use beam energies in GeV, while Phase 1 collects the center-of-mass energy
-in TeV.
+cards use beam energies in GeV. After Phase 1, event generation reads the
+explicit beam energies and does not use `sqrt(s)`.
 
 ## Optional Variables
 
 | Variable | Description | When Required |
 |----------|-------------|---------------|
-| `ebeam_proton` | Proton beam energy in GeV (ep colliders only) | Asymmetric ep collisions |
 | `polbeam1` | Beam 1 polarization, range [-1, 1] | User requests polarization |
 | `polbeam2` | Beam 2 polarization, range [-1, 1] | User requests polarization |
 
@@ -78,8 +77,15 @@ Process-folder naming is runner-owned and returned in the runner result JSON.
 The runner owns order-file creation, process-folder naming, run tracking, banner
 parsing, stdout/stderr log capture, and LHCO count metadata. Phase code should
 provide only JSON fields such as `mg5path`, `model`, `process`,
-`process_mode`, `target_coefficient`, `c_scan`, `energy_tev`, `nevents`,
-`output_dir`, and `result_json`.
+`process_mode`, `target_coefficient`, `c_scan`, `ebeam1`, `ebeam2`, `nevents`,
+`run_label`, `output_dir`, and `result_json`.
+
+When building a runner JSON from a `run_configurations` entry:
+- pass `ebeam1 = run_config.ebeam1` and `ebeam2 = run_config.ebeam2` for every
+  collider type;
+- pass `run_label = run_config.run_dir` so MG5 process folders remain
+  distinguishable across beam/luminosity configurations;
+- do not pass center-of-mass energy fields to runner configs.
 
 `process` may be a string or a list of strings. For a list, the runner writes
 one MG5 process folder with:
@@ -115,6 +121,9 @@ python scripts/run_mg5_config.py mg5_attempt.json
 
 The runner generates unique order/process names internally, checks MG5 return
 codes, and records stdout/stderr log paths in the result JSON.
+Automatic process folders include normalized process, model, mode, optional
+`run_label`, and timestamp. Do not hand-compute process folder names in phase
+logic.
 
 
 ## Pre-Run Preparation (Mandatory Before Event Generation)
@@ -187,11 +196,11 @@ Agent-controlled fields:
 - `target_coefficient`: required for target-operator NP runs and scans
 - `coefficient_mode`: `default`, `c_scan`, or `explicit` for non-scan NP runs
 - `c_scan`: required for `scan` and `coefficient_mode="c_scan"`
-- `energy_tev`, optional `ebeam_proton`, optional `polarization`, and `nevents`
+- explicit `ebeam1`/`ebeam2` in GeV; optional `polarization`; and `nevents`
 - `madspin`: copied from `run_config.json` after the Phase 1 LLM
   asymptotic-state judgment
 
-The runner handles coefficient-block syntax, beam-energy conversion, Delphes
+The runner handles coefficient-block syntax, beam-energy assignment, Delphes
 selection, MadSpin enablement, launch confirmation, run-folder tracking, and
 output labels.
 
@@ -246,7 +255,9 @@ Phase 5 SM attempt:
   "process": "mu+ mu- > a j j",
   "madspin": {"enabled": false},
   "process_mode": "pure_sm",
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 500000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "cutexperiment_path": "/opt/CutExperiment",
@@ -265,7 +276,9 @@ Equivalent multi-process example:
   "process": ["mu+ mu- > l+ vl j j", "mu+ mu- > l- vl~ j j"],
   "madspin": {"enabled": false},
   "process_mode": "pure_sm",
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 500000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "output_dir": "/work/results/phase5",
@@ -286,7 +299,9 @@ Phase 5 pure NP attempt:
   "target_coefficient": {"index": 3},
   "coefficient_mode": "c_scan",
   "c_scan": 1.2e-12,
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 100000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "cutexperiment_path": "/opt/CutExperiment",
@@ -307,7 +322,9 @@ Phase 6 scan attempt:
   "operator": "o_3",
   "target_coefficient": {"index": 3},
   "c_scan": 1.2e-12,
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 1000000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "cutexperiment_path": "/opt/CutExperiment",
@@ -333,7 +350,9 @@ Recovery wrapper for the Phase 6 scan above:
     "operator": "o_3",
     "target_coefficient": {"index": 3},
     "c_scan": 1.2e-12,
-    "energy_tev": 10,
+    "run_label": "E10_L1000",
+    "ebeam1": 5000.0,
+    "ebeam2": 5000.0,
     "nevents": 1000000,
     "delphes_card": "delphes_card_MuonColliderDet.tcl",
     "cutexperiment_path": "/opt/CutExperiment"
@@ -341,16 +360,16 @@ Recovery wrapper for the Phase 6 scan above:
 }
 ```
 
-### Energy Assignment
+### Beam Assignment
 
 | Collider Type | `ebeam1` | `ebeam2` | Derivation |
 |---------------|----------|----------|------------|
-| Symmetric (ee, pp, mu-mu) | `ebeam_value` | `ebeam_value` | Convert `energy_tev` to GeV with `tev_to_gev = 1000.0`, then divide by 2 |
-| Asymmetric (ep) | `ebeam_value` (electron) | `ebeam_proton` (proton) | `ebeam_proton` is read from **`run_config.json`** (field `ebeam_proton`) |
+| Symmetric (ee, pp, mu-mu) | explicit beam energy in GeV | same as `ebeam1` | computed once in Phase 1 from the user center-of-mass energy |
+| Asymmetric (ep) | explicit electron beam energy in GeV | explicit proton beam energy in GeV | copied from the user beam-energy pair |
 
-**Note:** The center-of-mass energy is `2 * ebeam_value` for symmetric
-colliders after both quantities are expressed in GeV. Do not use an unexplained
-literal `1000`; name it as the TeV-to-GeV conversion factor.
+**Note:** `sqrt(s)` is not a runner input. For manuscript metadata, call
+`scripts/beam_energy.py` and read `sqrt_s_tev` from its JSON output. Do not
+derive `sqrt(s)` inline in phase code or prose.
 
 ### Coefficient Block
 
@@ -513,12 +532,12 @@ Before writing/running a runner config:
 - [ ] `process_validation` from Phase 1 records the LLM asymptotic-state
       judgment; explicit quark/gluon states use `p` or `j`, and allowed
       final-state `t/t~/w+/w-/z` have MadSpin enabled
-- [ ] `energy` > 0 and `luminosity` > 0
+- [ ] runner config includes positive `ebeam1`, positive `ebeam2`, positive luminosity metadata when applicable, and `run_label` copied from `run_configurations[*].run_dir`
 - [ ] `process_mode`, `target_coefficient`, `c_scan`, and `nevents` match the phase task
 
 After process creation (`output` step), before event generation:
 - [ ] Collider type is identified; default applied if user did not specify
-- [ ] For ep collisions: `ebeam_proton` is provided
+- [ ] For ep collisions: each runner config includes positive `ebeam1` and `ebeam2`
 - [ ] Delphes `.tcl` card is copied to `Cards/delphes_card.dat`
 - [ ] All `.tcl` dependency folders are copied to `Cards/`
 - [ ] A coefficient block is found in `param_card.dat` (e.g. `anoinputs`, `dim8`) and coefficients are recorded

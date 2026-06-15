@@ -165,7 +165,13 @@ def _process_order_lines(processes: List[str], process_mode: str) -> List[str]:
     return lines
 
 
-def _default_process_folder(mg5path: str, process: Any, model: str, process_mode: str) -> str:
+def _default_process_folder(
+    mg5path: str,
+    process: Any,
+    model: str,
+    process_mode: str,
+    run_label: Optional[str] = None,
+) -> str:
     folder_base = normalize_process_name(_process_label(process))
     mode_suffix = {
         "create_np": "NP",
@@ -174,8 +180,16 @@ def _default_process_folder(mg5path: str, process: Any, model: str, process_mode
         "sm_np": "SMNP",
         "scan": "SCAN",
     }[process_mode]
-    stem = f"{folder_base}_{model}_{mode_suffix}_{_timestamp()}"
+    label_part = f"_{run_label}" if run_label else ""
+    stem = f"{folder_base}_{model}_{mode_suffix}{label_part}_{_timestamp()}"
     return _unique_name(mg5path, stem)
+
+
+def _safe_label(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = normalize_process_name(str(value).strip())
+    return text or None
 
 
 def _write_order(mg5path: str, name: str, lines: Iterable[str]) -> str:
@@ -308,6 +322,13 @@ def validate_config(cfg: Dict[str, Any]) -> None:
     survey_profile = cfg.get("survey_profile", "default")
     if survey_profile not in SURVEY_PROFILES:
         raise ValueError(f"Unknown survey_profile {survey_profile!r}")
+    if process_mode != "create_np":
+        if "ebeam1" not in cfg or "ebeam2" not in cfg:
+            raise ValueError(
+                "runner config requires explicit ebeam1 and ebeam2 in GeV from run_configurations"
+            )
+        _positive_finite(cfg["ebeam1"], "ebeam1")
+        _positive_finite(cfg["ebeam2"], "ebeam2")
 
     labels = cfg.get("output_labels")
     if labels is not None and not isinstance(labels, list):
@@ -411,14 +432,8 @@ def _coefficient_lines(cfg: Dict[str, Any], parsed: Dict[str, Any]) -> List[str]
 
 
 def _beam_lines(cfg: Dict[str, Any]) -> List[str]:
-    if "ebeam1" in cfg and "ebeam2" in cfg:
-        ebeam1 = cfg["ebeam1"]
-        ebeam2 = cfg["ebeam2"]
-    else:
-        tev_to_gev = 1000.0
-        energy_tev = float(cfg["energy_tev"])
-        ebeam1 = energy_tev * tev_to_gev / 2.0
-        ebeam2 = cfg.get("ebeam_proton", ebeam1)
+    ebeam1 = cfg["ebeam1"]
+    ebeam2 = cfg["ebeam2"]
     lines = [f"set ebeam1 = {ebeam1}", f"set ebeam2 = {ebeam2}"]
     pol = cfg.get("polarization")
     if isinstance(pol, dict):
@@ -535,6 +550,7 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "mg5path": cfg.get("mg5path"),
         "process_folder": cfg.get("process_folder"),
         "process_mode": cfg.get("process_mode"),
+        "run_label": cfg.get("run_label") or cfg.get("run_dir"),
         "model": cfg.get("model"),
         "process": cfg.get("process"),
         "process_validation": cfg.get("process_validation"),
@@ -542,6 +558,8 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "target_coefficient": cfg.get("target_coefficient"),
         "coefficient_mode": cfg.get("coefficient_mode"),
         "c_scan": cfg.get("c_scan"),
+        "ebeam1": cfg.get("ebeam1"),
+        "ebeam2": cfg.get("ebeam2"),
         "madspin": cfg.get("madspin", {"enabled": False}),
         "survey_profile": cfg.get("survey_profile", "default"),
         "outputs": [],
@@ -562,9 +580,12 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         result["model_dir"] = model_dir
 
         stage = "process_folder_resolution"
-        process_folder = cfg.get("process_folder") or _default_process_folder(
-            mg5path, cfg["process"], cfg["model"], process_mode
-        )
+        process_folder = cfg.get("process_folder")
+        if not process_folder:
+            run_label = _safe_label(cfg.get("run_label") or cfg.get("run_dir"))
+            process_folder = _default_process_folder(
+                mg5path, cfg["process"], cfg["model"], process_mode, run_label=run_label
+            )
         process_dir = os.path.join(mg5path, process_folder)
         create_process = bool(cfg.get("create_process", not os.path.isdir(process_dir)))
         result["process_folder"] = process_folder

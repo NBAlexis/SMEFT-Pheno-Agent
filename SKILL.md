@@ -1,6 +1,6 @@
 ---
 name: automated-smeft-ml-pheno
-description: Use when the user wants an automated SMEFT phenomenology study with MadGraph5, Delphes/root2lhco processing, CutExperiment feature extraction, machine-learning event selection, coefficient scans, expected Wilson-coefficient constraints, or a publication-style manuscript. Trigger even when required inputs are missing: Phase 1 must collect them interactively before execution. Supports single or multiple UFO models and single or multiple (energy, luminosity) run pairs.
+description: Use for automated SMEFT collider phenomenology workflows: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML event selectors, scan Wilson coefficients, compute expected constraints, and draft manuscript outputs.
 ---
 
 # Automated SMEFT Phenomenology with Machine Learning
@@ -107,8 +107,9 @@ Phase 1 must collect and validate:
 | `process` | Physics process only; no `NP=`, `QED=`, or `QCD=` suffix |
 | `process_validation`, `madspin` | Asymptotic-state validation; auto-enable MadSpin for final-state `t/t~/w+/w-/z` |
 | `models` | One or more UFO model names, preserving user order |
-| `energy` | Center-of-mass energy in TeV; scalar or list |
-| `luminosity` | Integrated luminosity in fb^-1; scalar or list matching energy length |
+| `energy` | Symmetric-collider center-of-mass energy metadata in TeV; null for ep |
+| `run_configurations[*].ebeam1/ebeam2` | MG5 beam energies in GeV used for event generation |
+| `luminosity` | Integrated luminosity in fb^-1; scalar or list matching run configurations |
 | `cutexperiment_path` | Existing or cloned CutExperiment path |
 | `delphes_card` | Recommended or user-selected detector card |
 | `debug`, `algorithms`, `polarization`, `analysis_notes` | Optional settings from `[9/9]` |
@@ -208,6 +209,7 @@ phase code.
 | `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
 | `scripts/run_mg5.py` | Low-level MG5 order-file helper for maintaining/debugging the config runner |
 | `scripts/run_mg5_config.py` | Run one MG5 job from JSON, including order generation, Delphes conversion, banner parsing, and loaded-count metadata |
+| `scripts/beam_energy.py` | Compute manuscript-only displayed `sqrt(s)` from explicit `ebeam1`/`ebeam2` |
 | `scripts/double_check_zero_cross_section.py` | Confirm zero cross-section claims from banner, MG5 logs, and LHE-like outputs |
 | `scripts/count_lhco_events.py` | Count actual LHCO events with CutExperiment |
 | `scripts/merge_lhco.py` | Merge LHCO recovery attempts and compute loaded-count-weighted merged cross-sections |

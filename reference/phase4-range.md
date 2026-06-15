@@ -51,7 +51,9 @@ Generate the SM baseline through `scripts/run_mg5_config.py` using
   "model": "AQGCm_UFO",
   "process": "mu+ mu- > a j j",
   "process_mode": "pure_sm",
-  "energy_tev": 10,
+  "run_label": "E10_L1000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
   "nevents": 10000,
   "delphes_card": "delphes_card_MuonColliderDet.tcl",
   "cutexperiment_path": "/opt/CutExperiment",
@@ -108,7 +110,7 @@ find the smallest positive real c_scan_N where S_stat_N(c_scan_N) = 2
 it can inflate scan ranges by many orders of magnitude.
 
 **Edge cases:**
-- If `cs_sm = 0`, abort. Verify process definition and energy.
+- If `cs_sm = 0`, abort. Verify process definition and beam energies.
 - If any claimed operator has `cs_np_N <= 0` or missing Phase 3 metadata, abort
   Phase 4 with a concrete red flag after logging the offending operator.
 
