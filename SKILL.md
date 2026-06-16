@@ -1,6 +1,6 @@
 ---
 name: automated-smeft-ml-pheno
-description: Use for automated SMEFT collider phenomenology workflows: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML event selectors, scan Wilson coefficients, compute expected constraints, and draft manuscript outputs.
+description: "Use for automated SMEFT collider phenomenology workflows: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML event selectors, scan Wilson coefficients, compute expected constraints, and draft manuscript outputs."
 ---
 
 # Automated SMEFT Phenomenology with Machine Learning

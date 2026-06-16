@@ -1,0 +1,21 @@
+* text=auto eol=lf
+
+*.md text eol=lf
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.log text eol=lf
+*.dat text eol=lf
+*.tcl text eol=lf
+*.toml text eol=lf
+
+*.pkl binary -eol
+*.png binary -eol
+*.jpg binary -eol
+*.jpeg binary -eol
+*.pdf binary -eol
+*.root binary -eol
+*.lhe binary -eol
+*.gz binary -eol
