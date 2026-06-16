@@ -104,6 +104,7 @@ handle:
 - `ssh user@host:/absolute/MG5/path`: set `execution={"mode":"ssh","ssh_target":"user@host"}` and `madgraph_path="/absolute/MG5/path"`. Validate with `scripts/remote_exec.py --mode ssh --ssh-target user@host -- test -x /absolute/MG5/path/bin/mg5_aMC -o -x /absolute/MG5/path/bin/mg5`.
 - `wsl2:/absolute/MG5/path`: set `execution={"mode":"wsl2"}` and `madgraph_path="/absolute/MG5/path"`. Validate with `scripts/remote_exec.py --mode wsl2 -- test -x /absolute/MG5/path/bin/mg5_aMC -o -x /absolute/MG5/path/bin/mg5`.
 - `wsl2`: run the WSL2 discovery subflow below.
+- WSL2/Git Bash caution: Git Bash on Windows may rewrite Linux paths such as `/home/...` or `/opt/...`; validate and run WSL2 target commands through `scripts/remote_exec.py`, not ad-hoc `wsl` shell snippets.
 - `install`: run the MG5 auto-install flow below on the selected target. If no target was selected and the agent is on Windows, first ask the WSL2 discovery subflow or ask for SSH target details; otherwise default to local Linux mode.
 - invalid: report the concrete failure and re-ask `[1/9]`.
 
