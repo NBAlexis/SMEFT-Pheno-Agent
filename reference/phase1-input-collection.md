@@ -324,6 +324,10 @@ handle:
 
 ## Final Validation
 
+Before writing `run_config.json`, satisfy
+[`deliverables-phase1.md`](deliverables-phase1.md). If any required field is
+missing or invalid, re-ask the responsible bilingual intake question.
+
 Before writing `run_config.json`, validate:
 - `execution.mode` is `local`, `ssh`, or `wsl2`.
 - If the agent is running on native Windows, `execution.mode` is `ssh` or `wsl2`.

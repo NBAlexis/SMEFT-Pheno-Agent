@@ -41,11 +41,15 @@ Mandatory content:
 - exact requested event counts and actual loaded LHCO event counts
 - exact final-state particle cut
 - exact surviving event counts after that cut
+- dataset table with loaded events, final-state-cut surviving events, raw
+  cross-section, final-state-cut cross-section, and the exact cut expression
 - threshold-passing counts and efficiency denominators for selected samples
 - public CSV data paths for SM, pure NP, and scan samples
 - dataset composition table for SM, anchor NP, and scans
 - scan coefficient table with all 11 points
-- representative Feynman diagrams when available
+- scan coefficient lower/upper bounds for every globally claimed non-zero
+  operator
+- representative Feynman diagrams, or a documented missing-diagram reason
 
 Final-state cuts, event counts, and efficiency denominators must be written in
 the main text or tables, not only implied by feature names.
@@ -56,12 +60,15 @@ For each trained algorithm, provide a compact self-contained description:
 
 - what object the algorithm learns
 - how the score is interpreted
+- the mathematical score definition `s(x)` and its output range
 - relevant hyperparameters
 - preprocessing and standardization
 - train/test split and random seed
+- concise pseudocode
 
-Pseudocode is not required. A reader should still understand how each score is
-constructed and why it can separate SM-like and NP-like events.
+The manuscript must include pseudocode and a clear score definition for every
+trained algorithm. A reader should understand how each score is constructed and
+why larger scores mean more NP-like events.
 
 ## Event Selection Optimization
 
@@ -75,6 +82,10 @@ Manuscript:
 - selected threshold for each algorithm
 - SM and NP efficiencies
 - constraint-width comparison on the anchor operator
+- bar plot comparing anchor-operator `S_stat = 2` interval widths for all
+  trained algorithms
+- curve showing the anchor operator's `S_stat = 2` expected coefficient
+  constraint range as a function of threshold
 - final anchor-selected algorithm
 
 Do not choose a different best algorithm or threshold separately for each
@@ -85,10 +96,16 @@ operator.
 Include:
 
 - quadratic fit equation
+- statement that the fit intercept is fixed to the `f=0` selected
+  cross-section after cuts/selection
 - numeric fit coefficients with units
 - scan points and fitted curves
+- fit-coefficient table for every globally claimed operator
+- SM+NP selected cross-section points compared with fitted curves for every
+  globally claimed operator
 - significance formula from [`significance-reference.md`](significance-reference.md), with all symbols defined
-- final constraints at S=2,3,5 using the anchor-selected algorithm
+- final constraint table for every globally claimed operator at S=2,3,5 using
+  the anchor-selected algorithm
 - optional comparison table for non-selected algorithms, clearly labeled
 
 When discussing constraint intervals, state that the upper bound is the smallest

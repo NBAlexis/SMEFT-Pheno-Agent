@@ -49,40 +49,58 @@ available.
 
 | File | Phase | Action if missing |
 |---|---|---|
+| `results/data/phase2/environment_manifest.json` | 2 | Abort |
 | `results/data/phase3/operator_claims.json` | 3 | Abort |
 | `results/data/phase3/cross_sections.json` | 3 | Abort |
 | `results/data/phase3/anchor.json` | 3 | Abort |
+| Phase 3 runner result JSONs referenced by `model_status.json` | 3 | Abort |
 | `results/data/phase4/coefficient_ranges.json` | 4 | Abort |
 | `results/data/phase4/sm_baseline.json` | 4 | Abort |
+| `results/data/phase4/sm_baseline_result.json` | 4 | Abort |
 | `results/data/phase5/sm.lhco` | 5 | Abort |
 | `results/data/phase5/np_anchor.lhco` | 5 | Abort |
 | `results/data/phase5/np_o_*.lhco` | 5 | Abort |
+| `results/data/phase5/sm_result.json` | 5 | Abort |
+| `results/data/phase5/np_o_*_result.json` | 5 | Abort |
+| `results/data/phase5/np_anchor_alias.json` | 5 | Abort |
 | `results/data/phase5/event_count_recovery.json` | 5 | Abort |
 | `results/data/phase6/np_o_*_f*.lhco` | 6 | Abort |
+| `results/data/phase6/np_o_*_scan_result.json` | 6 | Abort |
 | `results/data/phase6/event_count_recovery.json` | 6 | Abort |
 | `results/data/phase7/sm.csv` | 7 | Abort |
 | `results/data/phase7/np_anchor.csv` | 7 | Abort |
 | `results/data/phase7/np_o_*.csv` | 7 | Abort |
+| `results/data/phase7/feature_schema.json` | 7 | Abort |
+| `results/data/phase7/algorithm_descriptions.json` | 7 | Abort |
 | `results/data/phase7/scores/*_scores.csv` | 7 | Abort |
 | `results/data/phase7/algorithm_comparison.json` | 7 | Abort |
 | `results/algorithms/anchor_*.pkl` | 7 | Abort |
 | `results/algorithms/compute_scores.py` | 7 | Abort |
 | `results/data/phase8/threshold_optimization.json` | 8 | Abort |
+| `results/data/phase8/dataset_summary.json` | 8 | Abort |
 | `results/data/phase8/csv/np_o_*_f*.csv` | 8 | Abort |
 | `results/data/phase8/scores/*/np_o_*_f*_scores.csv` | 8 | Abort |
 | `results/data/phase8/csfit_o_*_{alg}.json` | 8 | Abort |
 | `results/data/phase9/constraint_table.json` | 9 | Abort |
-| `results/data/phase9/algorithm_selection.json` | 9 | Warn |
-| `results/data/phase10/manuscript_evidence.json` | 10 | Warn |
-| `results/data/phase10/reference_paper_plan.json` | 10 | Warn |
-| `results/data/phase10/literature_plan.json` | 10 | Warn |
-| `results/data/phase10/manuscript_validation.json` | 10 | Warn |
-| `results/plots/roc_anchor.pdf` | 7 | Warn |
-| `results/plots/threshold_comparison.pdf` | 8 | Warn |
-| `results/manuscript.html` or `results/manuscript.pdf` | 10 | Abort |
-| `results/mg5_processes/cleanup_log.json` | Cleanup | Warn |
-| `results/mg5_processes/` non-empty | Cleanup | Warn |
-| `results/orders/` non-empty | Cleanup | Warn |
+| `results/data/phase9/constraint_table.csv` | 9 | Abort |
+| `results/data/phase9/algorithm_selection.json` with selected algorithm and threshold | 9 | Abort |
+| `results/data/phase10/manuscript_build_environment.json` | 10 | Abort |
+| `results/data/phase10/manuscript_evidence.json` | 10 | Abort |
+| `results/data/phase10/reference_paper_plan.json` | 10 | Abort |
+| `results/data/phase10/literature_plan.json` | 10 | Abort |
+| `results/data/phase10/manuscript_checklist.json` | 10 | Abort |
+| `results/data/phase10/manuscript_validation.json` | 10 | Abort |
+| `results/data/phase10/manuscript_draft_v1.*` | 10 | Abort |
+| `results/plots/roc_anchor.pdf` | 7 | Abort |
+| `results/plots/score_dist_all_pure_np_{alg}.pdf` | 7 | Abort |
+| `results/plots/threshold_comparison.pdf` | 8 | Abort |
+| `results/plots/csfit_plot_o_*_{alg}.pdf` | 8 | Abort |
+| `results/plots/anchor_s2_constraint_range_vs_threshold.pdf` | 8 | Abort |
+| `results/plots/anchor_s2_algorithm_constraint_bar.pdf` | 9 | Abort |
+| `results/manuscript.pdf` and `.tex` if `phase10/manuscript_build_environment.json` has `pdf_required=true`; otherwise `results/manuscript.html` | 10 | Abort |
+| `results/mg5_processes/cleanup_log.json` | Cleanup | Abort |
+| `results/mg5_processes/` non-empty | Cleanup | Abort |
+| `results/orders/` non-empty | Cleanup | Abort |
 
 Phase 6 spot-check: for each operator in `operator_claims.json`, verify at least
 one scan file exists, such as `np_o_1_f0.lhco`. Abort if an operator has zero
@@ -98,10 +116,10 @@ with workflow_step(logger, "11", "check_numerical_sanity"):
 |---|---|
 | 3 | At least one operator claimed globally; `anchor` is set |
 | 4 | `cs_sm > 0`; `coefficient_ranges.json` has one finite two-significant-digit `c_scan` in `(0, 1e3)` for every claimed operator |
-| 7 | All selected algorithms trained; AUC and model paths recorded |
-| 8 | `csfit_sm > 0`, `csfit_np >= 0`, residual warnings recorded |
+| 7 | All selected algorithms trained; AUC, model paths, feature schema, score definitions, and pseudocode recorded |
+| 8 | fixed `sigma0_after_cut`/`csfit_sm > 0`, `fit_intercept_fixed=true`, `csfit_np >= 0`, dataset summary complete, residual warnings recorded |
 | 9 | `fmin < 0 < fmax`; one anchor-selected algorithm is used for all final constraints |
-| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups |
+| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`; `manuscript_checklist.json` exists and was run for the final draft; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
 
 Do not require `S=5` intervals to be narrower than `S=3` or `S=2`; larger
 significance thresholds can require larger coefficient deviations.
@@ -170,6 +188,10 @@ logger.phase_complete("11")
 | FAIL | Any abort condition | Return audit log; do not claim workflow success |
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("11")`, satisfy
+[`deliverables-phase11.md`](deliverables-phase11.md). Missing deliverables
+require self-repair, not user interaction.
 
 After `logger.phase_complete("11")` is called and `audit_report.json` is written:
 

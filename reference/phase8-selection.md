@@ -84,6 +84,10 @@ for alg_name, alg_info in alg_data["anchor"].items():
 
 Compute scores for all events in each scan point. The `compute_scores` function was produced in Phase 7 (Step 7.2.3) and handles normalization automatically for all algorithm types.
 
+Use `alg_name` exactly as the stable algorithm key from
+`algorithm_comparison.json["anchor"]` for score directories, fit JSON filenames,
+plots, and threshold records. Do not invent a second sanitized name in Phase 8.
+
 Save per-event scan scores for every algorithm:
 
 ```
@@ -147,7 +151,20 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
    The total selection efficiency is `m_x / loaded_event_count_x`. If useful,
    also record conditional ML efficiency as
    `m_x / surviving_final_state_event_count_x`.
-3. Fit quadratic: `csfit(f) = csfit_sm + f*csfit_int + f^2*csfit_np`
+3. Fit the quadratic with a **fixed intercept**:
+   ```
+   csfit(f) = sigma0_after_cut + f*csfit_int + f^2*csfit_np
+   ```
+   where `sigma0_after_cut` is the cut cross-section of the scan point with
+   coefficient `f = 0`. For the required scan expression
+   `[-c_scan + 0.2 * c_scan * n for n in range(11)]`, this is the `n = 5`
+   point (`f5`). Do not fit the constant term and do not replace it with an
+   uncut SM cross-section or a Phase 5 pure-SM value.
+
+   Fit only `csfit_int` and `csfit_np` using:
+   ```
+   cs_cut_x - sigma0_after_cut = f_x*csfit_int + f_x^2*csfit_np
+   ```
 4. Solve `S_stat = 2` with physical luminosity converted to the inverse unit
    matching the fitted cross-section. In the default workflow, `csfit_*` is in
    pb and `config.luminosity` is in fb^-1, so use
@@ -157,7 +174,7 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
 
    Use [`significance-reference.md`](significance-reference.md):
    ```
-   N_bg = L_pb_inv * csfit_sm
+   N_bg = L_pb_inv * sigma0_after_cut
    N_sig = L_pb_inv * (f * csfit_int + f^2 * csfit_np)
    S_stat = sqrt(2 * [(N_bg + N_sig) * ln(1 + N_sig/N_bg) - N_sig])
    ```
@@ -177,7 +194,17 @@ Record per algorithm:
 {
   "algorithm": "{alg_name}",
   "optimal_threshold": 0.62,
-  "constraint_width_at_optimal": 0.045
+  "constraint_width_at_optimal": 0.045,
+  "threshold_scan": [
+    {
+      "threshold": 0.62,
+      "sigma0_after_cut_pb": 0.0012,
+      "fit_intercept_fixed": true,
+      "lower_bound": -0.021,
+      "upper_bound": 0.024,
+      "constraint_width": 0.045
+    }
+  ]
 }
 ```
 
@@ -195,7 +222,8 @@ Record per scan point:
   "total_selection_efficiency": 0.01855,
   "conditional_ml_efficiency": 0.01905,
   "cs_x_pb": 0.034,
-  "cs_cut_x_pb": 0.000631
+  "cs_cut_x_pb": 0.000631,
+  "is_f0_point": false
 }
 ```
 
@@ -224,7 +252,9 @@ For **each algorithm**, using **its own** optimal threshold from Step 8.3, repea
 For each operator `o_{g_idx}`:
 - Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
 - Apply the algorithm's threshold
-- Fit quadratic and record coefficients
+- Fit the quadratic with the fixed `f=0` cut cross-section as the intercept and
+  record `sigma0_after_cut`, `csfit_int`, `csfit_np`,
+  `fit_intercept_fixed=true`, and `f0_label="f5"`
 - Use each scan point's own `loaded_lhco_event_count` as the denominator for
   `cs_cut_x`. Do not use the anchor denominator for non-anchor operators.
 
@@ -238,6 +268,39 @@ with workflow_step(logger, "8", "plot_csfit_and_threshold_comparison",
 For each algorithm and each operator: scatter `cs_cut_x` points + fitted curve `csfit(f)`.
 
 Also plot **algorithm comparison**: for the anchor operator, show constraint width vs threshold for all algorithms on the same plot.
+
+Also plot the **anchor S=2 constraint range vs threshold**: for the anchor
+operator and every trained algorithm, show the lower and upper real-root
+constraint bounds as functions of threshold. This plot is manuscript evidence
+for how the selected threshold changes the expected coefficient range.
+
+## Step 8.6: Build Dataset Summary
+
+Before completing Phase 8, write:
+
+```
+results/data/phase8/dataset_summary.json
+```
+
+This file is the manuscript source for the dataset table. Build it from Phase 5
+runner result JSONs, Phase 6 scan result/recovery metadata, Phase 7
+`event_counts.json`, and Phase 8 `scan_event_counts.json`. For every SM, pure
+NP, and scan dataset row include:
+
+- `dataset_id`
+- `loaded_lhco_event_count`
+- `surviving_final_state_event_count`
+- `final_state_cut`
+- `raw_cross_section_pb`
+- `final_state_cut_cross_section_pb`
+- `cross_section_source`: runner result, recovery metadata, or banner path
+- `public_csv_path`
+- `score_csv_paths`; for scan rows, include every Phase 8 algorithm score CSV;
+  for SM and pure-NP rows, include the corresponding Phase 7 score CSVs.
+
+Compute `final_state_cut_cross_section_pb` as
+`raw_cross_section_pb * surviving_final_state_event_count / loaded_lhco_event_count`.
+This is not the ML-threshold-selected `cs_cut_x`.
 
 ```python
 logger.phase_complete("8")
@@ -253,6 +316,7 @@ results/data/phase8/
   scores/{alg}/np_o_1_f0_scores.csv, ..., scores/{alg}/np_o_N_f10_scores.csv
   threshold_optimization.json    # per-algorithm optimal thresholds (from anchor)
   scan_event_counts.json         # requested, loaded, surviving, and passing counts
+  dataset_summary.json
   csfit_o_1_{alg1}.json, csfit_o_1_{alg2}.json, ...
   csfit_o_2_{alg1}.json, csfit_o_2_{alg2}.json, ...
   ...
@@ -263,7 +327,25 @@ results/plots/
   ...
   csfit_plot_o_N_{alg1}.pdf, csfit_plot_o_N_{alg2}.pdf, ...
   threshold_comparison.pdf       # all algorithms on one plot (anchor operator)
+  anchor_s2_constraint_range_vs_threshold.pdf
 ```
+
+Each `csfit_o_*_{alg}.json` must include at least:
+
+```json
+{
+  "fit_intercept_fixed": true,
+  "f0_label": "f5",
+  "sigma0_after_cut_pb": 0.0012,
+  "csfit_sm": 0.0012,
+  "csfit_int": 0.034,
+  "csfit_np": 1.8,
+  "fit_model": "sigma(f)=sigma0_after_cut+f*csfit_int+f^2*csfit_np"
+}
+```
+
+`csfit_sm` is retained only as a backward-compatible alias for
+`sigma0_after_cut_pb`; it must equal the `f=0` scan point's cut cross-section.
 
 ## Validation
 
@@ -272,15 +354,26 @@ Relevant invariants:
 Publication Data, Actual Event Counts, and Execution Continuity.
 
 - `csfit_sm > 0`
+- `csfit_sm` or `sigma0_after_cut` equals the `f=0` scan point's cut
+  cross-section and is not a fitted intercept
 - `csfit_np >= 0`
+- every `csfit_o_*_{alg}.json` records `fit_intercept_fixed=true` and
+  `f0_label="f5"`
 - Every scan point has positive `loaded_lhco_event_count`
 - No efficiency or `cs_cut_x` denominator is requested `nev_scan` or a banner event count
 - Every Phase 6 LHCO scan point has a corresponding public CSV under `results/data/phase8/csv/`
 - Every algorithm has per-event scan score CSVs under `results/data/phase8/scores/{alg}/`
 - Scan CSV row counts match `surviving_final_state_event_count`
+- `dataset_summary.json` exists and every row has loaded event count,
+  final-state-cut surviving count, raw cross-section, final-state-cut
+  cross-section, and exact final-state cut expression
 - Residual: `|cs_cut_x - csfit(f_x)| / csfit(f_x) < 0.5` for all points
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("8")`, satisfy
+[`deliverables-phase8.md`](deliverables-phase8.md). Missing deliverables require
+self-repair, not user interaction.
 
 After all operators are fitted and all JSON files are written:
 

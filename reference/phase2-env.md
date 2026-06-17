@@ -163,6 +163,18 @@ When resuming, still run all Phase 2 validation steps every time.
    {workdir}/results/{run_dir}/orders
    ```
 
+10. **Write environment manifest**
+    Write this structured provenance file under each run root:
+    ```text
+    results/data/phase2/environment_manifest.json
+    ```
+    Include execution mode/target, validated MG5 path and version probe,
+    CutExperiment path and commit/version probe when available, Delphes card
+    resolved path, model paths, venv Python path, installed Python package
+    versions, locked event-count mode, and every probe command with return code.
+    Phase 10 uses this file for toolchain provenance; do not leave tool
+    versions only in `workflow.log`.
+
 ```python
 logger.phase_complete("2")
 ```
@@ -175,6 +187,10 @@ logger.phase_complete("2")
 - Every MG5 subprocess must be wrapped by `workflow_step(...)` and must check the return code.
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("2")`, satisfy
+[`deliverables-phase2.md`](deliverables-phase2.md). Missing deliverables require
+self-repair, not user interaction.
 
 After `logger.phase_complete("2")` is called and run directories are set up:
 

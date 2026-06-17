@@ -204,6 +204,7 @@ logger.phase_complete("4")
 results/data/phase4/
   coefficient_ranges.json
   sm_baseline.json
+  sm_baseline_result.json
 ```
 
 `coefficient_ranges.json` schema:
@@ -235,6 +236,10 @@ results/data/phase4/
 - no new-run `coefficient_ranges.json` contains a `"global"` range
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("4")`, satisfy
+[`deliverables-phase4.md`](deliverables-phase4.md). Missing deliverables require
+self-repair, not user interaction.
 
 After `logger.phase_complete("4")` is called and all JSON outputs are written:
 

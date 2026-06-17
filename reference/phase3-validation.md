@@ -82,10 +82,19 @@ Records per-model Feynman diagram generation status and detailed coefficient res
 model_status = {
     "nTGC_UFO_11g1": {
         "has_feynman_diagrams": True,
+        "create_np_result_json": "results/data/phase3/nTGC_UFO_11g1_create_np_result.json",
         "num_coefficients": 14,
         "coefficients": {
-            "C1": {"c_default": 1.0, "sigma": 0.0},
-            "C2": {"c_default": 1.0, "sigma": 0.0},
+            "C1": {
+                "c_default": 1.0,
+                "sigma": 0.0,
+                "result_json": "results/data/phase3/nTGC_UFO_11g1_C1_result.json"
+            },
+            "C2": {
+                "c_default": 1.0,
+                "sigma": 0.0,
+                "result_json": "results/data/phase3/nTGC_UFO_11g1_C2_result.json"
+            },
             ...
         }
     },
@@ -182,8 +191,9 @@ For each coefficient `fi` in this model:
    process-creation result is already a confirmed zero-contribution model and
    does not need banner/LHE evidence.
 5. **Record result in `model_status`**: Always record the coefficient's
-   `c_default`, `sigma_i`, result JSON path, stdout/stderr paths, and zero-check
-   report if present.
+   `c_default`, `sigma_i`, `result_json`, stdout/stderr paths, and zero-check
+   report if present. Use the exact key `result_json` so Phase 11 can audit the
+   runner manifest.
 6. **Deduplication check**:
    - If `sigma_i > 0` and `fi` NOT in `claimed`:
      - Assign next global index `g_idx`
@@ -235,6 +245,13 @@ After all models have been processed:
 }
 ```
 
+Preserve every runner result JSON produced in Phase 3, including
+`*_create_np_result.json` and every per-coefficient `*_result.json`. Record the
+create-process manifest as `create_np_result_json` and each coefficient manifest
+as `result_json` in `model_status.json`; cleanup and Phase 10 diagram evidence
+use these manifests to find process directories, order files, stdout/stderr,
+and zero-cross-section evidence.
+
 ```python
 import json
 
@@ -263,8 +280,10 @@ logger.phase_complete("3")
 results/data/phase3/
   operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
   cross_sections.json        # {fi: {sigma, c_default, model, global_idx}} for all tested
-  model_status.json          # {model: {has_feynman_diagrams, num_coefficients, coefficients: {fi: {c_default, sigma}}}}
+  model_status.json          # {model: {has_feynman_diagrams, create_np_result_json, coefficients: {fi: {c_default, sigma, result_json}}}}
   anchor.json                # {global_idx, model, anoinput_idx, name}
+  *_create_np_result.json
+  *_result.json              # runner manifests referenced by model_status.json
 ```
 
 ## Validation
@@ -339,6 +358,10 @@ The following behaviors constitute a **critical violation** of the Execution Con
 | Not setting anchor if first model has all-zero operators | Continue to next model; anchor is first non-zero across ALL models |
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("3")`, satisfy
+[`deliverables-phase3.md`](deliverables-phase3.md). Missing deliverables require
+self-repair, not user interaction.
 
 After `logger.phase_complete("3")` is called and all JSON outputs are written:
 

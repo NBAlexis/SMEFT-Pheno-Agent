@@ -22,6 +22,13 @@ Required top-level keys:
 | `reference_papers` | user-list papers used for writing style, method comparison, or result comparison |
 | `citations` | mandatory toolchain citations and selected literature citations, grouped by role |
 
+## Toolchain Evidence
+
+Read `results/data/phase2/environment_manifest.json` for execution target,
+validated paths, tool versions, probe commands, venv Python path, package
+versions, model locations, and detector-card provenance. Do not reconstruct
+tool versions from conversation text.
+
 ## Collider Energy Evidence
 
 Use `run_configurations[*].ebeam1` and `run_configurations[*].ebeam2` as the
@@ -37,6 +44,10 @@ derive `sqrt(s)` inline and do not treat it as an MG5 runner input.
 
 ## Dataset Evidence
 
+Read `results/data/phase8/dataset_summary.json` first. It is the preferred
+source for the manuscript dataset table because it joins event counts,
+final-state cuts, raw cross-sections, and final-state-cut cross-sections.
+
 For every SM, anchor NP, and scan dataset, record:
 
 - dataset id and purpose
@@ -49,8 +60,15 @@ For every SM, anchor NP, and scan dataset, record:
 - ML/selection passing event count when a threshold is applied
 - efficiencies with denominators stated explicitly
 - cross-section before and after selection, with units
-- public CSV path and score CSV path, when available
+- public CSV path and score CSV path
 - composition: `SM only`, `SM + NP`, or `SM + NP + interference`
+
+Also build a dataset-summary table for the manuscript. Each row must include:
+dataset id, loaded LHCO event count, event count after the final-state
+particle-number cut, raw cross-section, cross-section after the final-state
+particle-number cut, units, and the exact final-state cut expression. The
+post-final-state-cut cross-section uses the final-state-cut efficiency, not the
+ML score threshold.
 
 Approximate counts are invalid in the final paper. If only an approximate count is
 available, write the exact evidence field as `null`, record the approximation in
@@ -61,6 +79,9 @@ targets, not actual LHCO output. Selection efficiencies and selected
 cross-sections must be normalized by actual loaded LHCO counts.
 
 ## Feature Evidence
+
+Read `results/data/phase7/feature_schema.json`; do not reconstruct the feature
+order or units from memory.
 
 Record features as an ordered list. Each feature must include:
 
@@ -77,6 +98,23 @@ Record preprocessing separately:
 - `standardization`: `none`, `standard_scaler`, or another concrete method
 - source sample used to fit preprocessing parameters
 - whether the same preprocessing is applied to SM, NP, and scan samples
+
+## Algorithm Evidence
+
+Read `results/data/phase7/algorithm_descriptions.json` and
+`results/data/phase7/algorithm_comparison.json`.
+
+For every trained algorithm, record:
+
+- algorithm name and implementation class
+- short self-contained method description
+- hyperparameters used in training
+- pseudocode suitable for the manuscript
+- exact score definition used by `compute_scores.py`, written as a mathematical
+  function `s(x)` with output range and direction (`higher = more NP-like`)
+- AUC on the anchor SM-vs-NP test set
+- ROC figure path
+- score-histogram figure path for SM and every globally claimed pure-NP operator
 
 ## Model Evidence for Arbitrary UFOs
 
@@ -99,12 +137,34 @@ For every reported fit, record:
 - algorithm
 - threshold
 - scan coefficient values
-- fitted coefficients in `sigma(f) = sigma_SM + f sigma_int + f^2 sigma_NP`
+- coefficient scan lower and upper bounds
+- fixed `sigma0_after_cut` from the `f=0` scan point after cuts/selection
+- fitted coefficients in
+  `sigma(f) = sigma0_after_cut + f sigma_int + f^2 sigma_NP`
+- `fit_intercept_fixed=true` and `f0_label="f5"` for the standard 11-point scan
 - units for every coefficient
-- fit quality if available: residuals, covariance, R2, or chi-square
+- fit quality if Phase 8 retained it: residuals, covariance, R2, or chi-square
+- SM+NP selected cross-section versus fit figure path
 
 The paper must include numeric fit coefficients. If unavailable, validation must
 record a major issue.
+
+## Figure Evidence
+
+Record figure paths and captions for:
+
+- representative Feynman diagrams for SM and NP, or documented missing reasons
+- SM-vs-anchor-NP ROC plot
+- score histograms comparing SM with every globally claimed pure-NP operator
+- SM+NP selected cross-section points versus fitted curve for every globally
+  claimed operator
+- anchor-operator `S_stat = 2` expected coefficient constraint range versus
+  threshold
+- anchor-operator `S_stat = 2` algorithm-comparison bar plot
+
+If a required figure is unavailable but the underlying data exists, create the
+figure before drafting. If the underlying data is missing, record the missing
+reason and let validation flag the issue.
 
 ## Citation Evidence
 

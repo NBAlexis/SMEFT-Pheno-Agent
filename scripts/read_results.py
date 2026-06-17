@@ -87,7 +87,11 @@ def read_threshold_optimization(workdir: str, run_dir: Optional[str] = None) -> 
 
 def read_csfit(workdir: str, operator: str, algorithm: str,
                run_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Read csfit_{operator}_{algorithm}.json: quadratic fit coefficients."""
+    """Read csfit_{operator}_{algorithm}.json.
+
+    Phase 8 fits use a fixed f=0 selected cross-section as the intercept; only
+    the linear and quadratic coefficients are fitted.
+    """
     fname = f"data/phase8/csfit_{operator}_{algorithm}.json"
     return _load_json(_result_path(workdir, run_dir, fname))
 

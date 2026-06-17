@@ -1,8 +1,10 @@
 # Manuscript Writing Guide
 
 Phase 10 writes a publication-style HEP phenomenology paper, not a workflow summary.
-The paper may be LaTeX/PDF or HTML; both formats must follow the same scientific
-content standard.
+The final paper must be PDF when `pdflatex` or `latexmk` is available on either
+the execution target or the local control environment. HTML must follow the
+same scientific content standard, but it is only a fallback when both LaTeX
+probes fail.
 
 ## Required Reading Order
 
@@ -14,7 +16,8 @@ Read these files in order during Phase 10:
 4. [`manuscript-citation-guide.md`](manuscript-citation-guide.md): select actual citations from the toolchain and literature bank.
 5. [`manuscript-literature-bank.md`](manuscript-literature-bank.md): use the SMEFT/aQGC/nTGC/ML-in-HEP citation warehouse.
 6. [`significance-reference.md`](significance-reference.md): use the shared significance and root-selection rules.
-7. [`manuscript-validation-guide.md`](manuscript-validation-guide.md): validate and revise with a bounded retry loop.
+7. [`manuscript-checklist.md`](manuscript-checklist.md): run a concrete completeness checklist before validation.
+8. [`manuscript-validation-guide.md`](manuscript-validation-guide.md): validate and revise with a bounded retry loop.
 
 ## Paper Structure
 
@@ -36,9 +39,12 @@ Use this section order unless the user explicitly requested a different journal 
 - Do not replace missing exact values with approximate text such as `~2500`.
 - Do not invent mathematical operator definitions for arbitrary UFO models.
 - When exact operator formulas are unavailable, describe the UFO parameter at model/block/index/name level.
-- Treat HTML as a formal paper output when LaTeX is unavailable.
+- Treat HTML as a formal paper output only when both target and local LaTeX are
+  unavailable. If either side has `pdflatex` or `latexmk`, the final deliverable
+  must include `manuscript.pdf` and `manuscript.tex`.
 - The final constraints must use the single algorithm selected by the first non-zero operator.
 - The significance formula and constraint-root rules must match [`significance-reference.md`](significance-reference.md).
 - The reference-paper plan must not force user-list papers into the bibliography; cite them only when the manuscript makes a direct comparison or uses a specific claim.
 - The literature plan must use role-based citation groups and include relevant arXiv identifiers from [`manuscript-literature-bank.md`](manuscript-literature-bank.md).
+- The manuscript checklist must be run after every draft; missing checklist items with available evidence are revision targets.
 - Validation failures are revision inputs, not stop conditions. After the bounded revision loop, archive remaining issues and continue to cleanup and audit.

@@ -269,6 +269,7 @@ results/data/phase6/
   scan_manifest.json
   phase6_progress.json
   event_count_recovery.json
+  np_o_1_scan_result.json, ..., np_o_N_scan_result.json
   np_o_1_f0_banner.txt    np_o_1_f0.lhco
   ...
   np_o_1_f10_banner.txt   np_o_1_f10.lhco
@@ -276,6 +277,10 @@ results/data/phase6/
   ...
   np_o_N_f10_banner.txt   np_o_N_f10.lhco
 ```
+
+Keep every `np_o_{g_idx}_scan_result.json`. Phase 10 uses these runner
+manifests to locate process folders, banners, LHCO paths, cross-sections, and
+representative Feynman diagrams.
 
 ## Common Mistakes
 
@@ -295,6 +300,10 @@ results/data/phase6/
 | Using `hard_survey > 2` | Do not exceed `hard_survey = 2`; it is too slow for this workflow |
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("6")`, satisfy
+[`deliverables-phase6.md`](deliverables-phase6.md). Missing deliverables require
+self-repair, not user interaction.
 
 After all operators are scanned and all LHCO files are copied:
 

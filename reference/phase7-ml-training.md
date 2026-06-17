@@ -86,6 +86,7 @@ def lhco_to_features(lhco_path, process_name=representative_process):
         "loaded_lhco_event_count": int(loaded_event_count),
         "surviving_final_state_event_count": int(len(features)),
         "final_state_cut": describe_final_state_cut(process_name),
+        "feature_schema_path": "results/data/phase7/feature_schema.json",
     }
     return feature_array, metadata
 ```
@@ -135,6 +136,13 @@ particles are selected and how many. A bracketed process list is one combined
 MG5 process for the workflow; use the same feature extraction for the combined
 LHCO sample. See [`cutexperiment-reference.md`](cutexperiment-reference.md) for
 the full pipeline.
+
+Also write `results/data/phase7/feature_schema.json`. It is the manuscript
+source of truth for the feature table and must contain an ordered `features`
+array with index, code name, paper symbol, unit, physical definition, particle
+assignment, ordering rule, and formula for derived quantities. Include the exact
+`final_state_cut` and preprocessing metadata (`standardization`, `fit_sample`,
+and whether the same preprocessing is applied to SM, pure NP, and scan samples).
 
 ## Step 7.2: Algorithm Pool and Selection Strategy
 
@@ -275,17 +283,36 @@ with workflow_step(logger, "7", "save_algorithms",
 Save **every fitted model**:
 ```python
 for alg_name, clf in fitted_clfs.items():
-    model_path = os.path.join(config.workdir, "results", "algorithms", f"anchor_{alg_name}.pkl")
+    alg_key = make_stable_algorithm_key(alg_name)
+    model_path = os.path.join(config.workdir, "results", "algorithms", f"anchor_{alg_key}.pkl")
     joblib.dump(clf, model_path)
 ```
+
+Use one stable `algorithm_key` for every output belonging to the same trained
+algorithm. The key is the object key under `algorithm_comparison.json["anchor"]`
+and must also be used in model filenames, score CSVs, histogram filenames, Phase
+8 score directories, Phase 8 fit filenames, and Phase 9 comparison records.
+Record the display name separately if it differs from the filesystem-safe key.
 
 Record all AUCs in `algorithm_comparison.json`:
 ```json
 {
   "anchor": {
-    "{alg1}": {"auc": 0.9876, "algorithm_path": "..."},
-    "{alg2}": {"auc": 0.9654, "algorithm_path": "..."},
-    "{alg3}": {"auc": 0.9432, "algorithm_path": "..."}
+    "{alg1}": {
+      "auc": 0.9876,
+      "algorithm_path": "...",
+      "score_definition": "s(x)=P_NP(x) from predict_proba, normalized to [0,1]"
+    },
+    "{alg2}": {
+      "auc": 0.9654,
+      "algorithm_path": "...",
+      "score_definition": "s(x)=sigmoid(decision_function(x))"
+    },
+    "{alg3}": {
+      "auc": 0.9432,
+      "algorithm_path": "...",
+      "score_definition": "s(x)=minmax(-score_samples(x))"
+    }
   },
   "algorithm_pool": ["{alg1}", "{alg2}", "{alg3}", "..."],
   "initial_random_seed": 12345,
@@ -293,6 +320,17 @@ Record all AUCs in `algorithm_comparison.json`:
   "anchor_model": "AQGCm_UFO"
 }
 ```
+
+Each trained algorithm must have a clear mathematical score definition in
+`algorithm_comparison.json`. Use the actual `compute_scores` branch used by that
+model: probability score, sigmoid-transformed decision function, or min-max
+normalized anomaly score. This definition is manuscript evidence, not a hidden
+implementation detail.
+
+Also write `results/data/phase7/algorithm_descriptions.json`. For every trained
+algorithm, include its implementation class, hyperparameters, train/test split,
+random seed, score definition, and manuscript-ready pseudocode. Phase 10 reads
+this file directly; do not leave pseudocode to be reconstructed from memory.
 
 ```python
 logger.phase_complete("7")
@@ -306,14 +344,17 @@ logger.phase_complete("7")
 results/data/phase7/
   sm.csv, np_anchor.csv
   np_o_1.csv, np_o_2.csv, ..., np_o_N.csv
+  feature_schema.json
   event_counts.json
   algorithm_comparison.json
+  algorithm_descriptions.json
   scores/{alg}_sm_scores.csv
   scores/{alg}_np_o_1_scores.csv, ..., scores/{alg}_np_o_N_scores.csv
 results/plots/
   roc_anchor.pdf
   score_dist_all_pure_np_{alg1}.pdf, score_dist_all_pure_np_{alg2}.pdf, ...
 results/algorithms/
+  compute_scores.py
   anchor_{alg1}.pkl, anchor_{alg2}.pkl, anchor_{alg3}.pkl, ...
 ```
 
@@ -325,10 +366,19 @@ Publication Data, Actual Event Counts, and Execution Continuity.
 
 - `0.5 < AUC <= 1.0` for anchor training
 - `event_counts.json` exists and every `loaded_lhco_event_count` is positive
+- `feature_schema.json` exists, is ordered, and includes units, definitions,
+  particle assignments, ordering rules, and preprocessing metadata
+- `algorithm_descriptions.json` exists and includes score definitions,
+  hyperparameters, train/test split, random seed, and pseudocode for every
+  trained algorithm
 - `sm.csv`, `np_anchor.csv`, and every `np_o_{g_idx}.csv` exist and are non-empty
 - Per-event score CSVs exist for SM and every pure-NP operator for every trained algorithm
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("7")`, satisfy
+[`deliverables-phase7.md`](deliverables-phase7.md). Missing deliverables require
+self-repair, not user interaction.
 
 After `logger.phase_complete("7")` is called and all algorithms are saved:
 

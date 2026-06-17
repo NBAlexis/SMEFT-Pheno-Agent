@@ -37,7 +37,8 @@ c_scan = coefficient_ranges["operators"][f"o_{global_idx}"]["c_scan"]
 ## Step 5.1: Pure SM Sample
 
 1. Build a `scripts/run_mg5_config.py` JSON with `process_mode="pure_sm"`,
-   `nevents = {nev_sm}`, and output label `sm`.
+   `nevents = {nev_sm}`, output label `sm`, and
+   `result_json = results/data/phase5/sm_result.json`.
 2. Run it through the event-count recovery wrapper when the loaded LHCO count is
    below the recovery threshold.
 3. Post-processing is runner-owned: Delphes card setup, ROOT-to-LHCO conversion,
@@ -48,6 +49,7 @@ c_scan = coefficient_ranges["operators"][f"o_{global_idx}"]["c_scan"]
 ```
 results/data/phase5/sm_banner.txt
 results/data/phase5/sm.lhco
+results/data/phase5/sm_result.json
 ```
 
 ```python
@@ -55,7 +57,7 @@ with workflow_step(logger, "5", "generate_sm_sample",
                    inputs={"anchor_model": anchor_model,
                            "nevents": config.locked_event_counts.nev_sm}):
     # Required action: run scripts/run_mg5_config.py (or recovery wrapper)
-    # from a JSON config and record the result JSON/stdout/stderr paths.
+    # from a JSON config and preserve the result JSON/stdout/stderr paths.
 ```
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
@@ -72,7 +74,8 @@ For each operator `o_{g_idx}`:
 1. Build a `scripts/run_mg5_config.py` JSON using that operator's source model,
    `process_mode="pure_np"`, `target_coefficient.index = anoinput_idx`,
    `coefficient_mode="c_scan"`, that operator's own Phase 4 `c_scan`, and
-   `nevents = {nev_np}`.
+   `nevents = {nev_np}`. Set
+   `result_json = results/data/phase5/np_o_{g_idx}_result.json`.
 2. The runner sets only that target coefficient nonzero and sets the other
    coefficients in the same UFO coefficient block to `0.0`.
 3. Post-process and apply event-count recovery from
@@ -81,6 +84,7 @@ For each operator `o_{g_idx}`:
 ```
 results/data/phase5/np_o_{g_idx}_banner.txt
 results/data/phase5/np_o_{g_idx}.lhco
+results/data/phase5/np_o_{g_idx}_result.json
 ```
 
 For compatibility with Phase 7 training, also write an anchor alias:
@@ -88,6 +92,7 @@ For compatibility with Phase 7 training, also write an anchor alias:
 ```
 results/data/phase5/np_anchor_banner.txt
 results/data/phase5/np_anchor.lhco
+results/data/phase5/np_anchor_alias.json
 results/data/phase5/event_count_recovery.json
 ```
 
@@ -104,7 +109,7 @@ for op_key, claim in operator_claims.items():
                                "c_scan": coefficient_ranges["operators"][op_key]["c_scan"],
                                "nevents": config.locked_event_counts.nev_np}):
         # Required action: run scripts/run_mg5_config.py (or recovery wrapper)
-        # from a JSON config and record the result JSON/stdout/stderr paths.
+        # from a JSON config and preserve the result JSON/stdout/stderr paths.
 
 logger.phase_complete("5")
 ```
@@ -124,10 +129,17 @@ Execution Continuity.
 - `sm.lhco` must exist and be non-empty (abort if missing)
 - `np_o_{g_idx}.lhco` must exist and be non-empty for every globally claimed operator (abort if missing)
 - `np_anchor.lhco` must exist and be non-empty, and must match the anchor operator sample (abort if missing)
+- `sm_result.json` and every `np_o_{g_idx}_result.json` must exist and contain
+  runner metadata including `process_dir`, `outputs[*].banner_path`,
+  `outputs[*].cross_section_pb`, and `outputs[*].loaded_lhco_event_count`
 - `event_count_recovery.json` records requested and actual LHCO counts, recovery attempts, and selected output paths for SM and every pure-NP sample
 - Apply [`event-count-recovery.md`](event-count-recovery.md): no sample with actual LHCO count below `10%` of requested `nevents` may pass validation unless recovery has been attempted and the remaining deficiency is recorded as a red flag
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("5")`, satisfy
+[`deliverables-phase5.md`](deliverables-phase5.md). Missing deliverables require
+self-repair, not user interaction.
 
 After `logger.phase_complete("5")` is called and all LHCO files are copied:
 

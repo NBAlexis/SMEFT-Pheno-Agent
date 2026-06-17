@@ -1,11 +1,24 @@
 ---
 name: automated-smeft-ml-pheno
-description: "Use for automated SMEFT collider phenomenology workflows: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML event selectors, scan Wilson coefficients, compute expected constraints, and draft manuscript outputs."
+description: "Use for serious long-running SMEFT collider phenomenology studies: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML selectors, scan Wilson coefficients, compute constraints, and produce a scientific manuscript."
 ---
 
 # Automated SMEFT Phenomenology with Machine Learning
 
 Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a publication-style manuscript, clean up MG5 process folders, and audit consistency.
+
+## Research Mission
+
+This skill is for serious scientific research, not quick demonstration runs. The
+goal is to produce a scientifically usable manuscript after numerical
+simulation, with reproducible data, plots, fit coefficients, constraints, and
+audit logs.
+
+After Phase 1 collects the required inputs, Phases 2-11 are an automated,
+unattended research workflow. Week-scale or longer computation is expected and
+normal. Do not downgrade the workflow to a progress summary, run report,
+partial result, informal answer, reduced scan, reduced event count, or HTML
+fallback while LaTeX is available or build errors are recoverable.
 
 ## Operating Modes
 
@@ -51,6 +64,29 @@ Before `logger.phase_complete("N")` in any execution phase, read
 invariants relevant to that phase, fix violating artifacts, log the correction,
 and continue without asking the user.
 
+#### Phase Delivery Gate
+
+Before `logger.phase_complete("N")`, read the deliverable file linked by the
+current phase reference (for example, Phase 5 reads only
+`reference/deliverables-phase5.md`). Phase 1 missing intake fields must be
+re-asked; Phases 2-11 missing deliverables must be repaired or resumed
+autonomously. Do not advance to the next phase until the gate passes. Do not
+load other phase deliverable files unless repairing an upstream failure or
+running Phase 11 audit.
+
+Delivery definitions:
+- Paths in deliverable files are relative to the current run root: `results/`
+  for single-run mode, or `results/{run_dir}/` for multi-run mode.
+- A delivered file must exist and be non-empty. JSON must parse and contain the
+  required keys; CSV/PDF/LHCO/plot files must be non-empty; any path referenced
+  inside a JSON deliverable must exist unless an explicit allowed
+  `missing_reason` field is required by that phase.
+- `o_N` always means the global operator key from Phase 3
+  `operator_claims.json`, not a UFO-internal coefficient index.
+- `alg` means the stable algorithm key used in
+  `algorithm_comparison.json["anchor"]`. Use the same key for model files,
+  score directories, fit files, plots, and manuscript evidence.
+
 ## SUPREME RULE: Execution Continuity
 
 Once Execution Mode starts, keep running until Phase 11 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
@@ -63,6 +99,8 @@ Rules:
 - Do not stop because the estimated runtime is hours, days, weeks, or months.
 - Do not declare a phase "impractical for an interactive session".
 - Do not alter physical parameters for speed or convenience.
+- Do not replace required artifacts or the scientific manuscript with a run
+  report, progress summary, partial result, or informal explanation.
 - Recover from MG5, Delphes, ROOT, root2lhco, filesystem, and parsing issues when a conservative recovery is possible; otherwise stop only with concrete evidence of an unrecoverable error.
 
 ## Long-Run Execution Contract
@@ -190,6 +228,7 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | 11 | Audit | [`reference/phase11-audit.md`](reference/phase11-audit.md) |
 
 Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), event-count/recovery rules in [`reference/event-count-recovery.md`](reference/event-count-recovery.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
+Each phase reference links its own `deliverables-phaseN.md` completion contract. Read only the current phase's deliverable file during normal execution.
 
 ## Scripts
 
@@ -235,7 +274,7 @@ results/
   algorithms/
   mg5_processes/
   orders/
-  manuscript.html or manuscript.pdf
+  manuscript.pdf if target/local LaTeX exists, otherwise manuscript.html
 ```
 
 Multi-run:
@@ -250,7 +289,7 @@ results/
     algorithms/
     mg5_processes/
     orders/
-    manuscript.html or manuscript.pdf
+    manuscript.pdf if target/local LaTeX exists, otherwise manuscript.html
   E14_L3000/
     ...
 ```

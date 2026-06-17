@@ -115,12 +115,20 @@ values recorded in runner result JSON files.
      "source": "/home/user/MG5_aMC_v3_5_6",
      "destination_processes": "/home/user/work/results/E10_L1000/mg5_processes",
      "destination_orders": "/home/user/work/results/E10_L1000/orders",
-     "moved_directories": ["mup_mum_to_ll_vlvl_AQGCm_UFO_NP_20260526_100000", ...],
-     "moved_order_files": ["order_create_mup_mum_to_ll_vlvl_AQGCm_UFO_NP_20260526_100000_01.txt", ...],
+     "expected_process_dirs": ["/path/to/process_A", "/path/to/process_B_broken_20260526"],
+     "moved_process_dirs": ["/home/user/work/results/E10_L1000/mg5_processes/process_A"],
+     "missing_process_dirs": [],
+     "expected_order_files": ["/path/to/order_create_process_A.txt"],
+     "moved_order_files": ["/home/user/work/results/E10_L1000/orders/order_create_process_A.txt"],
+     "missing_order_files": [],
      "total_moved_dirs": 5,
      "total_moved_orders": 8
    }
    ```
+
+   If a runner-recorded process directory or order file is already absent, do
+   not silently skip it. Record it in `missing_process_dirs` or
+   `missing_order_files` with the manifest path that referenced it.
 
    **Multi-run note**: In multi-run mode, the destination paths include the run subdirectory (e.g., `results/E10_L1000/mg5_processes`).
 
@@ -132,6 +140,10 @@ Before moving, verify:
 3. The destination does not already contain a directory or file with the same name (if so, abort and report)
 
 ## Validation
+
+Before treating cleanup as complete, satisfy
+[`deliverables-cleanup.md`](deliverables-cleanup.md). Missing cleanup
+deliverables require self-repair, not user interaction.
 
 After cleanup:
 - `mg5path` should contain **no** process directories from this workflow

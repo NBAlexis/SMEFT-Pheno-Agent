@@ -17,9 +17,11 @@ with:
   cross-section unit used in the fit
 - In this workflow, MG5/banner cross-sections are normally in pb and Phase 1
   collects luminosity in fb^-1, so `L = luminosity_fb * 1000` in pb^-1
-- `N_bg = L * sigma_SM`
-- `N_sig = L * (sigma(c) - sigma_SM)`
-- `sigma(c) = sigma_SM + c * sigma_int + c^2 * sigma_NP`
+- `N_bg = L * sigma0_after_cut`
+- `N_sig = L * (sigma(c) - sigma0_after_cut)`
+- `sigma(c) = sigma0_after_cut + c * sigma_int + c^2 * sigma_NP`
+- `sigma0_after_cut` is the fixed selected cross-section at coefficient
+  `c = 0` from the scan after all cuts/selection. It is not a fitted parameter.
 
 The factor `1000` is only the unit conversion `fb^-1 -> pb^-1`. If a fit stores
 cross-sections in another unit, convert luminosity to the corresponding inverse
@@ -28,9 +30,13 @@ unit instead of mechanically multiplying by `1000`.
 When the fit is expressed in a normalized coefficient `f`, use:
 
 ```text
-sigma(f) = sigma_SM + f * sigma_int + f^2 * sigma_NP
+sigma(f) = sigma0_after_cut + f * sigma_int + f^2 * sigma_NP
 N_sig(f) = L * (f * sigma_int + f^2 * sigma_NP)
 ```
+
+For Phase 8/9 fits, obtain `sigma0_after_cut` from the `f = 0` scan point. With
+the standard 11-point scan expression, this is label `f5`. Do not fit the
+constant term.
 
 Do not use `N_sig / sqrt(N_bg + N_sig)` or
 `N_sig / sqrt(N_bg)` unless the user explicitly selects a standard

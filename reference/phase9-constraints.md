@@ -52,7 +52,8 @@ where:
   `csfit_*`
 - In the default workflow, `csfit_*` is in pb and `config.luminosity` is in
   fb^-1, so `L = config.luminosity * 1000` in pb^-1
-- `N_bg = L * csfit_sm`
+- `N_bg = L * sigma0_after_cut`, where `sigma0_after_cut` is the fixed
+  Phase 8 `f=0` selected cross-section after cuts
 - `N_sig = L * (f * csfit_int + f^2 * csfit_np)`
 - `N_all = N_bg + N_sig`
 
@@ -88,13 +89,16 @@ Output field:
   "anchor_operator": "o_1",
   "anchor_model": "MODEL",
   "selected_algorithm": "RandomForestClassifier",
+  "selected_threshold": 0.62,
   "selection_scope": "anchor_operator_only",
-  "selection_criterion": "narrowest_anchor_S2_constraint_width"
+  "selection_criterion": "narrowest_anchor_S2_constraint_width",
+  "source_threshold_optimization_entry": "results/data/phase8/threshold_optimization.json:anchor.RandomForestClassifier"
 }
 ```
 
-The selected algorithm is the only algorithm used for the final physical
-constraint table.
+The selected algorithm and its Phase 8 optimal threshold form the single final
+event-selection strategy. Use this same strategy for every operator in the
+final physical constraint table.
 
 ## Step 9.2: Compute Final Constraints
 
@@ -108,9 +112,11 @@ with workflow_step(logger, "9", "compute_final_constraints",
 For every globally claimed operator:
 
 1. Load the Phase 8 fit for `selected_algorithm`.
-2. Solve constraints at `S = 2, 3, 5`.
-3. Store normalized-coefficient intervals and physical-coefficient intervals if both are available.
-4. Include the fit coefficients used to compute the constraint.
+2. Verify the fit has `fit_intercept_fixed=true` and use its
+   `sigma0_after_cut`/`csfit_sm` value as the fixed background cross-section.
+3. Solve constraints at `S = 2, 3, 5`.
+4. Store normalized-coefficient intervals and physical-coefficient intervals if both are available.
+5. Include the fixed intercept and fit coefficients used to compute the constraint.
 
 ## Step 9.3: Record Algorithm Comparison Data
 
@@ -119,8 +125,16 @@ Still record comparison data for transparency:
 - anchor operator intervals for every algorithm
 - optional per-operator S=2 intervals for non-selected algorithms
 - AUC values from Phase 7
+- a bar plot comparing the anchor operator's `S_stat = 2` coefficient interval
+  width for every trained algorithm
 
 This comparison data is not the final physical result.
+
+Save the plot to:
+
+```
+results/plots/anchor_s2_algorithm_constraint_bar.pdf
+```
 
 ## Root Selection
 
@@ -147,6 +161,8 @@ results/data/phase9/
   constraint_table.json
   constraint_table.csv
   algorithm_selection.json
+results/plots/
+  anchor_s2_algorithm_constraint_bar.pdf
 ```
 
 `constraint_table.json` must include:
@@ -169,7 +185,10 @@ results/data/phase9/
 {
   "anchor_operator": "o_1",
   "selected_algorithm": "RandomForestClassifier",
+  "selected_threshold": 0.62,
   "selection_criterion": "narrowest_anchor_S2_constraint_width",
+  "selection_scope": "anchor_operator_only",
+  "source_threshold_optimization_entry": "results/data/phase8/threshold_optimization.json:anchor.RandomForestClassifier",
   "anchor_intervals_by_algorithm": {
     "RandomForestClassifier": {"S2": [-0.1, 0.1]},
     "LogisticRegression": {"S2": [-0.2, 0.2]}
@@ -190,12 +209,24 @@ logger.phase_complete("9")
 ## Validation
 
 - `selected_algorithm` is chosen from the anchor operator only.
+- `selected_threshold` is the selected algorithm's optimal threshold from the
+  anchor-operator Phase 8 threshold scan.
 - `constraint_table.json` uses the same `selected_algorithm` for every operator.
 - All reported intervals have real numeric lower and upper bounds.
-- Fit coefficients used for constraints are archived or referenced.
+- Fit coefficients and the fixed `f=0` intercept used for constraints are
+  archived or referenced.
+- Every consumed Phase 8 fit records `fit_intercept_fixed=true`; if an older
+  three-parameter free-intercept fit is found, recompute Phase 8 fits before
+  computing constraints.
 - If per-operator best algorithms are computed for comparison, they are labeled comparison-only.
+- `results/plots/anchor_s2_algorithm_constraint_bar.pdf` exists and uses only
+  anchor-operator `S=2` intervals.
 
 ## Phase Transition
+
+Before calling `logger.phase_complete("9")`, satisfy
+[`deliverables-phase9.md`](deliverables-phase9.md). Missing deliverables require
+self-repair, not user interaction.
 
 After `logger.phase_complete("9")` is called and `constraint_table.json` is written:
 
