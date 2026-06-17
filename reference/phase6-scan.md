@@ -63,7 +63,9 @@ Read:
 
 ```text
 results/data/phase3/operator_claims.json
+results/data/phase5/np_o_N_result.json
 results/data/phase4/coefficient_ranges.json
+results/data/phase4/sm_baseline_result.json
 ```
 
 From `coefficient_ranges.json`, read each operator's own range:
@@ -111,6 +113,21 @@ runner JSON and call `scripts/run_mg5_config.py` or
 writes MG5 orders internally, captures stdout/stderr, and records the chosen
 process folder in the result JSON.
 
+Before each SM+NP scan process is created, call
+`scripts/extract_weighted_order.py` on the Phase 4 pure-SM process folder and
+this operator's Phase 5 pure-NP process folder, using the target MG5 UFO model
+directory. Pass the returned `max_weighted_order` to the runner as
+`weighted_order`. The runner will create the SM+NP process with
+`WEIGHTED=w`, retrying automatically with old-MG5 `Weighted=w` if needed. Record
+the script JSON path, `max_weighted_order`, and runner-selected keyword under
+the operator entry in `scan_manifest.json` as `weighted_order_guard`.
+
+If `extract_weighted_order.py` fails, inspect its error, the SM/NP
+`matrix1.ps` files, and the UFO `coupling_orders.py`; then compute the same
+conservative maximum weighted order manually and record the reason in
+`weighted_order_guard`. Do not ask the user and do not perform diagram-count
+judgment in phase logic.
+
 ## Step 6.2: Launch Scan Per Operator
 
 For each globally claimed operator `o_{g_idx}`:
@@ -148,6 +165,7 @@ Runner config:
   "operator": "o_3",
   "target_coefficient": {"index": 3},
   "c_scan": 1.2e-12,
+  "weighted_order": 7,
   "run_label": "E10_L1000",
   "ebeam1": 5000.0,
   "ebeam2": 5000.0,
@@ -162,6 +180,8 @@ Runner config:
 
 Rules:
 - Pass only the operator-specific rounded Phase 4 `c_scan`; the runner builds the MG5 scan expression internally.
+- Pass the conservative `weighted_order` extracted from the Phase 4 SM and
+  Phase 5 pure-NP process folders so SM `NP=0` diagrams are not dropped.
 - Do not pass a precomputed list of 11 coefficients.
 - The runner validates that scan mode creates exactly 11 runs and maps them to `f0` through `f10`.
 - For every collider type, pass explicit `ebeam1` and `ebeam2` from the active
@@ -183,7 +203,15 @@ Record in `scan_manifest.json`:
     "c_scan": 1.2e-12,
     "scan_expression": "[-1.2e-12 + 0.2 * 1.2e-12 * n for n in range(11)]",
     "point_count": 11,
-    "labels": ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10"]
+    "labels": ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10"],
+    "weighted_order_guard": {
+      "max_weighted_order": 7,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_1_result.json",
+      "weighted_order_json": "results/data/phase6/np_o_1_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
   }
 }
 ```
@@ -291,10 +319,11 @@ representative Feynman diagrams.
 | `runs[-11:]` heuristic | Use set-difference to identify new runs |
 | Re-launching on existing runs | Remove large temps, rename the process directory, create fresh |
 | Using model-internal index in filename | Always use global index `o_{g_idx}` |
-| Creating one process dir per operator | Create one per model |
+| Handwriting or reusing scan process directories | Let the runner create a fresh process directory for each operator scan |
 | Reusing a failed process folder | Rename it to `_broken_{timestamp}` and create a fresh process folder |
 | Stopping because runtime is hours, weeks, or months | Start durable execution and continue/resume |
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
+| Hand-checking Phase 6 diagram counts | Do not spend phase logic on diagram-count judgment; use `extract_weighted_order.py` and pass `weighted_order` to the runner |
 | File named `!` containing conversion usage text | Call `convert_root_to_lhco.py` with correct args and log stdout/stderr instead of shell clobber redirection |
 | Treating LHCO count below requested `nevents` as fatal | Use event-count recovery; only counts below `10%` after the full ladder are red flags |
 | Using `hard_survey > 2` | Do not exceed `hard_survey = 2`; it is too slow for this workflow |

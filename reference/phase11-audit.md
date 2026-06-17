@@ -66,6 +66,7 @@ available.
 | `results/data/phase5/event_count_recovery.json` | 5 | Abort |
 | `results/data/phase6/np_o_*_f*.lhco` | 6 | Abort |
 | `results/data/phase6/np_o_*_scan_result.json` | 6 | Abort |
+| `scan_manifest.json` per-operator `weighted_order_guard` with positive `max_weighted_order` and runner-selected `WEIGHTED`/`Weighted` keyword | 6 | Abort |
 | `results/data/phase6/event_count_recovery.json` | 6 | Abort |
 | `results/data/phase7/sm.csv` | 7 | Abort |
 | `results/data/phase7/np_anchor.csv` | 7 | Abort |
@@ -140,6 +141,7 @@ with workflow_step(logger, "11", "check_cross_phase_consistency"):
 | Phase 7 algorithms == Phase 8 algorithms | Same trained algorithm set | Abort |
 | Phase 5 claimed pure NP ops == Phase 7 pure NP CSV ops | Same global operator list | Abort |
 | Phase 6 scanned points == Phase 8 scan CSV points | Same operator/point list | Abort |
+| Phase 6 weighted-order guard | Conservative bound extracted from Phase 4 SM and Phase 5 pure-NP process folders is used by the runner | Abort |
 | Event-count recovery records | No selected sample below `10%` requested unless exhausted recovery red flag is recorded | Abort |
 | Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
 | Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |

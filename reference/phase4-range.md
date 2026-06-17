@@ -64,6 +64,9 @@ Generate the SM baseline through `scripts/run_mg5_config.py` using
 ```
 
 Do not infer banner names or replace runner/parser failures with `cs_sm = 0`.
+Keep the runner's `process_dir` and create-process metadata in
+`sm_baseline_result.json`; Phase 6 uses the process folder as one input to
+`scripts/extract_weighted_order.py`.
 
 ## Step 4.2: Compute Expected Event Counts Per Operator
 

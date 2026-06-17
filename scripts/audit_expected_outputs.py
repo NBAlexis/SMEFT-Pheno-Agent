@@ -326,6 +326,85 @@ def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
     }]
 
 
+def _phase6_weighted_order_checks(root: str) -> List[Dict[str, Any]]:
+    rel_path = os.path.join("data", "phase6", "scan_manifest.json")
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return []
+    try:
+        data = _load_json(path)
+    except Exception as exc:
+        return [{
+            "rel_path": rel_path,
+            "severity": "abort",
+            "source": "phase6_weighted_order_guard",
+            "path": path,
+            "ok": False,
+            "error": f"Could not parse scan_manifest.json: {exc}",
+        }]
+
+    checks: List[Dict[str, Any]] = []
+    for op_key, record in sorted(data.items()):
+        guard = record.get("weighted_order_guard") if isinstance(record, dict) else None
+        missing = []
+        if not isinstance(guard, dict):
+            missing = ["weighted_order_guard"]
+            guard = {}
+        for key in ("max_weighted_order", "status", "sm_result_json", "np_result_json"):
+            if key not in guard:
+                missing.append(key)
+        status = guard.get("status")
+        max_weighted_order = guard.get("max_weighted_order")
+        weighted_ok = isinstance(max_weighted_order, int) and max_weighted_order > 0
+        provenance_ok = bool(guard.get("weighted_order_json") or guard.get("manual_recovery_reason"))
+        keyword = guard.get("runner_selected_keyword")
+        keyword_ok = keyword in {"WEIGHTED", "Weighted"}
+        runner_rel = os.path.join("data", "phase6", f"np_{op_key}_scan_result.json")
+        runner_path = os.path.join(root, runner_rel)
+        runner_weighted_order = None
+        runner_keyword = None
+        runner_ok = False
+        runner_error = None
+        if os.path.exists(runner_path):
+            try:
+                runner = _load_json(runner_path)
+                create_process = runner.get("create_process") or {}
+                runner_weighted_order = create_process.get("weighted_order")
+                runner_keyword = create_process.get("weighted_keyword")
+                runner_ok = (
+                    runner_weighted_order == max_weighted_order
+                    and runner_keyword == keyword
+                )
+            except Exception as exc:
+                runner_error = f"Could not parse runner result: {exc}"
+        else:
+            runner_error = "Missing Phase 6 scan runner result JSON"
+        checks.append({
+            "rel_path": f"{rel_path}:{op_key}.weighted_order_guard",
+            "severity": "abort",
+            "source": "phase6_weighted_order_guard",
+            "path": path,
+            "ok": (
+                not missing
+                and status in {"pass", "manual_recovered"}
+                and weighted_ok
+                and provenance_ok
+                and keyword_ok
+                and runner_ok
+            ),
+            "missing_keys": missing,
+            "status": status,
+            "max_weighted_order": max_weighted_order,
+            "has_provenance": provenance_ok,
+            "runner_selected_keyword": keyword,
+            "runner_result_rel_path": runner_rel,
+            "runner_weighted_order": runner_weighted_order,
+            "runner_weighted_keyword": runner_keyword,
+            "runner_error": runner_error,
+        })
+    return checks
+
+
 def _cleanup_log_checks(root: str) -> List[Dict[str, Any]]:
     checks: List[Dict[str, Any]] = []
     for rel_dir in ("mg5_processes", "orders"):
@@ -632,6 +711,7 @@ def audit_expected_outputs(workdir: str, run_dir: Optional[str] = None) -> Dict[
         checks.append(rec)
     checks.extend(_recovery_metadata_checks(root))
     checks.extend(_phase3_runner_manifest_checks(root))
+    checks.extend(_phase6_weighted_order_checks(root))
     checks.extend(_phase9_strategy_checks(root))
     checks.extend(_cleanup_log_checks(root))
     checks.extend(_phase10_manuscript_checks(root))

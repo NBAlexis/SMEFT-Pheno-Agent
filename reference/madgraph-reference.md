@@ -75,16 +75,20 @@ Process-folder naming is runner-owned and returned in the runner result JSON.
 ### Runner-Owned Files
 
 The runner owns order-file creation, process-folder naming, run tracking, banner
-parsing, stdout/stderr log capture, and LHCO count metadata. Phase code should
+parsing, stdout/stderr log capture, create-process Feynman diagram-count
+metadata, and LHCO count metadata. Phase code should
 provide only JSON fields such as `mg5path`, `model`, `process`,
 `process_mode`, `target_coefficient`, `c_scan`, `ebeam1`, `ebeam2`, `nevents`,
-`run_label`, `output_dir`, and `result_json`.
+`run_label`, `weighted_order`, `output_dir`, and `result_json`.
 
 When building a runner JSON from a `run_configurations` entry:
 - pass `ebeam1 = run_config.ebeam1` and `ebeam2 = run_config.ebeam2` for every
   collider type;
 - pass `run_label = run_config.run_dir` so MG5 process folders remain
   distinguishable across beam/luminosity configurations;
+- for SM+NP/scan process creation, pass `weighted_order` from
+  `scripts/extract_weighted_order.py` when available; the runner tries
+  `WEIGHTED=w` first and falls back to old-MG5 `Weighted=w`;
 - do not pass center-of-mass energy fields to runner configs.
 
 `process` may be a string or a list of strings. For a list, the runner writes
@@ -120,7 +124,8 @@ python scripts/run_mg5_config.py mg5_attempt.json
 ```
 
 The runner generates unique order/process names internally, checks MG5 return
-codes, and records stdout/stderr log paths in the result JSON.
+codes, records stdout/stderr log paths, and stores create-process diagram
+counts in `create_process.diagram_count_total` when MG5 reports them.
 Automatic process folders include normalized process, model, mode, optional
 `run_label`, and timestamp. Do not hand-compute process folder names in phase
 logic.
@@ -322,6 +327,7 @@ Phase 6 scan attempt:
   "operator": "o_3",
   "target_coefficient": {"index": 3},
   "c_scan": 1.2e-12,
+  "weighted_order": 7,
   "run_label": "E10_L1000",
   "ebeam1": 5000.0,
   "ebeam2": 5000.0,
@@ -350,6 +356,7 @@ Recovery wrapper for the Phase 6 scan above:
     "operator": "o_3",
     "target_coefficient": {"index": 3},
     "c_scan": 1.2e-12,
+    "weighted_order": 7,
     "run_label": "E10_L1000",
     "ebeam1": 5000.0,
     "ebeam2": 5000.0,

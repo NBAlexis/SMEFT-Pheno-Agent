@@ -12,6 +12,10 @@ strings. For lists, the runner writes one process creation order with
 ``add process <process_i> <mode_suffix>`` for every additional process. The
 mode suffix, e.g. ``NP=0`` or ``NP>0``, belongs on each process line in the MG5
 order and is appended here from ``process_mode``.
+
+When ``weighted_order`` is provided, the runner appends ``WEIGHTED=<value>`` to
+process creation lines and automatically falls back to the old
+``Weighted=<value>`` spelling if the selected MG5 release requires it.
 """
 
 from __future__ import annotations
@@ -20,6 +24,7 @@ import argparse
 import json
 import math
 import os
+import re
 import shutil
 import sys
 import time
@@ -156,12 +161,22 @@ def _process_label(process: Any) -> str:
     return " add ".join(process) if isinstance(process, list) else str(process)
 
 
-def _process_order_lines(processes: List[str], process_mode: str) -> List[str]:
+def _process_order_lines(
+    processes: List[str],
+    process_mode: str,
+    weighted_order: Optional[int] = None,
+    weighted_keyword: Optional[str] = None,
+) -> List[str]:
     suffix = PROCESS_MODES[process_mode]
+    extra = ""
+    if weighted_order is not None:
+        if not weighted_keyword:
+            raise ValueError("weighted_keyword is required when weighted_order is set")
+        extra = f"{weighted_keyword}={weighted_order}"
     lines = []
     for idx, process in enumerate(processes):
         command = "generate" if idx == 0 else "add process"
-        lines.append(f"{command} {process} {suffix}".rstrip())
+        lines.append(" ".join(part for part in [command, process, suffix, extra] if part).rstrip())
     return lines
 
 
@@ -235,6 +250,17 @@ def _run_mg5_with_recorded_logs(
     return result, logs
 
 
+def _diagram_counts_from_stdout(text: str) -> Dict[str, Any]:
+    """Extract MG5-reported Feynman diagram counts from create-process stdout."""
+    counts = [int(match.group(1)) for match in re.finditer(r"\b(\d+)\s+diagrams?\b", text or "", re.I)]
+    return {
+        "counts": counts,
+        "count_total": sum(counts) if counts else None,
+        "count_max": max(counts) if counts else None,
+        "source": "mg5_create_stdout_regex",
+    }
+
+
 def _mark_process_dir_broken(process_dir: Optional[str]) -> Tuple[Optional[str], List[str]]:
     if not process_dir or not os.path.isdir(process_dir):
         return None, []
@@ -303,6 +329,16 @@ def _positive_finite(value: Any, name: str) -> float:
     return parsed
 
 
+def _positive_int(value: Any, name: str) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} must be an integer, got {value!r}")
+    if parsed <= 0:
+        raise ValueError(f"{name} must be positive, got {value!r}")
+    return parsed
+
+
 def validate_config(cfg: Dict[str, Any]) -> None:
     """Validate runner config before MG5 is started."""
     required = ["mg5path", "model", "process", "process_mode"]
@@ -314,6 +350,8 @@ def validate_config(cfg: Dict[str, Any]) -> None:
     process_mode = cfg["process_mode"]
     if process_mode not in PROCESS_MODES:
         raise ValueError(f"process_mode must be one of {sorted(PROCESS_MODES)}")
+    if cfg.get("weighted_order") is not None:
+        _positive_int(cfg["weighted_order"], "weighted_order")
     if process_mode != "create_np":
         if "nevents" not in cfg:
             raise ValueError("nevents is required unless process_mode='create_np'")
@@ -366,25 +404,77 @@ def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
     mg5path = cfg["mg5path"]
     process_mode = cfg["process_mode"]
     processes = _processes_from_config(cfg)
-    order_name = cfg.get(
-        "create_order_filename",
-        _unique_name(mg5path, f"order_create_{process_folder}", ".txt"),
+    weighted_order = (
+        _positive_int(cfg["weighted_order"], "weighted_order")
+        if cfg.get("weighted_order") is not None
+        else None
     )
-    lines = [
-        f"import model {cfg['model']}",
-        *_process_order_lines(processes, process_mode),
-        f"output {process_folder}",
-    ]
-    order_path = _write_order(mg5path, order_name, lines)
-    result, logs = _run_mg5_with_recorded_logs(
-        cfg,
-        f"create_{process_folder}",
-        mg5path,
-        order_name,
-    )
+    weighted_keywords = [None]
+    if weighted_order is not None:
+        # Newer MG5 accepts WEIGHTED=..., while older releases used Weighted=...
+        # Keep both here so phase logic does not need to know the MG5 version.
+        weighted_keywords = ["WEIGHTED", "Weighted"]
+
+    attempts = []
+    last_exc: Optional[Exception] = None
+    order_path = ""
+    order_name = ""
+    result: Dict[str, Any] = {}
+    logs: Dict[str, str] = {}
+    selected_weighted_keyword = None
+
+    for weighted_keyword in weighted_keywords:
+        fixed_order_name = cfg.get("create_order_filename")
+        if fixed_order_name and len(weighted_keywords) == 1:
+            order_name = fixed_order_name
+        else:
+            order_name = _unique_name(
+                mg5path,
+                f"order_create_{process_folder}"
+                + (f"_{weighted_keyword}" if weighted_keyword else ""),
+                ".txt",
+            )
+        lines = [
+            f"import model {cfg['model']}",
+            *_process_order_lines(processes, process_mode, weighted_order, weighted_keyword),
+            f"output {process_folder}",
+        ]
+        order_path = _write_order(mg5path, order_name, lines)
+        attempt = {
+            "weighted_keyword": weighted_keyword,
+            "weighted_order": weighted_order,
+            "order_file_path": order_path,
+            "order_filename": order_name,
+        }
+        try:
+            result, logs = _run_mg5_with_recorded_logs(
+                cfg,
+                f"create_{process_folder}" + (f"_{weighted_keyword}" if weighted_keyword else ""),
+                mg5path,
+                order_name,
+            )
+            attempt["status"] = "success"
+            attempts.append(attempt)
+            selected_weighted_keyword = weighted_keyword
+            break
+        except Exception as exc:
+            attempt["status"] = "failed"
+            attempt["error"] = f"{type(exc).__name__}: {exc}"
+            attempts.append(attempt)
+            last_exc = exc
+    else:
+        raise RuntimeError(f"MG5 process creation failed for all weighted-order syntaxes: {attempts}") from last_exc
+
+    diagram_counts = _diagram_counts_from_stdout(result.get("stdout", ""))
     return {
         "order_file_path": order_path,
         "order_filename": order_name,
+        "weighted_order": weighted_order,
+        "weighted_keyword": selected_weighted_keyword,
+        "weighted_attempts": attempts,
+        "diagram_counts": diagram_counts,
+        "diagram_count_total": diagram_counts["count_total"],
+        "diagram_count_max": diagram_counts["count_max"],
         **logs,
         "stdout_tail": result["stdout"][-4000:],
         "stderr_tail": result["stderr"][-4000:],

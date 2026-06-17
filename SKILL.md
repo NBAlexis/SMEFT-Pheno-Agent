@@ -250,6 +250,7 @@ phase code.
 | `scripts/run_mg5_config.py` | Run one MG5 job from JSON, including order generation, Delphes conversion, banner parsing, and loaded-count metadata |
 | `scripts/beam_energy.py` | Compute manuscript-only displayed `sqrt(s)` from explicit `ebeam1`/`ebeam2` |
 | `scripts/double_check_zero_cross_section.py` | Confirm zero cross-section claims from banner, MG5 logs, and LHE-like outputs |
+| `scripts/extract_weighted_order.py` | Extract conservative MG5 `WEIGHTED` order from SM/NP process diagrams and UFO coupling-order hierarchies |
 | `scripts/count_lhco_events.py` | Count actual LHCO events with CutExperiment |
 | `scripts/merge_lhco.py` | Merge LHCO recovery attempts and compute loaded-count-weighted merged cross-sections |
 | `scripts/recover_lhco_count.py` | Orchestrate event-count recovery across survey-profile attempts |
