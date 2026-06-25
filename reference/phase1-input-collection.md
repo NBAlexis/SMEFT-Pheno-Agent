@@ -105,6 +105,7 @@ handle:
 - `wsl2:/absolute/MG5/path`: set `execution={"mode":"wsl2"}` and `madgraph_path="/absolute/MG5/path"`. Validate with `scripts/remote_exec.py --mode wsl2 -- test -x /absolute/MG5/path/bin/mg5_aMC -o -x /absolute/MG5/path/bin/mg5`.
 - `wsl2`: run the WSL2 discovery subflow below.
 - WSL2/Git Bash caution: Git Bash on Windows may rewrite Linux paths such as `/home/...` or `/opt/...`; validate and run WSL2 target commands through `scripts/remote_exec.py`, not ad-hoc `wsl` shell snippets.
+- Regardless of how `madgraph_path` is obtained, Phase 1 must verify the full MG5 stack before accepting it: `bin/mg5_aMC` or `bin/mg5`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` on the selected target. If any piece is missing, treat the installation as incomplete and re-ask or reinstall.
 - `install`: run the MG5 auto-install flow below on the selected target. If no target was selected and the agent is on Windows, first ask the WSL2 discovery subflow or ask for SSH target details; otherwise default to local Linux mode.
 - invalid: report the concrete failure and re-ask `[1/9]`.
 
@@ -333,6 +334,8 @@ Before writing `run_config.json`, validate:
 - If the agent is running on native Windows, `execution.mode` is `ssh` or `wsl2`.
 - `execution.ssh_target` is present for SSH mode.
 - `madgraph_path` contains `bin/mg5_aMC` or `bin/mg5` on the selected execution target.
+- `madgraph_path` also contains `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`,
+  and `Delphes/cards/` on the selected execution target.
 - `workdir` is absolute on the selected execution target and not inside the skill directory in local mode.
 - `process` is a non-empty string or non-empty list of strings. No process
   entry contains an `NP=`, `QED=`, or `QCD=` suffix.

@@ -5,6 +5,9 @@ Consumes: user answers only.
 Must deliver:
 - `results/run_config.json` on the selected execution target.
 - In SSH/WSL2 mode, a local control copy plus the target copy.
+- A verified MG5 installation on `madgraph_path` with `bin/mg5_aMC` or
+  `bin/mg5`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and
+  `Delphes/cards/` present.
 - Valid `execution`, `madgraph_path`, `workdir`, `process`,
   `process_validation`, `madspin`, `models`, beam energies,
   `run_configurations`, `luminosity`, `cutexperiment_path`, `delphes_card`,

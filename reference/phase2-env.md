@@ -4,7 +4,11 @@
 
 ## Purpose
 
-Verify all dependencies exist before starting the workflow. Phase 2 reads the local control copy of `run_config.json` produced by Phase 1. In SSH/WSL2 mode, the same JSON must also exist at `{workdir}/results/run_config.json` on the selected target. No parameter should be sourced from conversation history or user interaction.
+Verify all non-MG5 dependencies exist before starting the workflow. Phase 1 has
+already validated the MG5 stack. Phase 2 reads the local control copy of
+`run_config.json` produced by Phase 1. In SSH/WSL2 mode, the same JSON must
+also exist at `{workdir}/results/run_config.json` on the selected target. No
+parameter should be sourced from conversation history or user interaction.
 
 ## Prerequisite
 
@@ -100,22 +104,16 @@ When resuming, still run all Phase 2 validation steps every time.
    ```
    Verify `execution.mode` is `local`, `ssh`, or `wsl2`. For SSH mode, verify `execution.ssh_target` exists. For SSH/WSL2 mode, verify `remote_exec.py -- true` returns 0 and that the target copy `{workdir}/results/run_config.json` exists.
 
-2. **Validate MadGraph5**
-   ```python
-   with workflow_step(logger, "2", "validate_madgraph5",
-                      inputs={"mg5path": config.madgraph_path,
-                              "mode": config.execution.mode}):
-   ```
-   - Local mode: verify `{config.madgraph_path}/bin/mg5_aMC` or `{config.madgraph_path}/bin/mg5` exists locally.
-   - SSH/WSL2 mode: verify the same path on the target through `remote_exec.py`.
-   - If `config.auto_installed_mg5` is true, also verify `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and `Delphes/cards/` on the selected target.
+2. **Consume the Phase 1 MG5 validation**
+   Phase 1 already verifies the full MG5 stack, including `bin/mg5_aMC` or
+   `bin/mg5`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and
+   `Delphes/cards/`, before accepting `run_config.json`. Phase 2 does not
+   repeat install remediation; it only uses the accepted `madgraph_path` for
+   downstream setup and provenance.
 
-3. **Validate CutExperiment**
-   ```python
-   with workflow_step(logger, "2", "validate_cutexperiment",
-                      inputs={"cutexperiment_path": config.cutexperiment_path}):
-   ```
-   If set, verify it exists on the selected target. If missing or user selected `clone`, run `python scripts/install_cutexperiment.py {config.workdir}/CutExperiment` on the selected target, parse `CutExperiment path: ...`, update `run_config.json`, and continue.
+3. **Use `cutexperiment_path`**
+   Use `config.cutexperiment_path` for downstream runners, event counting, and
+   provenance. Phase 2 does not handle CutExperiment installation or repair.
 
 4. **Validate models**
    ```python
@@ -168,7 +166,7 @@ When resuming, still run all Phase 2 validation steps every time.
     ```text
     results/data/phase2/environment_manifest.json
     ```
-    Include execution mode/target, validated MG5 path and version probe,
+    Include execution mode/target, MG5 path and version probe,
     CutExperiment path and commit/version probe when available, Delphes card
     resolved path, model paths, venv Python path, installed Python package
     versions, locked event-count mode, and every probe command with return code.

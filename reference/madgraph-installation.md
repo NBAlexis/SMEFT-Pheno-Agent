@@ -173,14 +173,16 @@ If the user does **not** provide `madgraph_path` (or presses Enter without a pat
    - Run `scripts/install_mg5.py {dir} --url {url} --name {name}`
    - Use the returned path as `madgraph_path`
 
-### Phase 2: Environment Validation
+### Phase 1 / Phase 2 Boundary
 
-If `config.auto_installed_mg5` is true in `run_config.json`, Phase 2 skips the existence check for `bin/mg5_aMC` (it was just verified by the installer). It still checks:
-- `HEPTools/pythia8/` exists
-- `HEPTools/lhapdf6_py3/` exists
-- `Delphes/cards/` exists
+Phase 1 is responsible for accepting `madgraph_path` only after the full MG5
+stack has been verified: `bin/mg5_aMC` or `bin/mg5`, `HEPTools/pythia8/`,
+`HEPTools/lhapdf6_py3/`, and `Delphes/cards/`. Phase 2 assumes that
+verification has already happened and should not try to repair MG5 installs.
 
-If any of these are missing, report: "MG5 auto-install incomplete — {component} missing. Re-run installer or provide a manual path."
+If any of the MG5 components are missing, report: "MG5 installation incomplete
+— {component} missing. Re-run the Phase 1 installer or provide a different
+manual path."
 
 **Environment decision:** The script does **not** modify any environment variable. It prints a report showing the current `PATH` / `LD_LIBRARY_PATH` and the recommended exports. The LLM/skill should:
 1. Inspect the printed report to see whether the MG5 paths are already in the current session
