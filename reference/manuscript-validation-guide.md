@@ -42,6 +42,10 @@ Mark these as `major` if they fail:
 
 - `manuscript_build_environment.json` is missing target/local LaTeX probe
   results or the `pdf_required` field
+- manuscript is not organized as a scientific paper with clear sections covering
+  motivation/background, theory/model, event generation and data preparation,
+  ML methodology, event-selection optimization, numerical fits/constraints, and
+  conclusions in a logical order
 - `pdf_required=true` but the final non-empty `results/manuscript.pdf` and
   `results/manuscript.tex` are missing
 - HTML is treated as the final deliverable even though target or local LaTeX is

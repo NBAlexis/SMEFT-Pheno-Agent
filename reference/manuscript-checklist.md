@@ -18,6 +18,11 @@ The JSON must include the checked draft path and one record per item:
 
 ## Physics Setup
 
+- The manuscript is organized as a scientific paper with clear sections whose
+  logical order covers: motivation/background, theory/model, event generation
+  and data preparation, ML methodology, event-selection optimization,
+  numerical fits/constraints, and conclusions. Exact section titles and section
+  count may vary, but every role must be present.
 - Process list is written exactly as studied, including multi-process `add process`
   cases.
 - Collider type, beam energies, displayed `sqrt(s)`, luminosity, detector card,
