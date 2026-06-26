@@ -30,6 +30,16 @@ sudo apt-get install -y build-essential gfortran libboost-all-dev python3 curl
 
 > **Note:** The installer does **not** run `sudo` automatically (password may be required). It detects missing packages and tells the user what to run.
 
+**ROOT means CERN ROOT.** If MG5/Delphes installation reports that ROOT is
+missing, this refers to the CERN ROOT data-analysis framework, not the Unix
+superuser account or filesystem root. Use the official installation page:
+`https://root.cern/install/`.
+
+Default ROOT install location: install or extract CERN ROOT under the selected
+target user's home directory, for example `~/root` or `~/cern-root`. Do not use
+`/opt`, `/usr/local`, or other system directories unless the user explicitly
+requests a system-wide install and is ready to provide sudo access.
+
 ---
 
 ## MG5 Download Sources
@@ -200,7 +210,7 @@ manual path."
 | `libpythia8.so: cannot open` | `LD_LIBRARY_PATH` not set | `export LD_LIBRARY_PATH={mg5path}/HEPTools/lib:$LD_LIBRARY_PATH` |
 | `lhapdf-config: command not found` | `PATH` not set | `export PATH={mg5path}/HEPTools/bin:$PATH` |
 | Pythia8 install hangs | Network timeout | Retry; check internet connection |
-| Delphes install fails | ROOT not found | Delphes does not require full ROOT; MG5 bundles minimal ROOT libraries |
+| Delphes install fails | CERN ROOT not found or not configured | Install/configure CERN ROOT from `https://root.cern/install/` under the target user's home directory by default, then retry MG5 Delphes installation |
 
 ---
 
@@ -208,6 +218,7 @@ manual path."
 
 - MG5 launchpad: https://launchpad.net/mg5amcnlo
 - MG5 GitHub (dev): https://github.com/mg5amcnlo/mg5amcnlo
+- CERN ROOT install: https://root.cern/install/
 - LHAPDF6: https://lhapdf.hepforge.org/
 - Pythia8: https://pythia.org/
 - Delphes: https://github.com/delphes/delphes
