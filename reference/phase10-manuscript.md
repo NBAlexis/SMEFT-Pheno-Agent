@@ -37,7 +37,8 @@ Read the manuscript guides in this order:
 6. [`manuscript-literature-bank.md`](manuscript-literature-bank.md)
 7. [`significance-reference.md`](significance-reference.md)
 8. [`manuscript-checklist.md`](manuscript-checklist.md)
-9. [`manuscript-validation-guide.md`](manuscript-validation-guide.md)
+9. [`manuscript-checklist-required-ids.json`](manuscript-checklist-required-ids.json)
+10. [`manuscript-validation-guide.md`](manuscript-validation-guide.md)
 
 ## Step 10.1: Select Manuscript Build Environment
 
@@ -228,10 +229,16 @@ Before each validation pass, run the checklist in
 
 ```
 results/data/phase10/manuscript_checklist.json
+results/data/phase10/manuscript_trace_map.json
 ```
 
-If a checklist item is missing and the required evidence exists, revise before
-calling the draft valid. Then follow
+`manuscript_checklist.json` must contain every required checklist ID from
+`manuscript-checklist-required-ids.json`. `manuscript_trace_map.json` must map
+each checklist ID to the evidence path and manuscript
+section/table/figure/equation where the item appears. In both files,
+`draft_path` is the exact draft being checked
+(`manuscript_draft_v1.*`, `v2.*`, or `v3.*`). If a checklist item is missing
+and the required evidence exists, revise before calling the draft valid. Then follow
 [`manuscript-validation-guide.md`](manuscript-validation-guide.md).
 
 Bounded loop:
@@ -306,6 +313,7 @@ results/data/phase10/
   reference_paper_plan.json
   literature_plan.json
   manuscript_checklist.json
+  manuscript_trace_map.json
   manuscript_validation.json
   manuscript_draft_v1.*
   manuscript_draft_v2.*      # if needed

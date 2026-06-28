@@ -4,11 +4,62 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import glob
 import json
 import os
 import sys
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+
+
+PHASE7_VALIDATION_CHECK_IDS = {
+    "feature_schema_complete",
+    "algorithm_keys_consistent",
+    "algorithm_descriptions_complete",
+    "public_csv_complete",
+    "score_csv_complete",
+    "plots_complete",
+}
+
+
+def _phase10_required_items_path(override_path: Optional[str] = None) -> str:
+    if override_path:
+        return os.path.abspath(os.path.expanduser(override_path))
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(script_dir, "..", "reference", "manuscript-checklist-required-ids.json"),
+        os.path.join(os.getcwd(), "reference", "manuscript-checklist-required-ids.json"),
+        os.path.join(os.getcwd(), "..", "reference", "manuscript-checklist-required-ids.json"),
+    ]
+    for path in candidates:
+        normalized = os.path.abspath(path)
+        if os.path.exists(normalized):
+            return normalized
+    return os.path.abspath(candidates[0])
+
+
+def _phase10_required_checklist_ids(override_path: Optional[str] = None) -> Tuple[Set[str], str, Optional[str]]:
+    path = _phase10_required_items_path(override_path)
+    if not os.path.exists(path):
+        return set(), path, "Missing canonical checklist ID JSON"
+    try:
+        data = _load_json(path)
+    except Exception as exc:
+        return set(), path, f"Could not parse canonical checklist ID JSON: {exc}"
+
+    required_items = data.get("required_items")
+    if not isinstance(required_items, list):
+        return set(), path, "canonical checklist ID JSON missing required_items list"
+    ids = {
+        item.get("id")
+        for item in required_items
+        if isinstance(item, dict) and isinstance(item.get("id"), str) and item.get("id")
+    }
+    if not ids:
+        return set(), path, "No checklist IDs found in canonical checklist ID JSON"
+    if len(ids) != len(required_items):
+        return set(), path, "canonical checklist ID JSON has duplicate or invalid id entries"
+    return ids, path, None
 
 
 def _load_json(path: str) -> Dict[str, Any]:
@@ -84,6 +135,7 @@ def _expected_files(root: str) -> List[Dict[str, Any]]:
         ("data/phase7/feature_schema.json", "abort"),
         ("data/phase7/algorithm_comparison.json", "abort"),
         ("data/phase7/algorithm_descriptions.json", "abort"),
+        ("data/phase7/phase7_validation.json", "abort"),
         ("algorithms/compute_scores.py", "abort"),
         ("data/phase8/threshold_optimization.json", "abort"),
         ("data/phase8/scan_event_counts.json", "abort"),
@@ -96,6 +148,7 @@ def _expected_files(root: str) -> List[Dict[str, Any]]:
         ("data/phase10/reference_paper_plan.json", "abort"),
         ("data/phase10/literature_plan.json", "abort"),
         ("data/phase10/manuscript_checklist.json", "abort"),
+        ("data/phase10/manuscript_trace_map.json", "abort"),
         ("data/phase10/manuscript_validation.json", "abort"),
     ]
     for rel, severity in fixed:
@@ -468,11 +521,272 @@ def _cleanup_log_checks(root: str) -> List[Dict[str, Any]]:
 def _resolve_inside_root(root: str, path_value: str) -> str:
     if os.path.isabs(path_value):
         return path_value
-    return os.path.join(root, path_value)
+    candidates = [os.path.join(root, path_value)]
+    parent = root
+    while True:
+        next_parent = os.path.dirname(parent)
+        if next_parent == parent:
+            break
+        parent = next_parent
+        candidates.append(os.path.join(parent, path_value))
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    return candidates[0]
 
 
-def _phase10_manuscript_checks(root: str) -> List[Dict[str, Any]]:
+def _has_any_key(data: Dict[str, Any], keys: Iterable[str]) -> bool:
+    return any(key in data and data.get(key) not in (None, "", [], {}) for key in keys)
+
+
+def _algorithm_description_map(data: Any) -> Dict[str, Dict[str, Any]]:
+    if not isinstance(data, dict):
+        return {}
+    algorithms = data.get("algorithms")
+    if isinstance(algorithms, dict):
+        return {str(k): v for k, v in algorithms.items() if isinstance(v, dict)}
+    if isinstance(algorithms, list):
+        mapped = {}
+        for item in algorithms:
+            if isinstance(item, dict):
+                key = item.get("algorithm_key") or item.get("key") or item.get("name")
+                if key:
+                    mapped[str(key)] = item
+        return mapped
+    metadata_keys = {
+        "schema_version",
+        "created_at",
+        "anchor_operator",
+        "anchor_model",
+        "notes",
+    }
+    return {
+        str(k): v
+        for k, v in data.items()
+        if k not in metadata_keys and isinstance(v, dict)
+    }
+
+
+def _csv_has_columns(path: str, required_columns: Iterable[str]) -> Dict[str, Any]:
+    result = _exists_nonempty(path)
+    if not result["ok"]:
+        result["columns"] = []
+        result["missing_columns"] = list(required_columns)
+        return result
+    try:
+        with open(path, "r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.reader(f)
+            columns = next(reader, [])
+    except Exception as exc:
+        result["ok"] = False
+        result["error"] = f"Could not read CSV header: {exc}"
+        result["columns"] = []
+        result["missing_columns"] = list(required_columns)
+        return result
+    normalized = {col.strip() for col in columns}
+    missing = [col for col in required_columns if col not in normalized]
+    result["ok"] = result["ok"] and not missing
+    result["columns"] = columns
+    result["missing_columns"] = missing
+    return result
+
+
+def _phase7_content_checks(root: str) -> List[Dict[str, Any]]:
     checks: List[Dict[str, Any]] = []
+    operators = _operators(root)
+    algorithms = _algorithm_names(root)
+
+    feature_rel = os.path.join("data", "phase7", "feature_schema.json")
+    feature_path = os.path.join(root, feature_rel)
+    if os.path.exists(feature_path):
+        try:
+            data = _load_json(feature_path)
+            features = data.get("features")
+            preprocessing = data.get("preprocessing")
+            if not isinstance(features, list):
+                features = []
+            bad_features = []
+            for idx, feature in enumerate(features):
+                if not isinstance(feature, dict):
+                    bad_features.append({"index": idx, "error": "not an object"})
+                    continue
+                missing = []
+                if not _has_any_key(feature, ("index", "idx", "feature_index")):
+                    missing.append("index")
+                if not _has_any_key(feature, ("unit", "units")):
+                    missing.append("unit")
+                if not _has_any_key(feature, ("definition", "physical_definition", "description")):
+                    missing.append("definition")
+                if not _has_any_key(feature, ("particle_assignment", "particle", "source_particle")):
+                    missing.append("particle_assignment")
+                if not _has_any_key(feature, ("ordering_rule", "order", "sorting_rule")):
+                    missing.append("ordering_rule")
+                if missing:
+                    bad_features.append({"index": idx, "missing": missing})
+            checks.append({
+                "rel_path": feature_rel,
+                "severity": "abort",
+                "source": "phase7_feature_schema_content",
+                "path": feature_path,
+                "ok": bool(features) and not bad_features and isinstance(preprocessing, dict) and bool(preprocessing),
+                "feature_count": len(features),
+                "bad_features": bad_features,
+                "has_preprocessing": isinstance(preprocessing, dict) and bool(preprocessing),
+            })
+        except Exception as exc:
+            checks.append({
+                "rel_path": feature_rel,
+                "severity": "abort",
+                "source": "phase7_feature_schema_content",
+                "path": feature_path,
+                "ok": False,
+                "error": f"Could not parse feature_schema.json: {exc}",
+            })
+
+    comparison_rel = os.path.join("data", "phase7", "algorithm_comparison.json")
+    comparison_path = os.path.join(root, comparison_rel)
+    if os.path.exists(comparison_path):
+        try:
+            data = _load_json(comparison_path)
+            anchor = data.get("anchor") or {}
+            bad = []
+            for alg, record in sorted(anchor.items()):
+                if not isinstance(record, dict):
+                    bad.append({"algorithm": alg, "error": "record is not an object"})
+                    continue
+                auc = record.get("auc")
+                try:
+                    auc_ok = 0.5 < float(auc) <= 1.0
+                except (TypeError, ValueError):
+                    auc_ok = False
+                missing = [
+                    key for key in ("algorithm_path", "score_definition")
+                    if record.get(key) in (None, "", [], {})
+                ]
+                if not auc_ok or missing:
+                    bad.append({"algorithm": alg, "auc": auc, "auc_ok": auc_ok, "missing": missing})
+            checks.append({
+                "rel_path": comparison_rel,
+                "severity": "abort",
+                "source": "phase7_algorithm_comparison_content",
+                "path": comparison_path,
+                "ok": bool(anchor) and not bad,
+                "algorithm_count": len(anchor),
+                "bad_records": bad,
+            })
+        except Exception as exc:
+            checks.append({
+                "rel_path": comparison_rel,
+                "severity": "abort",
+                "source": "phase7_algorithm_comparison_content",
+                "path": comparison_path,
+                "ok": False,
+                "error": f"Could not parse algorithm_comparison.json: {exc}",
+            })
+
+    desc_rel = os.path.join("data", "phase7", "algorithm_descriptions.json")
+    desc_path = os.path.join(root, desc_rel)
+    if os.path.exists(desc_path):
+        try:
+            desc_map = _algorithm_description_map(_load_json(desc_path))
+            missing_algs = [alg for alg in algorithms if alg not in desc_map]
+            bad = []
+            for alg in algorithms:
+                record = desc_map.get(alg, {})
+                missing = []
+                if not _has_any_key(record, ("hyperparameters", "params")):
+                    missing.append("hyperparameters")
+                if not _has_any_key(record, ("train_test_split", "split")):
+                    missing.append("train_test_split")
+                if not _has_any_key(record, ("random_seed", "seed")):
+                    missing.append("random_seed")
+                if not _has_any_key(record, ("score_definition", "score")):
+                    missing.append("score_definition")
+                if not _has_any_key(record, ("pseudocode", "pseudo_code")):
+                    missing.append("pseudocode")
+                if missing:
+                    bad.append({"algorithm": alg, "missing": missing})
+            checks.append({
+                "rel_path": desc_rel,
+                "severity": "abort",
+                "source": "phase7_algorithm_descriptions_content",
+                "path": desc_path,
+                "ok": bool(algorithms) and not missing_algs and not bad,
+                "missing_algorithms": missing_algs,
+                "bad_records": bad,
+            })
+        except Exception as exc:
+            checks.append({
+                "rel_path": desc_rel,
+                "severity": "abort",
+                "source": "phase7_algorithm_descriptions_content",
+                "path": desc_path,
+                "ok": False,
+                "error": f"Could not parse algorithm_descriptions.json: {exc}",
+            })
+
+    validation_rel = os.path.join("data", "phase7", "phase7_validation.json")
+    validation_path = os.path.join(root, validation_rel)
+    if os.path.exists(validation_path):
+        try:
+            data = _load_json(validation_path)
+            checks_list = data.get("checks") if isinstance(data.get("checks"), list) else []
+            present_ids = {item.get("id") for item in checks_list if isinstance(item, dict)}
+            missing_ids = sorted(PHASE7_VALIDATION_CHECK_IDS - present_ids)
+            failed = data.get("failed_checks") or [
+                item for item in checks_list
+                if isinstance(item, dict) and item.get("status") not in {"pass", "present"}
+            ]
+            checks.append({
+                "rel_path": validation_rel,
+                "severity": "abort",
+                "source": "phase7_validation_gate",
+                "path": validation_path,
+                "ok": data.get("status") == "pass" and not missing_ids and not failed,
+                "status": data.get("status"),
+                "missing_check_ids": missing_ids,
+                "failed_checks": failed,
+            })
+        except Exception as exc:
+            checks.append({
+                "rel_path": validation_rel,
+                "severity": "abort",
+                "source": "phase7_validation_gate",
+                "path": validation_path,
+                "ok": False,
+                "error": f"Could not parse phase7_validation.json: {exc}",
+            })
+
+    required_score_columns = ["event_index", "score", "label", "source_csv"]
+    for alg in algorithms:
+        rels = [os.path.join("data", "phase7", "scores", f"{alg}_sm_scores.csv")]
+        rels.extend(os.path.join("data", "phase7", "scores", f"{alg}_np_{op}_scores.csv") for op in operators)
+        for rel in rels:
+            path = os.path.join(root, rel)
+            checks.append({
+                "rel_path": rel,
+                "severity": "abort",
+                "source": "phase7_score_csv_schema",
+                **_csv_has_columns(path, required_score_columns),
+            })
+
+    return checks
+
+
+def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = None) -> List[Dict[str, Any]]:
+    checks: List[Dict[str, Any]] = []
+    required_checklist_ids, checklist_reference_path, checklist_reference_error = _phase10_required_checklist_ids(
+        required_ids_json
+    )
+    checks.append({
+        "rel_path": os.path.join("reference", "manuscript-checklist-required-ids.json") + ":required_ids",
+        "severity": "abort",
+        "source": "phase10_required_checklist_source",
+        "path": checklist_reference_path,
+        "ok": checklist_reference_error is None and bool(required_checklist_ids),
+        "error": checklist_reference_error,
+        "required_id_count": len(required_checklist_ids),
+    })
 
     draft_glob = os.path.join(root, "data", "phase10", "manuscript_draft_v1.*")
     drafts = [path for path in glob.glob(draft_glob) if os.path.getsize(path) > 0]
@@ -487,25 +801,42 @@ def _phase10_manuscript_checks(root: str) -> List[Dict[str, Any]]:
 
     checklist_rel = os.path.join("data", "phase10", "manuscript_checklist.json")
     checklist_path = os.path.join(root, checklist_rel)
+    checklist_items_by_id: Dict[str, Dict[str, Any]] = {}
+    missing_checklist_ids: List[str] = []
+    bad_checklist_items: List[Dict[str, Any]] = []
     if os.path.exists(checklist_path):
         try:
             checklist = _load_json(checklist_path)
             items = checklist.get("items")
             draft_path = checklist.get("draft_path")
-            bad_status = []
             if isinstance(items, list):
-                bad_status = [
-                    item.get("id", "<missing>")
-                    for item in items
-                    if item.get("status") not in {"present", "missing", "not_applicable"}
-                ]
+                for item in items:
+                    if not isinstance(item, dict):
+                        bad_checklist_items.append({"id": "<non_object>", "error": "item is not an object"})
+                        continue
+                    item_id = item.get("id")
+                    if item_id:
+                        checklist_items_by_id[str(item_id)] = item
+                    status = item.get("status")
+                    if status not in {"present", "missing"}:
+                        bad_checklist_items.append({"id": item_id or "<missing>", "error": f"bad status {status!r}"})
+                    if status == "present" and not item.get("manuscript_location"):
+                        bad_checklist_items.append({"id": item_id or "<missing>", "error": "present item lacks manuscript_location"})
+            missing_checklist_ids = sorted(required_checklist_ids - set(checklist_items_by_id))
             checks.append({
                 "rel_path": checklist_rel,
                 "severity": "abort",
                 "source": "phase10_checklist_schema",
                 "path": checklist_path,
-                "ok": isinstance(items, list) and bool(items) and bool(draft_path) and not bad_status,
-                "bad_status_items": bad_status,
+                "ok": (
+                    isinstance(items, list)
+                    and bool(items)
+                    and bool(draft_path)
+                    and not missing_checklist_ids
+                    and not bad_checklist_items
+                ),
+                "missing_required_ids": missing_checklist_ids,
+                "bad_items": bad_checklist_items,
                 "has_draft_path": bool(draft_path),
                 "item_count": len(items) if isinstance(items, list) else 0,
             })
@@ -519,6 +850,49 @@ def _phase10_manuscript_checks(root: str) -> List[Dict[str, Any]]:
                 "error": f"Could not parse manuscript_checklist.json: {exc}",
             })
 
+    trace_rel = os.path.join("data", "phase10", "manuscript_trace_map.json")
+    trace_path = os.path.join(root, trace_rel)
+    trace_items_by_id: Dict[str, Dict[str, Any]] = {}
+    missing_trace_ids: List[str] = []
+    bad_trace_items: List[Dict[str, Any]] = []
+    if os.path.exists(trace_path):
+        try:
+            trace = _load_json(trace_path)
+            raw_items = trace.get("items")
+            if isinstance(raw_items, dict):
+                trace_items_by_id = {str(k): v for k, v in raw_items.items() if isinstance(v, dict)}
+            elif isinstance(raw_items, list):
+                for item in raw_items:
+                    if isinstance(item, dict) and item.get("id"):
+                        trace_items_by_id[str(item["id"])] = item
+            missing_trace_ids = sorted(required_checklist_ids - set(trace_items_by_id))
+            for item_id, item in sorted(trace_items_by_id.items()):
+                status = item.get("status") or checklist_items_by_id.get(item_id, {}).get("status")
+                if item_id in required_checklist_ids and status == "present":
+                    if not item.get("evidence_path"):
+                        bad_trace_items.append({"id": item_id, "error": "present item lacks evidence_path"})
+                    if not item.get("manuscript_location"):
+                        bad_trace_items.append({"id": item_id, "error": "present item lacks manuscript_location"})
+            checks.append({
+                "rel_path": trace_rel,
+                "severity": "abort",
+                "source": "phase10_trace_map_schema",
+                "path": trace_path,
+                "ok": bool(trace_items_by_id) and not missing_trace_ids and not bad_trace_items,
+                "missing_required_ids": missing_trace_ids,
+                "bad_items": bad_trace_items,
+                "item_count": len(trace_items_by_id),
+            })
+        except Exception as exc:
+            checks.append({
+                "rel_path": trace_rel,
+                "severity": "abort",
+                "source": "phase10_trace_map_schema",
+                "path": trace_path,
+                "ok": False,
+                "error": f"Could not parse manuscript_trace_map.json: {exc}",
+            })
+
     validation_rel = os.path.join("data", "phase10", "manuscript_validation.json")
     validation_path = os.path.join(root, validation_rel)
     validation: Dict[str, Any] = {}
@@ -526,13 +900,57 @@ def _phase10_manuscript_checks(root: str) -> List[Dict[str, Any]]:
         try:
             validation = _load_json(validation_path)
             status = validation.get("status")
+            major_issues = validation.get("major_issues") or []
+            validation_required = {
+                "status": str,
+                "drafts_written": int,
+                "max_revisions": int,
+                "checklist_path": str,
+                "major_issues": list,
+                "minor_issues": list,
+                "continued_to_cleanup": bool,
+            }
+            validation_bad_fields = []
+            for key, expected_type in validation_required.items():
+                if key not in validation:
+                    validation_bad_fields.append({"field": key, "error": "missing"})
+                elif not isinstance(validation.get(key), expected_type):
+                    validation_bad_fields.append({
+                        "field": key,
+                        "error": f"expected {expected_type.__name__}",
+                    })
+            checklist_path_value = validation.get("checklist_path")
+            checklist_path_exists = False
+            if isinstance(checklist_path_value, str) and checklist_path_value:
+                checklist_resolved = _resolve_inside_root(root, checklist_path_value)
+                checklist_path_exists = os.path.exists(checklist_resolved)
+            checklist_has_missing_required = any(
+                (checklist_items_by_id.get(item_id) or {}).get("status") == "missing"
+                for item_id in required_checklist_ids
+            )
+            pass_consistent = (
+                status != "pass"
+                or (not major_issues and not missing_checklist_ids and not missing_trace_ids and not checklist_has_missing_required)
+            )
+            remaining_consistent = status != "issues_remaining" or validation.get("continued_to_cleanup") is True
             checks.append({
                 "rel_path": validation_rel,
                 "severity": "abort",
                 "source": "phase10_validation_schema",
                 "path": validation_path,
-                "ok": status in {"pass", "issues_remaining"},
+                "ok": (
+                    status in {"pass", "issues_remaining"}
+                    and not validation_bad_fields
+                    and checklist_path_exists
+                    and pass_consistent
+                    and remaining_consistent
+                ),
                 "status": status,
+                "bad_fields": validation_bad_fields,
+                "checklist_path_exists": checklist_path_exists,
+                "major_issue_count": len(major_issues) if isinstance(major_issues, list) else "non_list",
+                "pass_consistent": pass_consistent,
+                "issues_remaining_consistent": remaining_consistent,
             })
         except Exception as exc:
             checks.append({
@@ -700,7 +1118,11 @@ def _manuscript_format_checks(root: str) -> List[Dict[str, Any]]:
     return checks
 
 
-def audit_expected_outputs(workdir: str, run_dir: Optional[str] = None) -> Dict[str, Any]:
+def audit_expected_outputs(
+    workdir: str,
+    run_dir: Optional[str] = None,
+    phase10_required_ids_json: Optional[str] = None,
+) -> Dict[str, Any]:
     root = _result_root(os.path.abspath(os.path.expanduser(workdir)), run_dir)
     expected = _expected_files(root)
     checks = []
@@ -712,9 +1134,10 @@ def audit_expected_outputs(workdir: str, run_dir: Optional[str] = None) -> Dict[
     checks.extend(_recovery_metadata_checks(root))
     checks.extend(_phase3_runner_manifest_checks(root))
     checks.extend(_phase6_weighted_order_checks(root))
+    checks.extend(_phase7_content_checks(root))
     checks.extend(_phase9_strategy_checks(root))
     checks.extend(_cleanup_log_checks(root))
-    checks.extend(_phase10_manuscript_checks(root))
+    checks.extend(_phase10_manuscript_checks(root, required_ids_json=phase10_required_ids_json))
 
     checks.extend(_manuscript_format_checks(root))
 
@@ -736,9 +1159,18 @@ def main() -> int:
     parser.add_argument("workdir")
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--json-out", default=None)
+    parser.add_argument(
+        "--phase10-required-ids-json",
+        default=None,
+        help="Optional path to reference/manuscript-checklist-required-ids.json",
+    )
     args = parser.parse_args()
 
-    report = audit_expected_outputs(args.workdir, run_dir=args.run_dir)
+    report = audit_expected_outputs(
+        args.workdir,
+        run_dir=args.run_dir,
+        phase10_required_ids_json=args.phase10_required_ids_json,
+    )
     if args.json_out:
         os.makedirs(os.path.dirname(os.path.abspath(args.json_out)), exist_ok=True)
         with open(args.json_out, "w", encoding="utf-8") as f:

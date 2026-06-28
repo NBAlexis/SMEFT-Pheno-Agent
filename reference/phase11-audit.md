@@ -36,7 +36,9 @@ with workflow_step(logger, "11", "check_file_existence"):
 Use the manifest-driven audit helper first:
 
 ```bash
-python scripts/audit_expected_outputs.py {workdir} --json-out results/audit_expected_outputs.json
+python scripts/audit_expected_outputs.py {workdir} \
+  --phase10-required-ids-json reference/manuscript-checklist-required-ids.json \
+  --json-out results/audit_expected_outputs.json
 ```
 
 Then verify any additional run-specific files exist and have size greater than
@@ -44,8 +46,11 @@ zero. The helper builds the expected operator/scan/algorithm matrix from
 `operator_claims.json`, `scan_manifest.json`, and `algorithm_comparison.json`.
 It also parses Phase 5/6 `event_count_recovery.json` and checks merged output
 paths, loaded counts, source banners, merged cross-sections, warnings, and
-zero-event failure records. Do not rely only on wildcards when a manifest is
-available.
+zero-event failure records. It reads the Phase 10 required checklist IDs from
+`reference/manuscript-checklist-required-ids.json`; if the audit helper is copied
+to a target separately from the skill folder, copy this JSON too or pass its
+target path with `--phase10-required-ids-json`. Do not rely only on wildcards
+when a manifest is available.
 
 | File | Phase | Action if missing |
 |---|---|---|
@@ -73,6 +78,7 @@ available.
 | `results/data/phase7/np_o_*.csv` | 7 | Abort |
 | `results/data/phase7/feature_schema.json` | 7 | Abort |
 | `results/data/phase7/algorithm_descriptions.json` | 7 | Abort |
+| `results/data/phase7/phase7_validation.json` | 7 | Abort |
 | `results/data/phase7/scores/*_scores.csv` | 7 | Abort |
 | `results/data/phase7/algorithm_comparison.json` | 7 | Abort |
 | `results/algorithms/anchor_*.pkl` | 7 | Abort |
@@ -90,6 +96,7 @@ available.
 | `results/data/phase10/reference_paper_plan.json` | 10 | Abort |
 | `results/data/phase10/literature_plan.json` | 10 | Abort |
 | `results/data/phase10/manuscript_checklist.json` | 10 | Abort |
+| `results/data/phase10/manuscript_trace_map.json` | 10 | Abort |
 | `results/data/phase10/manuscript_validation.json` | 10 | Abort |
 | `results/data/phase10/manuscript_draft_v1.*` | 10 | Abort |
 | `results/plots/roc_anchor.pdf` | 7 | Abort |

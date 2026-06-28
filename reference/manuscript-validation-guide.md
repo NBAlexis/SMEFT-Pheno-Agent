@@ -34,9 +34,15 @@ limit.
 
 ## Required Checks
 
-First inspect `results/data/phase10/manuscript_checklist.json`. Any checklist
-item marked `missing` while the corresponding evidence field is non-null is a
-validation issue.
+First inspect `results/data/phase10/manuscript_checklist.json` and
+`results/data/phase10/manuscript_trace_map.json`. The checklist must contain
+every required ID from `manuscript-checklist-required-ids.json`; the trace map
+must contain the same IDs and point to both evidence and a manuscript location.
+Missing IDs, missing trace records, or `present` items without manuscript
+locations are major validation issues.
+
+Any checklist item marked `missing` while the corresponding evidence field is
+non-null is a validation issue.
 
 Mark these as `major` if they fail:
 
@@ -89,6 +95,9 @@ Mark these as `major` if they fail:
   `foundational`, `comparison_citations`, and `section_usage`
 - `reference_paper_plan.json` is missing when user-list comparison papers are available
 - `manuscript_checklist.json` is missing or was not updated for the current draft
+- `manuscript_checklist.json` omits a required checklist ID
+- `manuscript_trace_map.json` is missing, omits a required checklist ID, or
+  lacks evidence/manuscript locations for a present item
 - Feynman diagrams are unavailable but missing reasons are not recorded per
   process and per SM/NP class in both `manuscript_evidence.json` and
   `manuscript_validation.json`
@@ -116,5 +125,7 @@ Mark these as `minor`:
 }
 ```
 
-The final manuscript may be delivered with remaining issues only when the revision
-limit has been reached and the issues are archived.
+Use `status: "pass"` only when `major_issues` is empty and every required
+checklist ID is `present`. Use `status: "issues_remaining"` when the revision
+limit has been reached and archive each remaining major issue with its
+checklist ID when possible.

@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0",
+  "required_items": [
+    {
+      "id": "structure.logical_sections",
+      "required_content": "scientific-paper section logic"
+    },
+    {
+      "id": "physics.process_setup",
+      "required_content": "process, collider, beams, luminosity, detector, tool versions"
+    },
+    {
+      "id": "physics.model_anchor",
+      "required_content": "UFO model, operators, anchor operator"
+    },
+    {
+      "id": "figures.feynman_diagrams",
+      "required_content": "SM/NP diagrams or documented missing reasons"
+    },
+    {
+      "id": "scan.bounds_all_ops",
+      "required_content": "scan lower/upper bounds for every claimed operator"
+    },
+    {
+      "id": "data.actual_lhco_counts",
+      "required_content": "requested and actual loaded LHCO event counts"
+    },
+    {
+      "id": "data.final_state_cut",
+      "required_content": "exact final-state particle-number cut"
+    },
+    {
+      "id": "data.dataset_table",
+      "required_content": "loaded/cut counts, raw/cut cross-sections, units, cuts"
+    },
+    {
+      "id": "data.selection_denominators",
+      "required_content": "threshold counts and efficiency denominators"
+    },
+    {
+      "id": "data.public_csv_score_paths",
+      "required_content": "public CSV and score CSV paths"
+    },
+    {
+      "id": "features.table_units_order",
+      "required_content": "ordered feature table with units"
+    },
+    {
+      "id": "features.preprocessing",
+      "required_content": "preprocessing/standardization and fit sample"
+    },
+    {
+      "id": "ml.algorithm_descriptions",
+      "required_content": "self-contained algorithm descriptions"
+    },
+    {
+      "id": "ml.algorithm_pseudocode",
+      "required_content": "pseudocode for every trained algorithm"
+    },
+    {
+      "id": "ml.score_definitions",
+      "required_content": "mathematical score definitions and direction"
+    },
+    {
+      "id": "ml.score_histograms_all_np",
+      "required_content": "SM and all pure-NP score histograms"
+    },
+    {
+      "id": "ml.anchor_roc",
+      "required_content": "anchor SM-vs-NP ROC plot"
+    },
+    {
+      "id": "selection.single_strategy",
+      "required_content": "one anchor-selected strategy for all operators"
+    },
+    {
+      "id": "selection.threshold_optimization",
+      "required_content": "threshold scan and selected threshold"
+    },
+    {
+      "id": "selection.anchor_s2_vs_threshold",
+      "required_content": "anchor S_stat=2 range versus threshold"
+    },
+    {
+      "id": "fits.scan_fit_plots_all_ops",
+      "required_content": "SM+NP points versus fits for all claimed operators"
+    },
+    {
+      "id": "fits.fixed_intercept",
+      "required_content": "fixed f=0 selected cross-section statement"
+    },
+    {
+      "id": "fits.numeric_coefficients",
+      "required_content": "numeric fit coefficients with units"
+    },
+    {
+      "id": "fits.coefficient_table_all_ops",
+      "required_content": "fit coefficient table for all claimed operators"
+    },
+    {
+      "id": "constraints.significance_formula",
+      "required_content": "correct formula and units"
+    },
+    {
+      "id": "constraints.real_roots",
+      "required_content": "real-root bound convention"
+    },
+    {
+      "id": "constraints.final_s235_table",
+      "required_content": "final S_stat=2,3,5 table for all claimed operators"
+    },
+    {
+      "id": "constraints.algorithm_bar",
+      "required_content": "anchor S_stat=2 algorithm-comparison bar plot"
+    },
+    {
+      "id": "citations.required_references",
+      "required_content": "toolchain and relevant theory/ML citations"
+    }
+  ]
+}

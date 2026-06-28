@@ -143,6 +143,29 @@ array with index, code name, paper symbol, unit, physical definition, particle
 assignment, ordering rule, and formula for derived quantities. Include the exact
 `final_state_cut` and preprocessing metadata (`standardization`, `fit_sample`,
 and whether the same preprocessing is applied to SM, pure NP, and scan samples).
+Put `preprocessing` at the top level, not nested under `metadata`:
+
+```json
+{
+  "features": [
+    {
+      "index": 1,
+      "code_name": "E_gamma_1",
+      "paper_symbol": "E_{gamma,1}",
+      "unit": "GeV",
+      "physical_definition": "energy of the leading photon",
+      "particle_assignment": "leading photon",
+      "ordering_rule": "photons sorted by energy descending"
+    }
+  ],
+  "final_state_cut": "N_gamma >= 1, N_j >= 2",
+  "preprocessing": {
+    "standardization": "standard_scaler",
+    "fit_sample": "anchor SM/NP training split",
+    "applied_to": ["SM", "pure NP", "scan samples"]
+  }
+}
+```
 
 ## Step 7.2: Algorithm Pool and Selection Strategy
 
@@ -332,6 +355,51 @@ algorithm, include its implementation class, hyperparameters, train/test split,
 random seed, score definition, and manuscript-ready pseudocode. Phase 10 reads
 this file directly; do not leave pseudocode to be reconstructed from memory.
 
+## Step 7.5: Write Phase 7 Validation
+
+Before completing the phase, write:
+
+```
+results/data/phase7/phase7_validation.json
+```
+
+This is a mechanical gate, not a prose summary. Use `status: "pass"` only when
+all checks pass. If a check fails, repair the missing conversion, training,
+score file, plot, or metadata and rerun the validation before continuing.
+
+Required validation records:
+
+- `feature_schema_complete`: ordered features are non-empty; every feature has
+  index, unit, definition, particle assignment, and ordering rule; preprocessing
+  is specified.
+- `algorithm_keys_consistent`: the same stable algorithm keys appear in
+  `algorithm_comparison.json`, `algorithm_descriptions.json`,
+  `anchor_{alg}.pkl`, score CSVs, and histogram filenames.
+- `algorithm_descriptions_complete`: every trained algorithm has
+  hyperparameters, train/test split, random seed, score definition, and
+  pseudocode.
+- `public_csv_complete`: `sm.csv`, `np_anchor.csv`, and every `np_o_N.csv`
+  exists and is non-empty.
+- `score_csv_complete`: every trained algorithm has SM and every pure-NP score
+  CSV with columns `event_index, score, label, source_csv`; scores are in
+  `[0, 1]`.
+- `plots_complete`: `roc_anchor.pdf` and every
+  `score_dist_all_pure_np_{alg}.pdf` exist and are non-empty.
+
+Example:
+
+```json
+{
+  "status": "pass",
+  "algorithm_keys": ["gradient_boosting", "random_forest", "svc_rbf"],
+  "operator_keys": ["o_1", "o_2"],
+  "checks": [
+    {"id": "feature_schema_complete", "status": "pass", "evidence": "results/data/phase7/feature_schema.json"}
+  ],
+  "failed_checks": []
+}
+```
+
 ```python
 logger.phase_complete("7")
 ```
@@ -348,6 +416,7 @@ results/data/phase7/
   event_counts.json
   algorithm_comparison.json
   algorithm_descriptions.json
+  phase7_validation.json
   scores/{alg}_sm_scores.csv
   scores/{alg}_np_o_1_scores.csv, ..., scores/{alg}_np_o_N_scores.csv
 results/plots/
@@ -371,6 +440,7 @@ Publication Data, Actual Event Counts, and Execution Continuity.
 - `algorithm_descriptions.json` exists and includes score definitions,
   hyperparameters, train/test split, random seed, and pseudocode for every
   trained algorithm
+- `phase7_validation.json` exists with `status: "pass"` and no failed checks
 - `sm.csv`, `np_anchor.csv`, and every `np_o_{g_idx}.csv` exist and are non-empty
 - Per-event score CSVs exist for SM and every pure-NP operator for every trained algorithm
 

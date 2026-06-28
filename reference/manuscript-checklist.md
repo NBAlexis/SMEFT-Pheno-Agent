@@ -1,20 +1,49 @@
 # Manuscript Checklist
 
 Use this checklist after each manuscript draft and before validation. For every
-item, record `present`, `missing`, or `not_applicable` in
+item, record only `present` or `missing` in
 `results/data/phase10/manuscript_checklist.json`. If an item is missing and the
 evidence contains the value, revise the manuscript before validating.
 
-The JSON must include the checked draft path and one record per item:
+The JSON must include `draft_path`, the manuscript draft being checked, and one
+record per item:
 
 ```json
 {
   "draft_path": "results/data/phase10/manuscript_draft_v2.tex",
   "items": [
-    {"id": "data.actual_lhco_counts", "status": "present", "evidence_path": "results/data/phase10/manuscript_evidence.json", "note": ""}
+    {
+      "id": "data.actual_lhco_counts",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json",
+      "manuscript_location": "Table 2",
+      "note": ""
+    }
   ]
 }
 ```
+
+Also write `results/data/phase10/manuscript_trace_map.json` with the same IDs:
+this file maps each checklist item to the evidence source and to the exact
+section/table/figure/equation location in the checked draft.
+
+```json
+{
+  "draft_path": "results/data/phase10/manuscript_draft_v2.tex",
+  "items": {
+    "data.actual_lhco_counts": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#datasets",
+      "manuscript_location": "Table 2",
+      "status": "present"
+    }
+  }
+}
+```
+
+Required item IDs are defined only in
+[`manuscript-checklist-required-ids.json`](manuscript-checklist-required-ids.json).
+Use every `required_items[].id` from that file in both
+`manuscript_checklist.json` and `manuscript_trace_map.json`.
 
 ## Physics Setup
 
