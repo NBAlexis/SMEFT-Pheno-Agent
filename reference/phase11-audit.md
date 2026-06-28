@@ -23,6 +23,10 @@ logger.phase_start("11")
 ```
 
 Cleanup must be completed before Phase 11. See [`cleanup.md`](cleanup.md).
+Here cleanup means large intermediate files may be removed, while
+runner-recorded process folders and order files are archived by moving into
+`results/mg5_processes/` and `results/orders/`. Empty archive directories are a
+cleanup failure, not a successful deletion.
 
 Multi-run note: in multi-run mode, all paths below are under the run directory,
 for example `results/E10_L1000/data/phase3/operator_claims.json`.
@@ -106,9 +110,9 @@ when a manifest is available.
 | `results/plots/anchor_s2_constraint_range_vs_threshold.pdf` | 8 | Abort |
 | `results/plots/anchor_s2_algorithm_constraint_bar.pdf` | 9 | Abort |
 | `results/manuscript.pdf` and `.tex` if `phase10/manuscript_build_environment.json` has `pdf_required=true`; otherwise `results/manuscript.html` | 10 | Abort |
-| `results/mg5_processes/cleanup_log.json` | Cleanup | Abort |
-| `results/mg5_processes/` non-empty | Cleanup | Abort |
-| `results/orders/` non-empty | Cleanup | Abort |
+| `results/mg5_processes/cleanup_log.json` | Cleanup archive log | Abort |
+| `results/mg5_processes/` non-empty archive of moved process folders | Cleanup archive | Abort |
+| `results/orders/` non-empty archive of moved order files | Cleanup archive | Abort |
 
 Phase 6 spot-check: for each operator in `operator_claims.json`, verify at least
 one scan file exists, such as `np_o_1_f0.lhco`. Abort if an operator has zero

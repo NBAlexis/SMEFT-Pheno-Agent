@@ -19,7 +19,12 @@ Execute **after Phase 10 (manuscript generation)** and **before Phase 11 (audit)
 
 ## Critical Rule
 
-Use **`mv`** (move), not `cp` (copy). The process directories are large and no longer needed in `mg5path` once results are extracted. Moving saves disk space.
+Cleanup means **archive by moving**, not deleting. Use **`mv`** (move), not
+`cp` (copy), for MG5 process directories and order files. The only files that
+may be deleted during cleanup are large intermediate event files already copied
+or converted into required outputs, such as ROOT, LHE, and HEPMC payloads. Never
+delete a runner-recorded process directory or order file as a shortcut; move it
+under `results/mg5_processes/` or `results/orders/` for audit/debugging.
 
 ## Process Directories to Collect
 
@@ -49,7 +54,13 @@ values recorded in runner result JSON files.
    mkdir -p {workdir}/results/orders
    ```
 
-2. Move each process directory:
+2. Optionally remove large intermediate files inside each process directory
+   after required banners, LHCO files, CSVs, plots, and manuscript evidence are
+   already secured in `results/`. Limit this to ROOT/LHE/HEPMC-style payloads;
+   keep the directory tree, cards, logs, banners, subprocess files, and metadata
+   available for archive/audit.
+
+3. Move each process directory:
    ```python
    import shutil, os, glob, json
 
@@ -99,7 +110,7 @@ values recorded in runner result JSON files.
        moved_dirs.append(os.path.basename(src))
    ```
 
-3. Move all order files created during this run:
+4. Move all order files created during this run:
    ```python
    moved_orders = []
    for src in sorted(order_files):
@@ -108,7 +119,7 @@ values recorded in runner result JSON files.
        moved_orders.append(os.path.basename(src))
    ```
 
-4. Record cleanup log:
+5. Record cleanup log:
    ```json
    {
      "cleanup_time": "2026-05-26T10:00:00",

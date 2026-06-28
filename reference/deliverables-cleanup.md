@@ -7,6 +7,9 @@ Must deliver:
 - Moved runner-recorded MG5 process directories, including `_broken_*`
   directories, under `results/mg5_processes/`.
 - Moved runner-recorded order files under `results/orders/`.
+- Large ROOT/LHE/HEPMC-style intermediate files may be deleted after required
+  outputs are secured, but runner-recorded process directories and order files
+  must be archived by moving, not deleted.
 - `cleanup_log.json` must include `expected_process_dirs`,
   `moved_process_dirs`, `missing_process_dirs`, `expected_order_files`,
   `moved_order_files`, and `missing_order_files`.
