@@ -221,10 +221,29 @@ algorithm per operator unless the user requested that mode.
 
 ```python
 with workflow_step(logger, "10", "validate_and_revise_manuscript",
-                   inputs={"max_revisions": 2}):
+                   inputs={"min_completeness_passes": 3, "max_revisions": 2}):
 ```
 
-Before each validation pass, run the checklist in
+Before formal validation, run at least three manuscript completeness passes.
+Each pass must compare the current draft against
+[`manuscript-sections-guide.md`](manuscript-sections-guide.md),
+[`manuscript-checklist.md`](manuscript-checklist.md), and every required ID in
+[`manuscript-checklist-required-ids.json`](manuscript-checklist-required-ids.json).
+For each pass, list all missing required content, tables, figures, equations,
+citations, and numeric results; then fill every missing item whose evidence
+exists or whose figure/table can be generated from existing data. Do not skip a
+pass because the draft looks mostly complete.
+
+Write or update:
+
+```
+results/data/phase10/manuscript_completeness_passes.json
+```
+
+with at least three records containing `pass_number`, `draft_path`,
+`missing_items`, `repair_actions`, and `remaining_missing_items`.
+
+During each completeness pass, run the checklist in
 [`manuscript-checklist.md`](manuscript-checklist.md) and write:
 
 ```
@@ -238,16 +257,19 @@ each checklist ID to the evidence path and manuscript
 section/table/figure/equation where the item appears. In both files,
 `draft_path` is the exact draft being checked
 (`manuscript_draft_v1.*`, `v2.*`, or `v3.*`). If a checklist item is missing
-and the required evidence exists, revise before calling the draft valid. Then follow
+and the required evidence exists, revise before calling the draft valid.
+
+After the three completeness passes, follow
 [`manuscript-validation-guide.md`](manuscript-validation-guide.md).
 
 Bounded loop:
 
-1. Validate draft v1.
-2. If validation fails, revise to draft v2.
-3. Validate draft v2.
-4. If validation fails, revise once more and write the final manuscript.
-5. Validate the final manuscript and archive remaining issues.
+1. Run completeness pass 1 and repair missing content.
+2. Run completeness pass 2 and repair remaining missing content.
+3. Run completeness pass 3 and repair remaining missing content.
+4. Validate the resulting draft.
+5. If validation fails, revise within the remaining revision budget, validate
+   again, and archive remaining issues after the budget is exhausted.
 
 Maximum revisions after the first draft: `2`.
 
@@ -312,6 +334,7 @@ results/data/phase10/
   manuscript_evidence.json
   reference_paper_plan.json
   literature_plan.json
+  manuscript_completeness_passes.json
   manuscript_checklist.json
   manuscript_trace_map.json
   manuscript_validation.json

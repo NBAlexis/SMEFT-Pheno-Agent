@@ -14,6 +14,9 @@ Must deliver:
 - `results/data/phase10/manuscript_checklist.json` for the final draft.
 - `results/data/phase10/manuscript_trace_map.json` mapping every required
   checklist ID to evidence and to a manuscript location.
+- `results/data/phase10/manuscript_completeness_passes.json` with at least
+  three passes listing missing required content and the repair actions taken
+  before formal validation.
 - `results/data/phase10/manuscript_validation.json` with `status` equal to
   `pass` or `issues_remaining`.
 - `results/data/phase10/manuscript_draft_v1.*`. If revisions occur, also
@@ -35,8 +38,8 @@ a workflow summary.
 
 If missing or incomplete: rerun the LaTeX probes, choose PDF whenever target or
 local LaTeX is available, rebuild evidence, create missing figures from
-existing data, update the checklist and trace map, revise within the bounded
-revision loop, and archive remaining manuscript-writing issues after the
-revision limit. Missing upstream required artifacts are not manuscript-writing
-issues; repair the responsible phase artifact or let Phase 11 fail. Do not ask
-the user to choose missing content.
+existing data, run the three-pass completeness loop, update the checklist and
+trace map, revise within the bounded revision loop, and archive remaining
+manuscript-writing issues after the revision limit. Missing upstream required
+artifacts are not manuscript-writing issues; repair the responsible phase
+artifact or let Phase 11 fail. Do not ask the user to choose missing content.

@@ -1,6 +1,7 @@
 # Manuscript Validation Guide
 
-Validate the manuscript after every draft. Write validation output to
+Before formal validation, complete the three-pass manuscript completeness loop
+defined in `phase10-manuscript.md`. Write validation output to
 `results/data/phase10/manuscript_validation.json`.
 
 ## Revision Loop
@@ -8,11 +9,11 @@ Validate the manuscript after every draft. Write validation output to
 Use a bounded loop:
 
 1. Draft `manuscript_draft_v1`.
-2. Validate.
-3. If validation fails, revise and write `manuscript_draft_v2`.
-4. Validate.
-5. If validation still fails, revise once more and write the final manuscript.
-6. Validate the final manuscript and archive remaining issues.
+2. Run three completeness passes, each listing all missing required content and
+   repairing missing items whose evidence exists.
+3. Validate the resulting draft.
+4. If validation fails, revise within the remaining revision budget.
+5. Validate the final manuscript and archive remaining issues.
 
 Maximum revisions after the first draft: `2`.
 
@@ -34,12 +35,16 @@ limit.
 
 ## Required Checks
 
-First inspect `results/data/phase10/manuscript_checklist.json` and
+First inspect `results/data/phase10/manuscript_completeness_passes.json`,
+`results/data/phase10/manuscript_checklist.json`, and
 `results/data/phase10/manuscript_trace_map.json`. The checklist must contain
 every required ID from `manuscript-checklist-required-ids.json`; the trace map
 must contain the same IDs and point to both evidence and a manuscript location.
 Missing IDs, missing trace records, or `present` items without manuscript
 locations are major validation issues.
+
+`manuscript_completeness_passes.json` must contain at least three pass records,
+each with `missing_items`, `repair_actions`, and `remaining_missing_items`.
 
 Any checklist item marked `missing` while the corresponding evidence field is
 non-null is a validation issue.
@@ -96,6 +101,8 @@ Mark these as `major` if they fail:
 - `reference_paper_plan.json` is missing when user-list comparison papers are available
 - `manuscript_checklist.json` is missing or was not updated for the current draft
 - `manuscript_checklist.json` omits a required checklist ID
+- `manuscript_completeness_passes.json` is missing, has fewer than three passes,
+  or fails to list missing items and repair actions for each pass
 - `manuscript_trace_map.json` is missing, omits a required checklist ID, or
   lacks evidence/manuscript locations for a present item
 - Feynman diagrams are unavailable but missing reasons are not recorded per
@@ -118,6 +125,7 @@ Mark these as `minor`:
   "status": "pass | issues_remaining",
   "drafts_written": 3,
   "max_revisions": 2,
+  "completeness_passes": 3,
   "checklist_path": "results/data/phase10/manuscript_checklist.json",
   "major_issues": [],
   "minor_issues": [],
