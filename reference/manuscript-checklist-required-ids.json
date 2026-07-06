@@ -34,6 +34,10 @@
       "required_content": "loaded/cut counts, raw/cut cross-sections, units, cuts"
     },
     {
+      "id": "data.numeric_source_consistency",
+      "required_content": "manuscript numeric event counts, cross-sections, fit coefficients, and constraints checked against upstream evidence files"
+    },
+    {
       "id": "data.selection_denominators",
       "required_content": "threshold counts and efficiency denominators"
     },

@@ -75,6 +75,11 @@ Use every `required_items[].id` from that file in both
   after the final-state particle-number cut, and the exact cut expression used.
 - Threshold-passing counts and efficiency denominators are reported.
 - Cross-sections before and after selection include units.
+- Numeric values in the manuscript and `manuscript_evidence.json` are checked
+  against upstream evidence files, especially `dataset_summary.json`, runner
+  result JSON files, fit-result JSON files, and `constraint_table.json`. This
+  check covers event counts, raw/cut cross-sections, fit coefficients, and final
+  constraints; do not accept hardcoded or untraced numbers.
 - Public CSV paths and score CSV paths are listed for SM, pure NP, and scan
   samples.
 
