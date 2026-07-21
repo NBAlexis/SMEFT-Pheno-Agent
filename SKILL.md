@@ -22,7 +22,7 @@ fallback while LaTeX is available or build errors are recoverable.
 
 ## Highest-Priority Contract
 
-At the end of Phase 1, create two immutable contracts from the validated
+At the end of Phase 1, create two immutable contracts and one contract lock from the validated
 `run_config.json`:
 
 - `results/research_contract.json` freezes the scientific question and choices
@@ -30,12 +30,17 @@ At the end of Phase 1, create two immutable contracts from the validated
 - `results/deliverables_contract.json` freezes the required evidence and the
   deterministic rules that expand it for runs, operators, scan points, and
   algorithms.
+- `results/contract_lock.json` binds the exact two contract documents and their
+  objective/template hashes as one frozen set.
 
 These contracts define the task. Do not reduce, reinterpret, replace, or silently
 edit either contract because a tool fails, a standard script is unsuitable, the
 runtime is long, or the environment changes. Technical locations and
 implementations may change when the scientific objective, schemas, provenance,
-and required outputs remain equivalent.
+and required outputs remain equivalent. Deliverable paths, formats, required
+keys/columns, and acceptance rules are fixed contract requirements; an
+alternative implementation must satisfy them exactly rather than weakening or
+renaming them.
 
 The phases and bundled scripts are the tested standard execution path, not the
 research objective. Start from them because they encode known-good conventions.
@@ -67,7 +72,7 @@ Rules:
 ### Execution Mode
 
 Execution Mode begins only after Phase 1 writes a valid `run_config.json` and
-initializes both frozen contracts. From Phase 2 onward, user interaction is
+initializes both frozen contracts plus their lock. From Phase 2 onward, user interaction is
 disabled.
 
 #### Contract-Preserving Autonomy
@@ -77,6 +82,11 @@ repeated failures, a broken standard script, a missing package, a Delphes-card
 dependency, or an unfamiliar technical problem is not a reason to ask the user
 what to do. Investigate logs and artifacts, test hypotheses, preserve failed
 attempt evidence, and choose the next technically sound recovery.
+
+Treat validator output as diagnostic evidence. When a deliverable check fails,
+read its `failure_code`, `failure_reason`, missing keys/columns, and path details,
+then repair the producer or artifact. Never delete or relax an acceptance rule to
+make a technical failure disappear.
 
 Follow the phase order by default because downstream artifacts depend on
 upstream results. It is acceptable to create diagnostic code, adapters, or
@@ -160,7 +170,7 @@ If it is the source of a technical failure, repair it or use an equivalent
 logged execution method that preserves target semantics and provenance.
 
 In SSH/WSL2 mode, keep identical local-control and target copies of
-`run_config.json` and both frozen contracts.
+`run_config.json`, both frozen contracts, and `contract_lock.json`.
 
 ## Phase Completion Contracts
 
@@ -218,7 +228,11 @@ implementation restriction: inspect, patch, wrap, or replace them, and write
 project-specific scripts when the run requires it. Any alternative must preserve
 the frozen objective, required output schemas, physics settings, seeds/event
 counts, logs, checksums, and provenance. Package non-bundled production code in
-Phase 11 so the study remains replayable.
+Phase 11 so the study remains replayable. Algorithms are execution methodology,
+not part of the Phase 1 research objective. Phase 11 must freeze the algorithms
+actually trained and selected, including implementations, hyperparameters,
+seeds, score definitions, model-output paths, selection provenance, and packaged
+code checksums.
 
 Key entry points are `load_run_config.py`, `research_contract.py`,
 `remote_exec.py`, `durable_exec.py`, `run_mg5_config.py`,

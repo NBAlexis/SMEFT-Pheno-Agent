@@ -4,7 +4,8 @@ Consumes: all phase deliverables, cleanup output, and the Phase 11 replay packag
 
 Must deliver:
 - Successful verification of `results/research_contract.json` and
-  `results/deliverables_contract.json` against the current configuration.
+  `results/deliverables_contract.json` against the current configuration, plus
+  successful verification of their `results/contract_lock.json` binding.
 - `results/deliverables_resolved.json`, expanded from the frozen rules using the
   actual operator, scan-label, algorithm, replay, and manuscript-format
   manifests, with no pending rules.
@@ -12,6 +13,9 @@ Must deliver:
   The audit record must include the Phase 10 required-ID source
   `reference/manuscript-checklist-required-ids.json`.
 - `results/audit_report.json` with `PASS`, `WARN`, or `FAIL`.
+- A successful non-writing
+  `audit_expected_outputs.py --include-final-artifacts` pass after both audit
+  JSON files exist, proving the Phase 12 artifacts without self-reference.
 - Cross-phase checks for operator sets, scan points, algorithms, event-count
   denominators, final selected algorithm, manuscript consistency, cleanup, and
   replay-package coverage and independence, plus an existence/type/schema check

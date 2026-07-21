@@ -8,7 +8,11 @@ Must deliver:
   a valid canonical SHA-256 hash, plus the frozen deliverables-template hash.
 - `results/deliverables_contract.json`, bound to the research-objective hash and
   containing the immutable deliverable expansion template and template hash.
-- In SSH/WSL2 mode, identical local-control and target copies of all three JSON
+- `results/contract_lock.json`, binding the exact research and deliverables
+  contract hashes as one immutable set.
+- The research contract contains directory-tree SHA-256 identities for every
+  selected UFO model and a file SHA-256 identity for the selected Delphes card.
+- In SSH/WSL2 mode, identical local-control and target copies of all four JSON
   files.
 - A verified MG5 installation on `madgraph_path` with `bin/mg5_aMC` or
   `bin/mg5`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and

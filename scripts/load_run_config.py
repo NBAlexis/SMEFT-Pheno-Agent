@@ -107,12 +107,18 @@ def load_run_config(path):
     # Type checks
     if not isinstance(data["models"], list):
         raise ValueError(f"models must be a list, got {type(data['models'])}")
+    if not data["models"] or any(not isinstance(model, str) or not model.strip() for model in data["models"]):
+        raise ValueError("models must be a non-empty list of non-empty model names")
     if not isinstance(data["luminosity"], list):
         raise ValueError(f"luminosity must be a list, got {type(data['luminosity'])}")
+    if not data["luminosity"] or any(float(value) <= 0 for value in data["luminosity"]):
+        raise ValueError("luminosity must be a non-empty list of positive values")
     if not isinstance(data["run_configurations"], list):
         raise ValueError(
             f"run_configurations must be a list, got {type(data['run_configurations'])}"
         )
+    if not data["run_configurations"]:
+        raise ValueError("run_configurations must not be empty")
     collider_type = data.get("collider_type")
     if collider_type is not None and collider_type not in {"ee", "pp", "mumu", "ep"}:
         raise ValueError("collider_type must be one of ee, pp, mumu, ep when provided")
@@ -121,6 +127,8 @@ def load_run_config(path):
             raise ValueError("energy must be null for ep; use explicit ebeam1/ebeam2")
     elif not isinstance(data["energy"], list):
         raise ValueError(f"energy must be a list for non-ep colliders, got {type(data['energy'])}")
+    elif not data["energy"] or any(float(value) <= 0 for value in data["energy"]):
+        raise ValueError("energy must be a non-empty list of positive values")
     if isinstance(data["process"], str):
         if not data["process"].strip():
             raise ValueError("process must not be empty")

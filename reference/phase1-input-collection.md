@@ -448,18 +448,22 @@ After writing `run_config.json`, verify it is valid JSON, then freeze the task:
 python scripts/research_contract.py init {workdir}/results/run_config.json
 ```
 
-This writes `research_contract.json` and `deliverables_contract.json` beside
-`run_config.json`. The research contract includes scientific choices only; it
+Run this command on the selected execution target so it can hash the actual UFO
+model directories and selected Delphes card. This writes
+`research_contract.json`, `deliverables_contract.json`, and `contract_lock.json`
+beside `run_config.json`. The research contract includes scientific choices and
+content hashes for the selected UFO models and detector card; it
 does not freeze execution mode, host names, MG5/CutExperiment/workdir paths,
 virtual environments, schedulers, or implementation scripts. The deliverables
 contract freezes both fixed outputs and deterministic expansion rules for each
 run, claimed operator, scan label, and trained algorithm.
 
-If either contract already exists, `init` must verify identical content and
-refuse to overwrite a different contract. In SSH/WSL2 mode, create the contracts
-from the local control copy, then sync the same three JSON files to the target
+If either contract or the lock already exists, `init` must verify identical
+content and refuse to overwrite a different file. In SSH/WSL2 mode, initialize
+on the target, then sync the same four JSON files to the local control
 `{workdir}/results/` directory. Verify their SHA-256 fields on both sides.
 
-Do not proceed to Phase 2 until `run_config.json`, `research_contract.json`, and
-`deliverables_contract.json` all exist and agree locally and on the selected
-target. Then proceed immediately without asking for confirmation.
+Do not proceed to Phase 2 until `run_config.json`, `research_contract.json`,
+`deliverables_contract.json`, and `contract_lock.json` all exist and agree
+locally and on the selected target. Then proceed immediately without asking for
+confirmation.

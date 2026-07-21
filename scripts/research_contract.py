@@ -11,9 +11,15 @@ import sys
 from itertools import product
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+try:
+    from .load_run_config import load_run_config
+except ImportError:  # Direct script execution.
+    from load_run_config import load_run_config
+
 
 RESEARCH_CONTRACT_NAME = "research_contract.json"
 DELIVERABLES_CONTRACT_NAME = "deliverables_contract.json"
+CONTRACT_LOCK_NAME = "contract_lock.json"
 RESOLVED_DELIVERABLES_NAME = "deliverables_resolved.json"
 
 
@@ -38,6 +44,53 @@ def _sha256(value: Any) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
 
 
+def _file_sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _directory_sha256(path: str) -> Tuple[str, int]:
+    digest = hashlib.sha256()
+    file_count = 0
+    for root, dirnames, filenames in os.walk(path):
+        ignored_dirs = {"__pycache__", ".git", ".hg", ".svn"}
+        symlink_dirs = [
+            name for name in dirnames if os.path.islink(os.path.join(root, name))
+        ]
+        for name in sorted(symlink_dirs):
+            full_path = os.path.join(root, name)
+            rel_path = os.path.relpath(full_path, path).replace("\\", "/") + "/"
+            digest.update(rel_path.encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(os.readlink(full_path).encode("utf-8"))
+            digest.update(b"\0")
+            file_count += 1
+        dirnames[:] = sorted(
+            name for name in dirnames if name not in ignored_dirs and name not in symlink_dirs
+        )
+        for name in sorted(filenames):
+            if name.endswith((".pyc", ".pyo")):
+                continue
+            full_path = os.path.join(root, name)
+            rel_path = os.path.relpath(full_path, path).replace("\\", "/")
+            digest.update(rel_path.encode("utf-8"))
+            digest.update(b"\0")
+            if os.path.islink(full_path):
+                digest.update(os.readlink(full_path).encode("utf-8"))
+            else:
+                with open(full_path, "rb") as handle:
+                    for block in iter(lambda: handle.read(1024 * 1024), b""):
+                        digest.update(block)
+            digest.update(b"\0")
+            file_count += 1
+    if file_count == 0:
+        raise ValueError(f"Scientific input directory is empty: {path}")
+    return digest.hexdigest(), file_count
+
+
 def _write_json(path: str, value: Any) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="\n") as handle:
@@ -57,11 +110,62 @@ def _write_immutable(path: str, value: Any) -> str:
     return "created"
 
 
-def _card_identity(value: Any) -> Any:
-    if value is None:
-        return None
-    normalized = str(value).replace("\\", "/").rstrip("/")
-    return normalized.rsplit("/", 1)[-1]
+def _namespace_to_dict(value: Any) -> Any:
+    if hasattr(value, "__dict__"):
+        return {key: _namespace_to_dict(item) for key, item in vars(value).items()}
+    if isinstance(value, list):
+        return [_namespace_to_dict(item) for item in value]
+    return value
+
+
+def _validated_config(path: str) -> Dict[str, Any]:
+    return _namespace_to_dict(load_run_config(path))
+
+
+def _detector_card_path(config: Dict[str, Any]) -> str:
+    value = config.get("delphes_card")
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("delphes_card must be a non-empty path or card name")
+    if os.path.isabs(value):
+        path = value
+    else:
+        path = os.path.join(str(config.get("madgraph_path") or ""), "Delphes", "cards", value)
+    path = os.path.abspath(os.path.expanduser(path))
+    if not os.path.isfile(path):
+        raise ValueError(
+            "Cannot fingerprint the selected Delphes card on this execution target: " + path
+        )
+    return path
+
+
+def _scientific_input_identities(config: Dict[str, Any]) -> Dict[str, Any]:
+    model_identities: Dict[str, Any] = {}
+    madgraph_path = os.path.abspath(os.path.expanduser(str(config.get("madgraph_path") or "")))
+    for model in config.get("models") or []:
+        model_path = os.path.join(madgraph_path, "models", str(model))
+        if not os.path.isdir(model_path):
+            raise ValueError(
+                "Cannot fingerprint the selected UFO model on this execution target: "
+                + model_path
+            )
+        digest, file_count = _directory_sha256(model_path)
+        model_identities[str(model)] = {
+            "hash_kind": "directory-tree-sha256-v1",
+            "sha256": digest,
+            "file_count": file_count,
+        }
+    if not model_identities:
+        raise ValueError("models must contain at least one selected UFO model")
+
+    card_path = _detector_card_path(config)
+    return {
+        "models": model_identities,
+        "detector_card": {
+            "hash_kind": "file-sha256-v1",
+            "sha256": _file_sha256(card_path),
+            "size": os.path.getsize(card_path),
+        },
+    }
 
 
 def _run_objective(run: Dict[str, Any]) -> Dict[str, Any]:
@@ -75,21 +179,14 @@ def _run_objective(run: Dict[str, Any]) -> Dict[str, Any]:
 
 def research_objective(config: Dict[str, Any]) -> Dict[str, Any]:
     """Project run_config onto scientific choices, excluding technical locations."""
-    algorithms = config.get("algorithms")
-    algorithm_strategy = {
-        "requested": algorithms,
-        "selection_rule": (
-            "train_exact_requested_set"
-            if algorithms
-            else "use_phase7_standard_algorithm_set"
-        ),
-    }
+    identities = _scientific_input_identities(config)
     return {
         "process": config.get("process"),
         "collider_type": config.get("collider_type"),
         "process_validation": config.get("process_validation"),
         "madspin": config.get("madspin", {"enabled": False}),
         "models": config.get("models"),
+        "model_content_identities": identities["models"],
         "energy": config.get("energy"),
         "ebeam_electron": config.get("ebeam_electron"),
         "ebeam_proton": config.get("ebeam_proton"),
@@ -97,18 +194,14 @@ def research_objective(config: Dict[str, Any]) -> Dict[str, Any]:
         "run_configurations": [
             _run_objective(run) for run in config.get("run_configurations", [])
         ],
-        "detector_card_identity": config.get(
-            "delphes_card_identity", _card_identity(config.get("delphes_card"))
-        ),
+        "detector_card_content_identity": identities["detector_card"],
         "polarization": config.get("polarization"),
-        "algorithm_strategy": algorithm_strategy,
         "analysis_notes": config.get("analysis_notes"),
         "debug": bool(config.get("debug", False)),
         "event_counts_locked": config.get("event_counts_locked"),
         "locked_event_counts": config.get("locked_event_counts"),
         "significance_strategy": {
             "levels": [2, 3, 5],
-            "final_algorithm_rule": "narrowest_anchor_S2_interval",
         },
         "output_strategy": {
             "numerical_phases": [2, 3, 4, 5, 6, 7, 8, 9],
@@ -132,6 +225,7 @@ def _research_contract(config: Dict[str, Any]) -> Dict[str, Any]:
             "cutexperiment_path",
             "workdir",
             "auto_installed_mg5",
+            "algorithms",
             "collected_at",
             "run_configurations[*].run_dir",
             "host paths, virtual environments, schedulers, and implementation scripts",
@@ -151,6 +245,21 @@ def _deliverables_contract(
     }
 
 
+def _contract_lock(research: Dict[str, Any], deliverables: Dict[str, Any]) -> Dict[str, Any]:
+    payload = {
+        "research_contract_sha256": _sha256(research),
+        "deliverables_contract_sha256": _sha256(deliverables),
+        "objective_sha256": research["objective_sha256"],
+        "template_sha256": deliverables["template_sha256"],
+    }
+    return {
+        "schema_version": "1.0",
+        "contract_kind": "automated-smeft-ml-pheno-contract-lock",
+        **payload,
+        "contract_set_sha256": _sha256(payload),
+    }
+
+
 def default_template_path() -> str:
     return os.path.abspath(
         os.path.join(
@@ -167,9 +276,7 @@ def init_contracts(
     results_dir: Optional[str] = None,
     template_path: Optional[str] = None,
 ) -> Dict[str, Any]:
-    config = _load_json(run_config_path)
-    if config.get("version") != "1.0":
-        raise ValueError("run_config.json version must be '1.0'")
+    config = _validated_config(run_config_path)
     results_dir = os.path.abspath(
         results_dir or os.path.dirname(os.path.abspath(run_config_path))
     )
@@ -179,6 +286,8 @@ def init_contracts(
     deliverables = _deliverables_contract(template, research["objective_sha256"])
     research_path = os.path.join(results_dir, RESEARCH_CONTRACT_NAME)
     deliverables_path = os.path.join(results_dir, DELIVERABLES_CONTRACT_NAME)
+    lock_path = os.path.join(results_dir, CONTRACT_LOCK_NAME)
+    lock = _contract_lock(research, deliverables)
     return {
         "status": "ok",
         "research_contract": research_path,
@@ -187,6 +296,8 @@ def init_contracts(
         "deliverables_contract_action": _write_immutable(
             deliverables_path, deliverables
         ),
+        "contract_lock": lock_path,
+        "contract_lock_action": _write_immutable(lock_path, lock),
         "objective_sha256": research["objective_sha256"],
         "template_sha256": deliverables["template_sha256"],
     }
@@ -196,14 +307,16 @@ def verify_contracts(
     run_config_path: str,
     results_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
-    config = _load_json(run_config_path)
+    config = _validated_config(run_config_path)
     results_dir = os.path.abspath(
         results_dir or os.path.dirname(os.path.abspath(run_config_path))
     )
     research_path = os.path.join(results_dir, RESEARCH_CONTRACT_NAME)
     deliverables_path = os.path.join(results_dir, DELIVERABLES_CONTRACT_NAME)
+    lock_path = os.path.join(results_dir, CONTRACT_LOCK_NAME)
     research = _load_json(research_path)
     deliverables = _load_json(deliverables_path)
+    lock = _load_json(lock_path)
 
     expected_objective = research_objective(config)
     errors: List[str] = []
@@ -215,6 +328,10 @@ def verify_contracts(
         "contract_kind"
     ) != "automated-smeft-ml-pheno-frozen-deliverables":
         errors.append("deliverables_contract.json identity or schema is invalid")
+    if lock.get("schema_version") != "1.0" or lock.get("contract_kind") != (
+        "automated-smeft-ml-pheno-contract-lock"
+    ):
+        errors.append("contract_lock.json identity or schema is invalid")
     stored_objective = research.get("objective")
     stored_objective_hash = research.get("objective_sha256")
     expected_objective_hash = _sha256(expected_objective)
@@ -231,6 +348,17 @@ def verify_contracts(
         errors.append("research contract is bound to a different deliverables template")
     if deliverables.get("research_objective_sha256") != stored_objective_hash:
         errors.append("deliverables contract is bound to a different research objective")
+    lock_payload = {
+        "research_contract_sha256": _sha256(research),
+        "deliverables_contract_sha256": _sha256(deliverables),
+        "objective_sha256": stored_objective_hash,
+        "template_sha256": deliverables.get("template_sha256"),
+    }
+    for key, value in lock_payload.items():
+        if lock.get(key) != value:
+            errors.append(f"contract_lock.json {key} does not match the frozen contract set")
+    if lock.get("contract_set_sha256") != _sha256(lock_payload):
+        errors.append("contract_lock.json combined hash is invalid")
 
     return {
         "status": "ok" if not errors else "error",
@@ -306,13 +434,34 @@ def _phase3_runner_results(run_root: str) -> Optional[List[str]]:
         ):
             value = record.get(key)
             if isinstance(value, str) and value:
-                full = value if os.path.isabs(value) else os.path.join(run_root, value)
-                try:
-                    value = os.path.relpath(full, run_root)
-                except ValueError:
-                    pass
+                full = _manifest_reference_path(run_root, value)
+                value = os.path.relpath(full, run_root)
+                if value == os.pardir or value.startswith(os.pardir + os.sep):
+                    raise ValueError(
+                        f"Phase 3 runner manifest path escapes the run root: {record.get(key)!r}"
+                    )
                 values.add(value.replace("\\", "/"))
     return sorted(values)
+
+
+def _manifest_reference_path(run_root: str, value: str) -> str:
+    if os.path.isabs(value):
+        return os.path.abspath(value)
+    normalized = value.replace("\\", "/").lstrip("./")
+    first = normalized.split("/", 1)[0]
+    current = os.path.abspath(run_root)
+    results_root = None
+    while True:
+        if os.path.basename(current).lower() == "results":
+            results_root = current
+            break
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    if first.lower() == "results" and results_root:
+        return os.path.abspath(os.path.join(os.path.dirname(results_root), *normalized.split("/")))
+    return os.path.abspath(os.path.join(run_root, *normalized.split("/")))
 
 
 def _replay_files(run_root: str) -> Optional[List[str]]:
@@ -353,6 +502,37 @@ def _pdf_required(run_root: str) -> Optional[bool]:
         return None
     value = _load_json(path).get("pdf_required")
     return bool(value) if isinstance(value, bool) else None
+
+
+def _diagram_records(value: Any) -> List[Dict[str, Any]]:
+    if isinstance(value, list):
+        records: List[Dict[str, Any]] = []
+        for item in value:
+            records.extend(_diagram_records(item))
+        return records
+    if isinstance(value, dict):
+        if any(key in value for key in ("path", "figure_path", "missing_reason")):
+            return [value]
+        records = []
+        for item in value.values():
+            records.extend(_diagram_records(item))
+        return records
+    return []
+
+
+def _diagram_directory_required(run_root: str) -> Optional[bool]:
+    path = os.path.join(run_root, "data", "phase10", "manuscript_evidence.json")
+    if not os.path.exists(path):
+        return None
+    evidence = _load_json(path)
+    records = _diagram_records(((evidence.get("figures") or {}).get("feynman_diagrams")))
+    if not records:
+        return None
+    if any(record.get("path") or record.get("figure_path") for record in records):
+        return True
+    if all(record.get("missing_reason") for record in records):
+        return False
+    return None
 
 
 def _selector_rows(
@@ -405,7 +585,10 @@ def _selector_rows(
 
 
 def _condition_state(
-    condition: Optional[str], operators: Optional[List[str]], pdf_required: Optional[bool]
+    condition: Optional[str],
+    operators: Optional[List[str]],
+    pdf_required: Optional[bool],
+    diagram_directory_required: Optional[bool],
 ) -> Tuple[Optional[bool], Optional[str]]:
     if not condition:
         return True, None
@@ -425,6 +608,10 @@ def _condition_state(
         if pdf_required is None:
             return None, "manuscript format decision is not available"
         return not pdf_required, None
+    if condition == "feynman_diagram_directory_required":
+        if diagram_directory_required is None:
+            return None, "Feynman-diagram evidence decision is not available"
+        return diagram_directory_required, None
     if condition == "at_least_one_claimed_operator_and_pdf_required":
         if operators is None:
             return None, "operator_claims.json is not available"
@@ -472,13 +659,14 @@ def resolve_contract(
     runner_results = _phase3_runner_results(run_root)
     replay_files = _replay_files(run_root)
     pdf_required = _pdf_required(run_root)
+    diagram_directory_required = _diagram_directory_required(run_root)
 
     resolved: List[Dict[str, Any]] = []
     pending: List[Dict[str, Any]] = []
     excluded: List[Dict[str, Any]] = []
     for rule in template.get("rules", []):
         condition, condition_reason = _condition_state(
-            rule.get("condition"), operators, pdf_required
+            rule.get("condition"), operators, pdf_required, diagram_directory_required
         )
         if condition is False:
             excluded.append({"rule_id": rule.get("id"), "reason": "condition is false"})
@@ -500,6 +688,26 @@ def resolve_contract(
         for row in rows:
             for item in rule.get("items", []):
                 rel_path = item["path"].format(**row).replace("\\", "/")
+                item_condition, item_condition_reason = _condition_state(
+                    item.get("condition"),
+                    operators,
+                    pdf_required,
+                    diagram_directory_required,
+                )
+                if item_condition is False:
+                    excluded.append({
+                        "rule_id": rule.get("id"),
+                        "path": rel_path,
+                        "reason": "item condition is false",
+                    })
+                    continue
+                if item_condition is None:
+                    pending.append({
+                        "rule_id": rule.get("id"),
+                        "path": rel_path,
+                        "reason": item_condition_reason,
+                    })
+                    continue
                 base = results_dir if rule.get("scope") == "global_results" else run_root
                 absolute_path = os.path.abspath(os.path.join(base, rel_path))
                 resolved.append(
@@ -519,6 +727,7 @@ def resolve_contract(
         "contract_kind": "automated-smeft-ml-pheno-resolved-deliverables",
         "research_objective_sha256": verification["frozen_objective_sha256"],
         "deliverables_template_sha256": verification["template_sha256"],
+        "results_dir": results_dir,
         "run_root": run_root,
         "status": "resolved" if not pending else "pending",
         "resolved": resolved,
@@ -538,7 +747,11 @@ def resolve_contract(
 
 def _print_and_status(report: Dict[str, Any]) -> int:
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0 if report.get("status") in {"ok", "resolved", "pending"} else 2
+    if report.get("status") in {"ok", "resolved"}:
+        return 0
+    if report.get("status") == "pending":
+        return 3
+    return 2
 
 
 def main() -> int:

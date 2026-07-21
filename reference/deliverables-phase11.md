@@ -9,9 +9,13 @@ Must deliver under each run root:
 - `results/replay/replay.sh`, executable and usable with `./replay.sh` without
   prompts or edits.
 - `results/replay/replay_manifest.json` with ordered Phase 2-9 commands, inputs,
-  outputs, seeds, parameters, and SHA-256 checksums.
-- Frozen copies of `research_contract.json` and `deliverables_contract.json`
-  referenced by the replay manifest.
+  outputs, seeds, parameters, and SHA-256 checksums. Its `algorithm_lock` must
+  freeze every actually trained algorithm and the Phase 9 production algorithm,
+  including implementation identity, hyperparameters, random seed, score
+  definition, model-output path, selection provenance, packaged implementation
+  checksums, and a valid canonical lock hash.
+- Frozen copies of `research_contract.json`, `deliverables_contract.json`, and
+  `contract_lock.json` referenced by the replay manifest.
 - All phase drivers and helpers referenced by the manifest under
   `results/replay/steps/` or `results/replay/support/`.
 - `results/replay/data_files_report.md`, describing every declared numerical

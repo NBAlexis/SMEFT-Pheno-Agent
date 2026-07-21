@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import glob
+import hashlib
 import json
 import os
 import sys
@@ -74,15 +76,143 @@ def _result_root(workdir: str, run_dir: Optional[str]) -> str:
 
 
 def _exists_nonempty(path: str) -> Dict[str, Any]:
-    return {
+    result = {
         "path": path,
         "exists": os.path.exists(path),
         "size": os.path.getsize(path) if os.path.exists(path) else 0,
         "ok": os.path.exists(path) and os.path.getsize(path) > 0,
     }
+    if not result["ok"]:
+        result.update({
+            "failure_code": "file_missing_or_empty",
+            "failure_reason": f"Required file is missing or empty: {path}",
+        })
+    return result
 
 
-def _resolved_deliverable_checks(root: str) -> List[Dict[str, Any]]:
+def _path_is_within(path: str, base: str) -> bool:
+    try:
+        return os.path.commonpath([os.path.abspath(path), os.path.abspath(base)]) == os.path.abspath(base)
+    except ValueError:
+        return False
+
+
+def _manifest_reference_path(root: str, value: str) -> str:
+    if os.path.isabs(value):
+        return os.path.abspath(value)
+    normalized = value.replace("\\", "/").lstrip("./")
+    current = os.path.abspath(root)
+    results_root = None
+    while True:
+        if os.path.basename(current).lower() == "results":
+            results_root = current
+            break
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    if normalized.split("/", 1)[0].lower() == "results" and results_root:
+        return os.path.abspath(os.path.join(os.path.dirname(results_root), *normalized.split("/")))
+    return os.path.abspath(os.path.join(root, *normalized.split("/")))
+
+
+def _set_failure(record: Dict[str, Any], code: str, reason: str) -> None:
+    record.update({"ok": False, "failure_code": code, "failure_reason": reason})
+
+
+def _validate_declared_artifact(path: str, kind: str, record: Dict[str, Any]) -> None:
+    if kind == "glob":
+        matches = [candidate for candidate in glob.glob(path) if os.path.isfile(candidate)]
+        nonempty = [candidate for candidate in matches if os.path.getsize(candidate) > 0]
+        record.update({"matched_paths": nonempty, "match_count": len(nonempty)})
+        if not nonempty:
+            _set_failure(record, "glob_no_nonempty_match", f"No non-empty file matches {path}")
+        else:
+            record["ok"] = True
+        return
+    if kind == "directory":
+        if not os.path.isdir(path):
+            _set_failure(record, "directory_missing", f"Required directory does not exist: {path}")
+        else:
+            record["ok"] = True
+        return
+    if kind == "nonempty_directory":
+        entries = os.listdir(path) if os.path.isdir(path) else []
+        record["entry_count"] = len(entries)
+        if not entries:
+            _set_failure(record, "directory_empty_or_missing", f"Required directory is missing or empty: {path}")
+        else:
+            record["ok"] = True
+        return
+    if not os.path.isfile(path):
+        _set_failure(record, "file_missing", f"Required {kind} file does not exist: {path}")
+        return
+    size = os.path.getsize(path)
+    record.update({"exists": True, "size": size})
+    if size <= 0:
+        _set_failure(record, "file_empty", f"Required {kind} file is empty: {path}")
+        return
+
+    if kind == "json":
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            json.load(handle)
+    elif kind == "jsonl":
+        record_count = 0
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"JSONL record {line_number} is invalid: {exc}") from exc
+                record_count += 1
+        if not record_count:
+            raise ValueError("JSONL file has no records")
+        record["record_count"] = record_count
+    elif kind == "csv":
+        with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.reader(handle)
+            header = next(reader, [])
+            data_rows = sum(1 for row in reader if any(cell.strip() for cell in row))
+        if not header or not any(cell.strip() for cell in header):
+            raise ValueError("CSV header is missing or empty")
+        if data_rows < 1:
+            raise ValueError("CSV contains a header but no data rows")
+        record.update({"columns": header, "data_rows": data_rows})
+    elif kind == "pdf":
+        with open(path, "rb") as handle:
+            signature = handle.read(8)
+            handle.seek(max(0, size - 2048))
+            trailer = handle.read()
+        if not signature.startswith(b"%PDF-"):
+            raise ValueError("PDF signature %PDF- is missing")
+        if b"%%EOF" not in trailer:
+            raise ValueError("PDF end marker %%EOF is missing")
+    elif kind == "lhco":
+        with open(path, "r", encoding="utf-8", errors="replace") as handle:
+            has_event_header = any(line.lstrip().startswith("0") for line in handle if line.strip())
+        if not has_event_header:
+            raise ValueError("LHCO file has no event header line beginning with 0")
+    elif kind == "python":
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            ast.parse(handle.read(), filename=path)
+    elif kind == "markdown":
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            if not handle.read().strip():
+                raise ValueError("Markdown file contains no text")
+    elif kind == "executable":
+        if not os.access(path, os.X_OK):
+            raise ValueError("File is not executable on this target")
+        record["executable"] = True
+    elif kind not in {"file", "model"}:
+        raise ValueError(f"Unknown deliverable type: {kind}")
+    record["ok"] = True
+
+
+def _resolved_deliverable_checks(
+    root: str, include_final_artifacts: bool = True
+) -> List[Dict[str, Any]]:
     rel_path = "deliverables_resolved.json"
     path = os.path.join(root, rel_path)
     if not os.path.exists(path):
@@ -107,6 +237,53 @@ def _resolved_deliverable_checks(root: str) -> List[Dict[str, Any]]:
         }]
 
     checks: List[Dict[str, Any]] = []
+    contract_root_value = contract.get("run_root")
+    results_dir_value = contract.get("results_dir")
+    contract_root = (
+        os.path.abspath(contract_root_value)
+        if isinstance(contract_root_value, str) and contract_root_value
+        else ""
+    )
+    results_dir = (
+        os.path.abspath(results_dir_value)
+        if isinstance(results_dir_value, str) and results_dir_value
+        else ""
+    )
+    root = os.path.abspath(root)
+    current = root
+    expected_results_dir = None
+    while True:
+        if os.path.basename(current).lower() == "results":
+            expected_results_dir = current
+            break
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    if expected_results_dir is None:
+        expected_results_dir = root
+    root_ok = contract_root == root
+    checks.append({
+        "rel_path": rel_path + ":run_root",
+        "severity": "abort",
+        "source": "frozen_deliverables_contract",
+        "path": path,
+        "ok": root_ok,
+        "declared_run_root": contract_root,
+        "expected_run_root": root,
+        "failure_reason": None if root_ok else "Resolved contract belongs to a different run root",
+    })
+    results_dir_ok = expected_results_dir is not None and results_dir == expected_results_dir
+    checks.append({
+        "rel_path": rel_path + ":results_dir",
+        "severity": "abort",
+        "source": "frozen_deliverables_contract",
+        "path": path,
+        "ok": results_dir_ok,
+        "declared_results_dir": results_dir,
+        "expected_results_dir": expected_results_dir,
+        "failure_reason": None if results_dir_ok else "Resolved contract declares the wrong global results directory",
+    })
     pending = contract.get("pending_rules") or []
     checks.append({
         "rel_path": rel_path + ":pending_rules",
@@ -118,10 +295,16 @@ def _resolved_deliverable_checks(root: str) -> List[Dict[str, Any]]:
         "pending_rules": pending,
     })
 
+    deferred = []
     for item in contract.get("resolved") or []:
+        if str(item.get("phase")) == "12" and not include_final_artifacts:
+            deferred.append(item.get("path"))
+            continue
         declared = item.get("path", "<missing>")
-        full_path = item.get("absolute_path")
+        stored_path = item.get("absolute_path")
         kind = item.get("type", "file")
+        base = expected_results_dir if item.get("scope") == "global_results" else root
+        full_path = os.path.abspath(os.path.join(base, str(declared)))
         record = {
             "rel_path": declared,
             "severity": "abort",
@@ -129,41 +312,36 @@ def _resolved_deliverable_checks(root: str) -> List[Dict[str, Any]]:
             "path": full_path,
             "declared_type": kind,
             "rule_id": item.get("rule_id"),
+            "phase": item.get("phase"),
         }
         try:
-            if not isinstance(full_path, str) or not full_path:
-                raise ValueError("missing absolute_path")
-            if kind == "glob":
-                matches = [candidate for candidate in glob.glob(full_path) if os.path.getsize(candidate) > 0]
-                record.update({"ok": bool(matches), "matched_paths": matches})
-            elif kind == "directory":
-                record["ok"] = os.path.isdir(full_path)
-            elif kind == "nonempty_directory":
-                entries = os.listdir(full_path) if os.path.isdir(full_path) else []
-                record.update({"ok": bool(entries), "entry_count": len(entries)})
-            elif kind == "json":
-                _load_json(full_path)
-                record.update(_exists_nonempty(full_path))
-            elif kind == "jsonl":
-                with open(full_path, "r", encoding="utf-8-sig") as handle:
-                    lines = [line for line in handle if line.strip()]
-                for line in lines:
-                    json.loads(line)
-                record.update({
-                    "ok": bool(lines),
-                    "exists": True,
-                    "size": os.path.getsize(full_path),
-                    "record_count": len(lines),
-                })
-            elif kind == "executable":
-                record.update(_exists_nonempty(full_path))
-                record["executable"] = os.access(full_path, os.X_OK)
-                record["ok"] = record["ok"] and record["executable"]
-            else:
-                record.update(_exists_nonempty(full_path))
+            if not isinstance(declared, str) or not declared:
+                raise ValueError("Resolved item is missing its declared relative path")
+            if item.get("scope") == "global_results" and not expected_results_dir:
+                raise ValueError("Could not infer the global results directory from the run root")
+            if not base:
+                raise ValueError("Resolved item has no valid scope base")
+            if not _path_is_within(full_path, base):
+                raise ValueError(f"Declared path escapes its {item.get('scope')} base: {declared}")
+            if not isinstance(stored_path, str) or os.path.abspath(stored_path) != full_path:
+                raise ValueError(
+                    f"Stored absolute_path does not match the path recomputed from scope and declaration: {stored_path!r}"
+                )
+            _validate_declared_artifact(full_path, kind, record)
         except Exception as exc:
-            record.update({"ok": False, "error": str(exc)})
+            _set_failure(record, "acceptance_check_failed", str(exc))
         checks.append(record)
+    if deferred:
+        checks.append({
+            "rel_path": "phase12.audit:deferred_final_artifacts",
+            "severity": "info",
+            "source": "frozen_deliverables_contract",
+            "path": root,
+            "ok": True,
+            "deferred": True,
+            "deferred_paths": deferred,
+            "reason": "Final audit artifacts are checked after both audit files have been written",
+        })
     return checks
 
 
@@ -203,6 +381,10 @@ def _expected_files(root: str) -> List[Dict[str, Any]]:
         ("data/phase2/environment_manifest.json", "abort"),
         ("data/phase3/operator_claims.json", "abort"),
         ("data/phase3/cross_sections.json", "abort"),
+        ("data/phase3/model_status.json", "abort"),
+    ]
+    if operators:
+        fixed.extend([
         ("data/phase3/anchor.json", "abort"),
         ("data/phase4/coefficient_ranges.json", "abort"),
         ("data/phase4/sm_baseline.json", "abort"),
@@ -235,7 +417,9 @@ def _expected_files(root: str) -> List[Dict[str, Any]]:
         ("data/phase10/manuscript_checklist.json", "abort"),
         ("data/phase10/manuscript_trace_map.json", "abort"),
         ("data/phase10/manuscript_validation.json", "abort"),
-    ]
+        ])
+    else:
+        fixed.append(("data/phase3/phase3_report.txt", "abort"))
     for rel, severity in fixed:
         expected.append({"rel_path": rel, "severity": severity, "source": "fixed"})
 
@@ -414,17 +598,27 @@ def _phase3_runner_manifest_checks(root: str) -> List[Dict[str, Any]]:
                 result_paths.add(value)
 
     for result_path in sorted(result_paths):
-        full_path = result_path if os.path.isabs(result_path) else os.path.join(root, result_path)
-        try:
-            rel = os.path.relpath(full_path, root)
-        except ValueError:
-            rel = full_path
-        checks.append({
+        full_path = _manifest_reference_path(root, result_path)
+        rel = os.path.relpath(full_path, root)
+        record = {
             "rel_path": rel,
             "severity": "abort",
             "source": "phase3_runner_manifests",
             **_exists_nonempty(full_path),
-        })
+        }
+        if not _path_is_within(full_path, root):
+            _set_failure(
+                record,
+                "phase3_manifest_path_outside_run_root",
+                f"Phase 3 runner manifest path escapes the run root: {result_path}",
+            )
+        elif not record["ok"]:
+            _set_failure(
+                record,
+                "phase3_runner_result_missing",
+                f"Phase 3 runner result is missing or empty: {full_path}",
+            )
+        checks.append(record)
     return checks
 
 
@@ -650,6 +844,311 @@ def _algorithm_description_map(data: Any) -> Dict[str, Dict[str, Any]]:
         for k, v in data.items()
         if k not in metadata_keys and isinstance(v, dict)
     }
+
+
+def _canonical_sha256(value: Any) -> str:
+    payload = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _file_sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
+    manifest_rel = os.path.join("replay", "replay_manifest.json")
+    manifest_path = os.path.join(root, manifest_rel)
+    if not os.path.exists(manifest_path):
+        return []
+    record: Dict[str, Any] = {
+        "rel_path": manifest_rel + ":algorithm_lock",
+        "severity": "abort",
+        "source": "phase11_algorithm_lock",
+        "path": manifest_path,
+    }
+    try:
+        manifest = _load_json(manifest_path)
+        lock = manifest.get("algorithm_lock")
+        if not isinstance(lock, dict):
+            raise ValueError("replay_manifest.json is missing algorithm_lock object")
+        stored_hash = lock.get("lock_sha256")
+        lock_payload = {key: value for key, value in lock.items() if key != "lock_sha256"}
+        if stored_hash != _canonical_sha256(lock_payload):
+            raise ValueError("algorithm_lock.lock_sha256 does not match its canonical payload")
+
+        comparison = _load_json(os.path.join(root, "data", "phase7", "algorithm_comparison.json"))
+        expected_algorithms = set((comparison.get("anchor") or {}).keys())
+        descriptions = _algorithm_description_map(
+            _load_json(os.path.join(root, "data", "phase7", "algorithm_descriptions.json"))
+        )
+        trained = lock.get("trained_algorithms")
+        if not isinstance(trained, list):
+            raise ValueError("algorithm_lock.trained_algorithms must be a list")
+        trained_map = {
+            str(item.get("key")): item
+            for item in trained
+            if isinstance(item, dict) and item.get("key")
+        }
+        if set(trained_map) != expected_algorithms:
+            raise ValueError(
+                "algorithm_lock trained keys do not match Phase 7 anchor algorithms: "
+                f"expected={sorted(expected_algorithms)}, actual={sorted(trained_map)}"
+            )
+
+        bad_algorithms = []
+        for algorithm in sorted(expected_algorithms):
+            frozen = trained_map[algorithm]
+            source = descriptions.get(algorithm, {})
+            missing = [
+                key
+                for key in (
+                    "implementation",
+                    "hyperparameters",
+                    "random_seed",
+                    "score_definition",
+                    "model_output",
+                )
+                if key not in frozen or frozen.get(key) in (None, "")
+            ]
+            mismatches = []
+            source_params = source.get("hyperparameters", source.get("params"))
+            source_seed = source.get("random_seed", source.get("seed"))
+            source_score = source.get("score_definition", source.get("score"))
+            source_implementation = (
+                source.get("implementation")
+                or source.get("class_path")
+                or source.get("class_name")
+            )
+            if source_params is not None and frozen.get("hyperparameters") != source_params:
+                mismatches.append("hyperparameters")
+            if source_seed is not None and frozen.get("random_seed") != source_seed:
+                mismatches.append("random_seed")
+            if source_score is not None and frozen.get("score_definition") != source_score:
+                mismatches.append("score_definition")
+            if source_implementation is not None and frozen.get("implementation") != source_implementation:
+                mismatches.append("implementation")
+            expected_model = f"algorithms/anchor_{algorithm}.pkl"
+            if str(frozen.get("model_output", "")).replace("\\", "/") != expected_model:
+                mismatches.append("model_output")
+            if missing or mismatches:
+                bad_algorithms.append({
+                    "algorithm": algorithm,
+                    "missing": missing,
+                    "source_mismatches": mismatches,
+                })
+
+        selection = _load_json(os.path.join(root, "data", "phase9", "algorithm_selection.json"))
+        expected_production = selection.get("selected_algorithm")
+        production_ok = lock.get("production_algorithm") == expected_production
+        provenance = lock.get("selection_provenance")
+        provenance_ok = (
+            isinstance(provenance, dict)
+            and bool(provenance.get("selection_method"))
+            and provenance.get("source") == "data/phase9/algorithm_selection.json"
+        )
+
+        packaged_files = lock.get("packaged_files")
+        bad_files = []
+        phase7_references = set()
+        for step in manifest.get("steps") or []:
+            if not isinstance(step, dict) or str(step.get("phase")) != "7":
+                continue
+            for rel in (step.get("sha256") or {}).keys():
+                if isinstance(rel, str):
+                    phase7_references.add(rel.replace("\\", "/").lstrip("./"))
+            for token in step.get("command") or []:
+                if isinstance(token, str) and token.endswith((".py", ".sh")):
+                    phase7_references.add(token.replace("\\", "/").lstrip("./"))
+        if not isinstance(packaged_files, dict) or not packaged_files:
+            bad_files.append({"error": "algorithm_lock.packaged_files must be a non-empty checksum map"})
+        else:
+            packaged_normalized = {
+                str(rel).replace("\\", "/").lstrip("./") for rel in packaged_files
+            }
+            missing_phase7_files = sorted(phase7_references - packaged_normalized)
+            if missing_phase7_files:
+                bad_files.append({
+                    "error": "Phase 7 replay files are missing from algorithm_lock.packaged_files",
+                    "paths": missing_phase7_files,
+                })
+            replay_root = os.path.join(root, "replay")
+            for rel, expected_hash in sorted(packaged_files.items()):
+                rel_norm = str(rel).replace("\\", "/").lstrip("./")
+                full_path = os.path.abspath(os.path.join(replay_root, rel_norm))
+                if not _path_is_within(full_path, replay_root):
+                    bad_files.append({"path": rel, "error": "path escapes replay package"})
+                elif not os.path.isfile(full_path):
+                    bad_files.append({"path": rel, "error": "packaged algorithm file is missing"})
+                elif _file_sha256(full_path) != expected_hash:
+                    bad_files.append({"path": rel, "error": "SHA-256 mismatch"})
+
+        ok = not bad_algorithms and production_ok and provenance_ok and not bad_files
+        record.update({
+            "ok": ok,
+            "trained_algorithms": sorted(trained_map),
+            "bad_algorithms": bad_algorithms,
+            "expected_production_algorithm": expected_production,
+            "actual_production_algorithm": lock.get("production_algorithm"),
+            "selection_provenance_ok": provenance_ok,
+            "bad_packaged_files": bad_files,
+        })
+        if not ok:
+            record["failure_reason"] = (
+                "Phase 11 did not freeze the actual Phase 7/9 algorithms, parameters, seeds, "
+                "selection provenance, and packaged implementation checksums consistently"
+            )
+    except Exception as exc:
+        _set_failure(record, "algorithm_lock_invalid", str(exc))
+    return [record]
+
+
+def _workflow_contract_binding_checks(root: str) -> List[Dict[str, Any]]:
+    log_rel = "workflow.log"
+    log_path = os.path.join(root, log_rel)
+    if not os.path.exists(log_path):
+        return []
+    current = os.path.abspath(root)
+    results_root = None
+    while True:
+        if os.path.basename(current).lower() == "results":
+            results_root = current
+            break
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    contract_path = os.path.join(results_root or root, "research_contract.json")
+    record: Dict[str, Any] = {
+        "rel_path": log_rel + ":objective_sha256",
+        "severity": "abort",
+        "source": "workflow_contract_binding",
+        "path": log_path,
+    }
+    try:
+        expected = _load_json(contract_path).get("objective_sha256")
+        record_count = 0
+        mismatches = []
+        with open(log_path, "r", encoding="utf-8-sig") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                record_count += 1
+                if item.get("objective_sha256") != expected:
+                    mismatches.append(line_number)
+        record.update({
+            "ok": bool(record_count) and not mismatches,
+            "record_count": record_count,
+            "expected_objective_sha256": expected,
+            "mismatched_record_numbers": mismatches,
+        })
+        if not record["ok"]:
+            record["failure_reason"] = (
+                "Every workflow record must be bound to the frozen research objective hash"
+            )
+    except Exception as exc:
+        _set_failure(record, "workflow_objective_binding_invalid", str(exc))
+    return [record]
+
+
+def _ensure_failure_diagnostics(checks: List[Dict[str, Any]]) -> None:
+    for check in checks:
+        if check.get("ok") or check.get("severity") == "info":
+            continue
+        if not check.get("failure_code"):
+            check["failure_code"] = str(check.get("source") or "acceptance") + "_failed"
+        if not check.get("failure_reason"):
+            check["failure_reason"] = str(
+                check.get("error")
+                or f"Acceptance check failed for {check.get('rel_path', check.get('path', '<unknown>'))}; inspect the structured diagnostic fields"
+            )
+
+
+def _final_audit_artifact_checks(root: str) -> List[Dict[str, Any]]:
+    checks: List[Dict[str, Any]] = []
+    expected_path = os.path.join(root, "audit_expected_outputs.json")
+    report_path = os.path.join(root, "audit_report.json")
+    expected_status = None
+    try:
+        expected = _load_json(expected_path)
+        expected_status = expected.get("status")
+        missing = [
+            key for key in ("status", "checks", "failures", "warnings", "expected_count")
+            if key not in expected
+        ]
+        checks.append({
+            "rel_path": "audit_expected_outputs.json:schema",
+            "severity": "abort",
+            "source": "phase12_final_artifact_schema",
+            "path": expected_path,
+            "ok": expected.get("status") in {"PASS", "WARN", "FAIL"}
+            and isinstance(expected.get("checks"), list)
+            and isinstance(expected.get("failures"), list)
+            and isinstance(expected.get("warnings"), list)
+            and not missing,
+            "missing_keys": missing,
+        })
+    except Exception as exc:
+        checks.append({
+            "rel_path": "audit_expected_outputs.json:schema",
+            "severity": "abort",
+            "source": "phase12_final_artifact_schema",
+            "path": expected_path,
+            "ok": False,
+            "error": str(exc),
+        })
+
+    try:
+        report = _load_json(report_path)
+        required_categories = {
+            "research_contract",
+            "deliverables_contract",
+            "file_existence",
+            "numerical_sanity",
+            "cross_phase_consistency",
+        }
+        categories = report.get("checks") if isinstance(report.get("checks"), dict) else {}
+        missing = [
+            key for key in ("status", "checks", "abort_reasons", "warnings", "manuscript_validation_status")
+            if key not in report
+        ]
+        bad_categories = []
+        for category in sorted(required_categories):
+            value = categories.get(category)
+            if not isinstance(value, dict) or any(key not in value for key in ("passed", "failed", "details")):
+                bad_categories.append(category)
+        checks.append({
+            "rel_path": "audit_report.json:schema",
+            "severity": "abort",
+            "source": "phase12_final_artifact_schema",
+            "path": report_path,
+            "ok": report.get("status") in {"PASS", "WARN", "FAIL"}
+            and report.get("status") == expected_status
+            and not missing
+            and not bad_categories
+            and isinstance(report.get("abort_reasons"), list)
+            and isinstance(report.get("warnings"), list),
+            "missing_keys": missing,
+            "bad_check_categories": bad_categories,
+            "expected_status": expected_status,
+            "actual_status": report.get("status"),
+        })
+    except Exception as exc:
+        checks.append({
+            "rel_path": "audit_report.json:schema",
+            "severity": "abort",
+            "source": "phase12_final_artifact_schema",
+            "path": report_path,
+            "ok": False,
+            "error": str(exc),
+        })
+    return checks
 
 
 def _csv_has_columns(path: str, required_columns: Iterable[str]) -> Dict[str, Any]:
@@ -1207,6 +1706,7 @@ def audit_expected_outputs(
     workdir: str,
     run_dir: Optional[str] = None,
     phase10_required_ids_json: Optional[str] = None,
+    include_final_artifacts: bool = False,
 ) -> Dict[str, Any]:
     root = _result_root(os.path.abspath(os.path.expanduser(workdir)), run_dir)
     expected = _expected_files(root)
@@ -1221,12 +1721,19 @@ def audit_expected_outputs(
     checks.extend(_phase6_weighted_order_checks(root))
     checks.extend(_phase7_content_checks(root))
     checks.extend(_phase9_strategy_checks(root))
+    checks.extend(_replay_algorithm_lock_checks(root))
+    checks.extend(_workflow_contract_binding_checks(root))
     checks.extend(_cleanup_log_checks(root))
     checks.extend(_phase10_manuscript_checks(root, required_ids_json=phase10_required_ids_json))
 
     checks.extend(_manuscript_format_checks(root))
-    checks.extend(_resolved_deliverable_checks(root))
+    checks.extend(_resolved_deliverable_checks(
+        root, include_final_artifacts=include_final_artifacts
+    ))
+    if include_final_artifacts:
+        checks.extend(_final_audit_artifact_checks(root))
 
+    _ensure_failure_diagnostics(checks)
     failures = [c for c in checks if not c["ok"] and c["severity"] == "abort"]
     warnings = [c for c in checks if not c["ok"] and c["severity"] == "warn"]
     return {
@@ -1246,6 +1753,11 @@ def main() -> int:
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--json-out", default=None)
     parser.add_argument(
+        "--include-final-artifacts",
+        action="store_true",
+        help="Check Phase 12 audit artifacts after both final audit files have been written",
+    )
+    parser.add_argument(
         "--phase10-required-ids-json",
         default=None,
         help="Optional path to reference/manuscript-checklist-required-ids.json",
@@ -1256,6 +1768,7 @@ def main() -> int:
         args.workdir,
         run_dir=args.run_dir,
         phase10_required_ids_json=args.phase10_required_ids_json,
+        include_final_artifacts=args.include_final_artifacts,
     )
     if args.json_out:
         os.makedirs(os.path.dirname(os.path.abspath(args.json_out)), exist_ok=True)

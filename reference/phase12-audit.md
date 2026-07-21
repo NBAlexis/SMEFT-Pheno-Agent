@@ -73,6 +73,20 @@ to a target separately from the skill folder, copy this JSON too or pass its
 target path with `--phase10-required-ids-json`. Do not rely only on wildcards
 when a manifest is available.
 
+This first pass deliberately defers the Phase 12 audit files themselves so the
+audit does not require its own not-yet-written output. After writing both
+`audit_expected_outputs.json` and `audit_report.json`, run the final, non-writing
+contract check:
+
+```bash
+python scripts/audit_expected_outputs.py {workdir} \
+  --phase10-required-ids-json reference/manuscript-checklist-required-ids.json \
+  --include-final-artifacts
+```
+
+This command must return PASS or WARN. It checks the existing final artifacts
+without rewriting either one, eliminating the self-audit cycle.
+
 | File | Phase | Action if missing |
 |---|---|---|
 | `results/data/phase2/environment_manifest.json` | 2 | Abort |
@@ -233,11 +247,12 @@ logger.phase_complete("12")
 
 ## Phase Transition
 
-Before calling `logger.phase_complete("12")`, satisfy
+Before calling `logger.phase_complete("12")`, write `audit_report.json`, run the
+final `--include-final-artifacts` check, and satisfy
 [`deliverables-phase12.md`](deliverables-phase12.md). Missing deliverables
 require self-repair, not user interaction.
 
-After `logger.phase_complete("12")` is called and `audit_report.json` is written:
+After `logger.phase_complete("12")` is called:
 
 1. Check final status immediately.
 2. If PASS or WARN, deliver the manuscript and audit log to the user.

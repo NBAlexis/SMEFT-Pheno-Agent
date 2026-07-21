@@ -48,6 +48,10 @@ results/replay/
   replay_manifest.json
   replay_validation.json
   data_files_report.md
+  run_config.json
+  research_contract.json
+  deliverables_contract.json
+  contract_lock.json
   steps/
   support/
 ```
@@ -76,7 +80,8 @@ phase artifacts. Package:
 
 - an immutable copy of `run_config.json`, with secrets replaced by documented
   environment-variable references;
-- immutable copies of `research_contract.json` and `deliverables_contract.json`;
+- immutable copies of `research_contract.json`, `deliverables_contract.json`,
+  and `contract_lock.json`;
 - the exact Phase 2-9 drivers and helper versions needed to repeat the run;
 - ordered commands, working directories, random seeds, event counts, model and
   detector-card identities, algorithm parameters, and dependency versions;
@@ -96,6 +101,25 @@ Write `replay_manifest.json` with this minimum structure:
   "entrypoint": "replay.sh",
   "phase_order": ["2", "3", "4", "5", "6", "7", "8", "9"],
   "default_output": "replayed-results",
+  "algorithm_lock": {
+    "trained_algorithms": [
+      {
+        "key": "gradient_boosting",
+        "implementation": "sklearn.ensemble.GradientBoostingClassifier",
+        "hyperparameters": {"n_estimators": 200},
+        "random_seed": 12345,
+        "score_definition": "predict_proba[:, 1]",
+        "model_output": "algorithms/anchor_gradient_boosting.pkl"
+      }
+    ],
+    "production_algorithm": "gradient_boosting",
+    "selection_provenance": {
+      "selection_method": "narrowest_anchor_S2_interval",
+      "source": "data/phase9/algorithm_selection.json"
+    },
+    "packaged_files": {"steps/phase7.py": "...sha256..."},
+    "lock_sha256": "...canonical SHA-256 without lock_sha256..."
+  },
   "steps": [
     {
       "phase": "2",
@@ -116,6 +140,13 @@ required numerical JSON, CSV, LHCO, trained-model, and plot family from Phases
 3-9 must appear in exactly one step's `outputs`; Phase 2 environment provenance
 must also be declared. Output globs are allowed only when the operator,
 algorithm, or scan-point matrix that expands them is recorded in the manifest.
+
+`algorithm_lock` freezes execution state at Phase 11, not the Phase 1 research
+objective. Its trained keys must exactly match
+`algorithm_comparison.json["anchor"]`; parameters, seeds, and score definitions
+must match `algorithm_descriptions.json`; `production_algorithm` must match
+Phase 9 `algorithm_selection.json`; and every algorithm driver/helper required
+for reproduction must appear in `packaged_files` with its actual SHA-256.
 
 ## Step 11.3: Generate `replay.sh`
 
@@ -182,6 +213,8 @@ applicable checks:
    `data_files_report.md`.
 6. Static inspection confirms no production step reads original Phase 3-9
    result paths.
+7. The algorithm lock canonical hash is valid, its Phase 7/9 values match the
+   actual run, and every packaged algorithm implementation checksum matches.
 
 Write results to `replay_validation.json`, including commands, return codes,
 observed phase order, coverage counts, failures, warnings, and whether

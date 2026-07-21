@@ -72,6 +72,16 @@ def _read_skill_commit(skill_root: str) -> Dict[str, Optional[str]]:
     return {"skill_commit": None, "skill_commit_source": "unavailable"}
 
 
+def _read_objective_sha256(workdir: str) -> Optional[str]:
+    path = os.path.join(workdir, "results", "research_contract.json")
+    try:
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            value = json.load(handle).get("objective_sha256")
+        return value if isinstance(value, str) and value else None
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+
+
 class WorkflowLogger:
     """Append-only logger for workflow events."""
 
@@ -81,6 +91,7 @@ class WorkflowLogger:
         self.skill_root = _skill_root()
         self.skill_version = _read_skill_version(self.skill_root)
         self.skill_commit_info = _read_skill_commit(self.skill_root)
+        self.objective_sha256 = _read_objective_sha256(workdir)
         self.log_path = self._log_path(workdir, run_dir)
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
         open(self.log_path, "a", encoding="utf-8").close()
@@ -104,6 +115,7 @@ class WorkflowLogger:
         record.setdefault("skill_version", self.skill_version)
         record.setdefault("skill_commit", self.skill_commit_info["skill_commit"])
         record.setdefault("skill_commit_source", self.skill_commit_info["skill_commit_source"])
+        record.setdefault("objective_sha256", self.objective_sha256)
         if self.run_dir:
             record.setdefault("run_dir", self.run_dir)
         record["timestamp"] = datetime.now(timezone.utc).isoformat()

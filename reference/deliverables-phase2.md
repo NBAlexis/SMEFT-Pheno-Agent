@@ -1,11 +1,11 @@
 # Phase 2 Deliverables: Environment
 
-Consumes: Phase 1 `run_config.json`, `research_contract.json`, and
-`deliverables_contract.json`.
+Consumes: Phase 1 `run_config.json`, `research_contract.json`,
+`deliverables_contract.json`, and `contract_lock.json`.
 
 Must deliver:
 - Initialized `results/workflow.log` with `skill_version`, `skill_commit`, and
-  detailed step records.
+  detailed step records. Every record includes the frozen `objective_sha256`.
 - Consumed the Phase 1 CutExperiment result, and validated model directories,
   Delphes card, target execution, run directories, and locked event counts.
   MG5 stack validation happens in Phase 1.

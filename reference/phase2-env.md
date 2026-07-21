@@ -6,8 +6,8 @@
 
 Verify all non-MG5 dependencies exist before starting the workflow. Phase 1 has
 already validated the MG5 stack. Phase 2 reads the local control copy of
-`run_config.json` and the two frozen contracts produced by Phase 1. In SSH/WSL2
-mode, the same three JSON files must also exist at `{workdir}/results/` on the
+`run_config.json`, the two frozen contracts, and `contract_lock.json` produced by Phase 1. In SSH/WSL2
+mode, the same four JSON files must also exist at `{workdir}/results/` on the
 selected target. No parameter should be sourced from conversation history or
 user interaction.
 
@@ -191,7 +191,7 @@ When resuming, still run all Phase 2 validation steps every time.
     resolved path, model paths, venv Python path, installed Python package
     versions, locked event-count mode, and every probe command with return code.
     Also include `research_objective_sha256`, `deliverables_template_sha256`,
-    and the paths used to verify both contracts.
+    and the paths used to verify the complete locked contract set.
     Phase 10 uses this file for toolchain provenance; do not leave tool
     versions only in `workflow.log`.
 

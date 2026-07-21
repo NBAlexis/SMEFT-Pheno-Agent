@@ -23,7 +23,8 @@
       "items": [
         {"path": "run_config.json", "type": "json"},
         {"path": "research_contract.json", "type": "json"},
-        {"path": "deliverables_contract.json", "type": "json"}
+        {"path": "deliverables_contract.json", "type": "json"},
+        {"path": "contract_lock.json", "type": "json"}
       ]
     },
     {
@@ -265,7 +266,7 @@
         {"path": "data/phase10/manuscript_completeness_passes.json", "type": "json"},
         {"path": "data/phase10/manuscript_validation.json", "type": "json"},
         {"path": "data/phase10/manuscript_draft_v1.*", "type": "glob"},
-        {"path": "data/feynman_diagrams", "type": "directory"}
+        {"path": "data/feynman_diagrams", "type": "directory", "condition": "feynman_diagram_directory_required"}
       ]
     },
     {
@@ -311,7 +312,11 @@
         {"path": "replay/replay.sh", "type": "executable"},
         {"path": "replay/replay_manifest.json", "type": "json"},
         {"path": "replay/replay_validation.json", "type": "json"},
-        {"path": "replay/data_files_report.md", "type": "markdown"}
+        {"path": "replay/data_files_report.md", "type": "markdown"},
+        {"path": "replay/run_config.json", "type": "json"},
+        {"path": "replay/research_contract.json", "type": "json"},
+        {"path": "replay/deliverables_contract.json", "type": "json"},
+        {"path": "replay/contract_lock.json", "type": "json"}
       ]
     },
     {

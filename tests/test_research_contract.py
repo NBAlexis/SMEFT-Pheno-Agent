@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -68,8 +69,19 @@ class ResearchContractTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.results = os.path.join(self.temp.name, "results")
+        self.mg5 = os.path.join(self.temp.name, "MG5")
+        model_dir = os.path.join(self.mg5, "models", "AQGCm_UFO")
+        card_dir = os.path.join(self.mg5, "Delphes", "cards")
+        os.makedirs(model_dir, exist_ok=True)
+        os.makedirs(card_dir, exist_ok=True)
+        with open(os.path.join(model_dir, "parameters.py"), "w", encoding="utf-8") as handle:
+            handle.write("MODEL = 'AQGCm_UFO'\n")
+        with open(os.path.join(card_dir, "delphes_card_CEPC.tcl"), "w", encoding="utf-8") as handle:
+            handle.write("set DetectorName CEPC\n")
         self.config_path = os.path.join(self.results, "run_config.json")
         self.config = base_config(self.temp.name)
+        self.config["madgraph_path"] = self.mg5
+        self.config["delphes_card"] = "delphes_card_CEPC.tcl"
         write_json(self.config_path, self.config)
         init_contracts(self.config_path, self.results, TEMPLATE)
 
@@ -98,14 +110,32 @@ class ResearchContractTests(unittest.TestCase):
 
     def test_technical_path_migration_is_allowed(self):
         changed = copy.deepcopy(self.config)
+        new_mg5 = os.path.join(self.temp.name, "migrated", "MG5")
+        shutil.copytree(self.mg5, new_mg5)
         changed["execution"] = {"mode": "wsl2", "wsl_distro": "Ubuntu"}
-        changed["madgraph_path"] = "/new/MG5"
+        changed["madgraph_path"] = new_mg5
         changed["cutexperiment_path"] = "/new/CutExperiment"
         changed["workdir"] = "/new/workdir"
-        changed["delphes_card"] = "/new/cards/delphes_card_CEPC.tcl"
+        changed["delphes_card"] = os.path.join(
+            new_mg5, "Delphes", "cards", "delphes_card_CEPC.tcl"
+        )
         changed["run_configurations"][0]["run_dir"] = "renamed-run"
         write_json(self.config_path, changed)
         self.assertEqual(verify_contracts(self.config_path, self.results)["status"], "ok")
+
+    def test_algorithm_change_is_not_research_objective_drift(self):
+        changed = copy.deepcopy(self.config)
+        changed["algorithms"] = ["different", "technical", "set"]
+        write_json(self.config_path, changed)
+        self.assertEqual(verify_contracts(self.config_path, self.results)["status"], "ok")
+
+    def test_model_or_card_content_drift_is_rejected(self):
+        model_file = os.path.join(self.mg5, "models", "AQGCm_UFO", "parameters.py")
+        with open(model_file, "a", encoding="utf-8") as handle:
+            handle.write("DRIFT = True\n")
+        report = verify_contracts(self.config_path, self.results)
+        self.assertEqual(report["status"], "error")
+        self.assertTrue(any("scientific objective" in item for item in report["errors"]))
 
     def test_deliverables_template_tamper_is_rejected(self):
         path = os.path.join(self.results, "deliverables_contract.json")
@@ -126,7 +156,7 @@ class ResearchContractTests(unittest.TestCase):
         )
         write_json(
             os.path.join(root, "data", "phase3", "model_status.json"),
-            {"models": [{"result_json": "data/phase3/results/model_a.json"}]},
+            {"models": [{"result_json": "results/data/phase3/results/model_a.json"}]},
         )
         write_json(
             os.path.join(root, "data", "phase6", "scan_manifest.json"),
@@ -139,6 +169,10 @@ class ResearchContractTests(unittest.TestCase):
         write_json(
             os.path.join(root, "data", "phase10", "manuscript_build_environment.json"),
             {"pdf_required": True},
+        )
+        write_json(
+            os.path.join(root, "data", "phase10", "manuscript_evidence.json"),
+            {"figures": {"feynman_diagrams": [{"missing_reason": "not retained"}]}},
         )
         write_json(
             os.path.join(root, "replay", "replay_manifest.json"),
@@ -157,6 +191,7 @@ class ResearchContractTests(unittest.TestCase):
         self.assertIn("data/phase8/scores/mlp/np_o_2_f0_scores.csv", paths)
         self.assertIn("data/phase8/csfit_o_2_bdt.json", paths)
         self.assertIn("data/phase3/results/model_a.json", paths)
+        self.assertNotIn("results/data/phase3/results/model_a.json", paths)
         self.assertIn("replay/steps/phase2.py", paths)
         self.assertIn("replay/support/report.py", paths)
         self.assertIn("manuscript.pdf", paths)
@@ -183,6 +218,7 @@ class ResearchContractTests(unittest.TestCase):
         paths = {item["path"] for item in report["resolved"]}
         excluded_ids = {item["rule_id"] for item in report["excluded_rules"]}
         self.assertIn("data/phase3/phase3_report.txt", paths)
+        self.assertNotIn("data/phase3/anchor.json", paths)
         self.assertIn("phase4.ranges", excluded_ids)
         self.assertIn("phase12.audit", excluded_ids)
         self.assertEqual(report["status"], "resolved")
