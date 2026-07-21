@@ -1,6 +1,6 @@
 # Phase 4: Estimate Per-Operator Coefficient Ranges
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
@@ -27,7 +27,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("4")
 ```
 
@@ -115,9 +115,11 @@ find the smallest positive real c_scan_N where S_stat_N(c_scan_N) = 2
 it can inflate scan ranges by many orders of magnitude.
 
 **Edge cases:**
-- If `cs_sm = 0`, abort. Verify process definition and beam energies.
-- If any claimed operator has `cs_np_N <= 0` or missing Phase 3 metadata, abort
-  Phase 4 with a concrete red flag after logging the offending operator.
+- If `cs_sm = 0`, verify process definition, beam energies, banner extraction,
+  and MG5 logs; repair and rerun the baseline.
+- If any claimed operator has `cs_np_N <= 0` or missing Phase 3 metadata, repair
+  the Phase 3/4 inconsistency and rerun the offending operator. Use
+  `phase_fail` only under the structured rule in `SKILL.md`.
 
 ```python
 with workflow_step(logger, "4", "compute_operator_scan_ranges",
@@ -188,7 +190,8 @@ with workflow_step(logger, "4", "compute_operator_scan_ranges",
             "range_estimate": "operator_default_quadratic_np_approximation"
         }
 
-    phase4_dir = os.path.join(config.workdir, "results", run_dir, "data", "phase4")
+    run_root = os.path.join(config.workdir, "results", run_dir) if run_dir else os.path.join(config.workdir, "results")
+    phase4_dir = os.path.join(run_root, "data", "phase4")
     os.makedirs(phase4_dir, exist_ok=True)
     with open(os.path.join(phase4_dir, "coefficient_ranges.json"), "w") as f:
         json.dump({"significant_digits": 2, "operators": operator_ranges}, f, indent=2)
@@ -203,7 +206,7 @@ logger.phase_complete("4")
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase4/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase4/...`). See `SKILL.md` Output Layout.
 
 ```text
 results/data/phase4/

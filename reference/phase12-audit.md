@@ -1,6 +1,7 @@
 # Phase 12: Self-Consistency Audit
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply
+> the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
@@ -19,7 +20,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("12")
 ```
 
@@ -58,8 +59,9 @@ Then use the detailed manifest-driven audit helper:
 
 ```bash
 python scripts/audit_expected_outputs.py {workdir} \
+  {optional_run_dir_argument} \
   --phase10-required-ids-json reference/manuscript-checklist-required-ids.json \
-  --json-out results/audit_expected_outputs.json
+  --json-out {current_run_root}/audit_expected_outputs.json
 ```
 
 The helper supplies deeper content and consistency checks. It builds the
@@ -80,12 +82,19 @@ contract check:
 
 ```bash
 python scripts/audit_expected_outputs.py {workdir} \
+  {optional_run_dir_argument} \
   --phase10-required-ids-json reference/manuscript-checklist-required-ids.json \
   --include-final-artifacts
 ```
 
 This command must return PASS or WARN. It checks the existing final artifacts
 without rewriting either one, eliminating the self-audit cycle.
+
+Use an empty `optional_run_dir_argument` in single-run mode and
+`--run-dir {run_dir}` in multi-run mode. In the tables below, `Abort` means add
+an `ok=false`, `severity="abort"` entry to the audit report, continue collecting
+the remaining checks, and make the final audit status `FAIL`. It does not mean
+stop before diagnostics or skip repair attempts.
 
 | File | Phase | Action if missing |
 |---|---|---|
@@ -190,7 +199,7 @@ with workflow_step(logger, "12", "check_cross_phase_consistency"):
 | Phase 5 claimed pure NP ops == Phase 7 pure NP CSV ops | Same global operator list | Abort |
 | Phase 6 scanned points == Phase 8 scan CSV points | Same operator/point list | Abort |
 | Phase 6 weighted-order guard | Conservative bound extracted from Phase 4 SM and Phase 5 pure-NP process folders is used by the runner | Abort |
-| Event-count recovery records | No selected sample below `10%` requested unless exhausted recovery red flag is recorded | Abort |
+| Event-count recovery records | No selected sample below `10%` requested; otherwise recovery remains incomplete and the producing Phase cannot pass | Abort |
 | Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
 | Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |
 | Phase 8 event denominators | Actual loaded LHCO counts from CutExperiment, positive for every scan point | Abort if missing, zero, equal-by-assumption to `nev_scan`, or taken from banner |
@@ -198,7 +207,7 @@ with workflow_step(logger, "12", "check_cross_phase_consistency"):
 | `reference_paper_plan.papers_to_cite` entries are included in `literature_plan.comparison_citations` | Same comparison-citation set | Warn |
 | `anchor.json` model matches Phase 4/5 SM model | Same model | Abort |
 | Phase 11 replay manifest output matrix == Phase 3-9 required numerical deliverables | Every required numerical JSON/CSV/LHCO/model/plot family has one producing step | Abort |
-| Phase 11 replay computation inputs | Frozen config, external tools/models, packaged code, and raw inputs only; no original Phase 3-9 numerical result is consumed to produce replay results | Abort |
+| Phase 11 replay computation inputs | Packaged config/code, recorded external installations, selected model/card files, and manifest `source_inputs` only; no original Phase 3-9 numerical result is consumed by a production step | Abort |
 | Phase 11 data report == replay manifest output matrix | Every declared data file family is described with producer, format/schema, scientific meaning, units where applicable, and integrity metadata | Abort |
 | Current objective == `research_contract.json` | Canonical scientific projection and SHA-256 match | Abort |
 | Resolved deliverables == frozen rules expanded from actual manifests | No pending rule; no rule removed because of technical difficulty | Abort |

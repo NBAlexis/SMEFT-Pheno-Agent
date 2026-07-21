@@ -17,7 +17,10 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from remote_exec import _load_execution
+try:
+    from .remote_exec import _load_execution
+except ImportError:  # Direct script execution.
+    from remote_exec import _load_execution
 
 
 def run_checked(args, *, stdin=None) -> None:

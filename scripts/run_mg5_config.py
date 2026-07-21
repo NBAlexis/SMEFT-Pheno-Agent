@@ -3,8 +3,9 @@
 
 This runner is intentionally config-driven so agents do not hand-write fragile
 MG5 launch orders. It executes in the same environment that owns the MG5 working
-directory; for SSH/WSL2 workflows, upload this script and its companion scripts
-to the target and run it there.
+directory; for SSH/WSL2 workflows, copy the complete bundled `scripts/`
+directory with `sync_to_target.py` as specified by phase1-input-collection.md,
+then run this file from that target-side copy.
 
 The ``process`` config field may be one MG5 process string or a list of process
 strings. For lists, the runner writes one process creation order with
@@ -31,14 +32,24 @@ import time
 import traceback
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from convert_root_to_lhco import convert_root_to_lhco
-from count_lhco_events import count_lhco_events
-from double_check_zero_cross_section import double_check_zero_cross_section
-from extract_cross_section import extract_cross_section
-from normalize_process_name import normalize_process_name
-from parse_param_card import parse_coefficients
-from run_mg5 import MG5RunError, run_mg5
-from setup_delphes_card import setup_delphes_card
+try:
+    from .convert_root_to_lhco import convert_root_to_lhco
+    from .count_lhco_events import count_lhco_events
+    from .double_check_zero_cross_section import double_check_zero_cross_section
+    from .extract_cross_section import extract_cross_section
+    from .normalize_process_name import normalize_process_name
+    from .parse_param_card import parse_coefficients
+    from .run_mg5 import MG5RunError, run_mg5
+    from .setup_delphes_card import setup_delphes_card
+except ImportError:  # Direct script execution.
+    from convert_root_to_lhco import convert_root_to_lhco
+    from count_lhco_events import count_lhco_events
+    from double_check_zero_cross_section import double_check_zero_cross_section
+    from extract_cross_section import extract_cross_section
+    from normalize_process_name import normalize_process_name
+    from parse_param_card import parse_coefficients
+    from run_mg5 import MG5RunError, run_mg5
+    from setup_delphes_card import setup_delphes_card
 
 
 SURVEY_PROFILES = {

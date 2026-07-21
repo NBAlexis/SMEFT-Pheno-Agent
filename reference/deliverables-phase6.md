@@ -27,4 +27,4 @@ If missing or incomplete: resume from `phase6_progress.json` or rerun the
 specific operator scan. Runtime is never a reason to skip Phase 6. A missing
 operator, missing scan point, or scan point with loaded LHCO event count not
 greater than `10%` of the requested scan event count blocks Phase 7 until
-recovery succeeds or a red flag is recorded.
+recovery succeeds or a structured `phase_fail` record permitted by `SKILL.md` is recorded.

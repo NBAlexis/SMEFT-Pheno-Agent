@@ -1,6 +1,6 @@
 # Model Dependencies (UFO Models)
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 The `dependency/` directory in the skill repository contains SMEFT UFO (Universal FeynRules Output) models that can be automatically copied to the user's MadGraph5 installation when the requested model is not found in `{mg5path}/models/`.
 
@@ -62,4 +62,13 @@ To add a new UFO model to the skill:
 
 ## Phase 2 Validation
 
-Phase 2 verifies that every model in `config.models` exists under `{config.madgraph_path}/models/`. If a model is missing, Phase 2 attempts to copy it from the skill's `dependency/` directory with `scripts/sync_to_target.py` for SSH/WSL2 targets or local copy for Linux local targets. If copying fails or the model is not in `dependency/`, report: "Model `{model}` not found in MG5 and not available in skill dependencies. Re-run Phase 1 or install manually."
+Phase 2 verifies that every model in `config.models` exists under
+`{config.madgraph_path}/models/`. If a model is missing, copy it from the
+skill's `dependency/` directory with `scripts/sync_to_target.py` for SSH/WSL2
+or local copy for Linux local mode. If copying fails, inspect permissions,
+available storage, target paths, and transfer logs; retry after repair. If the
+model is absent from both locations, search the recorded source location or an
+official distribution, install it without changing the selected model name,
+and verify its directory SHA-256 against `research_contract.json`. Do not ask
+the user to rerun Phase 1. Use `phase_fail` only under the exact failure-evidence
+rule in `SKILL.md`.

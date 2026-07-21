@@ -64,7 +64,11 @@ Maintain these fields during Phase 1:
   "debug": false,
   "algorithms": null,
   "polarization": null,
-  "analysis_notes": null,
+  "analysis_notes": {
+    "focused_operators": [],
+    "manuscript_preferences": [],
+    "additional_requirements": []
+  },
   "auto_installed_mg5": false
 }
 ```
@@ -203,17 +207,14 @@ handle:
 
 before_ask:
 - Determine `skill_dir` as the directory containing `SKILL.md`.
-- Scan `{skill_dir}/dependency/` for bundled model directories.
+- Scan `{skill_dir}/dependency/` at the time the question is asked. Treat every
+  immediate child directory as one available bundled model, including
+  user-added directories. Sort names case-insensitively for display.
 - If `madgraph_path` is valid, scan `{madgraph_path}/models/` on the selected target when feasible.
 - Present every bundled model directory name in the question. Never abbreviate
   with `...`, `etc.`, "and more", or a partial list.
-- The bundled dependency list in this skill version is:
-  `AQGCm_UFO`, `AQGCs_UFO`, `AQGCt_UFO`, `gQGC_UFO`, `nTGC_Old`,
-  `nTGC_UFO_01wtw1`, `nTGC_UFO_02wtw2`, `nTGC_UFO_03btb1`,
-  `nTGC_UFO_04btb2`, `nTGC_UFO_05btw1`, `nTGC_UFO_06btw2`,
-  `nTGC_UFO_07wtb`, `nTGC_UFO_08bw`, `nTGC_UFO_09ww`,
-  `nTGC_UFO_10bb`, `nTGC_UFO_11g1`, `nTGC_UFO_12g2`,
-  `nTGC_UFO_13g3`, `nTGC_UFO_14g4`.
+- Do not use a model list copied from this document or a previous run. If the
+  directory is empty, say explicitly that no bundled models were found.
 
 ```text
 [4/9] What SMEFT model name(s) should be used? Provide one model or a list, for example `AQGCm_UFO` or `[AQGCm_UFO, AQGCs_UFO]`. Bundled models found in the skill dependency folder: {dependency_models}. You may also use models already installed in `{madgraph_path}/models/`.
@@ -322,9 +323,16 @@ This question is a preferences gateway. It exists so the user can personalize th
 handle:
 - `skip`: keep defaults.
 - `debug=true`: use debug event counts.
-- `polarization=a,b`: validate two floats in [-1, 1].
+- `polarization=a,b`: validate two floats in [-1, 1] and store
+  `{"polbeam1": a, "polbeam2": b}`. Do not store a list or comma-separated
+  string.
 - `algorithms=[...]`: store requested algorithm names.
-- Store other notes as `analysis_notes`.
+- Store other input as the exact object
+  `analysis_notes={"focused_operators": [...], "manuscript_preferences": [...],
+  "additional_requirements": [...]}`. Each additional requirement is
+  `{"id": "requirement_N", "text": "...", "applies_to_phases": ["..."]}`.
+  Ask a follow-up during Phase 1 if the applicable phases cannot be determined.
+  `skip` stores three empty lists.
 
 ## Final Validation
 
@@ -354,6 +362,11 @@ Before writing `run_config.json`, validate:
   `ebeam2=ebeam_proton[i]`.
 - `delphes_card` exists either under `{madgraph_path}/Delphes/cards/` or as an absolute path on the selected execution target.
 - `cutexperiment_path` exists on the selected execution target.
+- `polarization` is `null` or exactly
+  `{"polbeam1": number_in_[-1,1], "polbeam2": number_in_[-1,1]}`.
+- `analysis_notes` has exactly the three list fields defined in `[9/9]`; every
+  additional requirement has a unique `id`, non-empty `text`, and non-empty
+  `applies_to_phases` list.
 
 If validation fails, re-ask the field responsible for the failure.
 
@@ -393,7 +406,11 @@ target copy at `{workdir}/results/run_config.json`.
   "debug": false,
   "algorithms": null,
   "polarization": null,
-  "analysis_notes": null,
+  "analysis_notes": {
+    "focused_operators": [],
+    "manuscript_preferences": [],
+    "additional_requirements": []
+  },
   "auto_installed_mg5": false,
   "event_counts_locked": true,
   "locked_event_counts": {
@@ -444,9 +461,24 @@ Run directory naming:
 
 After writing `run_config.json`, verify it is valid JSON, then freeze the task:
 
+For SSH/WSL2, first copy the complete script directory and the deliverables
+template from the local skill checkout to a target-side runtime directory:
+
 ```bash
-python scripts/research_contract.py init {workdir}/results/run_config.json
+python scripts/sync_to_target.py --config {local_run_config} scripts {workdir}/.smeft-skill/scripts
+python scripts/sync_to_target.py --config {local_run_config} reference/deliverables-contract-template.json {workdir}/.smeft-skill/reference/deliverables-contract-template.json
 ```
+
+Repeat the first command after modifying any bundled script. This complete
+directory copy is the defined source of companion scripts for later target-side
+commands; do not guess an individual dependency list.
+
+```bash
+python {target_skill_runtime}/scripts/research_contract.py init {workdir}/results/run_config.json
+```
+
+Use `target_skill_runtime={workdir}/.smeft-skill` for SSH/WSL2 and the actual
+skill directory for Linux local mode.
 
 Run this command on the selected execution target so it can hash the actual UFO
 model directories and selected Delphes card. This writes

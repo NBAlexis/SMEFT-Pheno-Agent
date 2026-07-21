@@ -20,5 +20,6 @@ cross-sections, recovery notes, and all pure-NP score histograms.
 If missing or incomplete: rerun/resume the specific SM or pure-NP unit through
 the MG5 runner or event-count recovery wrapper. Counts below the requested
 target are not failures by themselves; counts not greater than `10%` of the
-requested target are incomplete until recovery succeeds or a red flag is
+requested target are incomplete until recovery succeeds or a structured
+`phase_fail` record permitted by `SKILL.md` is
 recorded.

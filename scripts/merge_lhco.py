@@ -9,8 +9,12 @@ import os
 import sys
 from typing import Any, Dict, Iterable, List, Optional
 
-from count_lhco_events import count_lhco_events
-from extract_cross_section import extract_cross_section
+try:
+    from .count_lhco_events import count_lhco_events
+    from .extract_cross_section import extract_cross_section
+except ImportError:  # Direct script execution.
+    from count_lhco_events import count_lhco_events
+    from extract_cross_section import extract_cross_section
 
 
 def _add_cutexperiment_path(cutexperiment_path: Optional[str]) -> None:
@@ -193,4 +197,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

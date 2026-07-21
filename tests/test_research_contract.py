@@ -11,6 +11,7 @@ from scripts.research_contract import (
     resolve_contract,
     verify_contracts,
 )
+from scripts.audit_expected_outputs import audit_phase_deliverables
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,7 +44,11 @@ def base_config(workdir):
         "delphes_card": "/old/cards/delphes_card_CEPC.tcl",
         "polarization": None,
         "algorithms": ["bdt", "mlp"],
-        "analysis_notes": "Use the full operator set",
+        "analysis_notes": {
+            "focused_operators": [],
+            "manuscript_preferences": [],
+            "additional_requirements": [],
+        },
         "debug": False,
         "event_counts_locked": True,
         "locked_event_counts": {
@@ -196,6 +201,11 @@ class ResearchContractTests(unittest.TestCase):
         self.assertIn("replay/support/report.py", paths)
         self.assertIn("manuscript.pdf", paths)
         self.assertNotIn("manuscript.html", paths)
+        fit_item = next(
+            item for item in report["resolved"]
+            if item["path"] == "data/phase8/csfit_o_1_bdt.json"
+        )
+        self.assertIn("fit_intercept_fixed", fit_item["required_keys"])
         self.assertEqual(report["status"], "resolved")
 
     def test_missing_manifests_keep_rules_pending(self):
@@ -222,6 +232,28 @@ class ResearchContractTests(unittest.TestCase):
         self.assertIn("phase4.ranges", excluded_ids)
         self.assertIn("phase12.audit", excluded_ids)
         self.assertEqual(report["status"], "resolved")
+
+    def test_phase2_audit_resolves_only_phase2_rules(self):
+        with open(os.path.join(self.results, "research_contract.json"), encoding="utf-8") as handle:
+            objective_sha256 = json.load(handle)["objective_sha256"]
+        with open(os.path.join(self.results, "workflow.log"), "w", encoding="utf-8") as handle:
+            json.dump({
+                "level": "step",
+                "phase": "2",
+                "event": "completed",
+                "objective_sha256": objective_sha256,
+            }, handle)
+            handle.write("\n")
+        write_json(
+            os.path.join(self.results, "data", "phase2", "environment_manifest.json"),
+            {"status": "ok"},
+        )
+        report = audit_phase_deliverables(self.temp.name, "2")
+        self.assertEqual(report["status"], "PASS", report["failures"])
+        self.assertFalse(any(
+            check.get("phase") not in (None, "2")
+            for check in report["checks"]
+        ))
 
 
 if __name__ == "__main__":

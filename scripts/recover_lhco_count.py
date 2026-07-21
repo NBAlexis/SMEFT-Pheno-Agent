@@ -10,8 +10,12 @@ import os
 import sys
 from typing import Any, Dict, List
 
-from merge_lhco import merge_lhco
-from run_mg5_config import run_from_config
+try:
+    from .merge_lhco import merge_lhco
+    from .run_mg5_config import run_from_config
+except ImportError:  # Direct script execution.
+    from merge_lhco import merge_lhco
+    from run_mg5_config import run_from_config
 
 
 DEFAULT_PROFILES = ["default", "sde0_hs0", "sde0_hs1", "sde0_hs2"]

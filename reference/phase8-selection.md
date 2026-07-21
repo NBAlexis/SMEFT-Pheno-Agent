@@ -1,6 +1,6 @@
 # Phase 8: Apply Selection and Fit Cross-Section
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold. In multi-model mode, threshold optimization uses the **anchor operator's** scan data only. The optimal threshold is then applied to ALL globally claimed operators.
@@ -14,7 +14,7 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("8")
 ```
 
@@ -308,7 +308,7 @@ logger.phase_complete("8")
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase8/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase8/...`). See `SKILL.md` Output Layout.
 
 ```
 results/data/phase8/

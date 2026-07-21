@@ -1,6 +1,6 @@
 ﻿# Phase 6: Generate SM+NP Coefficient Scan Samples
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
@@ -28,7 +28,7 @@ Forbidden behavior:
 - Do not ask whether to continue, split the scan, reduce event counts, enable
   debug mode, drop operators, or reduce the scan grid because of runtime.
 - Do not treat slow MG5 convergence, large HEPMC/ROOT files, or long
-  Delphes/root2lhco conversion as a red flag.
+  Delphes/root2lhco conversion as a technical failure requiring recovery.
 - Do not summarize intermediate progress and wait for user input.
 
 Required behavior when the foreground session is not suitable:
@@ -55,7 +55,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("6")
 ```
 
@@ -297,7 +297,7 @@ logger.phase_complete("6")
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase6/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase6/...`). See `SKILL.md` Output Layout.
 
 ```text
 results/data/phase6/
@@ -332,7 +332,7 @@ representative Feynman diagrams.
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
 | Hand-checking Phase 6 diagram counts | Do not spend phase logic on diagram-count judgment; use `extract_weighted_order.py` and pass `weighted_order` to the runner |
 | File named `!` containing conversion usage text | Call `convert_root_to_lhco.py` with correct args and log stdout/stderr instead of shell clobber redirection |
-| Treating LHCO count below requested `nevents` as fatal | Use event-count recovery; only counts below `10%` after the full ladder are red flags |
+| Treating LHCO count below requested `nevents` as final failure | Use event-count recovery; a sample below `10%` cannot pass the Phase 6 delivery check |
 | Using `hard_survey > 2` | Do not exceed `hard_survey = 2`; it is too slow for this workflow |
 
 ## Phase Transition

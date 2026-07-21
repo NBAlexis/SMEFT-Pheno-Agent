@@ -1,6 +1,6 @@
 # Phase 9: Compute Expected Coefficient Constraints
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
@@ -19,7 +19,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("9")
 ```
 
@@ -154,7 +154,7 @@ coefficient deviation.
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase9/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase9/...`). See `SKILL.md` Output Layout.
 
 ```
 results/data/phase9/
@@ -177,6 +177,13 @@ results/plots/
     "o_2": {"S2": [-0.4, 0.4], "S3": [-0.5, 0.5], "S5": [-0.7, 0.7]}
   }
 }
+```
+
+`constraint_table.csv` contains exactly one row per claimed operator and at
+least these columns:
+
+```text
+operator,selected_algorithm,selected_threshold,S2_lower,S2_upper,S3_lower,S3_upper,S5_lower,S5_upper
 ```
 
 `algorithm_selection.json` must include:

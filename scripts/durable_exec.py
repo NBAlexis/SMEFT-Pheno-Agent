@@ -15,7 +15,10 @@ import sys
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from remote_exec import _load_execution, _shell_join, run_ssh, run_wsl
+try:
+    from .remote_exec import _load_execution, _shell_join, run_ssh, run_wsl
+except ImportError:  # Direct script execution.
+    from remote_exec import _load_execution, _shell_join, run_ssh, run_wsl
 
 
 def utc_now() -> str:

@@ -1,6 +1,6 @@
 # Cleanup: Collect MG5 Process Folders
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 After all event generation is complete and results have been extracted to `results/data/`, move the MG5 process directories from `mg5path` to the working directory to prevent `mg5path` from accumulating unmanaged folders across multiple runs.
@@ -148,7 +148,9 @@ values recorded in runner result JSON files.
 Before moving, verify:
 1. All required result files exist in `results/data/` and `results/plots/` (quick spot-check). In multi-run mode, check under `results/{run_dir}/data/` and `results/{run_dir}/plots/`, where `{run_dir}` is copied from `run_configurations[*].run_dir`.
 2. Process directories are not currently being written to by a running MG5 process
-3. The destination does not already contain a directory or file with the same name (if so, abort and report)
+3. If the destination already contains the same name, compare checksums, merge
+   only non-conflicting content, and record the decision in `cleanup_log.json`;
+   do not overwrite an unequal file silently.
 
 ## Validation
 

@@ -636,6 +636,8 @@ def resolve_contract(
     run_root: Optional[str] = None,
     results_dir: Optional[str] = None,
     output_path: Optional[str] = None,
+    phases: Optional[Iterable[str]] = None,
+    write_output: bool = True,
 ) -> Dict[str, Any]:
     results_dir = os.path.abspath(
         results_dir or os.path.dirname(os.path.abspath(run_config_path))
@@ -660,11 +662,14 @@ def resolve_contract(
     replay_files = _replay_files(run_root)
     pdf_required = _pdf_required(run_root)
     diagram_directory_required = _diagram_directory_required(run_root)
+    selected_phases = {str(phase) for phase in phases} if phases is not None else None
 
     resolved: List[Dict[str, Any]] = []
     pending: List[Dict[str, Any]] = []
     excluded: List[Dict[str, Any]] = []
     for rule in template.get("rules", []):
+        if selected_phases is not None and str(rule.get("phase")) not in selected_phases:
+            continue
         condition, condition_reason = _condition_state(
             rule.get("condition"), operators, pdf_required, diagram_directory_required
         )
@@ -710,17 +715,27 @@ def resolve_contract(
                     continue
                 base = results_dir if rule.get("scope") == "global_results" else run_root
                 absolute_path = os.path.abspath(os.path.join(base, rel_path))
-                resolved.append(
-                    {
-                        "rule_id": rule.get("id"),
-                        "phase": rule.get("phase"),
-                        "scope": rule.get("scope"),
-                        "path": rel_path,
-                        "absolute_path": absolute_path,
-                        "type": item.get("type", "file"),
-                        "dimensions": row,
-                    }
-                )
+                resolved_item = {
+                    "rule_id": rule.get("id"),
+                    "phase": rule.get("phase"),
+                    "scope": rule.get("scope"),
+                    "path": rel_path,
+                    "absolute_path": absolute_path,
+                    "type": item.get("type", "file"),
+                    "dimensions": row,
+                }
+                for key in (
+                    "json_type",
+                    "required_keys",
+                    "required_columns",
+                    "required_values",
+                    "min_properties",
+                    "min_items",
+                    "min_data_rows",
+                ):
+                    if key in item:
+                        resolved_item[key] = item[key]
+                resolved.append(resolved_item)
 
     report = {
         "schema_version": "1.0",
@@ -729,6 +744,7 @@ def resolve_contract(
         "deliverables_template_sha256": verification["template_sha256"],
         "results_dir": results_dir,
         "run_root": run_root,
+        "selected_phases": sorted(selected_phases) if selected_phases is not None else None,
         "status": "resolved" if not pending else "pending",
         "resolved": resolved,
         "pending_rules": pending,
@@ -739,9 +755,10 @@ def resolve_contract(
             "excluded_rules": len(excluded),
         },
     }
-    output_path = output_path or os.path.join(run_root, RESOLVED_DELIVERABLES_NAME)
-    _write_json(output_path, report)
-    report["output_path"] = os.path.abspath(output_path)
+    if write_output:
+        output_path = output_path or os.path.join(run_root, RESOLVED_DELIVERABLES_NAME)
+        _write_json(output_path, report)
+        report["output_path"] = os.path.abspath(output_path)
     return report
 
 
@@ -774,6 +791,12 @@ def main() -> int:
     resolve_parser.add_argument("--results-dir")
     resolve_parser.add_argument("--run-root")
     resolve_parser.add_argument("--output")
+    resolve_parser.add_argument(
+        "--phase",
+        action="append",
+        dest="phases",
+        help="Resolve only rules whose phase exactly matches this value; may be repeated",
+    )
 
     args = parser.parse_args()
     try:
@@ -783,7 +806,11 @@ def main() -> int:
             report = verify_contracts(args.run_config, args.results_dir)
         else:
             report = resolve_contract(
-                args.run_config, args.run_root, args.results_dir, args.output
+                args.run_config,
+                args.run_root,
+                args.results_dir,
+                args.output,
+                phases=args.phases,
             )
         return _print_and_status(report)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:

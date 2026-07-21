@@ -3,14 +3,19 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.audit_expected_outputs import (
     _canonical_sha256,
     _expected_files,
     _final_audit_artifact_checks,
+    _phase6_scan_matrix_checks,
+    _phase9_strategy_checks,
     _phase3_runner_manifest_checks,
     _replay_algorithm_lock_checks,
+    _replay_package_checks,
     _resolved_deliverable_checks,
+    _validate_declared_artifact,
 )
 
 
@@ -66,6 +71,7 @@ class ResolvedContractAuditTests(unittest.TestCase):
                             "path": "data/result.json",
                             "absolute_path": data_path,
                             "type": "json",
+                            "required_keys": ["value"],
                         },
                         {
                             "rule_id": "plots",
@@ -80,6 +86,56 @@ class ResolvedContractAuditTests(unittest.TestCase):
             )
             checks = _resolved_deliverable_checks(root)
             self.assertTrue(all(item["ok"] for item in checks))
+
+    def test_text_and_html_are_valid_declared_types(self):
+        with tempfile.TemporaryDirectory() as root:
+            text_path = os.path.join(root, "report.txt")
+            html_path = os.path.join(root, "report.html")
+            with open(text_path, "w", encoding="utf-8") as handle:
+                handle.write("complete report\n")
+            with open(html_path, "w", encoding="utf-8") as handle:
+                handle.write("<html><body>complete</body></html>\n")
+            for path, kind in ((text_path, "text"), (html_path, "html")):
+                record = {}
+                _validate_declared_artifact(path, kind, record)
+                self.assertTrue(record["ok"])
+
+    def test_phase6_rejects_shortened_scan_label_list(self):
+        with tempfile.TemporaryDirectory() as root:
+            write_json(os.path.join(root, "data", "phase3", "operator_claims.json"), {"o_1": {}})
+            write_json(
+                os.path.join(root, "data", "phase6", "scan_manifest.json"),
+                {"o_1": {
+                    "labels": ["f0"],
+                    "point_count": 11,
+                    "c_scan": 1.0,
+                    "scan_expression": "[-1 + 0.2 * n for n in range(11)]",
+                }},
+            )
+            checks = _phase6_scan_matrix_checks(root)
+            self.assertEqual(len(checks), 1)
+            self.assertFalse(checks[0]["ok"])
+
+    def test_phase9_rejects_algorithm_not_trained_in_phase7(self):
+        with tempfile.TemporaryDirectory() as root:
+            write_json(
+                os.path.join(root, "data", "phase7", "algorithm_comparison.json"),
+                {"anchor": {"bdt": {}}},
+            )
+            write_json(
+                os.path.join(root, "data", "phase9", "algorithm_selection.json"),
+                {
+                    "selected_algorithm": "not_trained",
+                    "selected_threshold": 0.5,
+                    "anchor_operator": "o_1",
+                    "selection_scope": "anchor_operator_only",
+                    "selection_criterion": "narrowest_anchor_S2_constraint_width",
+                    "source_threshold_optimization_entry": "data/phase8/threshold_optimization.json:anchor.not_trained",
+                },
+            )
+            checks = _phase9_strategy_checks(root)
+            self.assertEqual(len(checks), 1)
+            self.assertFalse(checks[0]["ok"])
 
     def test_pending_rule_fails_contract_audit(self):
         with tempfile.TemporaryDirectory() as root:
@@ -195,7 +251,6 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 os.path.join(root, "data", "phase7", "algorithm_descriptions.json"),
                 {"algorithms": {"bdt": {
                     "hyperparameters": {"depth": 3},
-                    "random_seed": 7,
                     "score_definition": "predict_proba[:, 1]",
                 }}},
             )
@@ -208,7 +263,6 @@ class ResolvedContractAuditTests(unittest.TestCase):
                     "key": "bdt",
                     "implementation": "example.BDT",
                     "hyperparameters": {"depth": 3},
-                    "random_seed": 7,
                     "score_definition": "predict_proba[:, 1]",
                     "model_output": "algorithms/anchor_bdt.pkl",
                 }],
@@ -234,6 +288,58 @@ class ResolvedContractAuditTests(unittest.TestCase):
             checks = _replay_algorithm_lock_checks(root)
             self.assertEqual(len(checks), 1)
             self.assertTrue(checks[0]["ok"], checks[0])
+
+    def test_replay_package_requires_bounded_monte_carlo_tolerances(self):
+        with tempfile.TemporaryDirectory() as root:
+            replay_root = os.path.join(root, "replay")
+            os.makedirs(replay_root, exist_ok=True)
+            for name in (
+                "run_config.json",
+                "research_contract.json",
+                "deliverables_contract.json",
+                "contract_lock.json",
+            ):
+                value = {"name": name}
+                write_json(os.path.join(root, name), value)
+                write_json(os.path.join(replay_root, name), value)
+            output = "data/phase2/environment_manifest.json"
+            with open(os.path.join(replay_root, "data_files_report.md"), "w", encoding="utf-8") as handle:
+                handle.write(f"# Data files\n\n`{output}`\n")
+            manifest = {
+                "source_inputs": [],
+                "steps": [
+                    {
+                        "phase": str(phase),
+                        "command": ["python", f"steps/phase{phase}.py"],
+                        "inputs": ["run_config.json"],
+                        "outputs": [output] if phase == 2 else [],
+                    }
+                    for phase in range(2, 10)
+                ],
+                "monte_carlo_comparison": {
+                    "production_inputs_exclude_reference_results": True,
+                    "combined_standard_error_multiplier": 3.0,
+                    "fallback_limits": {
+                        "cross_sections": {"difference": "relative", "maximum": 0.10},
+                        "auc_and_thresholds": {"difference": "absolute", "maximum": 0.05},
+                        "fit_coefficients_and_constraint_endpoints": {"difference": "relative", "maximum": 0.20},
+                    },
+                },
+            }
+            write_json(os.path.join(replay_root, "replay_manifest.json"), manifest)
+            resolved = {
+                "pending_rules": [],
+                "resolved": [{"phase": "2", "path": output}],
+            }
+            with patch("scripts.audit_expected_outputs.resolve_contract", return_value=resolved):
+                checks = _replay_package_checks(root)
+            self.assertTrue(checks[0]["ok"], checks[0])
+
+            manifest["monte_carlo_comparison"]["fallback_limits"]["cross_sections"]["maximum"] = 0.5
+            write_json(os.path.join(replay_root, "replay_manifest.json"), manifest)
+            with patch("scripts.audit_expected_outputs.resolve_contract", return_value=resolved):
+                checks = _replay_package_checks(root)
+            self.assertFalse(checks[0]["ok"])
 
 
 if __name__ == "__main__":

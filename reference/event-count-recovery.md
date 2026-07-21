@@ -21,7 +21,7 @@ For each generated sample or scan point:
 |---|---|
 | `>= 0.9` | Accept normally |
 | `>= 0.1` and `< 0.9` | Accept with warning |
-| `< 0.1` | Run event-count recovery before any red flag |
+| `< 0.1` | Run the complete event-count recovery procedure; do not accept the sample before recovery succeeds |
 | zero or unparsable LHCO | Treat as likely Delphes/root2lhco/card failure, not a normal hard-survey success |
 
 Recovery must not change physics parameters, coefficients, beam energy,

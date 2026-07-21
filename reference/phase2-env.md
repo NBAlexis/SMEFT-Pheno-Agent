@@ -1,6 +1,6 @@
 # Phase 2: Environment Validation
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
@@ -64,7 +64,7 @@ Then start Phase 2:
 ```python
 from scripts.workflow_logger import WorkflowLogger
 
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.assert_ready()
 logger.phase_start("2")
 ```
@@ -85,7 +85,7 @@ Before starting any work, check whether a previous workflow run was interrupted:
 ```python
 from scripts.workflow_logger import WorkflowLogger
 
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 resume_phase = logger.get_resume_phase()
 logger.phase_start("2")
 ```
@@ -217,7 +217,8 @@ self-repair, not user interaction.
 After `logger.phase_complete("2")` is called and run directories are set up:
 
 1. If validation fails, diagnose and repair the environment or migrate to a
-   scientifically equivalent environment. Stop only if the frozen contract is
-   demonstrably impossible to fulfill and record the evidence.
+   another Linux target, rerun `research_contract.py verify`, and repeat every
+   Phase 2 check. Use `phase_fail` only after creating the failure JSON required
+   by `SKILL.md`.
 2. If validation passes, proceed immediately to Phase 3 without stopping.
 3. Do not summarize results, ask for confirmation, present options, or wait for user input.

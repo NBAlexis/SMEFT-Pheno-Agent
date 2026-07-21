@@ -185,19 +185,106 @@ class WorkflowLogger:
         self._append(record)
 
     def phase_complete(self, phase: str, message: str = "", details: Optional[Dict[str, Any]] = None) -> None:
-        if not self.has_step_records(phase):
+        if not self.has_completed_step_records(phase):
             self.meta(
-                "logging_anomaly",
-                f"Phase {phase} completed without any step records",
+                "phase_completion_blocked",
+                f"Phase {phase} has no completed step record",
                 details={"phase": phase},
             )
+            raise RuntimeError(f"Phase {phase} cannot complete without a completed step record")
+        delivery_report = self._audit_phase_deliverables(phase)
+        if delivery_report.get("status") == "FAIL":
+            failure_summary = [
+                {
+                    "path": item.get("rel_path", item.get("path")),
+                    "failure_code": item.get("failure_code"),
+                    "failure_reason": item.get("failure_reason", item.get("error")),
+                }
+                for item in delivery_report.get("failures") or []
+            ]
+            self.meta(
+                "phase_completion_blocked",
+                f"Phase {phase} deliverables did not pass",
+                details={"phase": phase, "failures": failure_summary},
+            )
+            raise RuntimeError(
+                f"Phase {phase} deliverables did not pass: "
+                + json.dumps(failure_summary, ensure_ascii=False)
+            )
+        self.meta(
+            "phase_delivery_check",
+            f"Phase {phase} deliverables passed",
+            details={"phase": phase, "status": delivery_report.get("status")},
+        )
         record = {"level": "phase", "phase": phase, "event": "completed", "message": message}
         if details is not None:
             record["details"] = details
         self._append(record)
 
+    def _audit_phase_deliverables(self, phase: str) -> Dict[str, Any]:
+        script = os.path.join(self.skill_root, "scripts", "audit_expected_outputs.py")
+        command = [sys.executable, script, self.workdir, "--phase", str(phase)]
+        if self.run_dir:
+            command.extend(["--run-dir", self.run_dir])
+        result = subprocess.run(
+            command,
+            cwd=self.skill_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+            timeout=300,
+        )
+        try:
+            report = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "Phase deliverable checker did not return JSON: "
+                f"returncode={result.returncode}, stderr={result.stderr.strip()}"
+            ) from exc
+        if result.returncode not in {0, 2}:
+            raise RuntimeError(
+                "Phase deliverable checker could not run: "
+                f"returncode={result.returncode}, stderr={result.stderr.strip()}"
+            )
+        return report
+
     def phase_fail(self, phase: str, error: str, details: Optional[Dict[str, Any]] = None) -> None:
+        run_root = os.path.dirname(self.log_path)
+        evidence_path = os.path.join(run_root, "failures", f"phase{phase}_failure.json")
+        try:
+            with open(evidence_path, "r", encoding="utf-8-sig") as handle:
+                evidence = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"phase_fail requires valid structured evidence at {evidence_path}"
+            ) from exc
+        required = (
+            "technical_cause",
+            "affected_deliverables",
+            "attempts",
+            "evidence_paths",
+            "why_no_remaining_method_can_preserve_the_contract",
+        )
+        missing = [key for key in required if evidence.get(key) in (None, "", [], {})]
+        bad_attempts = []
+        attempt_fields = (
+            "command_or_code_path",
+            "change_tested",
+            "return_code",
+            "stdout_path",
+            "stderr_path",
+        )
+        for index, attempt in enumerate(evidence.get("attempts") or []):
+            if not isinstance(attempt, dict) or any(key not in attempt for key in attempt_fields):
+                bad_attempts.append(index)
+        if missing or bad_attempts:
+            raise RuntimeError(
+                f"Invalid phase_fail evidence at {evidence_path}: "
+                f"missing={missing}, bad_attempt_indexes={bad_attempts}"
+            )
         record = {"level": "phase", "phase": phase, "event": "failed", "error": error}
+        record["failure_evidence"] = evidence_path
         if details is not None:
             record["details"] = details
         self._append(record)
@@ -291,6 +378,16 @@ class WorkflowLogger:
     def has_step_records(self, phase: str) -> bool:
         for record in self._read_records():
             if record.get("level") == "step" and str(record.get("phase")) == str(phase):
+                return True
+        return False
+
+    def has_completed_step_records(self, phase: str) -> bool:
+        for record in self._read_records():
+            if (
+                record.get("level") == "step"
+                and str(record.get("phase")) == str(phase)
+                and record.get("event") == "completed"
+            ):
                 return True
         return False
 

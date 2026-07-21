@@ -172,6 +172,72 @@ def load_run_config(path):
             if float(run_cfg["ebeam2"]) != float(data["ebeam_proton"][idx]):
                 raise ValueError(f"run_configurations[{idx}].ebeam2 must match ebeam_proton[{idx}]")
 
+    polarization = data.get("polarization")
+    if polarization is not None:
+        if not isinstance(polarization, dict) or set(polarization) != {"polbeam1", "polbeam2"}:
+            raise ValueError(
+                "polarization must be null or an object with exactly polbeam1 and polbeam2"
+            )
+        for key in ("polbeam1", "polbeam2"):
+            try:
+                value = float(polarization[key])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"polarization.{key} must be numeric") from exc
+            if not -1.0 <= value <= 1.0:
+                raise ValueError(f"polarization.{key} must be in [-1, 1]")
+            polarization[key] = value
+
+    analysis_notes = data.get("analysis_notes")
+    if analysis_notes is None:
+        analysis_notes = {
+            "focused_operators": [],
+            "manuscript_preferences": [],
+            "additional_requirements": [],
+        }
+        data["analysis_notes"] = analysis_notes
+    if not isinstance(analysis_notes, dict) or set(analysis_notes) != {
+        "focused_operators",
+        "manuscript_preferences",
+        "additional_requirements",
+    }:
+        raise ValueError(
+            "analysis_notes must contain exactly focused_operators, "
+            "manuscript_preferences, and additional_requirements"
+        )
+    for key in ("focused_operators", "manuscript_preferences"):
+        values = analysis_notes[key]
+        if not isinstance(values, list) or any(
+            not isinstance(value, str) or not value.strip() for value in values
+        ):
+            raise ValueError(f"analysis_notes.{key} must be a list of non-empty strings")
+    requirements = analysis_notes["additional_requirements"]
+    if not isinstance(requirements, list):
+        raise ValueError("analysis_notes.additional_requirements must be a list")
+    seen_requirement_ids = set()
+    for idx, requirement in enumerate(requirements):
+        if not isinstance(requirement, dict) or set(requirement) != {"id", "text", "applies_to_phases"}:
+            raise ValueError(
+                f"analysis_notes.additional_requirements[{idx}] must contain exactly "
+                "id, text, and applies_to_phases"
+            )
+        requirement_id = requirement.get("id")
+        if not isinstance(requirement_id, str) or not requirement_id.strip():
+            raise ValueError(f"analysis_notes.additional_requirements[{idx}].id must be non-empty")
+        if requirement_id in seen_requirement_ids:
+            raise ValueError(f"Duplicate analysis requirement id: {requirement_id}")
+        seen_requirement_ids.add(requirement_id)
+        if not isinstance(requirement.get("text"), str) or not requirement["text"].strip():
+            raise ValueError(f"analysis_notes.additional_requirements[{idx}].text must be non-empty")
+        phases = requirement.get("applies_to_phases")
+        if not isinstance(phases, list) or not phases or any(
+            str(phase) not in {str(value) for value in range(2, 13)} | {"cleanup"}
+            for phase in phases
+        ):
+            raise ValueError(
+                f"analysis_notes.additional_requirements[{idx}].applies_to_phases "
+                "must contain Phase numbers 2-12 or cleanup"
+            )
+
     if "debug" not in data:
         data["debug"] = False
     if "madspin" not in data:

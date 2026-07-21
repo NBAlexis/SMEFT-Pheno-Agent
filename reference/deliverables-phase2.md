@@ -22,7 +22,6 @@ Manuscript dependency: toolchain provenance, execution environment, detector
 card availability, and reproducibility metadata.
 
 If missing or invalid: fix or replace the technical implementation, repair the
-environment, or migrate to a scientifically equivalent target and rerun the
-validation. Write `phase_fail` only with evidence that the frozen contract is
-impossible, never solely because a dependency install, path, card, or standard
-script failed.
+environment, or migrate to another Linux target and rerun
+`research_contract.py verify` plus every Phase 2 environment check. Write
+`phase_fail` only after creating the failure JSON required by `SKILL.md`.

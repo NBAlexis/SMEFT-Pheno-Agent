@@ -7,8 +7,9 @@ Must deliver:
   non-zero operator with stable `o_N` numbering.
 - `results/data/phase3/cross_sections.json` covering all tested coefficients,
   including zero results.
-- `results/data/phase3/model_status.json` with per-model diagram status and
-  coefficient results.
+- `results/data/phase3/model_status.json` with exactly the configured model
+  names and the `coefficient_count`, `tested_count`, and per-coefficient fields
+  defined in `phase3-validation.md`.
 - `results/data/phase3/anchor.json` for the first non-zero operator.
 - Every Phase 3 runner result JSON produced by create-NP and per-coefficient
   tests, with paths recorded in `model_status.json`. These manifests must

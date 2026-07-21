@@ -1,6 +1,6 @@
 # Phase 10: Generate Publication-Quality Manuscript
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
@@ -23,7 +23,7 @@ from scripts.load_run_config import load_run_config
 config = load_run_config("{workdir}/results/run_config.json")
 
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("10")
 ```
 
@@ -127,6 +127,25 @@ Follow [`manuscript-evidence-guide.md`](manuscript-evidence-guide.md). The
 evidence must include exact requested event counts, actual LHCO event counts,
 final-state cuts, ordered features with units, preprocessing, algorithm
 metadata, fit coefficients, constraints, figures, and citations.
+
+Also add `analysis_notes_trace`:
+
+```json
+{
+  "focused_operators": {"requested": [], "covered": []},
+  "manuscript_preferences": [
+    {"request": "...", "status": "applied", "evidence": "section or file path"}
+  ],
+  "additional_requirements": [
+    {"id": "requirement_N", "status": "applied", "evidence": "workflow record or artifact path"}
+  ]
+}
+```
+
+The requested focused-operator list and preference text must exactly match
+`run_config.json["analysis_notes"]`. Use `status="not_applicable"` only with a
+non-empty evidence explanation. Focused operators receive extra emphasis but do
+not remove any other required operator from tables or constraints.
 
 Required structured sources:
 
@@ -323,7 +342,7 @@ not block manuscript generation when the reason is documented.
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/manuscript.pdf`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/manuscript.pdf`). See `SKILL.md` Output Layout.
 
 ```
 results/manuscript.pdf       # required if target or local LaTeX exists

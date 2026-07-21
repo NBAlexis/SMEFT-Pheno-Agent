@@ -22,9 +22,11 @@ Key contracts:
   on the target Linux environment, not Windows host paths.
 - Restart/retest requests reset the physics/run fields and begin again at
   `[1/9]`.
-- After `run_config.json` is written, Phases 2-12 run without user interaction
-  unless an unrecoverable error, documented red flag, or explicit user stop
-  occurs.
+- After `run_config.json` is written, Phases 2-12 run without user interaction.
+  A technical command failure triggers autonomous diagnosis and recovery. A
+  `phase_fail` event is allowed only after the structured failure evidence
+  required by `SKILL.md` has been written; an explicit user stop remains
+  immediate.
 - Event counts are locked in `run_config.json`; later phases must not resize
   them for speed.
 - Actual LHCO counts must come from CutExperiment

@@ -6,12 +6,19 @@ from __future__ import annotations
 import argparse
 import ast
 import csv
+import fnmatch
 import glob
 import hashlib
 import json
+import math
 import os
 import sys
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+
+try:
+    from .research_contract import resolve_contract
+except ImportError:  # Direct script execution.
+    from research_contract import resolve_contract
 
 
 PHASE7_VALIDATION_CHECK_IDS = {
@@ -21,6 +28,16 @@ PHASE7_VALIDATION_CHECK_IDS = {
     "public_csv_complete",
     "score_csv_complete",
     "plots_complete",
+}
+
+CROSS_FILE_ACCEPTANCE_IMPLEMENTATIONS = {
+    "phase3.complete_coefficient_loop",
+    "phase6.complete_scan_matrix",
+    "phase7.complete_algorithm_set",
+    "phase8.numerical_content",
+    "phase9.numerical_content",
+    "phase10.analysis_notes_trace",
+    "phase11.replay_coverage_and_comparison",
 }
 
 
@@ -120,7 +137,13 @@ def _set_failure(record: Dict[str, Any], code: str, reason: str) -> None:
     record.update({"ok": False, "failure_code": code, "failure_reason": reason})
 
 
-def _validate_declared_artifact(path: str, kind: str, record: Dict[str, Any]) -> None:
+def _validate_declared_artifact(
+    path: str,
+    kind: str,
+    record: Dict[str, Any],
+    specification: Optional[Dict[str, Any]] = None,
+) -> None:
+    specification = specification or {}
     if kind == "glob":
         matches = [candidate for candidate in glob.glob(path) if os.path.isfile(candidate)]
         nonempty = [candidate for candidate in matches if os.path.getsize(candidate) > 0]
@@ -155,7 +178,38 @@ def _validate_declared_artifact(path: str, kind: str, record: Dict[str, Any]) ->
 
     if kind == "json":
         with open(path, "r", encoding="utf-8-sig") as handle:
-            json.load(handle)
+            data = json.load(handle)
+        json_type = specification.get("json_type")
+        expected_type = {"object": dict, "array": list}.get(json_type)
+        if expected_type is not None and not isinstance(data, expected_type):
+            raise ValueError(f"JSON must be a {json_type}")
+        required_keys = specification.get("required_keys") or []
+        if required_keys:
+            if not isinstance(data, dict):
+                raise ValueError("required_keys can only be checked on a JSON object")
+            missing = [key for key in required_keys if key not in data]
+            if missing:
+                raise ValueError(f"JSON is missing required keys: {missing}")
+        required_values = specification.get("required_values") or {}
+        if required_values:
+            if not isinstance(data, dict):
+                raise ValueError("required_values can only be checked on a JSON object")
+            mismatches = {
+                key: {"expected": value, "actual": data.get(key)}
+                for key, value in required_values.items()
+                if data.get(key) != value
+            }
+            if mismatches:
+                raise ValueError(f"JSON has incorrect fixed values: {mismatches}")
+        if isinstance(data, dict) and len(data) < int(specification.get("min_properties", 0)):
+            raise ValueError(
+                f"JSON object has {len(data)} properties; expected at least "
+                f"{specification.get('min_properties')}"
+            )
+        if isinstance(data, list) and len(data) < int(specification.get("min_items", 0)):
+            raise ValueError(
+                f"JSON array has {len(data)} items; expected at least {specification.get('min_items')}"
+            )
     elif kind == "jsonl":
         record_count = 0
         with open(path, "r", encoding="utf-8-sig") as handle:
@@ -177,8 +231,15 @@ def _validate_declared_artifact(path: str, kind: str, record: Dict[str, Any]) ->
             data_rows = sum(1 for row in reader if any(cell.strip() for cell in row))
         if not header or not any(cell.strip() for cell in header):
             raise ValueError("CSV header is missing or empty")
-        if data_rows < 1:
-            raise ValueError("CSV contains a header but no data rows")
+        min_data_rows = int(specification.get("min_data_rows", 1))
+        if data_rows < min_data_rows:
+            raise ValueError(
+                f"CSV contains {data_rows} data rows; expected at least {min_data_rows}"
+            )
+        required_columns = specification.get("required_columns") or []
+        missing_columns = [column for column in required_columns if column not in header]
+        if missing_columns:
+            raise ValueError(f"CSV is missing required columns: {missing_columns}")
         record.update({"columns": header, "data_rows": data_rows})
     elif kind == "pdf":
         with open(path, "rb") as handle:
@@ -201,6 +262,17 @@ def _validate_declared_artifact(path: str, kind: str, record: Dict[str, Any]) ->
         with open(path, "r", encoding="utf-8-sig") as handle:
             if not handle.read().strip():
                 raise ValueError("Markdown file contains no text")
+    elif kind == "text":
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            if not handle.read().strip():
+                raise ValueError("Text file contains no text")
+    elif kind == "html":
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            content = handle.read().strip().lower()
+        if not content:
+            raise ValueError("HTML file contains no text")
+        if "<html" not in content or "</html>" not in content:
+            raise ValueError("HTML file is missing opening or closing html element")
     elif kind == "executable":
         if not os.access(path, os.X_OK):
             raise ValueError("File is not executable on this target")
@@ -211,11 +283,13 @@ def _validate_declared_artifact(path: str, kind: str, record: Dict[str, Any]) ->
 
 
 def _resolved_deliverable_checks(
-    root: str, include_final_artifacts: bool = True
+    root: str,
+    include_final_artifacts: bool = True,
+    contract_override: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     rel_path = "deliverables_resolved.json"
     path = os.path.join(root, rel_path)
-    if not os.path.exists(path):
+    if contract_override is None and not os.path.exists(path):
         return [{
             "rel_path": rel_path,
             "severity": "abort",
@@ -225,7 +299,7 @@ def _resolved_deliverable_checks(
             "error": "Missing resolved deliverables contract",
         }]
     try:
-        contract = _load_json(path)
+        contract = contract_override if contract_override is not None else _load_json(path)
     except Exception as exc:
         return [{
             "rel_path": rel_path,
@@ -327,7 +401,7 @@ def _resolved_deliverable_checks(
                 raise ValueError(
                     f"Stored absolute_path does not match the path recomputed from scope and declaration: {stored_path!r}"
                 )
-            _validate_declared_artifact(full_path, kind, record)
+            _validate_declared_artifact(full_path, kind, record, item)
         except Exception as exc:
             _set_failure(record, "acceptance_check_failed", str(exc))
         checks.append(record)
@@ -622,6 +696,230 @@ def _phase3_runner_manifest_checks(root: str) -> List[Dict[str, Any]]:
     return checks
 
 
+def _global_results_root(root: str) -> str:
+    current = os.path.abspath(root)
+    while True:
+        if os.path.basename(current).lower() == "results":
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            return os.path.abspath(root)
+        current = parent
+
+
+def _cross_file_acceptance_definition_checks(
+    root: str, phase: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    path = os.path.join(_global_results_root(root), "deliverables_contract.json")
+    if not os.path.exists(path):
+        return []
+    record: Dict[str, Any] = {
+        "rel_path": "deliverables_contract.json:cross_file_acceptance_rules",
+        "severity": "abort",
+        "source": "cross_file_acceptance_definitions",
+        "path": path,
+    }
+    try:
+        template = _load_json(path).get("template") or {}
+        rules = template.get("cross_file_acceptance_rules")
+        if not isinstance(rules, list):
+            raise ValueError("cross_file_acceptance_rules must be a list")
+        selected = [
+            item for item in rules
+            if isinstance(item, dict) and (phase is None or str(item.get("phase")) == str(phase))
+        ]
+        declared = {item.get("id") for item in selected}
+        malformed = [
+            item for item in selected
+            if not isinstance(item.get("id"), str)
+            or not isinstance(item.get("requirements"), list)
+            or not item.get("requirements")
+        ]
+        unimplemented = sorted(declared - CROSS_FILE_ACCEPTANCE_IMPLEMENTATIONS)
+        missing_definitions = (
+            sorted(CROSS_FILE_ACCEPTANCE_IMPLEMENTATIONS - declared)
+            if phase is None
+            else []
+        )
+        record.update({
+            "ok": not malformed and not unimplemented and not missing_definitions,
+            "phase": phase,
+            "declared_ids": sorted(declared),
+            "unimplemented_ids": unimplemented,
+            "missing_definition_ids": missing_definitions,
+            "malformed_rules": malformed,
+        })
+    except Exception as exc:
+        _set_failure(record, "cross_file_acceptance_definitions_invalid", str(exc))
+    return [record]
+
+
+def _phase3_completeness_checks(root: str) -> List[Dict[str, Any]]:
+    rel_path = os.path.join("data", "phase3", "model_status.json")
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return []
+    record: Dict[str, Any] = {
+        "rel_path": rel_path + ":complete_coefficient_loop",
+        "severity": "abort",
+        "source": "phase3_complete_coefficient_loop",
+        "path": path,
+    }
+    try:
+        config = _load_json(os.path.join(_global_results_root(root), "run_config.json"))
+        expected_models = [str(model) for model in config.get("models") or []]
+        model_status = _load_json(path)
+        claims = _load_json(os.path.join(root, "data", "phase3", "operator_claims.json"))
+        cross_sections = _load_json(os.path.join(root, "data", "phase3", "cross_sections.json"))
+        actual_models = sorted(model_status)
+        bad_models = []
+        expected_claim_keys = set()
+        expected_cross_section_keys = set()
+        ordered_claim_keys = [f"o_{index}" for index in range(1, len(claims) + 1)]
+        bad_claim_records = [
+            key for key, value in claims.items()
+            if not isinstance(value, dict)
+            or any(field not in value for field in ("model", "anoinput_idx", "name"))
+        ]
+        for model in expected_models:
+            status = model_status.get(model)
+            if not isinstance(status, dict):
+                bad_models.append({"model": model, "error": "missing model record"})
+                continue
+            missing = [
+                key for key in ("has_feynman_diagrams", "create_np_result_json")
+                if key not in status or status.get(key) in (None, "")
+            ]
+            if status.get("has_feynman_diagrams") is True:
+                coefficients = status.get("coefficients")
+                expected_count = status.get("coefficient_count")
+                tested_count = status.get("tested_count")
+                coefficient_errors = []
+                if not isinstance(coefficients, dict):
+                    coefficient_errors.append("coefficients must be an object")
+                    coefficients = {}
+                if not isinstance(expected_count, int) or expected_count <= 0:
+                    coefficient_errors.append("coefficient_count must be a positive integer")
+                if tested_count != expected_count or len(coefficients) != expected_count:
+                    coefficient_errors.append(
+                        "tested_count and coefficient record count must equal coefficient_count"
+                    )
+                for name, value in coefficients.items():
+                    expected_cross_section_keys.add(f"{model}:{name}")
+                    if not isinstance(value, dict) or any(
+                        key not in value for key in ("c_default", "sigma", "result_json")
+                    ):
+                        coefficient_errors.append(
+                            f"coefficient {name} must contain c_default, sigma, and result_json"
+                        )
+                        continue
+                    if not _finite_number(value.get("sigma")) or float(value["sigma"]) < 0.0:
+                        coefficient_errors.append(f"coefficient {name} sigma must be finite and non-negative")
+                    elif float(value["sigma"]) > 0.0:
+                        global_idx = value.get("global_idx")
+                        operator_key = (
+                            str(global_idx)
+                            if isinstance(global_idx, str) and str(global_idx).startswith("o_")
+                            else f"o_{global_idx}"
+                        )
+                        expected_claim_keys.add(operator_key)
+                        if operator_key not in claims:
+                            coefficient_errors.append(
+                                f"coefficient {name} has sigma > 0 but {operator_key} is missing from operator_claims.json"
+                            )
+                if coefficient_errors:
+                    bad_models.append({"model": model, "errors": coefficient_errors})
+            elif status.get("has_feynman_diagrams") is False:
+                if not status.get("no_diagram_reason"):
+                    missing.append("no_diagram_reason")
+            else:
+                missing.append("has_feynman_diagrams must be boolean")
+            if missing:
+                bad_models.append({"model": model, "missing_or_invalid": missing})
+        claim_set_matches = set(claims) == expected_claim_keys
+        cross_section_keys_match = set(cross_sections) == expected_cross_section_keys
+        anchor_matches = True
+        if claims:
+            anchor = _load_json(os.path.join(root, "data", "phase3", "anchor.json"))
+            first_claim = claims.get("o_1") or {}
+            anchor_matches = (
+                anchor.get("global_idx") in (1, "1", "o_1")
+                and all(anchor.get(key) == first_claim.get(key) for key in ("model", "anoinput_idx", "name"))
+            )
+        record.update({
+            "ok": (
+                actual_models == sorted(expected_models)
+                and not bad_models
+                and claim_set_matches
+                and cross_section_keys_match
+                and list(claims) == ordered_claim_keys
+                and not bad_claim_records
+                and anchor_matches
+            ),
+            "expected_models": expected_models,
+            "actual_models": actual_models,
+            "bad_models": bad_models,
+            "expected_claim_keys": sorted(expected_claim_keys),
+            "actual_claim_keys": sorted(claims),
+            "claim_set_matches": claim_set_matches,
+            "required_ordered_claim_keys": ordered_claim_keys,
+            "bad_claim_records": bad_claim_records,
+            "anchor_matches_o_1": anchor_matches,
+            "expected_cross_section_keys": sorted(expected_cross_section_keys),
+            "actual_cross_section_keys": sorted(cross_sections),
+            "cross_section_keys_match": cross_section_keys_match,
+        })
+    except Exception as exc:
+        _set_failure(record, "phase3_completeness_invalid", str(exc))
+    return [record]
+
+
+def _phase6_scan_matrix_checks(root: str) -> List[Dict[str, Any]]:
+    rel_path = os.path.join("data", "phase6", "scan_manifest.json")
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return []
+    record: Dict[str, Any] = {
+        "rel_path": rel_path + ":complete_scan_matrix",
+        "severity": "abort",
+        "source": "phase6_complete_scan_matrix",
+        "path": path,
+    }
+    try:
+        manifest = _load_json(path)
+        operators = _operators(root)
+        expected_labels = [f"f{i}" for i in range(11)]
+        bad = []
+        for operator in operators:
+            value = manifest.get(operator)
+            if not isinstance(value, dict):
+                bad.append({"operator": operator, "error": "missing operator record"})
+                continue
+            errors = []
+            if value.get("labels") != expected_labels:
+                errors.append("labels must be exactly f0 through f10 in order")
+            if value.get("point_count") != 11:
+                errors.append("point_count must equal 11")
+            try:
+                if float(value.get("c_scan")) <= 0:
+                    errors.append("c_scan must be positive")
+            except (TypeError, ValueError):
+                errors.append("c_scan must be numeric")
+            if not value.get("scan_expression"):
+                errors.append("scan_expression is required")
+            if errors:
+                bad.append({"operator": operator, "errors": errors})
+        record.update({
+            "ok": set(manifest) == set(operators) and not bad,
+            "expected_operators": operators,
+            "actual_operators": sorted(manifest),
+            "bad_records": bad,
+        })
+    except Exception as exc:
+        _set_failure(record, "phase6_scan_matrix_invalid", str(exc))
+    return [record]
+
+
 def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
     rel_path = os.path.join("data", "phase9", "algorithm_selection.json")
     path = os.path.join(root, rel_path)
@@ -648,14 +946,272 @@ def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
         "source_threshold_optimization_entry",
     ]
     missing = [key for key in required if key not in data or data.get(key) in (None, "")]
+    algorithms = _algorithm_names(root)
+    selected_algorithm = data.get("selected_algorithm")
+    invalid = []
+    if selected_algorithm not in algorithms:
+        invalid.append("selected_algorithm is not a Phase 7 anchor algorithm")
+    if data.get("selection_scope") != "anchor_operator_only":
+        invalid.append("selection_scope must be anchor_operator_only")
+    if data.get("selection_criterion") != "narrowest_anchor_S2_constraint_width":
+        invalid.append("selection_criterion must be narrowest_anchor_S2_constraint_width")
+    try:
+        threshold = float(data.get("selected_threshold"))
+        if not 0.0 <= threshold <= 1.0:
+            invalid.append("selected_threshold must be in [0, 1]")
+    except (TypeError, ValueError):
+        invalid.append("selected_threshold must be numeric")
     return [{
         "rel_path": rel_path,
         "severity": "abort",
         "source": "phase9_final_strategy",
         "path": path,
-        "ok": not missing,
+        "ok": not missing and not invalid,
         "missing_keys": missing,
+        "invalid_values": invalid,
     }]
+
+
+def _finite_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def _valid_interval(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) == 2
+        and all(_finite_number(item) for item in value)
+        and float(value[0]) < 0.0 < float(value[1])
+    )
+
+
+def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
+    checks: List[Dict[str, Any]] = []
+    operators = _operators(root)
+    algorithms = _algorithm_names(root)
+    threshold_rel = os.path.join("data", "phase8", "threshold_optimization.json")
+    threshold_path = os.path.join(root, threshold_rel)
+    if os.path.exists(threshold_path):
+        record: Dict[str, Any] = {
+            "rel_path": threshold_rel + ":numerical_content",
+            "severity": "abort",
+            "source": "phase8_threshold_numerical_content",
+            "path": threshold_path,
+        }
+        try:
+            data = _load_json(threshold_path)
+            anchor = data.get("anchor")
+            bad = []
+            if not isinstance(anchor, dict):
+                raise ValueError("threshold_optimization.json must contain an anchor object")
+            for algorithm in algorithms:
+                value = anchor.get(algorithm)
+                errors = []
+                if not isinstance(value, dict):
+                    bad.append({"algorithm": algorithm, "errors": ["missing algorithm record"]})
+                    continue
+                threshold = value.get("optimal_threshold")
+                width = value.get("constraint_width_at_optimal")
+                scan = value.get("threshold_scan")
+                if not _finite_number(threshold) or not 0.0 <= float(threshold) <= 1.0:
+                    errors.append("optimal_threshold must be a finite number in [0, 1]")
+                if not _finite_number(width) or float(width) <= 0.0:
+                    errors.append("constraint_width_at_optimal must be positive")
+                if not isinstance(scan, list) or len(scan) != 51:
+                    errors.append("threshold_scan must contain exactly 51 entries")
+                else:
+                    for index, point in enumerate(scan):
+                        if not isinstance(point, dict) or any(
+                            key not in point
+                            for key in (
+                                "threshold",
+                                "sigma0_after_cut_pb",
+                                "fit_intercept_fixed",
+                                "lower_bound",
+                                "upper_bound",
+                                "constraint_width",
+                            )
+                        ):
+                            errors.append(f"threshold_scan[{index}] is missing required fields")
+                            continue
+                        if point.get("fit_intercept_fixed") is not True:
+                            errors.append(f"threshold_scan[{index}].fit_intercept_fixed must be true")
+                        if not all(
+                            _finite_number(point.get(key))
+                            for key in ("threshold", "sigma0_after_cut_pb", "lower_bound", "upper_bound", "constraint_width")
+                        ):
+                            errors.append(f"threshold_scan[{index}] contains a non-finite number")
+                if errors:
+                    bad.append({"algorithm": algorithm, "errors": errors})
+            record.update({
+                "ok": set(anchor) == set(algorithms) and not bad,
+                "expected_algorithms": algorithms,
+                "actual_algorithms": sorted(anchor),
+                "bad_records": bad,
+            })
+        except Exception as exc:
+            _set_failure(record, "phase8_threshold_content_invalid", str(exc))
+        checks.append(record)
+
+    for operator in operators:
+        for algorithm in algorithms:
+            rel_path = os.path.join("data", "phase8", f"csfit_{operator}_{algorithm}.json")
+            path = os.path.join(root, rel_path)
+            if not os.path.exists(path):
+                continue
+            record = {
+                "rel_path": rel_path + ":numerical_content",
+                "severity": "abort",
+                "source": "phase8_fit_numerical_content",
+                "path": path,
+            }
+            try:
+                data = _load_json(path)
+                required = (
+                    "fit_intercept_fixed",
+                    "f0_label",
+                    "sigma0_after_cut_pb",
+                    "csfit_sm",
+                    "csfit_int",
+                    "csfit_np",
+                    "fit_model",
+                )
+                missing = [key for key in required if key not in data]
+                errors = []
+                if data.get("fit_intercept_fixed") is not True:
+                    errors.append("fit_intercept_fixed must be true")
+                if data.get("f0_label") != "f5":
+                    errors.append("f0_label must be f5")
+                if not all(_finite_number(data.get(key)) for key in ("sigma0_after_cut_pb", "csfit_sm", "csfit_int", "csfit_np")):
+                    errors.append("fit coefficients must be finite numbers")
+                elif not math.isclose(
+                    float(data["sigma0_after_cut_pb"]),
+                    float(data["csfit_sm"]),
+                    rel_tol=1e-12,
+                    abs_tol=0.0,
+                ):
+                    errors.append("csfit_sm must equal sigma0_after_cut_pb")
+                if _finite_number(data.get("sigma0_after_cut_pb")) and float(data["sigma0_after_cut_pb"]) <= 0.0:
+                    errors.append("sigma0_after_cut_pb must be positive")
+                if _finite_number(data.get("csfit_np")) and float(data["csfit_np"]) < 0.0:
+                    errors.append("csfit_np must be non-negative")
+                record.update({"ok": not missing and not errors, "missing_keys": missing, "invalid_values": errors})
+            except Exception as exc:
+                _set_failure(record, "phase8_fit_content_invalid", str(exc))
+            checks.append(record)
+    return checks
+
+
+def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
+    checks: List[Dict[str, Any]] = []
+    operators = _operators(root)
+    algorithms = _algorithm_names(root)
+    selection_path = os.path.join(root, "data", "phase9", "algorithm_selection.json")
+    threshold_path = os.path.join(root, "data", "phase8", "threshold_optimization.json")
+    selected_algorithm = None
+    selected_threshold = None
+    if os.path.exists(selection_path):
+        selection = _load_json(selection_path)
+        selected_algorithm = selection.get("selected_algorithm")
+        selected_threshold = selection.get("selected_threshold")
+        record = {
+            "rel_path": "data/phase9/algorithm_selection.json:phase8_match",
+            "severity": "abort",
+            "source": "phase9_selection_matches_phase8",
+            "path": selection_path,
+        }
+        errors = []
+        if selected_algorithm not in algorithms:
+            errors.append("selected_algorithm is not present in Phase 7")
+        anchor_path = os.path.join(root, "data", "phase3", "anchor.json")
+        if os.path.exists(anchor_path):
+            anchor = _load_json(anchor_path)
+            expected_anchor = f"o_{anchor.get('global_idx')}"
+            if selection.get("anchor_operator") != expected_anchor:
+                errors.append("anchor_operator does not match Phase 3 anchor.json")
+        else:
+            errors.append("Phase 3 anchor.json is missing")
+        if os.path.exists(threshold_path) and selected_algorithm in algorithms:
+            threshold_data = _load_json(threshold_path)
+            threshold_anchor = threshold_data.get("anchor") or {}
+            expected = (threshold_anchor.get(selected_algorithm) or {}).get("optimal_threshold")
+            if not (_finite_number(expected) and _finite_number(selected_threshold)) or not math.isclose(
+                float(expected), float(selected_threshold), rel_tol=0.0, abs_tol=1e-12
+            ):
+                errors.append("selected_threshold does not equal the Phase 8 optimal threshold")
+            widths = {
+                algorithm: value.get("constraint_width_at_optimal")
+                for algorithm, value in threshold_anchor.items()
+                if isinstance(value, dict) and _finite_number(value.get("constraint_width_at_optimal"))
+            }
+            if set(widths) != set(algorithms):
+                errors.append("Phase 8 optimal constraint widths do not cover every Phase 7 algorithm")
+            elif selected_algorithm in widths:
+                minimum = min(float(value) for value in widths.values())
+                if not math.isclose(float(widths[selected_algorithm]), minimum, rel_tol=1e-12, abs_tol=0.0):
+                    errors.append("selected_algorithm does not have the narrowest anchor S2 interval")
+        else:
+            errors.append("Phase 8 threshold_optimization.json is missing or selected algorithm is invalid")
+        record.update({"ok": not errors, "invalid_values": errors})
+        checks.append(record)
+
+    table_rel = os.path.join("data", "phase9", "constraint_table.json")
+    table_path = os.path.join(root, table_rel)
+    if os.path.exists(table_path):
+        record = {
+            "rel_path": table_rel + ":numerical_content",
+            "severity": "abort",
+            "source": "phase9_constraint_numerical_content",
+            "path": table_path,
+        }
+        try:
+            data = _load_json(table_path)
+            constraints = data.get("constraints")
+            bad = []
+            if data.get("selection_scope") != "anchor_operator_only":
+                bad.append("selection_scope must be anchor_operator_only")
+            if data.get("selected_algorithm") != selected_algorithm:
+                bad.append("selected_algorithm differs from algorithm_selection.json")
+            if not isinstance(constraints, dict):
+                bad.append("constraints must be an object")
+                constraints = {}
+            if set(constraints) != set(operators):
+                bad.append("constraints keys must exactly match Phase 3 claimed operators")
+            invalid_intervals = []
+            for operator in operators:
+                value = constraints.get(operator)
+                if not isinstance(value, dict):
+                    invalid_intervals.append({"operator": operator, "error": "missing constraint object"})
+                    continue
+                for significance in ("S2", "S3", "S5"):
+                    if not _valid_interval(value.get(significance)):
+                        invalid_intervals.append({"operator": operator, "significance": significance, "value": value.get(significance)})
+            record.update({"ok": not bad and not invalid_intervals, "invalid_values": bad, "invalid_intervals": invalid_intervals})
+        except Exception as exc:
+            _set_failure(record, "phase9_constraint_content_invalid", str(exc))
+        checks.append(record)
+
+    csv_rel = os.path.join("data", "phase9", "constraint_table.csv")
+    checks.append({
+        "rel_path": csv_rel + ":columns",
+        "severity": "abort",
+        "source": "phase9_constraint_csv_schema",
+        **_csv_has_columns(
+            os.path.join(root, csv_rel),
+            (
+                "operator",
+                "selected_algorithm",
+                "selected_threshold",
+                "S2_lower",
+                "S2_upper",
+                "S3_lower",
+                "S3_upper",
+                "S5_lower",
+                "S5_upper",
+            ),
+        ),
+    })
+    return checks
 
 
 def _phase6_weighted_order_checks(root: str) -> List[Dict[str, Any]]:
@@ -910,7 +1466,6 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
                 for key in (
                     "implementation",
                     "hyperparameters",
-                    "random_seed",
                     "score_definition",
                     "model_output",
                 )
@@ -918,7 +1473,6 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
             ]
             mismatches = []
             source_params = source.get("hyperparameters", source.get("params"))
-            source_seed = source.get("random_seed", source.get("seed"))
             source_score = source.get("score_definition", source.get("score"))
             source_implementation = (
                 source.get("implementation")
@@ -927,8 +1481,6 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
             )
             if source_params is not None and frozen.get("hyperparameters") != source_params:
                 mismatches.append("hyperparameters")
-            if source_seed is not None and frozen.get("random_seed") != source_seed:
-                mismatches.append("random_seed")
             if source_score is not None and frozen.get("score_definition") != source_score:
                 mismatches.append("score_definition")
             if source_implementation is not None and frozen.get("implementation") != source_implementation:
@@ -1000,11 +1552,193 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
         })
         if not ok:
             record["failure_reason"] = (
-                "Phase 11 did not freeze the actual Phase 7/9 algorithms, parameters, seeds, "
+                "Phase 11 did not freeze the actual Phase 7/9 algorithms, parameters, "
                 "selection provenance, and packaged implementation checksums consistently"
             )
     except Exception as exc:
         _set_failure(record, "algorithm_lock_invalid", str(exc))
+    return [record]
+
+
+def _normalized_manifest_path(value: Any) -> Optional[str]:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    normalized = value.replace("\\", "/").lstrip("./")
+    if normalized.startswith("replayed-results/"):
+        normalized = normalized[len("replayed-results/"):]
+    return normalized
+
+
+def _replay_package_checks(root: str) -> List[Dict[str, Any]]:
+    manifest_rel = os.path.join("replay", "replay_manifest.json")
+    manifest_path = os.path.join(root, manifest_rel)
+    if not os.path.exists(manifest_path):
+        return []
+    record: Dict[str, Any] = {
+        "rel_path": manifest_rel + ":coverage_and_independence",
+        "severity": "abort",
+        "source": "phase11_replay_coverage_and_independence",
+        "path": manifest_path,
+    }
+    try:
+        manifest = _load_json(manifest_path)
+        steps = manifest.get("steps")
+        if not isinstance(steps, list) or not steps:
+            raise ValueError("replay_manifest.json steps must be a non-empty list")
+        source_inputs = manifest.get("source_inputs")
+        source_input_errors = []
+        if not isinstance(source_inputs, list):
+            source_input_errors.append("source_inputs must be a list")
+            source_inputs = []
+        for index, item in enumerate(source_inputs):
+            if not isinstance(item, dict) or any(
+                key not in item for key in ("path", "sha256", "provided_before_phase2")
+            ):
+                source_input_errors.append(f"source_inputs[{index}] is missing required fields")
+                continue
+            if item.get("provided_before_phase2") is not True:
+                source_input_errors.append(f"source_inputs[{index}].provided_before_phase2 must be true")
+            if not isinstance(item.get("path"), str) or not item["path"].strip():
+                source_input_errors.append(f"source_inputs[{index}].path must be non-empty")
+            if not isinstance(item.get("sha256"), str) or re.fullmatch(r"[0-9a-fA-F]{64}", item["sha256"]) is None:
+                source_input_errors.append(f"source_inputs[{index}].sha256 must contain 64 hexadecimal characters")
+        observed_phases = [str(step.get("phase")) for step in steps if isinstance(step, dict)]
+        unique_phase_order = []
+        for phase in observed_phases:
+            if not unique_phase_order or unique_phase_order[-1] != phase:
+                unique_phase_order.append(phase)
+        order_ok = unique_phase_order == [str(value) for value in range(2, 10)]
+
+        outputs: Dict[str, int] = {}
+        forbidden_inputs = []
+        for index, step in enumerate(steps):
+            if not isinstance(step, dict):
+                continue
+            for value in step.get("outputs") or []:
+                normalized = _normalized_manifest_path(value)
+                if normalized:
+                    outputs[normalized] = outputs.get(normalized, 0) + 1
+            for value in step.get("inputs") or []:
+                normalized = _normalized_manifest_path(value)
+                if normalized and any(
+                    normalized.startswith(f"data/phase{phase}/") for phase in range(3, 10)
+                ):
+                    forbidden_inputs.append({"step_index": index, "path": value})
+
+        results_root = _global_results_root(root)
+        config_path = os.path.join(results_root, "run_config.json")
+        resolved = resolve_contract(
+            config_path,
+            run_root=root,
+            results_dir=results_root,
+            phases=[str(value) for value in range(2, 10)],
+            write_output=False,
+        )
+        if resolved.get("pending_rules"):
+            raise ValueError(
+                f"Phase 2-9 deliverables cannot be resolved: {resolved['pending_rules']}"
+            )
+        expected_outputs = {
+            str(item["path"]).replace("\\", "/")
+            for item in resolved.get("resolved") or []
+            if str(item.get("phase")) in {str(value) for value in range(2, 10)}
+        }
+        coverage_counts = {
+            expected: sum(
+                count for declared, count in outputs.items()
+                if fnmatch.fnmatchcase(expected, declared)
+            )
+            for expected in expected_outputs
+        }
+        missing_outputs = sorted(path for path, count in coverage_counts.items() if count == 0)
+        duplicate_outputs = sorted(path for path, count in coverage_counts.items() if count != 1 and count > 0)
+
+        report_path = os.path.join(root, "replay", "data_files_report.md")
+        report_text = ""
+        if os.path.isfile(report_path):
+            with open(report_path, "r", encoding="utf-8-sig") as handle:
+                report_text = handle.read().replace("\\", "/")
+        report_missing = sorted(
+            path
+            for path in expected_outputs
+            if path not in report_text
+            and not any(
+                fnmatch.fnmatchcase(path, declared) and declared in report_text
+                for declared in outputs
+            )
+        )
+
+        tolerance_policy = manifest.get("monte_carlo_comparison")
+        tolerance_errors = []
+        if not isinstance(tolerance_policy, dict):
+            tolerance_errors.append("monte_carlo_comparison must be an object")
+        else:
+            if tolerance_policy.get("production_inputs_exclude_reference_results") is not True:
+                tolerance_errors.append("production_inputs_exclude_reference_results must be true")
+            sigma_multiplier = tolerance_policy.get("combined_standard_error_multiplier")
+            if not _finite_number(sigma_multiplier) or not 1.0 <= float(sigma_multiplier) <= 5.0:
+                tolerance_errors.append("combined_standard_error_multiplier must be in [1, 5]")
+            fallback = tolerance_policy.get("fallback_limits")
+            required_fallback = {
+                "cross_sections": ("relative", 0.10),
+                "auc_and_thresholds": ("absolute", 0.05),
+                "fit_coefficients_and_constraint_endpoints": ("relative", 0.20),
+            }
+            if not isinstance(fallback, dict):
+                tolerance_errors.append("fallback_limits must be an object")
+            else:
+                for key, (difference_kind, maximum) in required_fallback.items():
+                    value = fallback.get(key)
+                    if not isinstance(value, dict) or value.get("difference") != difference_kind:
+                        tolerance_errors.append(f"{key} difference must be {difference_kind}")
+                        continue
+                    limit = value.get("maximum")
+                    if not _finite_number(limit) or not 0.0 < float(limit) <= maximum:
+                        tolerance_errors.append(f"{key} fallback tolerance must be in (0, {maximum}]")
+
+        replay_root = os.path.join(root, "replay")
+        original_path_mentions = []
+        original_root_text = os.path.abspath(root).replace("\\", "/")
+        for directory in ("steps", "support"):
+            base = os.path.join(replay_root, directory)
+            if not os.path.isdir(base):
+                continue
+            for current, _, names in os.walk(base):
+                for name in names:
+                    if not name.endswith((".py", ".sh")):
+                        continue
+                    path = os.path.join(current, name)
+                    with open(path, "r", encoding="utf-8-sig", errors="replace") as handle:
+                        text = handle.read().replace("\\", "/")
+                    if original_root_text in text or "../data/phase" in text:
+                        original_path_mentions.append(os.path.relpath(path, replay_root).replace("\\", "/"))
+
+        immutable_copy_errors = []
+        for name in ("run_config.json", "research_contract.json", "deliverables_contract.json", "contract_lock.json"):
+            source = os.path.join(results_root, name)
+            packaged = os.path.join(replay_root, name)
+            if not os.path.isfile(source) or not os.path.isfile(packaged):
+                immutable_copy_errors.append({"file": name, "error": "source or packaged copy missing"})
+                continue
+            if _load_json(source) != _load_json(packaged):
+                immutable_copy_errors.append({"file": name, "error": "packaged JSON content differs from source"})
+
+        ok = not any((source_input_errors, missing_outputs, duplicate_outputs, forbidden_inputs, report_missing, tolerance_errors, original_path_mentions, immutable_copy_errors)) and order_ok
+        record.update({
+            "ok": ok,
+            "observed_phase_order": unique_phase_order,
+            "expected_phase_order": [str(value) for value in range(2, 10)],
+            "source_input_errors": source_input_errors,
+            "missing_manifest_outputs": missing_outputs,
+            "duplicate_manifest_outputs": duplicate_outputs,
+            "forbidden_original_result_inputs": forbidden_inputs,
+            "report_missing_outputs": report_missing,
+            "tolerance_policy_errors": tolerance_errors,
+            "packaged_code_original_path_mentions": original_path_mentions,
+            "immutable_copy_errors": immutable_copy_errors,
+        })
+    except Exception as exc:
+        _set_failure(record, "phase11_replay_package_invalid", str(exc))
     return [record]
 
 
@@ -1234,6 +1968,13 @@ def _phase7_content_checks(root: str) -> List[Dict[str, Any]]:
             data = _load_json(comparison_path)
             anchor = data.get("anchor") or {}
             bad = []
+            config = _load_json(os.path.join(_global_results_root(root), "run_config.json"))
+            configured_algorithms = config.get("algorithms")
+            expected_algorithm_keys = (
+                {str(value) for value in configured_algorithms}
+                if isinstance(configured_algorithms, list) and configured_algorithms
+                else None
+            )
             for alg, record in sorted(anchor.items()):
                 if not isinstance(record, dict):
                     bad.append({"algorithm": alg, "error": "record is not an object"})
@@ -1254,8 +1995,18 @@ def _phase7_content_checks(root: str) -> List[Dict[str, Any]]:
                 "severity": "abort",
                 "source": "phase7_algorithm_comparison_content",
                 "path": comparison_path,
-                "ok": bool(anchor) and not bad,
+                "ok": (
+                    bool(anchor)
+                    and not bad
+                    and (
+                        set(anchor) == expected_algorithm_keys
+                        if expected_algorithm_keys is not None
+                        else len(anchor) == 3
+                    )
+                ),
                 "algorithm_count": len(anchor),
+                "configured_algorithm_keys": sorted(expected_algorithm_keys) if expected_algorithm_keys is not None else None,
+                "required_random_selection_count": 3 if expected_algorithm_keys is None else None,
                 "bad_records": bad,
             })
         except Exception as exc:
@@ -1600,6 +2351,47 @@ def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = Non
                 "missing_reason_count": len(missing_reasons),
                 "validation_mentions_feynman": validation_mentions_feynman,
             })
+            config = _load_json(os.path.join(_global_results_root(root), "run_config.json"))
+            notes = config.get("analysis_notes") or {
+                "focused_operators": [],
+                "manuscript_preferences": [],
+                "additional_requirements": [],
+            }
+            trace = evidence.get("analysis_notes_trace")
+            trace_errors = []
+            if not isinstance(trace, dict):
+                trace_errors.append("analysis_notes_trace must be an object")
+                trace = {}
+            focused = trace.get("focused_operators")
+            requested_focused = list(notes.get("focused_operators") or [])
+            if not isinstance(focused, dict) or focused.get("requested") != requested_focused:
+                trace_errors.append("focused_operators.requested must equal run_config analysis_notes")
+            elif not set(requested_focused).issubset(set(focused.get("covered") or [])):
+                trace_errors.append("every focused operator must appear in focused_operators.covered")
+            preference_records = trace.get("manuscript_preferences")
+            if not isinstance(preference_records, list):
+                preference_records = []
+            recorded_preferences = {item.get("request") for item in preference_records if isinstance(item, dict)}
+            if recorded_preferences != set(notes.get("manuscript_preferences") or []):
+                trace_errors.append("manuscript preference trace does not match run_config")
+            requirement_records = trace.get("additional_requirements")
+            if not isinstance(requirement_records, list):
+                requirement_records = []
+            expected_ids = {item.get("id") for item in notes.get("additional_requirements") or []}
+            recorded_ids = {item.get("id") for item in requirement_records if isinstance(item, dict)}
+            if recorded_ids != expected_ids:
+                trace_errors.append("additional requirement trace IDs do not match run_config")
+            for item in preference_records + requirement_records:
+                if not isinstance(item, dict) or item.get("status") not in {"applied", "not_applicable"} or not item.get("evidence"):
+                    trace_errors.append("every trace item needs status applied/not_applicable and non-empty evidence")
+            checks.append({
+                "rel_path": evidence_rel + ":analysis_notes_trace",
+                "severity": "abort",
+                "source": "phase10_analysis_notes_trace",
+                "path": evidence_path,
+                "ok": not trace_errors,
+                "errors": trace_errors,
+            })
         except Exception as exc:
             checks.append({
                 "rel_path": evidence_rel + ":figures.feynman_diagrams",
@@ -1716,12 +2508,18 @@ def audit_expected_outputs(
         rec = dict(item)
         rec.update(_exists_nonempty(path))
         checks.append(rec)
+    checks.extend(_cross_file_acceptance_definition_checks(root))
     checks.extend(_recovery_metadata_checks(root))
     checks.extend(_phase3_runner_manifest_checks(root))
+    checks.extend(_phase3_completeness_checks(root))
+    checks.extend(_phase6_scan_matrix_checks(root))
     checks.extend(_phase6_weighted_order_checks(root))
     checks.extend(_phase7_content_checks(root))
+    checks.extend(_phase8_numerical_checks(root))
     checks.extend(_phase9_strategy_checks(root))
+    checks.extend(_phase9_numerical_checks(root))
     checks.extend(_replay_algorithm_lock_checks(root))
+    checks.extend(_replay_package_checks(root))
     checks.extend(_workflow_contract_binding_checks(root))
     checks.extend(_cleanup_log_checks(root))
     checks.extend(_phase10_manuscript_checks(root, required_ids_json=phase10_required_ids_json))
@@ -1747,10 +2545,81 @@ def audit_expected_outputs(
     }
 
 
+def audit_phase_deliverables(
+    workdir: str,
+    phase: str,
+    run_dir: Optional[str] = None,
+    phase10_required_ids_json: Optional[str] = None,
+) -> Dict[str, Any]:
+    workdir = os.path.abspath(os.path.expanduser(workdir))
+    root = _result_root(workdir, run_dir)
+    results_root = os.path.join(workdir, "results")
+    contract = resolve_contract(
+        os.path.join(results_root, "run_config.json"),
+        run_root=root,
+        results_dir=results_root,
+        phases=[str(phase)],
+        write_output=False,
+    )
+    checks = _resolved_deliverable_checks(
+        root,
+        include_final_artifacts=True,
+        contract_override=contract,
+    )
+    checks.extend(_cross_file_acceptance_definition_checks(root, phase=str(phase)))
+    phase = str(phase)
+    if phase in {"5", "6"}:
+        checks.extend(_recovery_metadata_checks(root))
+    if phase == "3":
+        checks.extend(_phase3_runner_manifest_checks(root))
+        checks.extend(_phase3_completeness_checks(root))
+    elif phase == "6":
+        checks.extend(_phase6_scan_matrix_checks(root))
+        checks.extend(_phase6_weighted_order_checks(root))
+    elif phase == "7":
+        checks.extend(_phase7_content_checks(root))
+    elif phase == "8":
+        checks.extend(_phase8_numerical_checks(root))
+    elif phase == "9":
+        checks.extend(_phase9_strategy_checks(root))
+        checks.extend(_phase9_numerical_checks(root))
+    elif phase == "10":
+        checks.extend(_phase10_manuscript_checks(root, required_ids_json=phase10_required_ids_json))
+        checks.extend(_manuscript_format_checks(root))
+    elif phase == "cleanup":
+        checks.extend(_cleanup_log_checks(root))
+    elif phase == "11":
+        checks.extend(_replay_algorithm_lock_checks(root))
+        checks.extend(_replay_package_checks(root))
+    elif phase == "12":
+        checks.extend(_final_audit_artifact_checks(root))
+    if phase == "2":
+        checks.extend(_workflow_contract_binding_checks(root))
+
+    _ensure_failure_diagnostics(checks)
+    failures = [check for check in checks if not check["ok"] and check["severity"] == "abort"]
+    warnings = [check for check in checks if not check["ok"] and check["severity"] == "warn"]
+    return {
+        "schema_version": "1.0",
+        "root": root,
+        "phase": phase,
+        "status": "FAIL" if failures else ("WARN" if warnings else "PASS"),
+        "checks": checks,
+        "failures": failures,
+        "warnings": warnings,
+        "expected_count": len(checks),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit expected workflow outputs")
     parser.add_argument("workdir")
     parser.add_argument("--run-dir", default=None)
+    parser.add_argument(
+        "--phase",
+        default=None,
+        help="Check only deliverables whose frozen rule phase exactly matches this value",
+    )
     parser.add_argument("--json-out", default=None)
     parser.add_argument(
         "--include-final-artifacts",
@@ -1764,12 +2633,20 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    report = audit_expected_outputs(
-        args.workdir,
-        run_dir=args.run_dir,
-        phase10_required_ids_json=args.phase10_required_ids_json,
-        include_final_artifacts=args.include_final_artifacts,
-    )
+    if args.phase is not None:
+        report = audit_phase_deliverables(
+            args.workdir,
+            args.phase,
+            run_dir=args.run_dir,
+            phase10_required_ids_json=args.phase10_required_ids_json,
+        )
+    else:
+        report = audit_expected_outputs(
+            args.workdir,
+            run_dir=args.run_dir,
+            phase10_required_ids_json=args.phase10_required_ids_json,
+            include_final_artifacts=args.include_final_artifacts,
+        )
     if args.json_out:
         os.makedirs(os.path.dirname(os.path.abspath(args.json_out)), exist_ok=True)
         with open(args.json_out, "w", encoding="utf-8") as f:

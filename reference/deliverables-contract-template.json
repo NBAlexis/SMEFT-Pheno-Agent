@@ -6,6 +6,88 @@
     "single_run": "results",
     "multi_run": "results/{run_dir}"
   },
+  "acceptance_field_definitions": {
+    "json_type": "Required top-level JSON type: object or array",
+    "required_keys": "Keys that must exist in a top-level JSON object",
+    "required_columns": "Column names that must exist in a CSV header",
+    "required_values": "Top-level JSON keys whose values must equal the declared values",
+    "min_properties": "Minimum number of keys in a top-level JSON object",
+    "min_items": "Minimum number of entries in a top-level JSON array",
+    "min_data_rows": "Minimum number of non-empty CSV data rows"
+  },
+  "cross_file_acceptance_rules": [
+    {
+      "id": "phase3.complete_coefficient_loop",
+      "phase": "3",
+      "requirements": [
+        "model_status top-level keys equal run_config models",
+        "diagram-producing models have positive coefficient_count",
+        "tested_count and coefficient record count equal coefficient_count",
+        "every coefficient has c_default, sigma, and result_json",
+        "every positive coefficient maps to operator_claims and the distinct mapped keys equal all claims",
+        "operator_claims keys are ordered consecutively o_1 through o_N and every record has model, anoinput_idx, and name",
+        "anchor.json equals the o_1 claim",
+        "cross_sections keys equal model:coefficient_name for every coefficient record"
+      ]
+    },
+    {
+      "id": "phase6.complete_scan_matrix",
+      "phase": "6",
+      "requirements": [
+        "scan_manifest keys equal Phase 3 claimed operators",
+        "every operator has point_count 11 and labels f0 through f10 in order",
+        "every operator has positive numeric c_scan and non-empty scan_expression"
+      ]
+    },
+    {
+      "id": "phase7.complete_algorithm_set",
+      "phase": "7",
+      "requirements": [
+        "algorithm_comparison anchor keys equal user-configured algorithms when provided",
+        "otherwise algorithm_comparison anchor contains exactly three algorithms",
+        "algorithm descriptions, score files, model files, and validation records use the same keys"
+      ]
+    },
+    {
+      "id": "phase8.numerical_content",
+      "phase": "8",
+      "requirements": [
+        "threshold_optimization anchor keys equal Phase 7 algorithm keys",
+        "each threshold scan contains exactly 51 entries with finite required values",
+        "every operator-algorithm fit fixes the f5 intercept and has finite coefficients",
+        "csfit_sm equals sigma0_after_cut_pb and csfit_np is non-negative"
+      ]
+    },
+    {
+      "id": "phase9.numerical_content",
+      "phase": "9",
+      "requirements": [
+        "selected algorithm is a Phase 7 anchor algorithm",
+        "selected threshold equals its Phase 8 optimal threshold",
+        "constraint keys equal Phase 3 claimed operators",
+        "every operator has finite negative-to-positive S2, S3, and S5 intervals"
+      ]
+    },
+    {
+      "id": "phase10.analysis_notes_trace",
+      "phase": "10",
+      "requirements": [
+        "focused operators and manuscript preferences equal run_config analysis_notes",
+        "every preference and additional requirement has applied or not_applicable status and evidence"
+      ]
+    },
+    {
+      "id": "phase11.replay_coverage_and_comparison",
+      "phase": "11",
+      "requirements": [
+        "manifest phase order is 2 through 9",
+        "every resolved Phase 2-9 output has exactly one producing step",
+        "production inputs exclude original Phase 3-9 results",
+        "data_files_report covers every resolved output",
+        "Monte Carlo comparison limits do not exceed the declared maxima"
+      ]
+    }
+  ],
   "selectors": {
     "operator": "data/phase3/operator_claims.json object keys",
     "scan_label": "data/phase6/scan_manifest.json labels for each operator",
@@ -21,10 +103,10 @@
       "scope": "global_results",
       "selector": "fixed",
       "items": [
-        {"path": "run_config.json", "type": "json"},
-        {"path": "research_contract.json", "type": "json"},
-        {"path": "deliverables_contract.json", "type": "json"},
-        {"path": "contract_lock.json", "type": "json"}
+        {"path": "run_config.json", "type": "json", "json_type": "object", "required_keys": ["version", "process", "models", "run_configurations", "locked_event_counts"]},
+        {"path": "research_contract.json", "type": "json", "json_type": "object", "required_keys": ["objective", "objective_sha256", "deliverables_template_sha256"]},
+        {"path": "deliverables_contract.json", "type": "json", "json_type": "object", "required_keys": ["template", "template_sha256", "research_objective_sha256"]},
+        {"path": "contract_lock.json", "type": "json", "json_type": "object", "required_keys": ["research_contract_sha256", "deliverables_contract_sha256", "template_sha256"]}
       ]
     },
     {
@@ -43,10 +125,10 @@
       "scope": "run_root",
       "selector": "fixed",
       "items": [
-        {"path": "data/phase3/operator_claims.json", "type": "json"},
-        {"path": "data/phase3/cross_sections.json", "type": "json"},
-        {"path": "data/phase3/model_status.json", "type": "json"},
-        {"path": "data/phase3/anchor.json", "type": "json", "condition": "at_least_one_claimed_operator"}
+        {"path": "data/phase3/operator_claims.json", "type": "json", "json_type": "object"},
+        {"path": "data/phase3/cross_sections.json", "type": "json", "json_type": "object"},
+        {"path": "data/phase3/model_status.json", "type": "json", "json_type": "object", "min_properties": 1},
+        {"path": "data/phase3/anchor.json", "type": "json", "json_type": "object", "required_keys": ["global_idx", "model", "anoinput_idx", "name"], "condition": "at_least_one_claimed_operator"}
       ]
     },
     {
@@ -115,7 +197,7 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "fixed",
       "items": [
-        {"path": "data/phase6/scan_manifest.json", "type": "json"},
+        {"path": "data/phase6/scan_manifest.json", "type": "json", "json_type": "object", "min_properties": 1},
         {"path": "data/phase6/phase6_progress.json", "type": "json"},
         {"path": "data/phase6/event_count_recovery.json", "type": "json"}
       ]
@@ -152,9 +234,9 @@
         {"path": "data/phase7/np_anchor.csv", "type": "csv"},
         {"path": "data/phase7/event_counts.json", "type": "json"},
         {"path": "data/phase7/feature_schema.json", "type": "json"},
-        {"path": "data/phase7/algorithm_comparison.json", "type": "json"},
-        {"path": "data/phase7/algorithm_descriptions.json", "type": "json"},
-        {"path": "data/phase7/phase7_validation.json", "type": "json"},
+        {"path": "data/phase7/algorithm_comparison.json", "type": "json", "json_type": "object", "required_keys": ["anchor"]},
+        {"path": "data/phase7/algorithm_descriptions.json", "type": "json", "json_type": "object", "min_properties": 1},
+        {"path": "data/phase7/phase7_validation.json", "type": "json", "json_type": "object", "required_keys": ["status", "checks"]},
         {"path": "algorithms/compute_scores.py", "type": "python"},
         {"path": "plots/roc_anchor.pdf", "type": "pdf"}
       ]
@@ -177,7 +259,7 @@
       "selector": "algorithm",
       "items": [
         {"path": "algorithms/anchor_{algorithm}.pkl", "type": "model"},
-        {"path": "data/phase7/scores/{algorithm}_sm_scores.csv", "type": "csv"},
+        {"path": "data/phase7/scores/{algorithm}_sm_scores.csv", "type": "csv", "required_columns": ["event_index", "score", "label", "source_csv"]},
         {"path": "plots/score_dist_all_pure_np_{algorithm}.pdf", "type": "pdf"}
       ]
     },
@@ -188,7 +270,7 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "operator_algorithm",
       "items": [
-        {"path": "data/phase7/scores/{algorithm}_np_{operator}_scores.csv", "type": "csv"}
+        {"path": "data/phase7/scores/{algorithm}_np_{operator}_scores.csv", "type": "csv", "required_columns": ["event_index", "score", "label", "source_csv"]}
       ]
     },
     {
@@ -199,8 +281,8 @@
       "selector": "fixed",
       "items": [
         {"path": "data/phase8/scan_event_counts.json", "type": "json"},
-        {"path": "data/phase8/threshold_optimization.json", "type": "json"},
-        {"path": "data/phase8/dataset_summary.json", "type": "json"},
+        {"path": "data/phase8/threshold_optimization.json", "type": "json", "json_type": "object", "required_keys": ["anchor"]},
+        {"path": "data/phase8/dataset_summary.json", "type": "json", "json_type": "object", "min_properties": 1},
         {"path": "plots/threshold_comparison.pdf", "type": "pdf"},
         {"path": "plots/anchor_s2_constraint_range_vs_threshold.pdf", "type": "pdf"}
       ]
@@ -222,7 +304,7 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "operator_scan_label_algorithm",
       "items": [
-        {"path": "data/phase8/scores/{algorithm}/np_{operator}_{scan_label}_scores.csv", "type": "csv"}
+        {"path": "data/phase8/scores/{algorithm}/np_{operator}_{scan_label}_scores.csv", "type": "csv", "required_columns": ["event_index", "score", "source_csv"]}
       ]
     },
     {
@@ -232,7 +314,7 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "operator_algorithm",
       "items": [
-        {"path": "data/phase8/csfit_{operator}_{algorithm}.json", "type": "json"},
+        {"path": "data/phase8/csfit_{operator}_{algorithm}.json", "type": "json", "json_type": "object", "required_keys": ["fit_intercept_fixed", "f0_label", "sigma0_after_cut_pb", "csfit_sm", "csfit_int", "csfit_np", "fit_model"]},
         {"path": "plots/csfit_plot_{operator}_{algorithm}.pdf", "type": "pdf"}
       ]
     },
@@ -243,9 +325,9 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "fixed",
       "items": [
-        {"path": "data/phase9/algorithm_selection.json", "type": "json"},
-        {"path": "data/phase9/constraint_table.json", "type": "json"},
-        {"path": "data/phase9/constraint_table.csv", "type": "csv"},
+        {"path": "data/phase9/algorithm_selection.json", "type": "json", "json_type": "object", "required_keys": ["anchor_operator", "selected_algorithm", "selected_threshold", "selection_criterion", "selection_scope", "source_threshold_optimization_entry"]},
+        {"path": "data/phase9/constraint_table.json", "type": "json", "json_type": "object", "required_keys": ["selection_scope", "anchor_operator", "selected_algorithm", "constraints"]},
+        {"path": "data/phase9/constraint_table.csv", "type": "csv", "required_columns": ["operator", "selected_algorithm", "selected_threshold", "S2_lower", "S2_upper", "S3_lower", "S3_upper", "S5_lower", "S5_upper"]},
         {"path": "plots/anchor_s2_algorithm_constraint_bar.pdf", "type": "pdf"}
       ]
     },
@@ -258,7 +340,7 @@
       "items": [
         {"path": "data/phase10/manuscript_build_environment.json", "type": "json"},
         {"path": "data/phase10/collider_energy.json", "type": "json"},
-        {"path": "data/phase10/manuscript_evidence.json", "type": "json"},
+        {"path": "data/phase10/manuscript_evidence.json", "type": "json", "json_type": "object", "required_keys": ["analysis_notes_trace", "figures"]},
         {"path": "data/phase10/reference_paper_plan.json", "type": "json"},
         {"path": "data/phase10/literature_plan.json", "type": "json"},
         {"path": "data/phase10/manuscript_checklist.json", "type": "json"},
@@ -310,8 +392,8 @@
       "selector": "fixed",
       "items": [
         {"path": "replay/replay.sh", "type": "executable"},
-        {"path": "replay/replay_manifest.json", "type": "json"},
-        {"path": "replay/replay_validation.json", "type": "json"},
+        {"path": "replay/replay_manifest.json", "type": "json", "json_type": "object", "required_keys": ["schema_version", "entrypoint", "phase_order", "default_output", "source_inputs", "algorithm_lock", "steps", "monte_carlo_comparison", "report"]},
+        {"path": "replay/replay_validation.json", "type": "json", "json_type": "object", "required_keys": ["status", "commands", "observed_phase_order", "coverage", "failures", "warnings"]},
         {"path": "replay/data_files_report.md", "type": "markdown"},
         {"path": "replay/run_config.json", "type": "json"},
         {"path": "replay/research_contract.json", "type": "json"},
@@ -336,9 +418,9 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "fixed",
       "items": [
-        {"path": "deliverables_resolved.json", "type": "json"},
-        {"path": "audit_expected_outputs.json", "type": "json"},
-        {"path": "audit_report.json", "type": "json"}
+        {"path": "deliverables_resolved.json", "type": "json", "json_type": "object", "required_keys": ["status", "resolved", "pending_rules", "run_root", "results_dir"]},
+        {"path": "audit_expected_outputs.json", "type": "json", "json_type": "object", "required_keys": ["status", "checks", "failures", "warnings"]},
+        {"path": "audit_report.json", "type": "json", "json_type": "object", "required_keys": ["status", "checks", "abort_reasons", "warnings"]}
       ]
     }
   ]

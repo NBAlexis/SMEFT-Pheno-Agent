@@ -1,6 +1,6 @@
 ﻿# Phase 7: Train ML Event Selection Strategy
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 Train and compare ML algorithms to distinguish SM from NP events. In multi-model
@@ -17,7 +17,7 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("7")
 ```
 
@@ -406,7 +406,7 @@ logger.phase_complete("7")
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase7/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase7/...`). See `SKILL.md` Output Layout.
 
 ```
 results/data/phase7/
@@ -454,8 +454,8 @@ After `logger.phase_complete("7")` is called and all algorithms are saved:
 
 1. **Check validation rules immediately**: If no algorithm achieves AUC > 0.5,
    inspect labels, feature extraction, leakage guards, train/test construction,
-   hyperparameters, seeds, and model code; repair and rerun the frozen algorithm
-   strategy. If valid data genuinely has no separability, preserve the complete
+   hyperparameters, seeds, and model code; repair or replace the affected
+   algorithm implementation and rerun all affected Phase 7-10 outputs. If valid data genuinely has no separability, preserve the complete
    negative result and determine downstream outputs without silently dropping
    algorithms or changing the research objective.
 2. **If validation passes**: **proceed immediately to Phase 8 without stopping.**

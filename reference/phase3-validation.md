@@ -1,6 +1,6 @@
 # Phase 3: Validate New Physics Impact (Multi-Model)
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 Identify which SMEFT operators across **all specified models** actually affect the chosen process. Operators are globally deduplicated and continuously numbered. The first non-zero operator found across all models becomes the **anchor** for ML training and threshold optimization.
@@ -14,7 +14,7 @@ Required loop behavior:
 2. Test each coefficient exactly once unless it is a duplicate already claimed from an earlier model.
 3. Record every result, including `sigma = 0`.
 4. Continue immediately after each coefficient, regardless of whether `sigma` is zero or non-zero.
-5. Evaluate the zero-nonzero-operators red flag only after `tested_count == total_coefficients`.
+5. Evaluate the zero-operator scientific stop condition only after `tested_count == total_coefficients`.
 
 Forbidden during the loop:
 - Do not ask the user what to do.
@@ -34,7 +34,7 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("3")
 ```
 
@@ -148,8 +148,9 @@ that model/process combination as a confirmed zero-contribution case: set
 `model_status[model_name].has_feynman_diagrams = False`, record the MG5
 stdout/stderr/error paths, assign no operators from that model, and continue to
 the next user-provided model. Do not run the per-coefficient loop for a model
-whose NP process has no diagrams. Abort only for setup failures such as a
-missing UFO model, invalid MG5 path, or an unreadable result JSON.
+whose NP process has no diagrams. A missing UFO model, invalid MG5 path, or
+unreadable result JSON is a technical failure: diagnose and repair it under the
+`SKILL.md` recovery rule, then resume this model.
 
 ### Step 3.1.2 Extract Coefficients from Runner Result
 
@@ -166,7 +167,7 @@ the parser leaked into `Block mass`. Report this as a parser bug.
 
 > After testing one coefficient, continue immediately to the next coefficient
 > regardless of whether the current cross-section is zero or non-zero. Do not
-> run an SM baseline, inspect other models, report a red flag, or stop the
+> run an SM baseline, inspect other models, report the zero-operator result, or stop the
 > workflow from inside this loop.
 
 For each coefficient `fi` in this model:
@@ -235,7 +236,17 @@ After all models have been processed:
 
 1. Write `operator_claims.json`
 2. Write `cross_sections.json` (includes all tested operators, not just claimed ones)
-3. Write `model_status.json` (per-model Feynman diagram status and full coefficient-cross-section table)
+3. Write `model_status.json` with exactly one top-level key for every model in
+   `run_config.json["models"]`. Every model record contains
+   `has_feynman_diagrams` and `create_np_result_json`. A model with diagrams also
+   contains positive integer `coefficient_count`, equal integer `tested_count`,
+   and `coefficients`; every coefficient entry contains `c_default`, `sigma`,
+   and `result_json`. Every entry with `sigma > 0` also contains the assigned
+   `global_idx` (`o_N` or `N`), and the resulting distinct `o_N` set must equal
+   the keys in `operator_claims.json`. `cross_sections.json` uses the exact key
+   `{model}:{coefficient_name}` for every coefficient record, including zero
+   results; this prevents equal coefficient names in different models from
+   colliding. A model without diagrams contains `no_diagram_reason`.
 4. Write `anchor.json`:
 ```json
 {
@@ -259,7 +270,8 @@ import json
 with workflow_step(logger, "3", "write_global_metadata",
                    inputs={"num_claimed": len(operator_claims),
                            "num_tested": len(cross_sections)}):
-    phase3_dir = os.path.join(config.workdir, "results", run_dir, "data", "phase3")
+    run_root = os.path.join(config.workdir, "results", run_dir) if run_dir else os.path.join(config.workdir, "results")
+    phase3_dir = os.path.join(run_root, "data", "phase3")
     os.makedirs(phase3_dir, exist_ok=True)
     with open(os.path.join(phase3_dir, "operator_claims.json"), "w") as f:
         json.dump(operator_claims, f, indent=2)
@@ -275,13 +287,13 @@ logger.phase_complete("3")
 
 ## Output
 
-> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase3/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths below are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase3/...`). See `SKILL.md` Output Layout.
 
 ```
 results/data/phase3/
   operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
-  cross_sections.json        # {fi: {sigma, c_default, model, global_idx}} for all tested
-  model_status.json          # {model: {has_feynman_diagrams, create_np_result_json, coefficients: {fi: {c_default, sigma, result_json}}}}
+  cross_sections.json        # {"model:coefficient": {sigma, c_default, model, global_idx}} for all tested
+  model_status.json          # {model: {has_feynman_diagrams, create_np_result_json, coefficient_count, tested_count, coefficients: {fi: {c_default, sigma, result_json}}}}
   anchor.json                # {global_idx, model, anoinput_idx, name}
   *_create_np_result.json
   *_result.json              # runner manifests referenced by model_status.json
@@ -291,13 +303,16 @@ results/data/phase3/
 
 | Check | Action on Failure |
 |-------|-------------------|
-| `generate` succeeds for every model | Abort and report MG5 error |
-| At least one operator claimed globally | Abort: process insensitive to all provided models. **Before aborting, emit a full `model_status` report** (see below). |
-| `anchor` is set | Abort: no non-zero operators found. **Before aborting, emit a full `model_status` report** (see below). |
+| `generate` succeeds for every model | Diagnose the MG5 error, repair or replace the execution method, and resume the same model |
+| At least one operator claimed globally | If false after the full loop, emit the full `model_status` and zero-operator reports, then end with the valid negative result. |
+| `anchor` is set | If false after the full loop, emit the same reports and do not run downstream phases that require an operator. |
 
 ## Zero Cross-Section Report (Required)
 
-If **all** tested operators return `sigma = 0` (or if `anchor` is not set), the workflow MUST abort with a red flag. **Before aborting**, output a detailed report that includes:
+If **all** tested operators return `sigma = 0` after the complete loop, write the
+required zero-operator report and end the scientific workflow with that valid
+negative result. This is the only Phase 3 scientific stop condition and is not
+a technical failure. Before ending, output a detailed report that includes:
 
 1. **Per-model Feynman diagram status** (from `model_status.json`):
    - Model name
@@ -328,7 +343,7 @@ Model: nTGC_UFO_12g2
   has_feynman_diagrams: False
   error: NoDiagramException: No diagram found for mu+ mu- > a j j NP>0
 
-RED FLAG: No operator claimed. Process is insensitive to all provided models.
+ZERO-OPERATOR RESULT: No operator claimed. Process is insensitive to all provided models.
 ```
 
 This report is written to the log and to a file `results/data/phase3/phase3_report.txt` so the user can inspect the full result without re-running MG5.
@@ -339,12 +354,12 @@ The following behaviors constitute a **critical violation** of the Execution Con
 
 | Prohibited Behavior | Why It's Forbidden | Correct Action |
 |---------------------|-------------------|----------------|
-| **Stopping after the first (or any) coefficient returns sigma = 0** | A single zero cross-section is a valid physical result. The phase must complete before any red flag is checked. | Record the result and **immediately continue** to the next coefficient. |
+| **Stopping after the first (or any) coefficient returns sigma = 0** | A single zero cross-section is a valid physical result. The phase must complete before the zero-operator condition is checked. | Record the result and **immediately continue** to the next coefficient. |
 | **Testing SM baseline (all coefficients = 0) during Phase 3** | SM baseline is a Phase 4 operation. Doing it in Phase 3 is a phase boundary violation. | Stay in the coefficient testing loop. SM baseline comes **after** all coefficients are tested. |
 | **Skipping remaining coefficients because "the process seems insensitive"** | Insensitivity can only be determined after ALL coefficients are tested. | Test every coefficient in every model. No exceptions. |
 | **Switching to the next model before finishing the current model** | Model order is preserved for deduplication. Incomplete testing corrupts the claimed operator list. | Finish all coefficients in the current model before moving to the next. |
-| **Reporting red flags or asking the user mid-phase** | Red flags are checked **only after the phase completes**. | Complete the phase silently. Report findings at the phase boundary. |
-| **Reimplementing `extract_cross_section()` instead of using `scripts/extract_cross_section.py`** | The canonical script handles MG5 v3.x `Integrated weight (pb)` and older formats correctly. A handwritten regex will miss v3.x banners, silently corrupt all cross-section data, and produce false zero-cross-section reports. | Always call `scripts/extract_cross_section.py` (or import `extract_cross_section` from it). Never write your own parser. |
+| **Reporting the zero-operator result or asking the user mid-phase** | The zero-operator condition is checked only after the full coefficient loop. | Complete the loop silently. Report the result at the phase boundary. |
+| **Replacing `extract_cross_section()` without validating the replacement** | The bundled script handles MG5 v3.x `Integrated weight (pb)` and older formats. | Prefer `scripts/extract_cross_section.py`. If it cannot read the actual banner, repair it or replace it; test the replacement on both documented banner forms, emit the same cross-section and provenance fields, and never convert a read error to `0.0`. |
 
 > **Highest-priority loop rule:** If there are 10 coefficients, test all 10
 > coefficients even if the first 9 return zero. Mid-loop stopping is forbidden.
@@ -366,7 +381,7 @@ self-repair, not user interaction.
 
 After `logger.phase_complete("3")` is called and all JSON outputs are written:
 
-1. **Check validation rules immediately**: If `anchor` is not set, emit the Zero Cross-Section Report and abort.
+1. **Check validation rules immediately**: If `anchor` is not set after the full loop, emit the Zero Cross-Section Report and end with the valid zero-operator result.
 2. **If validation passes** (at least one operator claimed, anchor is set): **proceed immediately to Phase 4 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait
    for user input. Continue autonomously under the frozen research and

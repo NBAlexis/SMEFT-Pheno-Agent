@@ -1,6 +1,6 @@
 # Phase 5: Generate Pure SM and Pure NP Samples
 
-> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 Phase 5 can be long-running because it produces pure NP samples for every
@@ -21,7 +21,7 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 # Initialize logger
 from scripts.workflow_logger import WorkflowLogger, workflow_step
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("5")
 ```
 
@@ -60,7 +60,7 @@ with workflow_step(logger, "5", "generate_sm_sample",
     # A custom recovery must preserve equivalent result/stdout/stderr provenance.
 ```
 
-> **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See `SKILL.md` Output Layout.
 
 ## Step 5.2: Pure NP Samples for All Claimed Operators
 
@@ -118,7 +118,7 @@ logger.phase_complete("5")
 sample. Training uses only this anchor alias. Histogram and public-data outputs
 must include every `np_o_{g_idx}` sample.
 
-> **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
+> **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See `SKILL.md` Output Layout.
 
 ## Validation
 
@@ -126,14 +126,14 @@ Relevant invariants:
 [`workflow-invariants.md`](workflow-invariants.md) Publication Data and
 Execution Continuity.
 
-- `sm.lhco` must exist and be non-empty (abort if missing)
-- `np_o_{g_idx}.lhco` must exist and be non-empty for every globally claimed operator (abort if missing)
-- `np_anchor.lhco` must exist and be non-empty, and must match the anchor operator sample (abort if missing)
+- `sm.lhco` must exist and be non-empty; repair and rerun its producer if missing
+- `np_o_{g_idx}.lhco` must exist and be non-empty for every globally claimed operator; repair and rerun any missing producer
+- `np_anchor.lhco` must exist and be non-empty, and must match the anchor operator sample
 - `sm_result.json` and every `np_o_{g_idx}_result.json` must exist and contain
   runner metadata including `process_dir`, `outputs[*].banner_path`,
   `outputs[*].cross_section_pb`, and `outputs[*].loaded_lhco_event_count`
 - `event_count_recovery.json` records requested and actual LHCO counts, recovery attempts, and selected output paths for SM and every pure-NP sample
-- Apply [`event-count-recovery.md`](event-count-recovery.md): no sample with actual LHCO count below `10%` of requested `nevents` may pass validation unless recovery has been attempted and the remaining deficiency is recorded as a red flag
+- Apply [`event-count-recovery.md`](event-count-recovery.md): no sample with actual LHCO count below `10%` of requested `nevents` may pass validation; continue recovery or use the structured `phase_fail` rule in `SKILL.md`
 
 ## Phase Transition
 
@@ -143,6 +143,6 @@ self-repair, not user interaction.
 
 After `logger.phase_complete("5")` is called and all LHCO files are copied:
 
-1. **Check validation rules immediately**: If any required LHCO file is missing, abort.
+1. **Check validation rules immediately**: If any required LHCO file is missing, repair its producer and resume the phase.
 2. **If validation passes**: **proceed immediately to Phase 6 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.
