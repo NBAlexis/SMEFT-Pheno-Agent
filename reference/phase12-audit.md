@@ -1,11 +1,12 @@
 # Phase 12: Self-Consistency Audit
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 
-Systematically validate all preceding phases before declaring completion. Phase 12
-must distinguish data/workflow failures from manuscript-writing quality warnings.
+Systematically validate the frozen research objective and expanded deliverables
+contract before declaring completion. Phase 12 must distinguish unmet research
+evidence from manuscript-writing quality warnings.
 Remaining manuscript validation issues do not undo cleanup and do not block
 delivery when the manuscript file exists and the issues are archived.
 
@@ -38,7 +39,22 @@ for example `results/E10_L1000/data/phase3/operator_claims.json`.
 with workflow_step(logger, "12", "check_file_existence"):
 ```
 
-Use the manifest-driven audit helper first:
+Verify that the scientific objective and deliverable rules have not drifted,
+then expand the frozen rules using the actual run manifests:
+
+```bash
+python scripts/research_contract.py verify {workdir}/results/run_config.json
+python scripts/research_contract.py resolve {workdir}/results/run_config.json \
+  --run-root {current_run_root} \
+  --output {current_run_root}/deliverables_resolved.json
+```
+
+`resolve` must finish with no `pending_rules`. Pending selectors mean an
+upstream manifest is missing; repair the responsible phase rather than deleting
+or weakening the rule. Verify every resolved item exists, is non-empty where
+appropriate, and passes its type/schema acceptance checks.
+
+Then use the detailed manifest-driven audit helper:
 
 ```bash
 python scripts/audit_expected_outputs.py {workdir} \
@@ -46,8 +62,8 @@ python scripts/audit_expected_outputs.py {workdir} \
   --json-out results/audit_expected_outputs.json
 ```
 
-Then verify any additional run-specific files exist and have size greater than
-zero. The helper builds the expected operator/scan/algorithm matrix from
+The helper supplies deeper content and consistency checks. It builds the
+expected operator/scan/algorithm matrix from
 `operator_claims.json`, `scan_manifest.json`, and `algorithm_comparison.json`.
 It also parses Phase 5/6 `event_count_recovery.json` and checks merged output
 paths, loaded counts, source banners, merged cross-sections, warnings, and
@@ -170,6 +186,9 @@ with workflow_step(logger, "12", "check_cross_phase_consistency"):
 | Phase 11 replay manifest output matrix == Phase 3-9 required numerical deliverables | Every required numerical JSON/CSV/LHCO/model/plot family has one producing step | Abort |
 | Phase 11 replay computation inputs | Frozen config, external tools/models, packaged code, and raw inputs only; no original Phase 3-9 numerical result is consumed to produce replay results | Abort |
 | Phase 11 data report == replay manifest output matrix | Every declared data file family is described with producer, format/schema, scientific meaning, units where applicable, and integrity metadata | Abort |
+| Current objective == `research_contract.json` | Canonical scientific projection and SHA-256 match | Abort |
+| Resolved deliverables == frozen rules expanded from actual manifests | No pending rule; no rule removed because of technical difficulty | Abort |
+| Every resolved deliverable passes acceptance | Required path exists and satisfies its declared type/schema | Abort |
 
 ## Step 12.4: Audit Log
 
@@ -190,6 +209,8 @@ Format:
 {
   "status": "PASS | WARN | FAIL",
   "checks": {
+    "research_contract": {"passed": 0, "failed": 0, "details": []},
+    "deliverables_contract": {"passed": 0, "failed": 0, "details": []},
     "file_existence": {"passed": 0, "failed": 0, "details": []},
     "numerical_sanity": {"passed": 0, "failed": 0, "details": []},
     "cross_phase_consistency": {"passed": 0, "failed": 0, "details": []}
@@ -208,7 +229,7 @@ logger.phase_complete("12")
 |---|---|---|
 | PASS | No abort, no warnings | Deliver manuscript and audit log |
 | WARN | No abort, has warnings or manuscript issues remaining | Deliver manuscript and audit log |
-| FAIL | Any abort condition | Return audit log; do not claim workflow success |
+| FAIL | Any required contract item remains unmet | Return audit log with the unmet item, attempted repairs, and evidence; do not claim workflow success |
 
 ## Phase Transition
 
@@ -220,5 +241,8 @@ After `logger.phase_complete("12")` is called and `audit_report.json` is written
 
 1. Check final status immediately.
 2. If PASS or WARN, deliver the manuscript and audit log to the user.
-3. If FAIL, return the audit log to the user.
+3. If FAIL, return the audit log and the unresolved contract items. A technical
+   command failure alone is not a final failure; Phase 12 may report final FAIL
+   only after repair and alternative implementation attempts establish that the
+   frozen item cannot be fulfilled.
 4. This is the final phase.

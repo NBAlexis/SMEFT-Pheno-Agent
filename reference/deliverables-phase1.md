@@ -4,7 +4,12 @@ Consumes: user answers only.
 
 Must deliver:
 - `results/run_config.json` on the selected execution target.
-- In SSH/WSL2 mode, a local control copy plus the target copy.
+- `results/research_contract.json`, with the immutable scientific objective and
+  a valid canonical SHA-256 hash, plus the frozen deliverables-template hash.
+- `results/deliverables_contract.json`, bound to the research-objective hash and
+  containing the immutable deliverable expansion template and template hash.
+- In SSH/WSL2 mode, identical local-control and target copies of all three JSON
+  files.
 - A verified MG5 installation on `madgraph_path` with `bin/mg5_aMC` or
   `bin/mg5`, `HEPTools/pythia8/`, `HEPTools/lhapdf6_py3/`, and
   `Delphes/cards/` present.
@@ -16,5 +21,8 @@ Must deliver:
 Manuscript dependency: process list, collider type, beam energies, luminosity,
 detector card, model list, debug mode, algorithms, polarization, and user notes.
 
-If missing or invalid: re-ask the responsible Phase 1 bilingual question. On
-restart, discard prior physics/run fields and ask from `[1/9]`.
+If an input is missing or invalid: re-ask the responsible Phase 1 bilingual
+question. If contract initialization fails, repair the configuration or contract
+write/sync problem; never overwrite a different existing contract. On restart,
+discard prior physics/run fields and ask from `[1/9]`, then create new contracts
+for the restarted study.

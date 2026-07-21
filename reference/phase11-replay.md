@@ -1,16 +1,16 @@
 # Phase 11: Build the Numerical Replay Package
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once
-> started, this phase MUST run to completion without stopping. Only an
-> unrecoverable error, a documented red flag, or explicit user interrupt is a
-> valid stop condition.
+> **Contract priority**: Preserve the frozen research objective and deliverables.
+> Technical failure triggers diagnosis and recovery; stop only on explicit user
+> instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 
 Produce a self-contained, one-command replay package that starts from the frozen
-run configuration and raw/external physics inputs, executes the numerical
-workflow in order, and regenerates every numerical result from Phases 2-9. Also
-produce a Markdown report that describes the data files made by the replay.
+research objective, deliverables contract, run configuration, and raw/external
+physics inputs. It executes the numerical workflow in order and regenerates the
+Phase 2-9 numerical subset of the frozen deliverables contract. Also produce a
+Markdown report that describes the data files made by the replay.
 
 Phase 11 packages and validates the replay; it does not rerun the full study.
 Phase 10 manuscript generation, cleanup, and Phase 12 audit are outside the
@@ -28,6 +28,11 @@ config = load_run_config("{workdir}/results/run_config.json")
 logger = WorkflowLogger(config.workdir)
 logger.phase_start("11")
 ```
+
+Before packaging, run `scripts/research_contract.py verify`. Contract drift must
+be corrected before replay generation. The replay may use different technical
+orchestration from the original run, but it must preserve the same frozen
+scientific objective and produce the same numerical deliverable schemas.
 
 In multi-run mode, create one replay package in each `results/{run_dir}/` root.
 Create and validate the package on the selected Linux execution target. Native
@@ -71,6 +76,7 @@ phase artifacts. Package:
 
 - an immutable copy of `run_config.json`, with secrets replaced by documented
   environment-variable references;
+- immutable copies of `research_contract.json` and `deliverables_contract.json`;
 - the exact Phase 2-9 drivers and helper versions needed to repeat the run;
 - ordered commands, working directories, random seeds, event counts, model and
   detector-card identities, algorithm parameters, and dependency versions;
@@ -121,8 +127,9 @@ POSIX Bash entry point that:
    directory.
 2. Refuses to overwrite a non-empty output directory unless explicit `--resume`
    semantics prove that completed steps match their recorded checksums.
-3. Runs manifest steps in exact Phase 2, 3, 4, 5, 6, 7, 8, 9 order and stops on
-   the first nonzero exit.
+3. Runs manifest steps in exact Phase 2, 3, 4, 5, 6, 7, 8, 9 order. A nonzero
+   command stops that replay attempt with diagnostic state; it does not redefine
+   the frozen replay objective or authorize dropping outputs.
 4. Writes stdout/stderr, command, return code, timestamps, checksums, and step
    state under the replay output so a long run can resume safely.
 5. Uses the locked event counts and recorded random seeds. It must not reduce
@@ -170,8 +177,9 @@ applicable checks:
 3. The observed dry-run phase sequence is exactly 2 through 9.
 4. Every referenced driver/helper exists, is non-empty, and matches its manifest
    checksum.
-5. Every required Phase 2-9 numerical deliverable family has a manifest producer
-   and a corresponding entry in `data_files_report.md`.
+5. Every Phase 2-9 numerical item obtained by resolving the frozen deliverables
+   contract has a manifest producer and a corresponding entry in
+   `data_files_report.md`.
 6. Static inspection confirms no production step reads original Phase 3-9
    result paths.
 

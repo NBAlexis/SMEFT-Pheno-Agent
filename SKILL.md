@@ -20,6 +20,35 @@ normal. Do not downgrade the workflow to a progress summary, run report,
 partial result, informal answer, reduced scan, reduced event count, or HTML
 fallback while LaTeX is available or build errors are recoverable.
 
+## Highest-Priority Contract
+
+At the end of Phase 1, create two immutable contracts from the validated
+`run_config.json`:
+
+- `results/research_contract.json` freezes the scientific question and choices
+  that determine its meaning.
+- `results/deliverables_contract.json` freezes the required evidence and the
+  deterministic rules that expand it for runs, operators, scan points, and
+  algorithms.
+
+These contracts define the task. Do not reduce, reinterpret, replace, or silently
+edit either contract because a tool fails, a standard script is unsuitable, the
+runtime is long, or the environment changes. Technical locations and
+implementations may change when the scientific objective, schemas, provenance,
+and required outputs remain equivalent.
+
+The phases and bundled scripts are the tested standard execution path, not the
+research objective. Start from them because they encode known-good conventions.
+When they fail or do not fit the actual run, inspect the evidence, diagnose the
+cause, and repair, extend, replace, or write scripts as needed. A command, card,
+dependency, runner, parser, or conversion failure is a technical problem to
+solve; it is not by itself evidence that the research failed.
+
+Terminate without completing the contracts only after recording concrete
+evidence that the frozen research objective or a required deliverable is
+impossible to fulfill. Exhaust reasonable unattended recovery, alternative
+implementations, and scientifically equivalent environment migration first.
+
 ## Operating Modes
 
 This skill has exactly two modes.
@@ -37,25 +66,23 @@ Rules:
 
 ### Execution Mode
 
-Execution Mode begins only after Phase 1 writes a valid `run_config.json`. From Phase 2 onward, user interaction is disabled.
+Execution Mode begins only after Phase 1 writes a valid `run_config.json` and
+initializes both frozen contracts. From Phase 2 onward, user interaction is
+disabled.
 
-#### Stop / Pause Gate
+#### Contract-Preserving Autonomy
 
-In Execution Mode, before stopping, pausing, or asking the user any question, classify the reason.
+In Execution Mode, continue autonomously toward the frozen contracts. Runtime,
+repeated failures, a broken standard script, a missing package, a Delphes-card
+dependency, or an unfamiliar technical problem is not a reason to ask the user
+what to do. Investigate logs and artifacts, test hypotheses, preserve failed
+attempt evidence, and choose the next technically sound recovery.
 
-Allowed reasons only: explicit user stop; proven unrecoverable error; red flag after a phase completion unit; durable handoff with no user decision required.
-
-Forbidden reasons: runtime estimate; repeated work; capability already validated; asking whether to continue.
-
-If the reason is forbidden, continue automatically. Do not ask the user.
-
-#### Serial Phase Artifact Rule
-
-During Phase N, do not create, modify, or execute artifacts for Phase N+1 or later.
-
-Allowed waiting work: monitor current phase jobs, update current phase progress manifests, inspect current phase logs, retry current phase failures, and clean current phase intermediates after required outputs are secured.
-
-Future-phase code, result files, plots, models, manuscripts, or audit artifacts may be created only after the current phase completes.
+Follow the phase order by default because downstream artifacts depend on
+upstream results. It is acceptable to create diagnostic code, adapters, or
+recovery helpers whenever they are needed to unblock the current scientific
+deliverable. Record deviations from the standard path and why the replacement
+is scientifically equivalent.
 
 #### Phase-End Invariant Self-Check
 
@@ -66,7 +93,8 @@ and continue without asking the user.
 
 #### Phase Delivery Gate
 
-Before `logger.phase_complete("N")`, read the deliverable file linked by the
+Before `logger.phase_complete("N")`, verify the relevant subset of the frozen
+deliverables contract and read the deliverable file linked by the
 current phase reference (for example, Phase 5 reads only
 `reference/deliverables-phase5.md`). Phase 1 missing intake fields must be
 re-asked; Phases 2-12 missing deliverables must be repaired or resumed
@@ -87,70 +115,27 @@ Delivery definitions:
   `algorithm_comparison.json["anchor"]`. Use the same key for model files,
   score directories, fit files, plots, and manuscript evidence.
 
-## SUPREME RULE: Execution Continuity
-
-Once Execution Mode starts, keep running until Phase 12 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
-
-Rules:
-- Do not ask whether to continue.
-- Do not ask whether to reduce event counts.
-- Do not ask what to do with zero cross-sections.
-- Do not stop because a command is slow.
-- Do not stop because the estimated runtime is hours, days, weeks, or months.
-- Do not declare a phase "impractical for an interactive session".
-- Do not alter physical parameters for speed or convenience.
-- Do not replace required artifacts or the scientific manuscript with a run
-  report, progress summary, partial result, or informal explanation.
-- Recover from MG5, Delphes, ROOT, root2lhco, filesystem, and parsing issues when a conservative recovery is possible; otherwise stop only with concrete evidence of an unrecoverable error.
-
 ## Long-Run Execution Contract
 
-MadGraph/Delphes scans are allowed to run for 4-8 hours, several days, several weeks, or more than two months. Runtime length is normal physics-workflow behavior, not a red flag.
+Runtime from hours to months is normal. Never change physics, event counts,
+operators, scan points, or algorithms because of time estimates. Use
+`scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or a site
+scheduler when work may outlive the foreground session, and record resumable job
+state plus stdout/stderr paths.
 
-Hard rules:
-- Time estimates may be written to logs, but they must never change the physics plan, event counts, operator list, scan grid, algorithms, or phase transitions.
-- "Interactive session impracticality" is not a stop condition. If the foreground session is unsuitable for the expected duration, switch to durable execution instead of halting.
-- Do not ask the user whether to continue, split the scan, reduce `nev_scan`, enable debug mode, drop operators, or run fewer scan points because of runtime.
-- If a command may outlive the current agent session, start it with a durable mechanism on the selected execution target: `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or a site batch scheduler when available.
 - Native Windows is not a local execution mode for this workflow. On Windows, use WSL2 or SSH as the execution target.
-- Durable execution must write enough state to resume: job name, PID/job id, command, working directory, stdout/stderr paths, and a phase progress manifest under `{workdir}/results/`.
 - Storage pressure may trigger documented cleanup of intermediate ROOT/LHE/HEPMC files after required outputs are copied. Storage pressure must not trigger event-count reduction.
 
 ## Workflow Logging Contract
 
-`{workdir}/results/workflow.log` is mandatory from Phase 2 onward.
+`{workdir}/results/workflow.log` is the mandatory resume and bug-report record
+from Phase 2 onward. Initialize it before Phase 2 work. Record skill version and
+commit, phase/step boundaries, commands, cwd, return codes, outputs, retries,
+exceptions, and stdout/stderr paths.
 
-Rules:
-- The first action in Phase 2 must initialize and validate the log with `scripts/workflow_logger.py {workdir} --touch`, or the target-aware equivalent through `scripts/remote_exec.py`.
-- Every `workflow.log` record must include `skill_version`, `skill_commit`, and `skill_commit_source`. `skill_version` is read from the skill `VERSION` file as a string; `skill_commit` is read dynamically from `git rev-parse --short HEAD` when `.git` is available.
-- Every phase must append `phase_start` before any filesystem, subprocess, download, install, or analysis operation.
-- Every phase must append `phase_complete` only after its completion unit is satisfied, or `phase_fail` only for a proven unrecoverable failure.
-- Every execution phase must contain step records. A phase with only `phase_start`/`phase_complete` and no `level="step"` records is an invalid bug-report log, even if resume technically works.
-- Repeated `phase_start` for the same phase before a completion/failure record must be logged as a recovery/resume anomaly with the reason.
-- Do not create workflow files with heredoc markers, shell EOF redirection, or shell clobber redirection. Forbidden patterns include `cat <<EOF`, `python <<EOF`, `python - <<EOF`, `> EOF`, `>> EOF`, `> !`, and `>!`.
-- A file literally named `EOF` or `!` in `{workdir}` or `{workdir}/results` is a logging/bootstrap violation. Stop the current shell-writing approach, initialize `workflow.log`, record the anomaly, and continue using Python file APIs or bundled scripts.
-- Do not rely on conversation text as a log. The JSONL `workflow.log` is the resume source of truth.
-- `workflow.log` is also the bug-report source of truth. Records must include enough detail to diagnose failures after publication: commands or script arguments, target paths, return codes, output paths, retry attempts, exception type, traceback, and relevant stdout/stderr log paths.
-- Prefer `run_logged_subprocess(...)` from `scripts/workflow_logger.py` for subprocesses so command arguments, cwd, return code, duration, stdout/stderr paths, and output tails are recorded consistently.
-
-## Required Inputs
-
-Phase 1 must collect and validate:
-
-| Field | Meaning |
-|---|---|
-| `execution` | Where commands run: current Linux/Unix shell, SSH target, or WSL2 target |
-| `madgraph_path` | Absolute path to MadGraph5, or auto-installed path |
-| `workdir` | Directory where all workflow outputs are written |
-| `process` | Physics process only; no `NP=`, `QED=`, or `QCD=` suffix |
-| `process_validation`, `madspin` | Asymptotic-state validation; auto-enable MadSpin for final-state `t/t~/w+/w-/z` |
-| `models` | One or more UFO model names, preserving user order |
-| `energy` | Symmetric-collider center-of-mass energy metadata in TeV; null for ep |
-| `run_configurations[*].ebeam1/ebeam2` | MG5 beam energies in GeV used for event generation |
-| `luminosity` | Integrated luminosity in fb^-1; scalar or list matching run configurations |
-| `cutexperiment_path` | Existing or cloned CutExperiment path |
-| `delphes_card` | Recommended or user-selected detector card |
-| `debug`, `algorithms`, `polarization`, `analysis_notes` | Optional settings from `[9/9]` |
+- Every phase must append `phase_complete` only after its contract subset is
+  satisfied. Write `phase_fail` only when the frozen contract is demonstrably
+  impossible, not merely when a command or standard script fails.
 
 ## Locked Runtime Contract
 
@@ -166,38 +151,31 @@ Phase 1 writes these locked event counts to `run_config.json`; every phase must 
 
 Only `debug=true`, explicitly collected in Phase 1, may select the debug values. No later phase may change them.
 
-## Execution Target Contract
+## Execution Target
 
-Phase 1 determines where commands execute and writes it to `run_config.json`.
+Phase 1 records `local`, `ssh`, or `wsl2` execution. Treat target and tool paths
+as mutable technical state, not as the scientific objective.
+Use `scripts/remote_exec.py` as the standard target-aware adapter for SSH/WSL2.
+If it is the source of a technical failure, repair it or use an equivalent
+logged execution method that preserves target semantics and provenance.
 
-| Mode | Meaning | Path interpretation |
-|---|---|---|
-| `local` | Run commands in the current Linux/Unix environment; unavailable on native Windows | local filesystem paths |
-| `ssh` | Run commands on a remote Linux host through SSH | paths on the SSH host |
-| `wsl2` | Run commands inside a local WSL2 Linux distro | paths inside WSL2 |
-
-From Phase 2 onward, do not hand-write ad-hoc SSH or WSL command prefixes. Use `scripts/remote_exec.py` for target-aware command execution when `execution.mode` is `ssh` or `wsl2`.
-
-In SSH/WSL2 mode, Phase 1 must write two identical `run_config.json` copies: a local control copy readable by the agent, and the target copy at `{workdir}/results/run_config.json`. The local control copy is used only for orchestration; workflow outputs remain on the selected execution target.
+In SSH/WSL2 mode, keep identical local-control and target copies of
+`run_config.json` and both frozen contracts.
 
 ## Phase Completion Contracts
 
-Every phase has a completion unit. Red flags are evaluated only after that unit completes.
+Every phase must satisfy its frozen contract subset before completion:
 
-| Phase | Completion unit | Early stop allowed? |
-|---|---|---|
-| 2 | All environment checks finish | Only unrecoverable missing dependency or invalid config |
-| 3 | Every coefficient in every requested model is tested | No. Individual `sigma=0` is a valid result |
-| 4 | SM baseline and coefficient range are written | Only `cs_sm=0` or MG5 failure |
-| 5 | Pure SM and anchor NP samples are generated | Only unrecoverable generation/conversion failure |
-| 6 | All 11 scan points for all claimed operators are processed | No runtime or progress-only red flag |
-| 7 | All selected ML algorithms are trained and recorded | No early algorithm filtering |
-| 8 | Threshold optimization and fits are attempted for required algorithms/operators | Fit issues are recorded unless unrecoverable |
-| 9 | Constraints are computed for S=2,3,5 where mathematically possible | Numerical red flags are recorded |
-| 10 | Manuscript is generated | Use HTML fallback only if no usable local or target LaTeX exists |
-| Cleanup | MG5 process folders/orders are moved into results | Only filesystem failure |
-| 11 | One-command replay package and data-file report are written | Only unrecoverable packaging or validation failure |
-| 12 | Audit file is written | Final manuscript and replay package only |
+| Phase | Completion unit |
+|---|---|
+| 2 | Environment and contract verification |
+| 3 | Every coefficient in every requested model tested; zero-result branch reported |
+| 4-6 | Baselines, per-operator ranges, pure samples, and all 11-point scans |
+| 7-9 | Frozen algorithm strategy, fits, and S=2,3,5 constraints |
+| 10 | Publication manuscript and evidence |
+| Cleanup | Process/order provenance archived |
+| 11 | One-command numerical replay and data-file report |
+| 12 | Fully resolved deliverables contract and final audit |
 
 ### Phase 3 Loop Lock
 
@@ -234,79 +212,23 @@ Each phase reference links its own `deliverables-phaseN.md` completion contract.
 
 ## Scripts
 
-Use bundled scripts for deterministic pieces. For any MG5 event-generation
-operation, use `scripts/run_mg5_config.py` or the recovery wrapper around it;
-do not hand-write shell snippets, MG5 order files, or direct `mg5_aMC` calls in
-phase code.
+Use bundled scripts as the standard path for deterministic and fragile pieces.
+When they work, prefer them to reduce avoidable variation. They are not an
+implementation restriction: inspect, patch, wrap, or replace them, and write
+project-specific scripts when the run requires it. Any alternative must preserve
+the frozen objective, required output schemas, physics settings, seeds/event
+counts, logs, checksums, and provenance. Package non-bundled production code in
+Phase 11 so the study remains replayable.
 
-| Script | Purpose |
-|---|---|
-| `scripts/load_run_config.py` | Load/validate `run_config.json` |
-| `scripts/install_mg5.py` | Install MG5 after the agent dynamically resolves the Launchpad download URL |
-| `scripts/install_cutexperiment.py` | Clone/validate CutExperiment |
-| `scripts/remote_exec.py` | Run commands locally, over SSH, or inside WSL2 |
-| `scripts/sync_to_target.py` | Copy local files/directories such as `run_config.json` or bundled UFO models to SSH/WSL2 targets |
-| `scripts/sync_from_target.py` | Copy target files/directories back to local disk for local-only tooling such as LaTeX |
-| `scripts/durable_exec.py` | Start/status long-running commands without relying on an interactive session |
-| `scripts/run_mg5.py` | Low-level MG5 order-file helper for maintaining/debugging the config runner |
-| `scripts/run_mg5_config.py` | Run one MG5 job from JSON, including order generation, Delphes conversion, banner parsing, and loaded-count metadata |
-| `scripts/beam_energy.py` | Compute manuscript-only displayed `sqrt(s)` from explicit `ebeam1`/`ebeam2` |
-| `scripts/double_check_zero_cross_section.py` | Confirm zero cross-section claims from banner, MG5 logs, and LHE-like outputs |
-| `scripts/extract_weighted_order.py` | Extract conservative MG5 `WEIGHTED` order from SM/NP process diagrams and UFO coupling-order hierarchies |
-| `scripts/count_lhco_events.py` | Count actual LHCO events with CutExperiment |
-| `scripts/merge_lhco.py` | Merge LHCO recovery attempts and compute loaded-count-weighted merged cross-sections |
-| `scripts/recover_lhco_count.py` | Orchestrate event-count recovery across survey-profile attempts |
-| `scripts/parse_param_card.py` | Parse coefficient blocks |
-| `scripts/extract_cross_section.py` | Parse MG5 banner cross-sections |
-| `scripts/setup_delphes_card.py` | Copy Delphes cards/dependencies |
-| `scripts/convert_root_to_lhco.py` | Convert ROOT outputs to LHCO |
-| `scripts/workflow_logger.py` | Append-only phase/step log |
-| `scripts/read_results.py` | Typed JSON result readers |
-| `scripts/audit_expected_outputs.py` | Build Phase 12 expected-output checks from manifests |
+Key entry points are `load_run_config.py`, `research_contract.py`,
+`remote_exec.py`, `durable_exec.py`, `run_mg5_config.py`,
+`recover_lhco_count.py`, `workflow_logger.py`, and
+`audit_expected_outputs.py`. Read the current phase reference for the smaller
+parsers, conversion helpers, installation tools, and expected schemas.
 
 ## Output Layout
 
-Single run:
-
-```text
-results/
-  run_config.json
-  workflow.log
-  data/
-  plots/
-  algorithms/
-  mg5_processes/
-  orders/
-  replay/
-    replay.sh
-    replay_manifest.json
-    replay_validation.json
-    data_files_report.md
-  audit_report.json
-  manuscript.pdf if target/local LaTeX exists, otherwise manuscript.html
-```
-
-Multi-run:
-
-```text
-results/
-  run_config.json
-  E10_L1000/
-    workflow.log
-    data/
-    plots/
-    algorithms/
-    mg5_processes/
-    orders/
-    replay/
-      replay.sh
-      replay_manifest.json
-      replay_validation.json
-      data_files_report.md
-    audit_report.json
-    manuscript.pdf if target/local LaTeX exists, otherwise manuscript.html
-  E14_L3000/
-    ...
-```
-
-All paths are relative to `workdir`. Never write workflow outputs into the skill directory.
+Keep global contracts under `{workdir}/results/`; keep single-run outputs there
+or multi-run outputs under `results/{run_dir}/`. The frozen deliverables template
+in [`reference/deliverables-contract-template.json`](reference/deliverables-contract-template.json)
+is the authoritative layout. Never write workflow outputs into the skill folder.

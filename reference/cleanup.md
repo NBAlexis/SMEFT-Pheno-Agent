@@ -1,6 +1,6 @@
 # Cleanup: Collect MG5 Process Folders
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 After all event generation is complete and results have been extracted to `results/data/`, move the MG5 process directories from `mg5path` to the working directory to prevent `mg5path` from accumulating unmanaged folders across multiple runs.

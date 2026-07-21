@@ -1,6 +1,6 @@
 # Phase 5: Generate Pure SM and Pure NP Samples
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 Phase 5 can be long-running because it produces pure NP samples for every
@@ -36,12 +36,12 @@ c_scan = coefficient_ranges["operators"][f"o_{global_idx}"]["c_scan"]
 
 ## Step 5.1: Pure SM Sample
 
-1. Build a `scripts/run_mg5_config.py` JSON with `process_mode="pure_sm"`,
+1. For the standard path, build a `scripts/run_mg5_config.py` JSON with `process_mode="pure_sm"`,
    `nevents = {nev_sm}`, output label `sm`, and
    `result_json = results/data/phase5/sm_result.json`.
 2. Run it through the event-count recovery wrapper when the loaded LHCO count is
    below the recovery threshold.
-3. Post-processing is runner-owned: Delphes card setup, ROOT-to-LHCO conversion,
+3. The standard runner handles Delphes card setup, ROOT-to-LHCO conversion,
    banner parsing, stdout/stderr capture, and actual LHCO counting are recorded
    in the result JSON.
 4. Apply event-count recovery from [`event-count-recovery.md`](event-count-recovery.md), then clean large files.
@@ -56,8 +56,8 @@ results/data/phase5/sm_result.json
 with workflow_step(logger, "5", "generate_sm_sample",
                    inputs={"anchor_model": anchor_model,
                            "nevents": config.locked_event_counts.nev_sm}):
-    # Required action: run scripts/run_mg5_config.py (or recovery wrapper)
-    # from a JSON config and preserve the result JSON/stdout/stderr paths.
+    # Standard action: run scripts/run_mg5_config.py (or recovery wrapper).
+    # A custom recovery must preserve equivalent result/stdout/stderr provenance.
 ```
 
 > **Multi-run note:** In multi-run mode, all `results/` paths above are prefixed with the run subdirectory (e.g., `results/E10_L1000/data/phase5/...`). See [`SKILL.md`](../SKILL.md) Rule 11.
@@ -71,12 +71,12 @@ CSV release, score-distribution histograms, and manuscript evidence.
 
 For each operator `o_{g_idx}`:
 
-1. Build a `scripts/run_mg5_config.py` JSON using that operator's source model,
+1. For the standard path, build a `scripts/run_mg5_config.py` JSON using that operator's source model,
    `process_mode="pure_np"`, `target_coefficient.index = anoinput_idx`,
    `coefficient_mode="c_scan"`, that operator's own Phase 4 `c_scan`, and
    `nevents = {nev_np}`. Set
    `result_json = results/data/phase5/np_o_{g_idx}_result.json`.
-2. The runner sets only that target coefficient nonzero and sets the other
+2. The standard runner sets only that target coefficient nonzero and sets the other
    coefficients in the same UFO coefficient block to `0.0`.
 3. Post-process and apply event-count recovery from
    [`event-count-recovery.md`](event-count-recovery.md)
@@ -108,8 +108,8 @@ for op_key, claim in operator_claims.items():
                                "operator": claim["name"],
                                "c_scan": coefficient_ranges["operators"][op_key]["c_scan"],
                                "nevents": config.locked_event_counts.nev_np}):
-        # Required action: run scripts/run_mg5_config.py (or recovery wrapper)
-        # from a JSON config and preserve the result JSON/stdout/stderr paths.
+        # Standard action: run scripts/run_mg5_config.py (or recovery wrapper).
+        # Custom code must preserve coefficient isolation and output provenance.
 
 logger.phase_complete("5")
 ```

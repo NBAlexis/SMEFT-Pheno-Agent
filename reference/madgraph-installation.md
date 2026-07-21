@@ -1,6 +1,6 @@
 # MadGraph5 Automatic Installation
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Overview
 
@@ -80,9 +80,9 @@ Result: `{install_dir}/MG5_aMC_v3_5_15/` with `bin/mg5_aMC` inside.
 
 ### Step 3: Install MG5 Internal Dependencies
 
-Use `scripts/install_mg5.py` to install MG5 internal dependencies. The script
-issues the required MG5 `install` commands internally; do not hand-write an
-MG5 order file for this step.
+Use `scripts/install_mg5.py` as the standard installer for MG5 internal
+dependencies. If it fails, inspect its logs and repair it or run equivalent MG5
+installation commands while recording exact commands, versions, and paths.
 
 MG5 will:
 - Download and compile Pythia8 under `HEPTools/pythia8/`

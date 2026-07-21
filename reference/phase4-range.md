@@ -1,6 +1,6 @@
 # Phase 4: Estimate Per-Operator Coefficient Ranges
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 
@@ -41,7 +41,7 @@ results/data/phase3/cross_sections.json
 
 ## Step 4.1: Generate SM Baseline
 
-Generate the SM baseline through `scripts/run_mg5_config.py` using
+Generate the SM baseline through `scripts/run_mg5_config.py` as the standard path using
 `process_mode="pure_sm"` and `nevents = {nev_phase4}`. Read `cs_sm` from
 `outputs[0].cross_section_pb` in the runner result JSON.
 
@@ -63,7 +63,9 @@ Generate the SM baseline through `scripts/run_mg5_config.py` using
 }
 ```
 
-Do not infer banner names or replace runner/parser failures with `cs_sm = 0`.
+Never replace runner/parser failures with `cs_sm = 0`. If the runner cannot
+complete, inspect its process directory and logs, repair or replace the failing
+step, and emit equivalent baseline result/provenance fields.
 Keep the runner's `process_dir` and create-process metadata in
 `sm_baseline_result.json`; Phase 6 uses the process folder as one input to
 `scripts/extract_weighted_order.py`.
@@ -246,6 +248,9 @@ self-repair, not user interaction.
 
 After `logger.phase_complete("4")` is called and all JSON outputs are written:
 
-1. Check validation rules immediately. If `cs_sm <= 0` or any operator range is invalid, abort with a red flag.
+1. Check validation rules immediately. If `cs_sm <= 0` or any operator range is
+   invalid, diagnose generation/parsing/model issues, independently verify zero
+   claims, and repair or replace the failing implementation. Terminate only if
+   the required baseline/range is proven impossible for the frozen objective.
 2. If validation passes, proceed immediately to Phase 5 without stopping.
 3. Do not summarize results, ask for confirmation, present options, or wait for user input.

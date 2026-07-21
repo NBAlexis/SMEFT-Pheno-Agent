@@ -131,7 +131,10 @@ MG5 auto-install flow:
 4. Run `python scripts/install_mg5.py {install_dir} --url {download_url} --name {extracted_name}` through the selected execution target.
 5. If exit code `1`, show the missing system dependency command and wait for the user to reply `continue`; then retry.
 6. If exit code `2`, retry download up to three times with exponential backoff.
-7. If exit code `3` or `4`, report the specific log/component and abort Phase 1.
+7. If exit code `3` or `4`, inspect the specific log/component, repair the
+   installer or use an equivalent installation path, and rerun the full stack
+   validation. Re-ask for a different target only when the current target is
+   proven unable to host the required stack.
 8. Store the printed `MadGraph5 path:` as `madgraph_path` and set `auto_installed_mg5=true`.
 
 ### [2/9] `workdir`
@@ -439,4 +442,24 @@ Run directory naming:
 - Replace decimal points with underscores.
 - Example: `13.6, 3000` -> `E13_6_L3000`.
 
-After writing `run_config.json`, verify it is valid JSON and proceed immediately to Phase 2. Do not ask for confirmation.
+After writing `run_config.json`, verify it is valid JSON, then freeze the task:
+
+```bash
+python scripts/research_contract.py init {workdir}/results/run_config.json
+```
+
+This writes `research_contract.json` and `deliverables_contract.json` beside
+`run_config.json`. The research contract includes scientific choices only; it
+does not freeze execution mode, host names, MG5/CutExperiment/workdir paths,
+virtual environments, schedulers, or implementation scripts. The deliverables
+contract freezes both fixed outputs and deterministic expansion rules for each
+run, claimed operator, scan label, and trained algorithm.
+
+If either contract already exists, `init` must verify identical content and
+refuse to overwrite a different contract. In SSH/WSL2 mode, create the contracts
+from the local control copy, then sync the same three JSON files to the target
+`{workdir}/results/` directory. Verify their SHA-256 fields on both sides.
+
+Do not proceed to Phase 2 until `run_config.json`, `research_contract.json`, and
+`deliverables_contract.json` all exist and agree locally and on the selected
+target. Then proceed immediately without asking for confirmation.

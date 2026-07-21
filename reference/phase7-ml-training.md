@@ -1,6 +1,6 @@
 ﻿# Phase 7: Train ML Event Selection Strategy
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 Train and compare ML algorithms to distinguish SM from NP events. In multi-model
@@ -452,6 +452,11 @@ self-repair, not user interaction.
 
 After `logger.phase_complete("7")` is called and all algorithms are saved:
 
-1. **Check validation rules immediately**: If no algorithm achieves AUC > 0.5, abort with red flag.
+1. **Check validation rules immediately**: If no algorithm achieves AUC > 0.5,
+   inspect labels, feature extraction, leakage guards, train/test construction,
+   hyperparameters, seeds, and model code; repair and rerun the frozen algorithm
+   strategy. If valid data genuinely has no separability, preserve the complete
+   negative result and determine downstream outputs without silently dropping
+   algorithms or changing the research objective.
 2. **If validation passes**: **proceed immediately to Phase 8 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

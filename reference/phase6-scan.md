@@ -1,6 +1,6 @@
 ﻿# Phase 6: Generate SM+NP Coefficient Scan Samples
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 
@@ -107,11 +107,15 @@ need the 11 numeric coefficient values.
 
 ## Step 6.1: Create Scan Process Directories
 
-Do not create scan process directories by hand. For each operator scan, write a
-runner JSON and call `scripts/run_mg5_config.py` or
-`scripts/recover_lhco_count.py`. The runner creates the process directory,
+For each operator scan, the standard path is to write a runner JSON and call
+`scripts/run_mg5_config.py` or `scripts/recover_lhco_count.py`. The runner creates the process directory,
 writes MG5 orders internally, captures stdout/stderr, and records the chosen
 process folder in the result JSON.
+
+If this path fails, inspect the process, card dependencies, MG5 orders, and logs.
+Repair the runner or use a custom process directory/order/launch implementation
+that preserves the 11-point scan, weighted-order guard, naming schema, and full
+result provenance.
 
 Before each SM+NP scan process is created, call
 `scripts/extract_weighted_order.py` on the Phase 4 pure-SM process folder and
@@ -139,8 +143,9 @@ with workflow_step(logger, "6", f"scan_operator_o_{g_idx}",
 ```
 
 1. Look up its source model and anoinput index from `operator_claims.json`.
-2. Do not choose or reuse a process directory manually; the runner records the
-   created process directory in its result JSON.
+2. With the standard runner, use its fresh process directory and recorded path.
+   A custom recovery may manage the directory explicitly but must never reuse a
+   contaminated failed run and must record the chosen path.
 3. Read this operator's own Phase 4 `c_scan`.
 4. Build the MG5 scan expression without expanding the 11 values:
 
@@ -236,10 +241,12 @@ If MG5 fails or ROOT-to-LHCO conversion fails for any operator scan:
    directory itself.
 4. Rename the runner-created process directory to a `_broken_{timestamp}` suffix
    if the runner has not already done so.
-5. Recreate a fresh process directory through the runner.
+5. Recreate a fresh process directory through the runner or an equivalent
+   diagnosed recovery path.
 6. Re-run the scan launch for the same operator.
-7. Repeat until success unless a proven unrecoverable error or explicit user
-   stop occurs.
+7. Repeat while testing new evidence-based fixes. Stop only for explicit user
+   instruction or documented proof that the frozen scan deliverables are
+   impossible, not because the standard runner exhausted its own retries.
 
 Each operator scan is an independent retry scope. An earlier operator's success
 does not protect a later operator from needing its own retry.
@@ -319,7 +326,7 @@ representative Feynman diagrams.
 | `runs[-11:]` heuristic | Use set-difference to identify new runs |
 | Re-launching on existing runs | Remove large temps, rename the process directory, create fresh |
 | Using model-internal index in filename | Always use global index `o_{g_idx}` |
-| Handwriting or reusing scan process directories | Let the runner create a fresh process directory for each operator scan |
+| Reusing a failed scan process directory | Create a fresh directory with the runner or equivalent custom orchestration and record it |
 | Reusing a failed process folder | Rename it to `_broken_{timestamp}` and create a fresh process folder |
 | Stopping because runtime is hours, weeks, or months | Start durable execution and continue/resume |
 | Asking the user to reduce events or confirm continuation | Never ask during Phase 6; event counts are locked |
@@ -336,6 +343,6 @@ self-repair, not user interaction.
 
 After all operators are scanned and all LHCO files are copied:
 
-1. Check validation immediately. If any scan point is missing, continue/resume/retry from `phase6_progress.json`; if any scan point has actual LHCO count below `10%` of `nev_scan`, complete the event-count recovery ladder before declaring a red flag. Abort only for concrete unrecoverable filesystem, physics-generation, or exhausted-recovery errors.
+1. Check validation immediately. If any scan point is missing, continue/resume/retry from `phase6_progress.json`; if any scan point has actual LHCO count below `10%` of `nev_scan`, complete the standard recovery ladder, diagnose its failures, and try contract-preserving alternatives. Final termination requires evidence that the frozen scan deliverable is impossible.
 2. If validation passes, proceed immediately to Phase 7 without stopping.
 3. Do not summarize results, ask for confirmation, present options, or wait for user input.

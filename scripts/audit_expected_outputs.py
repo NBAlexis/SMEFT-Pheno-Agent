@@ -82,6 +82,91 @@ def _exists_nonempty(path: str) -> Dict[str, Any]:
     }
 
 
+def _resolved_deliverable_checks(root: str) -> List[Dict[str, Any]]:
+    rel_path = "deliverables_resolved.json"
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return [{
+            "rel_path": rel_path,
+            "severity": "abort",
+            "source": "frozen_deliverables_contract",
+            "path": path,
+            "ok": False,
+            "error": "Missing resolved deliverables contract",
+        }]
+    try:
+        contract = _load_json(path)
+    except Exception as exc:
+        return [{
+            "rel_path": rel_path,
+            "severity": "abort",
+            "source": "frozen_deliverables_contract",
+            "path": path,
+            "ok": False,
+            "error": f"Could not parse resolved deliverables contract: {exc}",
+        }]
+
+    checks: List[Dict[str, Any]] = []
+    pending = contract.get("pending_rules") or []
+    checks.append({
+        "rel_path": rel_path + ":pending_rules",
+        "severity": "abort",
+        "source": "frozen_deliverables_contract",
+        "path": path,
+        "ok": contract.get("status") == "resolved" and not pending,
+        "status": contract.get("status"),
+        "pending_rules": pending,
+    })
+
+    for item in contract.get("resolved") or []:
+        declared = item.get("path", "<missing>")
+        full_path = item.get("absolute_path")
+        kind = item.get("type", "file")
+        record = {
+            "rel_path": declared,
+            "severity": "abort",
+            "source": "frozen_deliverables_contract",
+            "path": full_path,
+            "declared_type": kind,
+            "rule_id": item.get("rule_id"),
+        }
+        try:
+            if not isinstance(full_path, str) or not full_path:
+                raise ValueError("missing absolute_path")
+            if kind == "glob":
+                matches = [candidate for candidate in glob.glob(full_path) if os.path.getsize(candidate) > 0]
+                record.update({"ok": bool(matches), "matched_paths": matches})
+            elif kind == "directory":
+                record["ok"] = os.path.isdir(full_path)
+            elif kind == "nonempty_directory":
+                entries = os.listdir(full_path) if os.path.isdir(full_path) else []
+                record.update({"ok": bool(entries), "entry_count": len(entries)})
+            elif kind == "json":
+                _load_json(full_path)
+                record.update(_exists_nonempty(full_path))
+            elif kind == "jsonl":
+                with open(full_path, "r", encoding="utf-8-sig") as handle:
+                    lines = [line for line in handle if line.strip()]
+                for line in lines:
+                    json.loads(line)
+                record.update({
+                    "ok": bool(lines),
+                    "exists": True,
+                    "size": os.path.getsize(full_path),
+                    "record_count": len(lines),
+                })
+            elif kind == "executable":
+                record.update(_exists_nonempty(full_path))
+                record["executable"] = os.access(full_path, os.X_OK)
+                record["ok"] = record["ok"] and record["executable"]
+            else:
+                record.update(_exists_nonempty(full_path))
+        except Exception as exc:
+            record.update({"ok": False, "error": str(exc)})
+        checks.append(record)
+    return checks
+
+
 def _operators(root: str) -> List[str]:
     claims_path = os.path.join(root, "data", "phase3", "operator_claims.json")
     if not os.path.exists(claims_path):
@@ -1140,6 +1225,7 @@ def audit_expected_outputs(
     checks.extend(_phase10_manuscript_checks(root, required_ids_json=phase10_required_ids_json))
 
     checks.extend(_manuscript_format_checks(root))
+    checks.extend(_resolved_deliverable_checks(root))
 
     failures = [c for c in checks if not c["ok"] and c["severity"] == "abort"]
     warnings = [c for c in checks if not c["ok"] and c["severity"] == "warn"]

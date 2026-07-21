@@ -1,6 +1,6 @@
 # Model Dependencies (UFO Models)
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 The `dependency/` directory in the skill repository contains SMEFT UFO (Universal FeynRules Output) models that can be automatically copied to the user's MadGraph5 installation when the requested model is not found in `{mg5path}/models/`.
 

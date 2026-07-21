@@ -1,14 +1,15 @@
 # Phase 2: Environment Validation
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE: once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 
 Verify all non-MG5 dependencies exist before starting the workflow. Phase 1 has
 already validated the MG5 stack. Phase 2 reads the local control copy of
-`run_config.json` produced by Phase 1. In SSH/WSL2 mode, the same JSON must
-also exist at `{workdir}/results/run_config.json` on the selected target. No
-parameter should be sourced from conversation history or user interaction.
+`run_config.json` and the two frozen contracts produced by Phase 1. In SSH/WSL2
+mode, the same three JSON files must also exist at `{workdir}/results/` on the
+selected target. No parameter should be sourced from conversation history or
+user interaction.
 
 ## Prerequisite
 
@@ -35,7 +36,10 @@ For target-aware commands, use:
 python scripts/remote_exec.py --config {local_run_config} --cwd {target_cwd} -- {command}
 ```
 
-Do not hand-write ad-hoc SSH or WSL prefixes in later phases. In SSH and WSL2 modes, do not validate target paths with local `os.path.exists`.
+Use `remote_exec.py` as the standard SSH/WSL adapter. A custom or repaired
+adapter is allowed when it preserves command, cwd, return-code, and stdout/stderr
+provenance. In SSH and WSL2 modes, do not validate target paths with local
+`os.path.exists`.
 
 Native Windows is not a valid `local` execution target for MG5. If `config.execution.mode == "local"` on Windows, `load_run_config.py` must fail and Phase 1 must be rerun with WSL2 or SSH.
 
@@ -106,7 +110,16 @@ When resuming, still run all Phase 2 validation steps every time.
    with workflow_step(logger, "2", "validate_run_config"):
        config = load_run_config(local_run_config)
    ```
-   Verify `execution.mode` is `local`, `ssh`, or `wsl2`. For SSH mode, verify `execution.ssh_target` exists. For SSH/WSL2 mode, verify `remote_exec.py -- true` returns 0 and that the target copy `{workdir}/results/run_config.json` exists.
+   Verify `execution.mode` is `local`, `ssh`, or `wsl2`. For SSH mode, verify `execution.ssh_target` exists. For SSH/WSL2 mode, verify `remote_exec.py -- true` returns 0 and that the target copies of all three Phase 1 contract files exist.
+
+   Verify the frozen task before dependency work:
+   ```bash
+   python scripts/research_contract.py verify {workdir}/results/run_config.json
+   ```
+   A changed execution target, host path, MG5 path, CutExperiment path, workdir,
+   or implementation script is allowed when verification still passes. A change
+   to the scientific objective or deliverable template is contract drift and
+   must be reverted to the frozen value, not accepted as a recovery shortcut.
 
 2. **Consume the Phase 1 MG5 validation**
    Phase 1 already verifies the full MG5 stack, including `bin/mg5_aMC` or
@@ -128,7 +141,10 @@ When resuming, still run all Phase 2 validation steps every time.
    ```bash
    python scripts/sync_to_target.py --config {local_run_config} {skill_dir}/dependency/{model} {madgraph_path}/models/{model}
    ```
-   Then re-check the model path on the selected target. If the model is missing in both locations or sync fails, stop with the missing model name and the sync stderr path.
+   Then re-check the model path on the selected target. If the model is missing
+   or sync fails, inspect the source/target paths and stderr, repair or replace
+   the transfer, and search the documented model sources. Terminate only after
+   proving that the frozen model cannot be obtained or made loadable.
 
 5. **Validate physics inputs and locked event counts**
    ```python
@@ -174,6 +190,8 @@ When resuming, still run all Phase 2 validation steps every time.
     CutExperiment path and commit/version probe when available, Delphes card
     resolved path, model paths, venv Python path, installed Python package
     versions, locked event-count mode, and every probe command with return code.
+    Also include `research_objective_sha256`, `deliverables_template_sha256`,
+    and the paths used to verify both contracts.
     Phase 10 uses this file for toolchain provenance; do not leave tool
     versions only in `workflow.log`.
 
@@ -186,7 +204,9 @@ logger.phase_complete("2")
 - Always use the venv created in Step 6 for Python operations in later phases.
 - Never fall back to system Python for workflow analysis scripts.
 - All workflow outputs must be written under `{workdir}/results/` on the selected execution target.
-- Every MG5 subprocess must be wrapped by `workflow_step(...)` and must check the return code.
+- Every MG5 subprocess must be logged with equivalent command, cwd, return-code,
+  stdout/stderr, and output provenance. `workflow_step(...)` is the standard
+  helper, but a repaired or custom execution path may provide equivalent logs.
 
 ## Phase Transition
 
@@ -196,6 +216,8 @@ self-repair, not user interaction.
 
 After `logger.phase_complete("2")` is called and run directories are set up:
 
-1. If any critical validation failed, abort with a concrete red flag.
+1. If validation fails, diagnose and repair the environment or migrate to a
+   scientifically equivalent environment. Stop only if the frozen contract is
+   demonstrably impossible to fulfill and record the evidence.
 2. If validation passes, proceed immediately to Phase 3 without stopping.
 3. Do not summarize results, ask for confirmation, present options, or wait for user input.

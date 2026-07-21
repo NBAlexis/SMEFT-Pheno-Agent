@@ -29,7 +29,9 @@ Phase 12 `FAIL`; do not hide them as acceptable `issues_remaining`.
 
 ## Blocking During Phase 10
 
-Stop only for unrecoverable file-writing, parser, or output-generation errors.
+Treat file-writing, parser, and output-generation errors as technical recovery
+tasks. Stop only with documented proof that the frozen manuscript deliverable
+cannot be produced by any reasonable equivalent implementation.
 Scientific/style validation failures are not stop conditions after the revision
 limit.
 

@@ -1,0 +1,340 @@
+{
+  "schema_version": "1.0",
+  "contract_kind": "automated-smeft-ml-pheno-deliverables",
+  "path_base": "run_root",
+  "run_root_rule": {
+    "single_run": "results",
+    "multi_run": "results/{run_dir}"
+  },
+  "selectors": {
+    "operator": "data/phase3/operator_claims.json object keys",
+    "scan_label": "data/phase6/scan_manifest.json labels for each operator",
+    "algorithm": "data/phase7/algorithm_comparison.json anchor keys",
+    "phase3_runner_result": "result_json paths referenced by data/phase3/model_status.json",
+    "replay_file": "drivers/helpers referenced by replay/replay_manifest.json",
+    "manuscript_format": "data/phase10/manuscript_build_environment.json pdf_required"
+  },
+  "rules": [
+    {
+      "id": "global.contracts",
+      "phase": "1",
+      "scope": "global_results",
+      "selector": "fixed",
+      "items": [
+        {"path": "run_config.json", "type": "json"},
+        {"path": "research_contract.json", "type": "json"},
+        {"path": "deliverables_contract.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase2.environment",
+      "phase": "2",
+      "scope": "run_root",
+      "selector": "fixed",
+      "items": [
+        {"path": "workflow.log", "type": "jsonl"},
+        {"path": "data/phase2/environment_manifest.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase3.fixed",
+      "phase": "3",
+      "scope": "run_root",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase3/operator_claims.json", "type": "json"},
+        {"path": "data/phase3/cross_sections.json", "type": "json"},
+        {"path": "data/phase3/model_status.json", "type": "json"},
+        {"path": "data/phase3/anchor.json", "type": "json", "condition": "at_least_one_claimed_operator"}
+      ]
+    },
+    {
+      "id": "phase3.runner-results",
+      "phase": "3",
+      "scope": "run_root",
+      "selector": "phase3_runner_result",
+      "items": [
+        {"path": "{phase3_runner_result}", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase3.zero-report",
+      "phase": "3",
+      "scope": "run_root",
+      "selector": "fixed",
+      "condition": "no_claimed_operator",
+      "items": [
+        {"path": "data/phase3/phase3_report.txt", "type": "text"}
+      ]
+    },
+    {
+      "id": "phase4.ranges",
+      "phase": "4",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase4/sm_baseline.json", "type": "json"},
+        {"path": "data/phase4/sm_baseline_result.json", "type": "json"},
+        {"path": "data/phase4/coefficient_ranges.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase5.fixed",
+      "phase": "5",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase5/sm.lhco", "type": "lhco"},
+        {"path": "data/phase5/sm_banner.txt", "type": "text"},
+        {"path": "data/phase5/sm_result.json", "type": "json"},
+        {"path": "data/phase5/np_anchor.lhco", "type": "lhco"},
+        {"path": "data/phase5/np_anchor_banner.txt", "type": "text"},
+        {"path": "data/phase5/np_anchor_alias.json", "type": "json"},
+        {"path": "data/phase5/event_count_recovery.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase5.per-operator",
+      "phase": "5",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator",
+      "items": [
+        {"path": "data/phase5/np_{operator}.lhco", "type": "lhco"},
+        {"path": "data/phase5/np_{operator}_banner.txt", "type": "text"},
+        {"path": "data/phase5/np_{operator}_result.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase6.fixed",
+      "phase": "6",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase6/scan_manifest.json", "type": "json"},
+        {"path": "data/phase6/phase6_progress.json", "type": "json"},
+        {"path": "data/phase6/event_count_recovery.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase6.per-operator",
+      "phase": "6",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator",
+      "items": [
+        {"path": "data/phase6/np_{operator}_scan_result.json", "type": "json"}
+      ]
+    },
+    {
+      "id": "phase6.per-scan-point",
+      "phase": "6",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator_scan_label",
+      "items": [
+        {"path": "data/phase6/np_{operator}_{scan_label}.lhco", "type": "lhco"},
+        {"path": "data/phase6/np_{operator}_{scan_label}_banner.txt", "type": "text"}
+      ]
+    },
+    {
+      "id": "phase7.fixed",
+      "phase": "7",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase7/sm.csv", "type": "csv"},
+        {"path": "data/phase7/np_anchor.csv", "type": "csv"},
+        {"path": "data/phase7/event_counts.json", "type": "json"},
+        {"path": "data/phase7/feature_schema.json", "type": "json"},
+        {"path": "data/phase7/algorithm_comparison.json", "type": "json"},
+        {"path": "data/phase7/algorithm_descriptions.json", "type": "json"},
+        {"path": "data/phase7/phase7_validation.json", "type": "json"},
+        {"path": "algorithms/compute_scores.py", "type": "python"},
+        {"path": "plots/roc_anchor.pdf", "type": "pdf"}
+      ]
+    },
+    {
+      "id": "phase7.per-operator",
+      "phase": "7",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator",
+      "items": [
+        {"path": "data/phase7/np_{operator}.csv", "type": "csv"}
+      ]
+    },
+    {
+      "id": "phase7.per-algorithm",
+      "phase": "7",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "algorithm",
+      "items": [
+        {"path": "algorithms/anchor_{algorithm}.pkl", "type": "model"},
+        {"path": "data/phase7/scores/{algorithm}_sm_scores.csv", "type": "csv"},
+        {"path": "plots/score_dist_all_pure_np_{algorithm}.pdf", "type": "pdf"}
+      ]
+    },
+    {
+      "id": "phase7.per-operator-algorithm",
+      "phase": "7",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator_algorithm",
+      "items": [
+        {"path": "data/phase7/scores/{algorithm}_np_{operator}_scores.csv", "type": "csv"}
+      ]
+    },
+    {
+      "id": "phase8.fixed",
+      "phase": "8",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase8/scan_event_counts.json", "type": "json"},
+        {"path": "data/phase8/threshold_optimization.json", "type": "json"},
+        {"path": "data/phase8/dataset_summary.json", "type": "json"},
+        {"path": "plots/threshold_comparison.pdf", "type": "pdf"},
+        {"path": "plots/anchor_s2_constraint_range_vs_threshold.pdf", "type": "pdf"}
+      ]
+    },
+    {
+      "id": "phase8.per-scan-point",
+      "phase": "8",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator_scan_label",
+      "items": [
+        {"path": "data/phase8/csv/np_{operator}_{scan_label}.csv", "type": "csv"}
+      ]
+    },
+    {
+      "id": "phase8.per-score",
+      "phase": "8",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator_scan_label_algorithm",
+      "items": [
+        {"path": "data/phase8/scores/{algorithm}/np_{operator}_{scan_label}_scores.csv", "type": "csv"}
+      ]
+    },
+    {
+      "id": "phase8.per-fit",
+      "phase": "8",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "operator_algorithm",
+      "items": [
+        {"path": "data/phase8/csfit_{operator}_{algorithm}.json", "type": "json"},
+        {"path": "plots/csfit_plot_{operator}_{algorithm}.pdf", "type": "pdf"}
+      ]
+    },
+    {
+      "id": "phase9.constraints",
+      "phase": "9",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase9/algorithm_selection.json", "type": "json"},
+        {"path": "data/phase9/constraint_table.json", "type": "json"},
+        {"path": "data/phase9/constraint_table.csv", "type": "csv"},
+        {"path": "plots/anchor_s2_algorithm_constraint_bar.pdf", "type": "pdf"}
+      ]
+    },
+    {
+      "id": "phase10.fixed",
+      "phase": "10",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "data/phase10/manuscript_build_environment.json", "type": "json"},
+        {"path": "data/phase10/collider_energy.json", "type": "json"},
+        {"path": "data/phase10/manuscript_evidence.json", "type": "json"},
+        {"path": "data/phase10/reference_paper_plan.json", "type": "json"},
+        {"path": "data/phase10/literature_plan.json", "type": "json"},
+        {"path": "data/phase10/manuscript_checklist.json", "type": "json"},
+        {"path": "data/phase10/manuscript_trace_map.json", "type": "json"},
+        {"path": "data/phase10/manuscript_completeness_passes.json", "type": "json"},
+        {"path": "data/phase10/manuscript_validation.json", "type": "json"},
+        {"path": "data/phase10/manuscript_draft_v1.*", "type": "glob"},
+        {"path": "data/feynman_diagrams", "type": "directory"}
+      ]
+    },
+    {
+      "id": "phase10.pdf",
+      "phase": "10",
+      "scope": "run_root",
+      "selector": "fixed",
+      "condition": "at_least_one_claimed_operator_and_pdf_required",
+      "items": [
+        {"path": "manuscript.pdf", "type": "pdf"},
+        {"path": "manuscript.tex", "type": "text"}
+      ]
+    },
+    {
+      "id": "phase10.html",
+      "phase": "10",
+      "scope": "run_root",
+      "selector": "fixed",
+      "condition": "at_least_one_claimed_operator_and_not_pdf_required",
+      "items": [
+        {"path": "manuscript.html", "type": "html"}
+      ]
+    },
+    {
+      "id": "cleanup.archive",
+      "phase": "cleanup",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "mg5_processes/cleanup_log.json", "type": "json"},
+        {"path": "mg5_processes", "type": "nonempty_directory"},
+        {"path": "orders", "type": "nonempty_directory"}
+      ]
+    },
+    {
+      "id": "phase11.replay",
+      "phase": "11",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "replay/replay.sh", "type": "executable"},
+        {"path": "replay/replay_manifest.json", "type": "json"},
+        {"path": "replay/replay_validation.json", "type": "json"},
+        {"path": "replay/data_files_report.md", "type": "markdown"}
+      ]
+    },
+    {
+      "id": "phase11.referenced-files",
+      "phase": "11",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "replay_file",
+      "items": [
+        {"path": "{replay_file}", "type": "file"}
+      ]
+    },
+    {
+      "id": "phase12.audit",
+      "phase": "12",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "fixed",
+      "items": [
+        {"path": "deliverables_resolved.json", "type": "json"},
+        {"path": "audit_expected_outputs.json", "type": "json"},
+        {"path": "audit_report.json", "type": "json"}
+      ]
+    }
+  ]
+}

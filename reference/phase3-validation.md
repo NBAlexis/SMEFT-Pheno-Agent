@@ -1,6 +1,6 @@
 # Phase 3: Validate New Physics Impact (Multi-Model)
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 Identify which SMEFT operators across **all specified models** actually affect the chosen process. Operators are globally deduplicated and continuously numbered. The first non-zero operator found across all models becomes the **anchor** for ML training and threshold optimization.
@@ -122,7 +122,7 @@ For each `model_name` in the user-provided model list (in order):
 
 ### Step 3.1.1 Create NP Process Directory and Discover Coefficients
 
-Create the NP process through the config runner in `create_np` mode. This mode
+Use the config runner in `create_np` mode as the standard path. This mode
 creates the process, parses `param_card.dat`, writes the result JSON, and does
 not launch events.
 
@@ -176,14 +176,15 @@ For each coefficient `fi` in this model:
    `target_coefficient.index = idx`, `target_coefficient.value = c_default`,
    `coefficient_mode="explicit"`, and
    `nevents = config.locked_event_counts.nev_phase3`.
-3. Run `python scripts/run_mg5_config.py {json_path}`. The runner creates the
+3. Normally run `python scripts/run_mg5_config.py {json_path}`. The runner creates the
    process/order internally, captures stdout/stderr, converts ROOT to LHCO,
    parses the banner, records actual LHCO count, and performs zero-cross-section
    double-checks when needed.
 4. Read `sigma_i` from `outputs[0].cross_section_pb` in the result JSON. Any
    positive value, even `1e-10 pb`, means the operator couples to the process.
-   Do not parse stdout, infer banner names, or replace a runner/parser failure
-   with `0.0`.
+   Do not replace a runner/parser failure with `0.0`. If the standard result is
+   unavailable, diagnose the failure and use logs, banners, or a custom parser
+   to produce equivalent evidence and the required result schema.
    If the runner reports `sigma_i = 0`, accept it only after its zero-cross-section
    double-check confirms either a `0.0` banner or a missing banner, matching
    zero-cross-section MG5 logs, and no substantial LHE payload.
@@ -367,4 +368,6 @@ After `logger.phase_complete("3")` is called and all JSON outputs are written:
 
 1. **Check validation rules immediately**: If `anchor` is not set, emit the Zero Cross-Section Report and abort.
 2. **If validation passes** (at least one operator claimed, anchor is set): **proceed immediately to Phase 4 without stopping.**
-3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input. The workflow runs to completion automatically per [`SKILL.md`](../SKILL.md) SUPREME RULE.
+3. **Do NOT**: summarize results, ask for confirmation, present options, or wait
+   for user input. Continue autonomously under the frozen research and
+   deliverables contracts in [`SKILL.md`](../SKILL.md).

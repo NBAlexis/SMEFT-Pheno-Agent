@@ -1,6 +1,6 @@
 # Phase 8: Apply Selection and Fit Cross-Section
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE — once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Purpose
 For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold. In multi-model mode, threshold optimization uses the **anchor operator's** scan data only. The optimal threshold is then applied to ALL globally claimed operators.

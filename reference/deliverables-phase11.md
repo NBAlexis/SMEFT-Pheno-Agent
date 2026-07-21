@@ -1,7 +1,8 @@
 # Phase 11 Deliverables: Numerical Replay Package
 
-Consumes: the frozen run configuration, Phase 2-9 provenance and numerical
-artifacts, Phase 10 manuscript evidence, workflow log, and cleanup archive.
+Consumes: the frozen research objective and deliverables contract, run
+configuration, Phase 2-9 provenance and numerical artifacts, Phase 10 manuscript
+evidence, workflow log, and cleanup archive.
 
 Must deliver under each run root:
 
@@ -9,6 +10,8 @@ Must deliver under each run root:
   prompts or edits.
 - `results/replay/replay_manifest.json` with ordered Phase 2-9 commands, inputs,
   outputs, seeds, parameters, and SHA-256 checksums.
+- Frozen copies of `research_contract.json` and `deliverables_contract.json`
+  referenced by the replay manifest.
 - All phase drivers and helpers referenced by the manifest under
   `results/replay/steps/` or `results/replay/support/`.
 - `results/replay/data_files_report.md`, describing every declared numerical
@@ -18,10 +21,10 @@ Must deliver under each run root:
   clean-directory dry-run order, referenced-file checksum validation, output
   coverage, report coverage, and absence of original-result production inputs.
 
-The default replay must start in a new output directory and regenerate all
-Phase 3-9 numerical results in order, plus Phase 2 environment provenance. It
-must not reuse original numerical outputs as production inputs. A full replay is
-not required to complete Phase 11.
+The default replay must start in a new output directory and regenerate the full
+Phase 2-9 numerical subset of the expanded frozen deliverables contract in
+order. It must not reuse original numerical outputs as production inputs. A full
+replay is not required to complete Phase 11.
 
 Manuscript dependency: the manuscript can cite the replay package and data-file
 report as reproducibility material; replay does not regenerate Phase 10.

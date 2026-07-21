@@ -1,10 +1,12 @@
 # MadGraph Reference
 
-> **Execution Continuity**: Per [`SKILL.md`](../SKILL.md) SUPREME RULE - once started, this phase MUST run to completion without stopping. Only unrecoverable errors, red flags, or explicit user interrupt are valid stop conditions.
+> **Contract priority**: Preserve the frozen research objective and deliverables. Technical failure triggers diagnosis and recovery; stop only on explicit user instruction or documented proof that a frozen item is impossible.
 
 ## Overview
 
-This document defines the standardized way to invoke MadGraph5 within the SMEFT-ML workflow. All Phases that use MG5 must follow these conventions.
+This document defines the tested standard way to invoke MadGraph5. Custom or
+repaired implementations may replace it when they preserve the same physics,
+schemas, logs, and provenance.
 
 ## Required Variables
 
@@ -35,16 +37,19 @@ explicit beam energies and does not use `sqrt(s)`.
 | `polbeam1` | Beam 1 polarization, range [-1, 1] | User requests polarization |
 | `polbeam2` | Beam 2 polarization, range [-1, 1] | User requests polarization |
 
-## MG5 Config Runner Convention
+## MG5 Config Runner Standard Path
 
-All workflow phases that generate MG5 events must call `scripts/run_mg5_config.py`
-with a JSON configuration. Do not hand-write MG5 order files or call `mg5_aMC`
-directly from phase logic. If the runner itself needs maintenance, see the
-implementation notes in `scripts/run_mg5.py`.
+Start MG5 event generation with `scripts/run_mg5_config.py` and JSON
+configuration. This is the tested path and already handles many fragile details.
+It is not a prohibition on other implementations. If the runner is broken or
+cannot represent the required run, diagnose it and then patch it, call lower
+level helpers, write MG5 order files, invoke `mg5_aMC` directly, or create a new
+adapter as needed. Preserve the frozen physics settings, result JSON schema,
+logs, process/run provenance, banners, cross sections, and loaded-event counts.
 
 ### Process Name Normalization
 
-**Use the script** (do not reimplement):
+Prefer the script for the standard normalization convention:
 
 ```bash
 python scripts/normalize_process_name.py "e+ e- > a a"
@@ -70,11 +75,12 @@ Rules:
 Example: `e+ e- > a a` -> `ep_em_to_a_a`
 
 For `process` lists, do not call `normalize_process_name(config.process)`.
-Process-folder naming is runner-owned and returned in the runner result JSON.
+With the standard runner, process-folder naming is returned in the result JSON.
+Alternative implementations must record the same provenance explicitly.
 
-### Runner-Owned Files
+### Standard Runner Responsibilities
 
-The runner owns order-file creation, process-folder naming, run tracking, banner
+The standard runner handles order-file creation, process-folder naming, run tracking, banner
 parsing, stdout/stderr log capture, create-process Feynman diagram-count
 metadata, and LHCO count metadata. Phase code should
 provide only JSON fields such as `mg5path`, `model`, `process`,
@@ -102,8 +108,8 @@ add process process3 MODE_SUFFIX
 
 where `MODE_SUFFIX` is owned by the runner, for example `NP=0` for `pure_sm`
 or `NP>0` for `pure_np`. Agents should still provide suffix-free process
-strings in JSON and should not hand-write this order outside runner
-maintenance.
+strings in JSON. Alternative implementations must preserve the same process-mode
+semantics and record their exact generated order.
 
 ## Process Generation Modes
 
@@ -192,9 +198,10 @@ Save the mapping for downstream use (e.g., as `operator_coefficients.json`).
 
 ## Event Generation Through Runner JSON
 
-After process setup is complete, phase code launches event generation only by
-calling `scripts/run_mg5_config.py` or `scripts/recover_lhco_count.py` with JSON
-configuration. The runner writes the MG5 order internally.
+After process setup, prefer `scripts/run_mg5_config.py` or
+`scripts/recover_lhco_count.py` with JSON configuration. If recovery requires a
+different launch path, record equivalent configuration, generated orders,
+commands, outputs, and error evidence.
 
 Agent-controlled fields:
 - `process_mode`: `pure_sm`, `pure_np`, `sm_np`, or `scan`
@@ -234,8 +241,10 @@ serious problem unless the actual LHCO count is clearly insufficient. Follow
 [`event-count-recovery.md`](event-count-recovery.md) for thresholds, recovery
 profiles, LHCO merging, and efficiency denominators.
 
-The recovery orchestrator applies survey profiles through the runner. Agents
-select only the recovery wrapper; do not write recovery launch-order lines.
+The recovery orchestrator applies the standard survey profiles through the
+runner. Use it first. When it cannot solve the observed failure, inspect its
+attempts and implement an equivalent or better recovery while keeping the event
+count and physics contract unchanged.
 
 Prefer the config-driven runner and recovery orchestrator:
 
@@ -480,12 +489,13 @@ rm unweighted_events.lhe.gz tag_1_pythia8_events.hepmc.gz tag_1_delphes_events.r
 
 ## Cross-Section Extraction
 
-For normal workflow event generation, read cross-sections from
+For the standard workflow, read cross-sections from
 `scripts/run_mg5_config.py` result JSON (`outputs[*].cross_section_pb`). The
 runner uses the canonical banner parser internally and records stdout/stderr
 paths for debugging.
 
-The lower-level banner parser is for runner maintenance and diagnostics only.
+The lower-level banner parser is also available for runner maintenance,
+diagnostics, and custom recovery implementations.
 If you need it, pass the banner path recorded in the runner result JSON:
 
 ```bash
@@ -510,8 +520,10 @@ The script supports both MG5_aMC v3.x (`Integrated weight (pb) : X.XXXX`) and ol
 **Critical rules:**
 - Any positive value, even `1e-10 pb`, is a valid cross-section.
 - Do NOT silently return `0.0` on parse failure. Raise an error so the failure is visible.
-- All phases that read cross-sections must use the runner result JSON. Low-level
-  scripts may import `extract_cross_section()`.
+- Prefer the runner result JSON. Custom implementations may import
+  `extract_cross_section()` or write an equivalent parser, but must emit the
+  same cross-section/provenance fields and must never convert parse failure to
+  `0.0`.
 - A parsed `0.0` banner cross-section, or a missing banner, is not enough to
   prove a true zero cross section. Run `scripts/double_check_zero_cross_section.py`
   or use `scripts/run_mg5_config.py`, which calls it automatically. Accept zero
