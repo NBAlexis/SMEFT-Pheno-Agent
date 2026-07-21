@@ -255,6 +255,69 @@ class ResearchContractTests(unittest.TestCase):
             for check in report["checks"]
         ))
 
+    def test_phase3_audit_passes_with_minimal_fake_deliverables(self):
+        write_json(
+            os.path.join(self.results, "data", "phase3", "operator_claims.json"),
+            {
+                "o_1": {
+                    "model": "AQGCm_UFO",
+                    "anoinput_idx": 1,
+                    "name": "fM0",
+                }
+            },
+        )
+        write_json(
+            os.path.join(self.results, "data", "phase3", "cross_sections.json"),
+            {
+                "AQGCm_UFO:fM0": {
+                    "sigma": 1.23e-3,
+                    "global_idx": 1,
+                }
+            },
+        )
+        write_json(
+            os.path.join(self.results, "data", "phase3", "model_status.json"),
+            {
+                "AQGCm_UFO": {
+                    "has_feynman_diagrams": True,
+                    "coefficient_count": 1,
+                    "tested_count": 1,
+                    "create_np_result_json": "results/data/phase3/results/AQGCm_UFO_create_np.json",
+                    "coefficients": {
+                        "fM0": {
+                            "c_default": 0.0,
+                            "sigma": 1.23e-3,
+                            "result_json": "results/data/phase3/results/AQGCm_UFO_fM0.json",
+                            "global_idx": 1,
+                        }
+                    },
+                }
+            },
+        )
+        write_json(
+            os.path.join(self.results, "data", "phase3", "anchor.json"),
+            {
+                "global_idx": 1,
+                "model": "AQGCm_UFO",
+                "anoinput_idx": 1,
+                "name": "fM0",
+            },
+        )
+        write_json(
+            os.path.join(self.results, "data", "phase3", "results", "AQGCm_UFO_create_np.json"),
+            {"status": "ok"},
+        )
+        write_json(
+            os.path.join(self.results, "data", "phase3", "results", "AQGCm_UFO_fM0.json"),
+            {"status": "ok"},
+        )
+        report = audit_phase_deliverables(self.temp.name, "3")
+        self.assertEqual(report["status"], "PASS", report["failures"])
+        self.assertTrue(any(
+            check.get("source") == "phase3_complete_coefficient_loop"
+            for check in report["checks"]
+        ))
+
 
 if __name__ == "__main__":
     unittest.main()
