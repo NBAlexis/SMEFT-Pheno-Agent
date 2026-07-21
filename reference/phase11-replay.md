@@ -1,18 +1,20 @@
 # Phase 11: Build the Numerical Replay Package
 
-> **Contract priority**: Preserve the frozen research objective and deliverables.
-> Technical failure triggers diagnosis and recovery; stop only on explicit user
-> instruction or documented proof that a frozen item is impossible.
+> **Contract priority**: Preserve the research objective and deliverables. Apply
+> the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
 
-Produce a self-contained, one-command replay package that starts from the frozen
-research objective, deliverables contract, run configuration, and raw/external
-physics inputs. It executes the numerical workflow in order and regenerates the
-Phase 2-9 numerical subset of the frozen deliverables contract. Also produce a
-Markdown report that describes the data files made by the replay.
+Produce a one-command replay package that includes every project-specific
+driver, helper, configuration file, and card needed by the study. MG5, UFO,
+Pythia, Delphes, and CutExperiment installations may remain external and their
+required versions and content checksums must be recorded. It defines the
+ordered numerical workflow and the file/report contract needed to rerun the
+Phase 2-9 numerical subset of the frozen deliverables contract later. Also
+produce a Markdown report that describes the data files made by the replay.
 
-Phase 11 packages and validates the replay; it does not rerun the full study.
+Phase 11 packages and validates the replay package; it does not rerun the full
+study.
 Phase 10 manuscript generation, cleanup, and Phase 12 audit are outside the
 numerical replay scope.
 
@@ -25,14 +27,16 @@ from scripts.load_run_config import load_run_config
 from scripts.workflow_logger import WorkflowLogger, workflow_step
 
 config = load_run_config("{workdir}/results/run_config.json")
-logger = WorkflowLogger(config.workdir)
+logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("11")
 ```
 
 Before packaging, run `scripts/research_contract.py verify`. Contract drift must
 be corrected before replay generation. The replay may use different technical
 orchestration from the original run, but it must preserve the same frozen
-scientific objective and produce the same numerical deliverable schemas.
+scientific objective and produce the same numerical deliverable paths, file
+types, required JSON keys, and required CSV columns declared by
+`deliverables_contract.json`.
 
 In multi-run mode, create one replay package in each `results/{run_dir}/` root.
 Create and validate the package on the selected Linux execution target. Native
@@ -78,14 +82,20 @@ With `workflow_step(logger, "11", "freeze_replay_inputs")`, derive replay
 inputs from the actual run configuration, runner manifests, workflow log, and
 phase artifacts. Package:
 
-- an immutable copy of `run_config.json`, with secrets replaced by documented
-  environment-variable references;
-- immutable copies of `research_contract.json`, `deliverables_contract.json`,
-  and `contract_lock.json`;
+- a JSON-content-identical copy of `run_config.json`; credentials and tokens are
+  forbidden in `run_config.json`, and replay-time secrets are supplied only by
+  documented environment variables;
+- JSON-content-identical copies of `research_contract.json`,
+  `deliverables_contract.json`, and `contract_lock.json`;
 - the exact Phase 2-9 drivers and helper versions needed to repeat the run;
-- ordered commands, working directories, random seeds, event counts, model and
+- ordered commands, working directories, event counts, model and
   detector-card identities, algorithm parameters, and dependency versions;
-- SHA-256 checksums for packaged scripts/configuration and immutable raw inputs.
+- SHA-256 checksums for packaged scripts and configuration files.
+
+"JSON-content-identical" means the parsed JSON values are equal; whitespace and
+object-key order may differ. The replay does not require or invent MG5, Pythia,
+or Delphes random seeds. Monte Carlo reproduction is evaluated by the numerical
+comparison policy below, not by event-by-event identity.
 
 Do not package credentials, private keys, access tokens, or host-specific secret
 material. Fail with a concrete error if a required secret cannot be supplied by
@@ -101,13 +111,13 @@ Write `replay_manifest.json` with this minimum structure:
   "entrypoint": "replay.sh",
   "phase_order": ["2", "3", "4", "5", "6", "7", "8", "9"],
   "default_output": "replayed-results",
+  "source_inputs": [],
   "algorithm_lock": {
     "trained_algorithms": [
       {
         "key": "gradient_boosting",
         "implementation": "sklearn.ensemble.GradientBoostingClassifier",
         "hyperparameters": {"n_estimators": 200},
-        "random_seed": 12345,
         "score_definition": "predict_proba[:, 1]",
         "model_output": "algorithms/anchor_gradient_boosting.pkl"
       }
@@ -127,10 +137,19 @@ Write `replay_manifest.json` with this minimum structure:
       "command": ["python", "steps/phase2.py"],
       "inputs": ["run_config.json"],
       "outputs": ["data/phase2/environment_manifest.json"],
-      "random_seeds": {},
       "sha256": {"steps/phase2.py": "..."}
     }
   ],
+  "monte_carlo_comparison": {
+    "production_inputs_exclude_reference_results": true,
+    "combined_standard_error_multiplier": 3.0,
+    "fallback_limits": {
+      "cross_sections": {"difference": "relative", "maximum": 0.10},
+      "auc_and_thresholds": {"difference": "absolute", "maximum": 0.05},
+      "fit_coefficients_and_constraint_endpoints": {"difference": "relative", "maximum": 0.20}
+    },
+    "comparison_output": "numerical_comparison.json"
+  },
   "report": "data_files_report.md"
 }
 ```
@@ -143,7 +162,7 @@ algorithm, or scan-point matrix that expands them is recorded in the manifest.
 
 `algorithm_lock` freezes execution state at Phase 11, not the Phase 1 research
 objective. Its trained keys must exactly match
-`algorithm_comparison.json["anchor"]`; parameters, seeds, and score definitions
+`algorithm_comparison.json["anchor"]`; parameters and score definitions
 must match `algorithm_descriptions.json`; `production_algorithm` must match
 Phase 9 `algorithm_selection.json`; and every algorithm driver/helper required
 for reproduction must appear in `packaged_files` with its actual SHA-256.
@@ -163,16 +182,36 @@ POSIX Bash entry point that:
    the frozen replay objective or authorize dropping outputs.
 4. Writes stdout/stderr, command, return code, timestamps, checksums, and step
    state under the replay output so a long run can resume safely.
-5. Uses the locked event counts and recorded random seeds. It must not reduce
+5. Uses the locked event counts. It must not reduce
    statistics or silently substitute algorithms, models, cards, or scan points.
 6. Generates `data_files_report.md` only after all numerical steps complete,
    then verifies that every manifest output exists and is non-empty.
 
-The replay may read the frozen configuration, packaged code, external MG5/UFO/
-Delphes/CutExperiment installations, detector cards, and genuinely raw inputs.
+Production steps may read only the packaged configuration and code, the
+external installations named above, the selected UFO directories, detector
+cards, and user-supplied source files explicitly listed in
+`replay_manifest.json["source_inputs"]` with SHA-256 checksums. A source input is
+a file supplied before Phase 2 that was not produced by any Phase 2-9 command.
+Each list entry is
+`{"path": "...", "sha256": "64 hexadecimal characters", "provided_before_phase2": true}`.
 It must not copy, parse, fit, or otherwise consume original Phase 3-9 numerical
 outputs to produce replay results. Original results may be used only by an
 optional post-run comparison step that is clearly separated from production.
+
+If a replay is actually executed later, the manifest may include an optional
+comparison policy for comparing replay results with the original results. A
+quantity passes when its absolute difference is no more than
+`combined_standard_error_multiplier` times the combined standard error. If
+either result lacks a standard error, use the corresponding fallback limit from
+the manifest: relative difference for cross-sections and fit/constraint values,
+and absolute difference for AUC/threshold values. The limits may be stricter,
+but may not exceed 0.10, 0.05, and 0.20 respectively. Write every comparison,
+uncertainty or fallback used, and pass/fail result to
+`numerical_comparison.json`.
+
+Phase 11 package construction itself is complete after the static and dry-run
+checks below; it does not claim that replay outputs have already been
+generated.
 
 ## Step 11.4: Write the Data-File Report
 
@@ -215,10 +254,16 @@ applicable checks:
    result paths.
 7. The algorithm lock canonical hash is valid, its Phase 7/9 values match the
    actual run, and every packaged algorithm implementation checksum matches.
+8. `audit_expected_outputs.py --phase 11` confirms that every resolved Phase
+   2-9 deliverable appears in exactly one manifest step, no production input is
+   an original Phase 3-9 result, every output is named in
+   `data_files_report.md`, and the Monte Carlo comparison limits do not exceed
+   the maxima above.
 
 Write results to `replay_validation.json`, including commands, return codes,
 observed phase order, coverage counts, failures, warnings, and whether
-`shellcheck` was available. A full replay is not required during Phase 11.
+`shellcheck` was available. Phase 11 does not require executing the full
+replay.
 
 ## Phase Transition
 

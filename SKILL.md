@@ -5,7 +5,7 @@ description: "Use for serious long-running SMEFT collider phenomenology studies:
 
 # Automated SMEFT Phenomenology with Machine Learning
 
-Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a publication-style manuscript, clean up MG5 process folders, package a one-command numerical replay, and audit consistency.
+Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a publication-style manuscript, clean up MG5 process folders, package a one-command numerical replay script and data-file report, and audit consistency.
 
 ## Research Mission
 
@@ -33,11 +33,19 @@ At the end of Phase 1, create two immutable contracts and one contract lock from
 - `results/contract_lock.json` binds the exact two contract documents and their
   objective/template hashes as one frozen set.
 
+Here `immutable` and `frozen` mean that `research_contract.py init` compares
+parsed JSON content and refuses to overwrite an existing different value, while
+`research_contract.py verify` checks the objective, template, and lock SHA-256
+values. They do not mean filesystem read-only permissions.
+
 These contracts define the task. Do not reduce, reinterpret, replace, or silently
 edit either contract because a tool fails, a standard script is unsuitable, the
 runtime is long, or the environment changes. Technical locations and
-implementations may change when the scientific objective, schemas, provenance,
-and required outputs remain equivalent. Deliverable paths, formats, required
+implementations may change only when `research_contract.py verify` still
+returns `status="ok"`, every declared deliverable keeps the same path and
+acceptance fields, all locked physics settings and event counts are unchanged,
+and the replacement records its command, code checksum, inputs, and outputs in
+`workflow.log`. Deliverable paths, formats, required
 keys/columns, and acceptance rules are fixed contract requirements; an
 alternative implementation must satisfy them exactly rather than weakening or
 renaming them.
@@ -46,13 +54,25 @@ The phases and bundled scripts are the tested standard execution path, not the
 research objective. Start from them because they encode known-good conventions.
 When they fail or do not fit the actual run, inspect the evidence, diagnose the
 cause, and repair, extend, replace, or write scripts as needed. A command, card,
-dependency, runner, parser, or conversion failure is a technical problem to
+dependency, runner, cross-section extraction, or conversion failure is a technical problem to
 solve; it is not by itself evidence that the research failed.
 
-Terminate without completing the contracts only after recording concrete
-evidence that the frozen research objective or a required deliverable is
-impossible to fulfill. Exhaust reasonable unattended recovery, alternative
-implementations, and scientifically equivalent environment migration first.
+A technical failure is a command, dependency, environment, card,
+file-conversion, or implementation error that prevents a required output from
+being produced; a valid zero cross-section or other valid negative scientific
+result is not a technical failure. Diagnose the recorded error, attempt a
+targeted repair, and then try an alternative implementation or another
+compatible Linux target when applicable.
+
+Write `phase_fail` only after creating
+`results/failures/phase{N}_failure.json` (or the current multi-run root
+equivalent) with `technical_cause`, `affected_deliverables`, `attempts`,
+`evidence_paths`, and `why_no_remaining_method_can_preserve_the_contract`.
+Every `attempts` entry must contain `command_or_code_path`, `change_tested`,
+`return_code`, `stdout_path`, and `stderr_path`. The final field must identify the exact
+objective field or deliverable acceptance rule that every remaining method
+would violate. Repeated command failure without this evidence does not permit
+`phase_fail`.
 
 ## Operating Modes
 
@@ -91,8 +111,8 @@ make a technical failure disappear.
 Follow the phase order by default because downstream artifacts depend on
 upstream results. It is acceptable to create diagnostic code, adapters, or
 recovery helpers whenever they are needed to unblock the current scientific
-deliverable. Record deviations from the standard path and why the replacement
-is scientifically equivalent.
+deliverable. Record deviations from the standard path and the verification
+results required by the Highest-Priority Contract section.
 
 #### Phase-End Invariant Self-Check
 
@@ -112,9 +132,24 @@ autonomously. Do not advance to the next phase until the gate passes. Do not
 load other phase deliverable files unless repairing an upstream failure or
 running Phase 12 audit.
 
+Run `python scripts/audit_expected_outputs.py {workdir} --phase N` and add
+`--run-dir {run_dir}` in multi-run mode. `WorkflowLogger.phase_complete()` runs
+the same check and raises an error instead of writing a completed record when a
+current-Phase rule fails. A current-Phase rule is an entry in
+`deliverables_contract.json["template"]["rules"]` whose `phase` equals `N`.
+In audit output, `severity="abort"` means a required check failed: continue
+collecting diagnostics, set the audit status to `FAIL`, repair the producer, and
+rerun the check. It never means skip diagnostics or immediately write
+`phase_fail`.
+
 Delivery definitions:
 - Paths in deliverable files are relative to the current run root: `results/`
   for single-run mode, or `results/{run_dir}/` for multi-run mode.
+- Set the phase variable `run_dir=None` when `run_configurations` contains one
+  entry. When it contains more than one entry, process each entry separately and
+  set `run_dir` to that entry's non-empty `run_dir` value. Pass the same value to
+  `WorkflowLogger`, `research_contract.py --run-root`, and
+  `audit_expected_outputs.py --run-dir`.
 - A delivered file must exist and be non-empty. JSON must parse and contain the
   required keys; CSV/PDF/LHCO/plot files must be non-empty; any path referenced
   inside a JSON deliverable must exist unless an explicit allowed
@@ -124,6 +159,12 @@ Delivery definitions:
 - `alg` means the stable algorithm key used in
   `algorithm_comparison.json["anchor"]`. Use the same key for model files,
   score directories, fit files, plots, and manuscript evidence.
+- `analysis_notes.focused_operators` changes only plot, table, and manuscript
+  emphasis; it never reduces the required operator set. Phase 10 records every
+  focused operator and manuscript preference in
+  `manuscript_evidence.json["analysis_notes_trace"]`. Apply every
+  `analysis_notes.additional_requirements` entry in each phase listed in its
+  `applies_to_phases` field and record a completed workflow step for it.
 
 ## Long-Run Execution Contract
 
@@ -143,9 +184,10 @@ from Phase 2 onward. Initialize it before Phase 2 work. Record skill version and
 commit, phase/step boundaries, commands, cwd, return codes, outputs, retries,
 exceptions, and stdout/stderr paths.
 
-- Every phase must append `phase_complete` only after its contract subset is
-  satisfied. Write `phase_fail` only when the frozen contract is demonstrably
-  impossible, not merely when a command or standard script fails.
+- Every phase must append `phase_complete` only after its current-Phase rules
+  pass. `phase_fail` means the event written by `WorkflowLogger.phase_fail()`
+  after the required failure JSON above exists; a command failure alone never
+  permits it.
 
 ## Locked Runtime Contract
 
@@ -166,25 +208,27 @@ Only `debug=true`, explicitly collected in Phase 1, may select the debug values.
 Phase 1 records `local`, `ssh`, or `wsl2` execution. Treat target and tool paths
 as mutable technical state, not as the scientific objective.
 Use `scripts/remote_exec.py` as the standard target-aware adapter for SSH/WSL2.
-If it is the source of a technical failure, repair it or use an equivalent
-logged execution method that preserves target semantics and provenance.
+If it is the source of a technical failure, repair it or use another logged
+method that executes the same command on the configured SSH host or WSL2
+distribution. Record command, target, cwd, return code, stdout/stderr paths, and
+rerun `research_contract.py verify` afterward.
 
 In SSH/WSL2 mode, keep identical local-control and target copies of
 `run_config.json`, both frozen contracts, and `contract_lock.json`.
 
 ## Phase Completion Contracts
 
-Every phase must satisfy its frozen contract subset before completion:
+Every phase must satisfy all rules whose `phase` value equals that phase before completion:
 
 | Phase | Completion unit |
 |---|---|
 | 2 | Environment and contract verification |
 | 3 | Every coefficient in every requested model tested; zero-result branch reported |
 | 4-6 | Baselines, per-operator ranges, pure samples, and all 11-point scans |
-| 7-9 | Frozen algorithm strategy, fits, and S=2,3,5 constraints |
+| 7-9 | Recorded trained algorithms, fits, selected production algorithm, and S=2,3,5 constraints |
 | 10 | Publication manuscript and evidence |
 | Cleanup | Process/order provenance archived |
-| 11 | One-command numerical replay and data-file report |
+| 11 | One-command numerical replay package and data-file report |
 | 12 | Fully resolved deliverables contract and final audit |
 
 ### Phase 3 Loop Lock
@@ -214,7 +258,7 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | 9 | Constraints | [`reference/phase9-constraints.md`](reference/phase9-constraints.md) |
 | 10 | Manuscript | [`reference/phase10-manuscript.md`](reference/phase10-manuscript.md) |
 | Cleanup | Process-folder collection | [`reference/cleanup.md`](reference/cleanup.md) |
-| 11 | Numerical replay package | [`reference/phase11-replay.md`](reference/phase11-replay.md) |
+| 11 | Numerical replay package and data-file report | [`reference/phase11-replay.md`](reference/phase11-replay.md) |
 | 12 | Audit | [`reference/phase12-audit.md`](reference/phase12-audit.md) |
 
 Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), event-count/recovery rules in [`reference/event-count-recovery.md`](reference/event-count-recovery.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
@@ -226,13 +270,18 @@ Use bundled scripts as the standard path for deterministic and fragile pieces.
 When they work, prefer them to reduce avoidable variation. They are not an
 implementation restriction: inspect, patch, wrap, or replace them, and write
 project-specific scripts when the run requires it. Any alternative must preserve
-the frozen objective, required output schemas, physics settings, seeds/event
+the frozen objective, required output schemas, physics settings, event
 counts, logs, checksums, and provenance. Package non-bundled production code in
 Phase 11 so the study remains replayable. Algorithms are execution methodology,
 not part of the Phase 1 research objective. Phase 11 must freeze the algorithms
 actually trained and selected, including implementations, hyperparameters,
-seeds, score definitions, model-output paths, selection provenance, and packaged
+score definitions, model-output paths, selection provenance, and packaged
 code checksums.
+Before Phase 11, an algorithm or its implementation may change to resolve a
+technical or scientific-validity problem. After such a change, rerun every
+affected Phase 7-10 producer so all algorithm keys, scores, fits, constraints,
+plots, and manuscript evidence agree. Phase 11 then records the final actual
+state; it does not retroactively add algorithms to the Phase 1 objective.
 
 Key entry points are `load_run_config.py`, `research_contract.py`,
 `remote_exec.py`, `durable_exec.py`, `run_mg5_config.py`,
@@ -246,3 +295,17 @@ Keep global contracts under `{workdir}/results/`; keep single-run outputs there
 or multi-run outputs under `results/{run_dir}/`. The frozen deliverables template
 in [`reference/deliverables-contract-template.json`](reference/deliverables-contract-template.json)
 is the authoritative layout. Never write workflow outputs into the skill folder.
+
+## Rule Precedence
+
+Apply conflicting instructions in this order:
+
+1. `research_contract.json` defines the scientific objective.
+2. `deliverables_contract.json["template"]` defines required paths, types,
+   required keys and columns, fixed values, and minimum sizes.
+3. `deliverables-phaseN.md` and the Phase reference explain how to produce those
+   exact files. They may add scientific consistency checks but may not rename or
+   remove a template item.
+4. `audit_expected_outputs.py` enforces the two JSON documents. If its behavior
+   differs from them, repair the script; do not change a frozen JSON document or
+   weaken a requirement.
