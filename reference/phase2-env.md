@@ -90,8 +90,12 @@ logger.phase_start("2")
 |---|---|
 | `None` | No prior log: start normally from Phase 2 |
 | `"2"` | Phase 1 completed, Phase 2 not started: start Phase 2 |
-| `"3"` to `"10"` | Last completed phase was N-1; skip to `resume_phase` after validation |
-| `"11"` or later | Workflow already finished; run Phase 11 audit only |
+| `"3"` to `"11"` | Last completed phase was N-1; skip to `resume_phase` after validation |
+| `"12"` | Phase 11 replay packaging is complete, or Phase 12 is being re-audited; run Phase 12 |
+
+Logs created before skill version `0.25` used Phase 11 for the audit. The logger
+maps that legacy completion back to the new Phase 11 so the replay package is
+created before Phase 12.
 
 When resuming, still run all Phase 2 validation steps every time.
 

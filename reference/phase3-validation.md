@@ -192,7 +192,7 @@ For each coefficient `fi` in this model:
    does not need banner/LHE evidence.
 5. **Record result in `model_status`**: Always record the coefficient's
    `c_default`, `sigma_i`, `result_json`, stdout/stderr paths, and zero-check
-   report if present. Use the exact key `result_json` so Phase 11 can audit the
+   report if present. Use the exact key `result_json` so Phase 12 can audit the
    runner manifest.
 6. **Deduplication check**:
    - If `sigma_i > 0` and `fi` NOT in `claimed`:

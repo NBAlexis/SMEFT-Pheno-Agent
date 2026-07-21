@@ -5,7 +5,7 @@ description: "Use for serious long-running SMEFT collider phenomenology studies:
 
 # Automated SMEFT Phenomenology with Machine Learning
 
-Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a publication-style manuscript, clean up MG5 process folders, and audit consistency.
+Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, validate the environment, generate SM/NP samples with MadGraph5, convert event outputs, train ML selectors, optimize event selection, compute expected Wilson-coefficient constraints, generate a publication-style manuscript, clean up MG5 process folders, package a one-command numerical replay, and audit consistency.
 
 ## Research Mission
 
@@ -14,7 +14,7 @@ goal is to produce a scientifically usable manuscript after numerical
 simulation, with reproducible data, plots, fit coefficients, constraints, and
 audit logs.
 
-After Phase 1 collects the required inputs, Phases 2-11 are an automated,
+After Phase 1 collects the required inputs, Phases 2-12 are an automated,
 unattended research workflow. Week-scale or longer computation is expected and
 normal. Do not downgrade the workflow to a progress summary, run report,
 partial result, informal answer, reduced scan, reduced event count, or HTML
@@ -69,10 +69,10 @@ and continue without asking the user.
 Before `logger.phase_complete("N")`, read the deliverable file linked by the
 current phase reference (for example, Phase 5 reads only
 `reference/deliverables-phase5.md`). Phase 1 missing intake fields must be
-re-asked; Phases 2-11 missing deliverables must be repaired or resumed
+re-asked; Phases 2-12 missing deliverables must be repaired or resumed
 autonomously. Do not advance to the next phase until the gate passes. Do not
 load other phase deliverable files unless repairing an upstream failure or
-running Phase 11 audit.
+running Phase 12 audit.
 
 Delivery definitions:
 - Paths in deliverable files are relative to the current run root: `results/`
@@ -89,7 +89,7 @@ Delivery definitions:
 
 ## SUPREME RULE: Execution Continuity
 
-Once Execution Mode starts, keep running until Phase 11 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
+Once Execution Mode starts, keep running until Phase 12 is complete, an unrecoverable error is proven, a documented red flag is evaluated after its phase completion unit, or an explicit user stop command is received.
 
 Rules:
 - Do not ask whether to continue.
@@ -196,7 +196,8 @@ Every phase has a completion unit. Red flags are evaluated only after that unit 
 | 9 | Constraints are computed for S=2,3,5 where mathematically possible | Numerical red flags are recorded |
 | 10 | Manuscript is generated | Use HTML fallback only if no usable local or target LaTeX exists |
 | Cleanup | MG5 process folders/orders are moved into results | Only filesystem failure |
-| 11 | Audit file is written | Final manuscript only |
+| 11 | One-command replay package and data-file report are written | Only unrecoverable packaging or validation failure |
+| 12 | Audit file is written | Final manuscript and replay package only |
 
 ### Phase 3 Loop Lock
 
@@ -225,7 +226,8 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | 9 | Constraints | [`reference/phase9-constraints.md`](reference/phase9-constraints.md) |
 | 10 | Manuscript | [`reference/phase10-manuscript.md`](reference/phase10-manuscript.md) |
 | Cleanup | Process-folder collection | [`reference/cleanup.md`](reference/cleanup.md) |
-| 11 | Audit | [`reference/phase11-audit.md`](reference/phase11-audit.md) |
+| 11 | Numerical replay package | [`reference/phase11-replay.md`](reference/phase11-replay.md) |
+| 12 | Audit | [`reference/phase12-audit.md`](reference/phase12-audit.md) |
 
 Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), event-count/recovery rules in [`reference/event-count-recovery.md`](reference/event-count-recovery.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
 Each phase reference links its own `deliverables-phaseN.md` completion contract. Read only the current phase's deliverable file during normal execution.
@@ -260,7 +262,7 @@ phase code.
 | `scripts/convert_root_to_lhco.py` | Convert ROOT outputs to LHCO |
 | `scripts/workflow_logger.py` | Append-only phase/step log |
 | `scripts/read_results.py` | Typed JSON result readers |
-| `scripts/audit_expected_outputs.py` | Build Phase 11 expected-output checks from manifests |
+| `scripts/audit_expected_outputs.py` | Build Phase 12 expected-output checks from manifests |
 
 ## Output Layout
 
@@ -275,6 +277,12 @@ results/
   algorithms/
   mg5_processes/
   orders/
+  replay/
+    replay.sh
+    replay_manifest.json
+    replay_validation.json
+    data_files_report.md
+  audit_report.json
   manuscript.pdf if target/local LaTeX exists, otherwise manuscript.html
 ```
 
@@ -290,6 +298,12 @@ results/
     algorithms/
     mg5_processes/
     orders/
+    replay/
+      replay.sh
+      replay_manifest.json
+      replay_validation.json
+      data_files_report.md
+    audit_report.json
     manuscript.pdf if target/local LaTeX exists, otherwise manuscript.html
   E14_L3000/
     ...

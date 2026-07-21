@@ -264,6 +264,12 @@ class WorkflowLogger:
                 return str(record.get("phase"))
         return None
 
+    def last_completed_phase_record(self) -> Optional[Dict[str, Any]]:
+        for record in self._read_records():
+            if record.get("level") == "phase" and record.get("event") == "completed":
+                return record
+        return None
+
     def latest_phase_event(self, phase: str) -> Optional[str]:
         for record in self._read_records():
             if record.get("level") == "phase" and str(record.get("phase")) == str(phase):
@@ -289,17 +295,38 @@ class WorkflowLogger:
         return False
 
     def get_resume_phase(self) -> Optional[str]:
-        last = self.last_completed_phase()
-        if last is None:
+        completed = self.last_completed_phase_record()
+        if completed is None:
             return None
+        last = str(completed.get("phase"))
         if str(last).lower() == "cleanup":
             return "11"
         try:
             phase_number = int(last)
         except ValueError:
             return None
-        if phase_number >= 11:
-            return "11"
+        if phase_number == 11:
+            version = str(completed.get("skill_version", ""))
+            try:
+                version_parts = tuple(int(part) for part in version.split("."))
+            except ValueError:
+                version_parts = ()
+            if not version_parts:
+                replay_steps = {
+                    "freeze_replay_inputs",
+                    "generate_replay_entrypoint",
+                    "validate_replay_package",
+                }
+                has_replay_step = any(
+                    record.get("step") in replay_steps
+                    for record in self.get_phase_steps("11")
+                )
+                return "12" if has_replay_step else "11"
+            if version_parts and version_parts < (0, 25):
+                return "11"
+            return "12"
+        if phase_number >= 12:
+            return "12"
         return str(phase_number + 1)
 
     def get_phase_steps(self, phase: str) -> list:

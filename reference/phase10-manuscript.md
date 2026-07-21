@@ -273,7 +273,7 @@ Bounded loop:
 
 Maximum revisions after the first draft: `2`.
 
-Validation failures do not block cleanup or Phase 11 after the revision limit.
+Validation failures do not block cleanup, Phase 11, or Phase 12 after the revision limit.
 Write:
 
 ```

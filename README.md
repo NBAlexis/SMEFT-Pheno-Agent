@@ -22,7 +22,7 @@ Key contracts:
   on the target Linux environment, not Windows host paths.
 - Restart/retest requests reset the physics/run fields and begin again at
   `[1/9]`.
-- After `run_config.json` is written, Phases 2-11 run without user interaction
+- After `run_config.json` is written, Phases 2-12 run without user interaction
   unless an unrecoverable error, documented red flag, or explicit user stop
   occurs.
 - Event counts are locked in `run_config.json`; later phases must not resize
@@ -47,6 +47,8 @@ Key contracts:
 - `reference/phase1-input-collection.md` - intake state machine
 - `reference/phase2-env.md` - environment validation
 - `reference/phase3-validation.md` - operator loop completion contract
+- `reference/phase11-replay.md` - one-command numerical replay package contract
+- `reference/phase12-audit.md` - final self-consistency audit
 - `scripts/install_mg5.py` - MG5 installer after the agent resolves the dynamic
   Launchpad URL
 - `scripts/install_cutexperiment.py` - CutExperiment clone/validation helper
@@ -60,7 +62,7 @@ Key contracts:
 - `scripts/count_lhco_events.py` - CutExperiment-backed LHCO event counter
 - `scripts/merge_lhco.py` - LHCO merge helper with weighted cross-sections
 - `scripts/recover_lhco_count.py` - event-count recovery orchestrator
-- `scripts/audit_expected_outputs.py` - manifest-driven Phase 11 audit helper
+- `scripts/audit_expected_outputs.py` - manifest-driven Phase 12 audit helper
 
 ## Runtime Inputs
 

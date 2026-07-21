@@ -43,7 +43,8 @@ class TimingTracker:
         "Phase 9: Constraints",
         "Phase 10: Manuscript",
         "Cleanup",
-        "Phase 11: Audit",
+        "Phase 11: Replay Package",
+        "Phase 12: Audit",
     ]
 
     def __init__(self, log_path=None):

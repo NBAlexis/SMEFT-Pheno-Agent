@@ -17,7 +17,7 @@ Must deliver:
   runner manifests; empty expected lists mean earlier phases did not use the
   required runner records.
 
-Manuscript dependency: none directly, but Phase 11 uses this for reproducibility
+Manuscript dependency: none directly, but Phases 11 and 12 use this for reproducibility
 and disk hygiene evidence.
 
 If missing or incomplete: inspect runner manifests, move remaining recorded

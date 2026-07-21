@@ -17,15 +17,15 @@ Use a bounded loop:
 
 Maximum revisions after the first draft: `2`.
 
-Never block cleanup or Phase 11 because the manuscript remains imperfect. After the
+Never block cleanup, Phase 11, or Phase 12 because the manuscript remains imperfect. After the
 revision limit, write `manuscript_validation.json` with `status: "issues_remaining"`
-and continue to cleanup and audit.
+and continue to cleanup, replay packaging, and audit.
 
 The revision limit applies only to manuscript-writing quality issues. Missing
 upstream required artifacts, missing required data tables, missing required
 plots when the underlying data exists, or missing final PDF/HTML format
 deliverables must trigger repair of the responsible phase artifact or produce a
-Phase 11 `FAIL`; do not hide them as acceptable `issues_remaining`.
+Phase 12 `FAIL`; do not hide them as acceptable `issues_remaining`.
 
 ## Blocking During Phase 10
 

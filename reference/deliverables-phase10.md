@@ -42,4 +42,4 @@ existing data, run the three-pass completeness loop, update the checklist and
 trace map, revise within the bounded revision loop, and archive remaining
 manuscript-writing issues after the revision limit. Missing upstream required
 artifacts are not manuscript-writing issues; repair the responsible phase
-artifact or let Phase 11 fail. Do not ask the user to choose missing content.
+artifact or let Phase 12 fail. Do not ask the user to choose missing content.

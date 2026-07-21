@@ -15,7 +15,7 @@ config = load_run_config("{workdir}/results/run_config.json")
 
 ## When to Run
 
-Execute **after Phase 10 (manuscript generation)** and **before Phase 11 (audit)**. At this point, all required files (banners, LHCO, CSV, plots, manuscript) have already been copied to `results/`.
+Execute **after Phase 10 (manuscript generation)** and **before Phase 11 (replay packaging)**. At this point, all required files (banners, LHCO, CSV, plots, manuscript) have already been copied to `results/`.
 
 ## Critical Rule
 
@@ -159,4 +159,4 @@ deliverables require self-repair, not user interaction.
 After cleanup:
 - `mg5path` should contain **no** process directories from this workflow
 - `mg5path` should contain **no** runner order files recorded in the manifests
-- Phase 11 audit should verify the cleanup log exists and records both directories and order files
+- Phase 12 audit should verify the cleanup log exists and records both directories and order files
