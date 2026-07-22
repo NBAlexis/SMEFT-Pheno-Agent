@@ -1,0 +1,5 @@
+{
+  "wsl_distro": "Ubuntu-22.04",
+  "madgraph_path": "wsl2:/home/nbalexis/MG5_aMC_v3_5_6",
+  "cutexperiment_path": "wsl2:/home/nbalexis/CutExp/CutExperiment"
+}
