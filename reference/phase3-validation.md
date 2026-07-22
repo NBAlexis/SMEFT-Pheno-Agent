@@ -182,7 +182,11 @@ For each coefficient `fi` in this model:
    parses the banner, records actual LHCO count, and performs zero-cross-section
    double-checks when needed.
 4. Read `sigma_i` from `outputs[0].cross_section_pb` in the result JSON. Any
-   positive value, even `1e-10 pb`, means the operator couples to the process.
+   positive finite value, from a very small value such as `1e-10 pb` to a very
+   large value such as `1e20 pb`, is non-zero and means the operator couples to
+   the process. A very large value can result from the model's default
+   coefficient; record the value and coefficient and continue. Do not classify
+   it as zero because later generation or conversion produced no usable file.
    Do not replace a runner/parser failure with `0.0`. If the standard result is
    unavailable, diagnose the failure and use logs, banners, or a custom parser
    to produce equivalent evidence and the required result schema.
@@ -372,6 +376,7 @@ The following behaviors constitute a **critical violation** of the Execution Con
 | Claiming duplicate operators | Check `claimed` dict before assigning global index |
 | Forgetting to include model in process dir name | Always prefix/suffix with model name to avoid collisions |
 | Not setting anchor if first model has all-zero operators | Continue to next model; anchor is first non-zero across ALL models |
+| Treating a very large cross-section as zero or invalid | Record every positive finite parsed value, including values around `1e20 pb`; investigate later generation errors separately |
 
 ## Phase Transition
 

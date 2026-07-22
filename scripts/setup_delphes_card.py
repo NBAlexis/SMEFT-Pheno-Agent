@@ -24,18 +24,29 @@ import sys
 import os
 
 
-def collect_dependencies(tcl_file, cards_root, collected):
+def _is_within(path, root):
+    return os.path.commonpath([os.path.abspath(path), os.path.abspath(root)]) == os.path.abspath(root)
+
+
+def collect_dependencies(tcl_file, cards_root, collected, missing=None):
     """Recursively collect all source/include dependencies of a .tcl file.
 
     Args:
         tcl_file: absolute path to the .tcl file to scan
         cards_root: absolute path to the Delphes cards/ root directory
         collected: set of absolute paths already collected (modified in-place)
+        missing: list receiving unresolved dependency records
 
     Returns:
         set: updated collected paths
     """
-    dep_pattern = re.compile(r"(?:source|include)\s+(\S+)")
+    if missing is None:
+        missing = []
+    cards_root = os.path.realpath(cards_root)
+
+    dep_pattern = re.compile(
+        r"^\s*(?:source|include)\s+(?:\"([^\"]+)\"|'([^']+)'|\{([^}]+)\}|(\S+))"
+    )
 
     if not os.path.exists(tcl_file):
         return collected
@@ -51,27 +62,30 @@ def collect_dependencies(tcl_file, cards_root, collected):
         for line in f:
             m = dep_pattern.search(line)
             if m:
-                dep_path = m.group(1)
+                dep_path = next(group for group in m.groups() if group)
                 # Dependency paths in Delphes cards are relative to cards_root
                 dep_full = os.path.normpath(os.path.join(cards_root, dep_path))
-                if os.path.exists(dep_full):
+                alt_full = os.path.normpath(
+                    os.path.join(os.path.dirname(tcl_file), dep_path)
+                )
+                candidates = [path for path in (dep_full, alt_full) if _is_within(path, cards_root)]
+                existing = next((path for path in candidates if os.path.exists(path)), None)
+                if existing:
+                    dep_full = existing
                     if dep_full not in collected:
                         if os.path.isdir(dep_full):
                             collected.add(dep_full)
                         else:
                             # Recursively scan .tcl files for nested dependencies
-                            collect_dependencies(dep_full, cards_root, collected)
+                            collect_dependencies(dep_full, cards_root, collected, missing)
                 else:
-                    # Try relative to the directory containing the current file
-                    alt_full = os.path.normpath(
-                        os.path.join(os.path.dirname(tcl_file), dep_path)
-                    )
-                    if os.path.exists(alt_full):
-                        if alt_full not in collected:
-                            if os.path.isdir(alt_full):
-                                collected.add(alt_full)
-                            else:
-                                collect_dependencies(alt_full, cards_root, collected)
+                    missing.append({
+                        "referenced_from": tcl_file,
+                        "dependency": dep_path,
+                        "cards_root_path": dep_full,
+                        "referencing_file_path": alt_full,
+                        "outside_cards_root": not candidates,
+                    })
 
     return collected
 
@@ -134,16 +148,32 @@ def setup_delphes_card(mg5path, delphes_card, process_folder):
     _sanitize_execution_path(dst_card)
 
     # Recursively resolve all dependencies
-    cards_root = os.path.join(mg5path, "Delphes", "cards")
+    cards_root = os.path.realpath(os.path.join(mg5path, "Delphes", "cards"))
     copied_deps = set()
 
-    deps = collect_dependencies(src_card, cards_root, set())
+    missing = []
+    deps = collect_dependencies(src_card, cards_root, set(), missing)
+    if missing:
+        details = "\n".join(
+            f"- {item['referenced_from']}: {item['dependency']!r}; tried "
+            f"{item['cards_root_path']} and {item['referencing_file_path']}"
+            + ("; dependency resolves outside Delphes/cards" if item["outside_cards_root"] else "")
+            for item in missing
+        )
+        raise FileNotFoundError(
+            "Unresolved Delphes card dependencies:\n" + details
+        )
     # Don't copy the card itself (already copied as delphes_card.dat)
     deps.discard(os.path.realpath(src_card))
 
     for dep_full in deps:
         rel_path = os.path.relpath(dep_full, cards_root)
         dst_dep = os.path.join(cards_dir, rel_path)
+        if not _is_within(dst_dep, cards_dir):
+            raise RuntimeError(
+                f"Delphes dependency resolves outside the cards tree: {dep_full} "
+                f"relative to {cards_root}"
+            )
         if dep_full not in copied_deps:
             os.makedirs(os.path.dirname(dst_dep), exist_ok=True)
             if os.path.isdir(dep_full):
@@ -153,6 +183,18 @@ def setup_delphes_card(mg5path, delphes_card, process_folder):
             else:
                 shutil.copy2(dep_full, dst_dep)
             copied_deps.add(dep_full)
+
+    missing_copies = []
+    for dep_full in sorted(copied_deps):
+        rel_path = os.path.relpath(dep_full, cards_root)
+        dst_dep = os.path.join(cards_dir, rel_path)
+        if not os.path.exists(dst_dep):
+            missing_copies.append(f"{dep_full} -> {dst_dep}")
+    if missing_copies:
+        raise RuntimeError(
+            "Delphes dependencies were resolved but not copied:\n- "
+            + "\n- ".join(missing_copies)
+        )
 
     return dst_card
 
@@ -179,7 +221,7 @@ def main():
     try:
         dst = setup_delphes_card(mg5path, delphes_card, process_folder)
         print(f"Copied to: {dst}")
-    except FileNotFoundError as e:
+    except (FileNotFoundError, RuntimeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

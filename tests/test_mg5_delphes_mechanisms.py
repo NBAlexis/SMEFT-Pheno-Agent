@@ -91,6 +91,11 @@ class Mg5DelphesMechanismTests(unittest.TestCase):
             )
             self.assertEqual(detect_jet_branch(card), "Jet")
 
+            write_text(card, "add Branch Output/jets FatJet Jet\n")
+            self.assertEqual(detect_jet_branch(card), "FatJet")
+            write_text(card, "set NoJetBranch 1\n")
+            self.assertIsNone(detect_jet_branch(card))
+
     def test_convert_root_to_lhco_constructs_expected_command(self):
         with tempfile.TemporaryDirectory() as mg5:
             process = "proc"
@@ -141,6 +146,123 @@ class Mg5DelphesMechanismTests(unittest.TestCase):
                     convert_root_to_lhco(mg5, process, run_folder)
             self.assertIn("root2lhco failed", str(ctx.exception))
             self.assertIn("Cannot find tree", str(ctx.exception))
+            self.assertIn("Detected jet branch: Jet", str(ctx.exception))
+            self.assertIn("Command: ./root2lhco", str(ctx.exception))
+            self.assertIn("Return code: 2", str(ctx.exception))
+            self.assertIn("root2lhco.log", str(ctx.exception))
+
+    def test_convert_root_to_lhco_missing_output_keeps_diagnostic_context(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            process = "proc"
+            run_folder = "run_01"
+            root_dir = os.path.join(mg5, process, "Events", run_folder)
+            cards_dir = os.path.join(mg5, process, "Cards")
+            write_text(os.path.join(cards_dir, "delphes_card.dat"), "add Branch Output/jets GenJet Jet\n")
+            root_path = os.path.join(root_dir, "tag_1_delphes_events.root")
+            write_text(root_path, "fake-root")
+
+            with patch(
+                "scripts.convert_root_to_lhco.subprocess.run",
+                return_value=subprocess.CompletedProcess(["./root2lhco"], 0),
+            ):
+                with self.assertRaises(RuntimeError) as ctx:
+                    convert_root_to_lhco(mg5, process, run_folder)
+
+            message = str(ctx.exception)
+            self.assertIn("LHCO file not created", message)
+            self.assertIn(f"ROOT input: {root_path}", message)
+            self.assertIn("Detected jet branch: GenJet", message)
+            self.assertIn("--jet-branch=GenJet", message)
+            self.assertIn("Return code: 0", message)
+
+    def test_convert_root_to_lhco_reports_missing_inputs(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            with self.assertRaisesRegex(RuntimeError, "ROOT file not found"):
+                convert_root_to_lhco(mg5, "proc", "run_01")
+
+            root_path = os.path.join(mg5, "proc", "Events", "run_01", "tag_1_delphes_events.root")
+            write_text(root_path, "root")
+            with self.assertRaises(RuntimeError) as ctx:
+                convert_root_to_lhco(mg5, "proc", "run_01")
+            self.assertIn("Delphes card not found", str(ctx.exception))
+            self.assertIn(root_path, str(ctx.exception))
+
+    def test_convert_root_to_lhco_rejects_empty_header_only_and_error_log_outputs(self):
+        cases = [
+            ("", "ok\n", "LHCO file is empty"),
+            ("header only\n", "ok\n", "LHCO file has no events"),
+            ("event one\nevent two\n", "contains 0 events\n", "root2lhco log indicates failure"),
+        ]
+        for lhco_text, log_text, expected in cases:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as mg5:
+                process = "proc"
+                run_folder = "run_01"
+                root_dir = os.path.join(mg5, process, "Events", run_folder)
+                cards_dir = os.path.join(mg5, process, "Cards")
+                write_text(os.path.join(cards_dir, "delphes_card.dat"), "add Branch Output/jets Jet Jet\n")
+                write_text(os.path.join(root_dir, "tag_1_delphes_events.root"), "root")
+
+                def fake_run(cmd, cwd, stdout, stderr, text):
+                    write_text(os.path.abspath(os.path.join(cwd, cmd[2])), lhco_text)
+                    stdout.write(log_text)
+                    return subprocess.CompletedProcess(cmd, 0)
+
+                with patch("scripts.convert_root_to_lhco.subprocess.run", side_effect=fake_run):
+                    with self.assertRaises(RuntimeError) as ctx:
+                        convert_root_to_lhco(mg5, process, run_folder)
+                self.assertIn(expected, str(ctx.exception))
+                self.assertIn("root2lhco.log", str(ctx.exception))
+
+    def test_convert_root_to_lhco_rejects_tiny_output_for_large_root(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            process = "proc"
+            run_folder = "run_01"
+            root_dir = os.path.join(mg5, process, "Events", run_folder)
+            cards_dir = os.path.join(mg5, process, "Cards")
+            write_text(os.path.join(cards_dir, "delphes_card.dat"), "add Branch Output/jets Jet Jet\n")
+            write_text(os.path.join(root_dir, "tag_1_delphes_events.root"), "x" * (1024 * 1024 + 1))
+
+            def fake_run(cmd, cwd, stdout, stderr, text):
+                write_text(os.path.abspath(os.path.join(cwd, cmd[2])), "event one\nevent two\n")
+                stdout.write("ok\n")
+                return subprocess.CompletedProcess(cmd, 0)
+
+            with patch("scripts.convert_root_to_lhco.subprocess.run", side_effect=fake_run):
+                with self.assertRaisesRegex(RuntimeError, "suspiciously small"):
+                    convert_root_to_lhco(mg5, process, run_folder)
+
+    @unittest.skipUnless(
+        shutil.which("wsl.exe") or shutil.which("wsl"),
+        "WSL is required for the real Delphes-card copy test",
+    )
+    def test_real_muon_collider_card_dependencies_copy_in_wsl(self):
+        config = external_tool_config()
+        distro = config["wsl_distro"]
+        mg5_path = config["madgraph_path"]
+        if not distro or not mg5_path:
+            self.skipTest("Configure tests/external_tools.json or SMEFT_MG5_WSL_* to enable the card test")
+
+        script_path = "/mnt/" + str(ROOT / "scripts" / "setup_delphes_card.py").replace(":", "", 1).replace("\\", "/").lower()
+        test_root = f"/tmp/smeft_delphes_card_test_{os.getpid()}"
+        command = (
+            "set -euo pipefail; "
+            f"test {shlex.quote(test_root)} != /; rm -rf -- {shlex.quote(test_root)}; "
+            f"mkdir -p {shlex.quote(test_root + '/Delphes')} {shlex.quote(test_root + '/proc')}; "
+            f"ln -s {shlex.quote(mg5_path + '/Delphes/cards')} {shlex.quote(test_root + '/Delphes/cards')}; "
+            f"python3 {shlex.quote(script_path)} {shlex.quote(test_root)} delphes_card_MuonColliderDet.tcl proc; "
+            f"test -s {shlex.quote(test_root + '/proc/Cards/delphes_card.dat')}; "
+            f"test -d {shlex.quote(test_root + '/proc/Cards/MuonCollider')}; "
+            "for f in MuonColliderDet_JetReco.tcl MuonColliderDet_JetSmearing.tcl "
+            "MuonColliderDet_JetFlavorAssociation.tcl MuonColliderDet_BTagging.tcl "
+            f"MuonColliderDet_TauTagging.tcl; do test -s {shlex.quote(test_root + '/proc/Cards/MuonCollider')}/\"$f\"; done; "
+            f"rm -rf -- {shlex.quote(test_root)}"
+        )
+        result = run_wsl_probe(command, distro, 30)
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
 
     @unittest.skipUnless(
         shutil.which("wsl.exe") or shutil.which("wsl"),
@@ -153,8 +275,9 @@ class Mg5DelphesMechanismTests(unittest.TestCase):
         if not distro or not mg5_path:
             self.skipTest("Configure tests/external_tools.json or SMEFT_MG5_WSL_* to enable the smoke test")
 
-        process = "smoke_ep_em_to_mu_mu"
-        order_name = "smoke_order.txt"
+        smoke_root = f"/tmp/smeft_mg5_smoke_{os.getpid()}"
+        process = f"{smoke_root}/process"
+        order_name = f"{smoke_root}/order.txt"
         order_text = "\n".join([
             "import model sm",
             "generate e+ e- > mu+ mu-",
@@ -163,6 +286,8 @@ class Mg5DelphesMechanismTests(unittest.TestCase):
         result = run_wsl_probe(
             (
                 "set -euo pipefail; "
+                f"test {shlex.quote(smoke_root)} != /; rm -rf -- {shlex.quote(smoke_root)}; "
+                f"mkdir -p {shlex.quote(smoke_root)}; trap 'rm -rf -- {shlex.quote(smoke_root)}' EXIT; "
                 f"cd {shlex.quote(mg5_path)}; "
                 f"cat > {shlex.quote(order_name)} <<'EOF'\n{order_text}EOF\n"
                 f"./bin/mg5_aMC {shlex.quote(order_name)}"

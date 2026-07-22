@@ -21,18 +21,20 @@ Execute **after Phase 10 (manuscript generation)** and **before Phase 11 (replay
 
 Cleanup means **archive by moving**, not deleting. Use **`mv`** (move), not
 `cp` (copy), for MG5 process directories and order files. The only files that
-may be deleted during cleanup are large intermediate event files already copied
-or converted into required outputs, such as ROOT, LHE, and HEPMC payloads. Never
-delete a runner-recorded process directory or order file as a shortcut; move it
-under `results/mg5_processes/` or `results/orders/` for audit/debugging.
+may be deleted during cleanup are `.root`, `.hepmc`, and `.hepmc.gz` files after
+required outputs are secured. LHE/LHE.GZ files, cards, banners, logs, JSON,
+order files, scripts, configuration files, and all other process contents are
+small files under this workflow's cleanup definition and must be archived.
+Never delete a runner-recorded process directory or order file as a shortcut;
+move it under `results/mg5_processes/` or `results/orders/` for audit/debugging.
 
 ## Process Directories to Collect
 
 Identify all process directories created during this workflow.
 
 The config runner names process directories with the normalized process base, model name, mode suffix (`SM`, `NP`, `SMNP`, or `SCAN`), and timestamp. Failed runner-owned directories may have an additional `_broken_{timestamp}` suffix.
-Keep `_broken_*` process directories until cleanup. They may have had large
-ROOT/LHE/HEPMC files removed already, but the directory itself must be moved
+Keep `_broken_*` process directories until cleanup. They may have had ROOT or
+HEPMC files removed already, but the directory itself must be moved
 into the project results for audit/debugging rather than deleted during the
 workflow.
 
@@ -54,11 +56,12 @@ values recorded in runner result JSON files.
    mkdir -p {workdir}/results/orders
    ```
 
-2. Optionally remove large intermediate files inside each process directory
+2. Optionally remove `.root`, `.hepmc`, and `.hepmc.gz` files inside each process directory
    after required banners, LHCO files, CSVs, plots, and manuscript evidence are
-   already secured in `results/`. Limit this to ROOT/LHE/HEPMC-style payloads;
-   keep the directory tree, cards, logs, banners, subprocess files, and metadata
-   available for archive/audit.
+   already secured in `results/`. Keep LHE/LHE.GZ, the directory tree, cards,
+   logs, banners, subprocess files, scripts, configurations, and metadata
+   available for archive/audit. Record every deleted ROOT/HEPMC path in
+   `cleanup_log.json`; deletion of any other suffix makes cleanup invalid.
 
 3. Move each process directory:
    ```python

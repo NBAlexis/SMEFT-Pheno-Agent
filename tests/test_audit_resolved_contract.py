@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from scripts.audit_expected_outputs import (
     _canonical_sha256,
+    _cleanup_log_checks,
     _expected_files,
     _final_audit_artifact_checks,
     _phase6_scan_matrix_checks,
@@ -205,6 +206,51 @@ class ResolvedContractAuditTests(unittest.TestCase):
             self.assertTrue(any(item.get("deferred") for item in first_pass))
             final_pass = _resolved_deliverable_checks(root, include_final_artifacts=True)
             self.assertEqual(sum(not item["ok"] for item in final_pass), 2)
+
+    def test_cleanup_log_rejects_deleting_small_files(self):
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, "mg5_processes", "proc_archive"), exist_ok=True)
+            os.makedirs(os.path.join(root, "orders"), exist_ok=True)
+            write_json(
+                os.path.join(root, "mg5_processes", "cleanup_log.json"),
+                {
+                    "expected_process_dirs": ["proc"],
+                    "moved_process_dirs": ["mg5_processes/proc_archive"],
+                    "missing_process_dirs": [],
+                    "expected_order_files": ["order.txt"],
+                    "moved_order_files": ["orders/order.txt"],
+                    "missing_order_files": [],
+                    "deleted_files": [
+                        "proc/Events/run_01/tag_1_delphes_events.root",
+                        "proc/Events/run_01/tag_1_pythia8_events.hepmc.gz",
+                        "proc/Events/run_01/unweighted_events.lhe.gz",
+                        "proc/Cards/param_card.dat",
+                    ],
+                },
+            )
+            checks = _cleanup_log_checks(root)
+            cleanup = checks[-1]
+            self.assertFalse(cleanup["ok"])
+            self.assertIn("unweighted_events.lhe.gz", "\n".join(cleanup["forbidden_deleted_files"]))
+            self.assertIn("param_card.dat", "\n".join(cleanup["forbidden_deleted_files"]))
+
+            write_json(
+                os.path.join(root, "mg5_processes", "cleanup_log.json"),
+                {
+                    "expected_process_dirs": ["proc"],
+                    "moved_process_dirs": ["mg5_processes/proc_archive"],
+                    "missing_process_dirs": [],
+                    "expected_order_files": ["order.txt"],
+                    "moved_order_files": ["orders/order.txt"],
+                    "missing_order_files": [],
+                    "deleted_large_files": [
+                        "proc/Events/run_01/tag_1_delphes_events.root",
+                        "proc/Events/run_01/tag_1_pythia8_events.hepmc.gz",
+                    ],
+                },
+            )
+            checks = _cleanup_log_checks(root)
+            self.assertTrue(checks[-1]["ok"], checks[-1])
 
     def test_final_audit_artifact_schemas(self):
         with tempfile.TemporaryDirectory() as root:

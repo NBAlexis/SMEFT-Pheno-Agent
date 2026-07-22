@@ -22,7 +22,7 @@ For each generated sample or scan point:
 | `>= 0.9` | Accept normally |
 | `>= 0.1` and `< 0.9` | Accept with warning |
 | `< 0.1` | Run the complete event-count recovery procedure; do not accept the sample before recovery succeeds |
-| zero or unparsable LHCO | Treat as likely Delphes/root2lhco/card failure, not a normal hard-survey success |
+| zero or unparsable LHCO | Treat as likely Delphes/root2lhco/card failure, not a normal hard-survey success; preserve and report the exact exception or log lines |
 
 Recovery must not change physics parameters, coefficients, beam energy,
 polarization, cuts, algorithms, locked event targets, or scan grids.
@@ -52,6 +52,14 @@ The recovery orchestrator runs the MG5 config runner with survey profiles:
 
 `hard_survey = 2` is the maximum for this workflow.
 
+For every attempt, record the profile name and verify that the generated launch
+order contains exactly the settings listed for that profile. A profile label in
+JSON is not proof that MG5 received the settings. If an attempt crashes, retain
+its result JSON, stdout/stderr paths, return code, process directory, and exact
+error text before trying the next repair. Do not interpret one failed profile
+as a scientific failure or continue the low-count ladder when the LHCO itself
+is zero or unreadable; diagnose the card, Delphes, ROOT, or root2lhco step first.
+
 ## LHCO Merge Rule
 
 Merge recovery attempts with the LHCO merge helper.
@@ -63,6 +71,9 @@ Merge recovery attempts with the LHCO merge helper.
   loaded-LHCO-event-count-weighted average of source banner cross-sections.
 - Preserve metadata for every source count, banner, source cross-section, merged
   count, and merged cross-section.
+- Never concatenate CSV files in place of LHCO recovery. Merge the LHCO files
+  first, verify the loaded event count, and create downstream CSV files from
+  that verified merged LHCO file.
 
 ## Phase Use
 

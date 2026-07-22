@@ -145,7 +145,7 @@ After the process directory is created (`output` step completed), the following 
 
 The Delphes detector card is read from **`run_config.json`** (field `delphes_card`), which was determined during Phase 1 - either user-specified or auto-recommended. See [`reference/phase1-input-collection.md`](phase1-input-collection.md) for the selection logic.
 
-**(1.1) Use the script:**
+**(1.1) Standard path:**
 
 ```bash
 python scripts/setup_delphes_card.py {mg5path} {delphes_card} {folder_name}
@@ -155,6 +155,22 @@ The script:
 1. Copies `{mg5path}/Delphes/cards/{delphes_card}` -> `{mg5path}/{folder_name}/Cards/delphes_card.dat`
 2. Reads the `.tcl` file to find `source` / `include` dependencies
 3. Locates dependency folders under `{mg5path}/Delphes/cards/` and copies them into `Cards/`
+
+Preserve every dependency's path relative to `{mg5path}/Delphes/cards/`.
+Muon-collider cards commonly depend on files or directories below that tree;
+copying only the main card, or flattening a dependency directory into `Cards/`,
+is incorrect. Inspect the actual `Delphes/cards/` directory at runtime. After
+copying, follow every direct and nested `source` or `include` in the selected
+card and verify that the same relative path exists below the process `Cards/`
+directory. Paths may be unquoted, single-quoted, double-quoted, or enclosed in
+braces.
+
+If Delphes reports a missing card, module, Tcl file, or tree, compare the
+selected source card and its dependency tree with the process `Cards/`
+directory, copy the missing path with its relative directory structure, and
+retry. Record the failing command, return code, log path, and the exact error
+lines. A Delphes dependency failure is not a zero cross-section or a normal
+zero-event result.
 
 Or import in Python:
 ```python
@@ -172,7 +188,7 @@ Read the parameter card:
 {mg5path}/{folder_name}/Cards/param_card.dat
 ```
 
-**Use the script** (do not reimplement):
+Use the bundled parser as the standard path:
 
 ```bash
 python scripts/parse_param_card.py {param_card_path}
@@ -195,6 +211,10 @@ The script handles all edge cases:
 - Block boundary detection (prevents leaking into `Block mass`, etc.)
 
 Save the mapping for downstream use (e.g., as `operator_coefficients.json`).
+If the parser does not support the actual parameter card, inspect the named
+block and its boundary, repair or replace the parser, and preserve the same
+output keys. Never substitute an empty coefficient list or zero value for a
+parse error.
 
 ## Event Generation Through Runner JSON
 
@@ -442,9 +462,9 @@ Each generation run creates a subfolder named `run_01`, `run_02`, etc.
 
 **Note:** `tag_1` in the filename `tag_1_delphes_events.root` is fixed when using the order template in this workflow.
 
-### Convert ROOT to LHCO (Use the Script)
+### Convert ROOT to LHCO
 
-**Use the script** (do not reimplement):
+Use the bundled converter as the standard path:
 
 ```bash
 python scripts/convert_root_to_lhco.py {mg5path} {folder_name} {run_folder}
@@ -468,6 +488,12 @@ lhco_path = convert_root_to_lhco(mg5path, folder_name, run_folder)
 - `.lhco` must exist and be non-empty
 - If `.lhco` < 1 KB but `.root` > 1 MB -> `root2lhco` failed silently; **check the log**
 - Do NOT proceed to cleanup if `.lhco` is invalid
+- On failure, report the ROOT path, detected jet branch, command, return code,
+  `root2lhco.log` path, and the exact relevant log lines. Then inspect the
+  Delphes card dependency tree, ROOT tree/branch names, command arguments, and
+  file permissions; repair the converter or use an equivalent logged command
+  and retry. Empty or missing LHCO output is a technical error, not evidence of
+  a zero cross-section.
 
 ### Step 3: Retain and Clean Files
 
@@ -477,15 +503,19 @@ After successful LHCO conversion, the run folder contains:
 |------|--------|--------|
 | `{run_folder}_tag_1_banner.txt` | **Retain** | Contains run metadata and cross-section info |
 | `{run_folder}.lhco` | **Retain** | Converted event data for downstream analysis |
-| `unweighted_events.lhe.gz` | **Delete** | Large raw event file; LHCO replaces it |
+| `unweighted_events.lhe.gz` | **Retain and archive** | Small provenance/event file under this workflow's cleanup definition |
 | `tag_1_pythia8_events.hepmc.gz` | **Delete** | Large intermediate HepMC file |
 | `tag_1_delphes_events.root` | **Delete** | Large ROOT file; LHCO replaces it |
 
 **Cleanup command example:**
 ```bash
 cd {mg5path}/{folder_name}/Events/{run_folder}
-rm unweighted_events.lhe.gz tag_1_pythia8_events.hepmc.gz tag_1_delphes_events.root
+rm tag_1_pythia8_events.hepmc.gz tag_1_delphes_events.root
 ```
+
+Only `.root`, `.hepmc`, and `.hepmc.gz` files may be deleted for space. Move
+the remaining process directory, including LHE/LHE.GZ, cards, banners, logs,
+JSON, scripts, and configuration files, into the cleanup archive.
 
 ## Cross-Section Extraction
 
@@ -518,7 +548,10 @@ cs = extract_cross_section(banner_path)  # returns float in pb
 The script supports both MG5_aMC v3.x (`Integrated weight (pb) : X.XXXX`) and older (`X +/- Y pb`) formats. Raises `ValueError` on parse failure.
 
 **Critical rules:**
-- Any positive value, even `1e-10 pb`, is a valid cross-section.
+- Any positive finite value is a non-zero cross-section. This includes very
+  small values such as `1e-10 pb` and very large values such as `1e20 pb`.
+  Investigate a surprising magnitude by checking the coefficient and units,
+  but do not turn it into zero or a parse failure.
 - Do NOT silently return `0.0` on parse failure. Raise an error so the failure is visible.
 - Prefer the runner result JSON. Custom implementations may import
   `extract_cross_section()` or write an equivalent parser, but must emit the
@@ -558,7 +591,9 @@ After process creation (`output` step), before event generation:
 - [ ] Collider type is identified; default applied if user did not specify
 - [ ] For ep collisions: each runner config includes positive `ebeam1` and `ebeam2`
 - [ ] Delphes `.tcl` card is copied to `Cards/delphes_card.dat`
-- [ ] All `.tcl` dependency folders are copied to `Cards/`
+- [ ] Every direct and nested `source`/`include` dependency exists under
+      `Cards/` at the same path relative to `Delphes/cards/`, including the
+      selected muon-collider card's supporting directories
 - [ ] A coefficient block is found in `param_card.dat` (e.g. `anoinputs`, `dim8`) and coefficients are recorded
 - [ ] If polarization requested: `polbeam1` and `polbeam2` are in [-1, 1]
 

@@ -1341,14 +1341,31 @@ def _cleanup_log_checks(root: str) -> List[Dict[str, Any]]:
     ]
     missing = [key for key in required if key not in data or not isinstance(data.get(key), list)]
     no_expected_records = not data.get("expected_process_dirs") and not data.get("expected_order_files")
+    deletion_keys = [
+        "deleted_files",
+        "removed_files",
+        "deleted_large_files",
+        "removed_large_files",
+    ]
+    deleted_paths = []
+    for key in deletion_keys:
+        values = data.get(key)
+        if isinstance(values, list):
+            deleted_paths.extend(str(value) for value in values)
+    forbidden_deleted = [
+        path for path in deleted_paths
+        if not path.lower().endswith((".root", ".hepmc", ".hepmc.gz"))
+    ]
     checks.append({
         "rel_path": rel_path,
         "severity": "abort",
         "source": "cleanup_log",
         "path": path,
-        "ok": not missing and not no_expected_records,
+        "ok": not missing and not no_expected_records and not forbidden_deleted,
         "missing_or_nonlist_keys": missing,
         "no_expected_records": no_expected_records,
+        "deleted_file_keys_checked": deletion_keys,
+        "forbidden_deleted_files": forbidden_deleted,
     })
     return checks
 

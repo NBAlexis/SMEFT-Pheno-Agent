@@ -21,7 +21,16 @@ from scripts.parse_param_card import parse_coefficients
 from scripts.read_results import get_anchor_model, get_c_scan, get_operator_c_scan, get_cs_sm
 import scripts.recover_lhco_count as recover_module
 from scripts.run_mg5 import run_mg5
-from scripts.run_mg5_config import _beam_lines, _coefficient_lines, _labels_for_runs, _process_order_lines, validate_config
+from scripts.run_mg5_config import (
+    _beam_lines,
+    _cleanup_candidates,
+    _coefficient_lines,
+    _labels_for_runs,
+    _launch_process,
+    _process_order_lines,
+    _remove_large_intermediates,
+    validate_config,
+)
 from scripts.setup_delphes_card import setup_delphes_card
 from scripts.timing_tracker import TimingTracker
 
@@ -114,23 +123,68 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                 os.path.join(cards, "main.tcl"),
                 "\n".join([
                     "source modules/common.tcl",
+                    "include \"modules/quoted file.tcl\"",
                     "set ExecutionPath {",
                     "# CommentedModule",
                     "RealModule",
                     "}",
                 ]),
             )
-            write_text(os.path.join(cards, "modules", "common.tcl"), "set X 1\n")
+            write_text(os.path.join(cards, "modules", "common.tcl"), "source nested/inner.tcl\n")
+            write_text(os.path.join(cards, "modules", "nested", "inner.tcl"), "set INNER 1\n")
+            write_text(os.path.join(cards, "modules", "quoted file.tcl"), "set QUOTED 1\n")
 
             copied = setup_delphes_card(mg5, "main.tcl", process)
             self.assertTrue(os.path.exists(copied))
             self.assertTrue(
                 os.path.exists(os.path.join(mg5, process, "Cards", "modules", "common.tcl"))
             )
+            self.assertTrue(
+                os.path.exists(os.path.join(mg5, process, "Cards", "modules", "nested", "inner.tcl"))
+            )
+            self.assertTrue(
+                os.path.exists(os.path.join(mg5, process, "Cards", "modules", "quoted file.tcl"))
+            )
             with open(copied, "r", encoding="utf-8") as handle:
                 text = handle.read()
             self.assertNotIn("# CommentedModule", text)
             self.assertIn("RealModule", text)
+
+    def test_setup_delphes_card_reports_each_unresolved_dependency(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            cards = os.path.join(mg5, "Delphes", "cards")
+            process = "proc"
+            os.makedirs(os.path.join(mg5, process), exist_ok=True)
+            main_card = os.path.join(cards, "main.tcl")
+            write_text(
+                main_card,
+                "# source ignored/commented.tcl\nsource MuonCollider/missing.tcl\n",
+            )
+
+            with self.assertRaises(FileNotFoundError) as ctx:
+                setup_delphes_card(mg5, "main.tcl", process)
+
+            message = str(ctx.exception)
+            self.assertIn("Unresolved Delphes card dependencies", message)
+            self.assertIn(main_card, message)
+            self.assertIn("MuonCollider/missing.tcl", message)
+            self.assertIn(os.path.join(cards, "MuonCollider", "missing.tcl"), message)
+            self.assertNotIn("ignored/commented.tcl", message)
+
+    def test_setup_delphes_card_rejects_dependency_outside_cards_tree(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            cards = os.path.join(mg5, "Delphes", "cards")
+            process = "proc"
+            os.makedirs(os.path.join(mg5, process), exist_ok=True)
+            outside = os.path.join(mg5, "Delphes", "outside.tcl")
+            write_text(outside, "set OUTSIDE 1\n")
+            write_text(os.path.join(cards, "main.tcl"), "source ../outside.tcl\n")
+
+            with self.assertRaises(FileNotFoundError) as ctx:
+                setup_delphes_card(mg5, "main.tcl", process)
+
+            self.assertIn("outside Delphes/cards", str(ctx.exception))
+            self.assertFalse(os.path.exists(os.path.join(mg5, process, "outside.tcl")))
 
     def test_weighted_order_extraction_uses_fake_process_files(self):
         with tempfile.TemporaryDirectory() as root:
@@ -151,6 +205,18 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             result = extract_weighted_order(model, [process])
             self.assertEqual(result["max_weighted_order"], 5)
             self.assertEqual(result["diagram_count"], 1)
+
+            write_text(
+                os.path.join(process, "SubProcesses", "P0_aa", "matrix1.ps"),
+                "diagram label (NP=2, QED=1, QCD=1)\n",
+            )
+            matrix_path = os.path.join(process, "SubProcesses", "P0_aa", "matrix1.ps")
+            with self.assertRaises(ValueError) as ctx:
+                extract_weighted_order(model, [process])
+            message = str(ctx.exception)
+            self.assertIn("Missing coupling-order hierarchies for: QCD", message)
+            self.assertIn(os.path.join(model, "coupling_orders.py"), message)
+            self.assertIn(matrix_path, message)
 
     def test_fast_pure_python_helpers(self):
         self.assertEqual(normalize_process_name("e+ e- > a a"), "ep_em_to_a_a")
@@ -248,6 +314,10 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             )
             self.assertEqual(metadata["merged_loaded_lhco_event_count"], 3)
             self.assertAlmostEqual(metadata["merged_cross_section_pb"], 3.0)
+            self.assertEqual(
+                metadata["cross_section_rule"],
+                "loaded-LHCO-event-count-weighted average of source banner cross-sections",
+            )
 
     def test_zero_cross_section_checker_requires_logs_and_no_substantial_lhe(self):
         with tempfile.TemporaryDirectory() as root:
@@ -270,6 +340,13 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                 tar.add(inner, arcname="events.lhe")
             tar_report = double_check_zero_cross_section(0.0, [stdout_log], [], run_dir, small_lhe_bytes=10000)
             self.assertTrue(any(item["path"].endswith("events.tar.gz") for item in tar_report["lhe_files"]))
+
+            huge_banner = os.path.join(root, "huge_banner.txt")
+            write_text(huge_banner, "Integrated weight (pb) : 1.0e20\n")
+            self.assertEqual(extract_cross_section(huge_banner), 1.0e20)
+            huge_report = double_check_zero_cross_section(1.0e20, [stdout_log], [], run_dir)
+            self.assertEqual(huge_report["status"], "not_zero_cross_section")
+            self.assertFalse(huge_report["confirmed"])
 
     def test_install_and_read_result_helpers_on_fake_layouts(self):
         with tempfile.TemporaryDirectory() as root:
@@ -330,6 +407,60 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
         data = tracker.to_dict()
         self.assertEqual(data["phases"]["Phase 3: Validation"]["status"], "done")
         self.assertEqual(data["mg5_steps"]["Phase 3: Validation"]["madgraph"]["duration_sec"], 1.5)
+
+    def test_cleanup_only_deletes_root_and_hepmc_large_files(self):
+        with tempfile.TemporaryDirectory() as root:
+            process = os.path.join(root, "proc")
+            run = os.path.join(process, "Events", "run_01")
+            root_file = os.path.join(run, "tag_1_delphes_events.root")
+            hepmc_file = os.path.join(run, "tag_1_pythia8_events.hepmc.gz")
+            lhe_file = os.path.join(run, "unweighted_events.lhe.gz")
+            banner_file = os.path.join(run, "run_01_tag_1_banner.txt")
+            order_file = os.path.join(process, "Cards", "run_card.dat")
+            for path in (root_file, hepmc_file, lhe_file, banner_file, order_file):
+                write_text(path, "payload\n")
+
+            self.assertEqual(
+                set(_cleanup_candidates(root, "proc", ["run_01"])),
+                {os.path.abspath(root_file), os.path.abspath(hepmc_file)},
+            )
+            removed = _remove_large_intermediates(process)
+            self.assertEqual(set(removed), {os.path.abspath(root_file), os.path.abspath(hepmc_file)})
+            self.assertFalse(os.path.exists(root_file))
+            self.assertFalse(os.path.exists(hepmc_file))
+            self.assertTrue(os.path.exists(lhe_file))
+            self.assertTrue(os.path.exists(banner_file))
+            self.assertTrue(os.path.exists(order_file))
+
+    def test_sde_survey_profile_is_written_to_launch_order(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            process_folder = "proc"
+            events_dir = os.path.join(mg5, process_folder, "Events")
+            os.makedirs(events_dir, exist_ok=True)
+            cfg = {
+                "mg5path": mg5,
+                "process_mode": "pure_np",
+                "nevents": 10,
+                "ebeam1": 120,
+                "ebeam2": 120,
+                "survey_profile": "sde0_hs2",
+                "launch_order_filename": "launch_order.txt",
+                "log_dir": os.path.join(mg5, "logs"),
+            }
+
+            def fake_run(_mg5path, _order_name):
+                os.makedirs(os.path.join(events_dir, "run_01"), exist_ok=True)
+                return {"returncode": 0, "stdout": "ok", "stderr": "", "mg5_steps": {}}
+
+            with patch("scripts.run_mg5_config.run_mg5", side_effect=fake_run):
+                result, runs = _launch_process(cfg, process_folder, {"block_name": "anoinputs", "coefficients": {}})
+
+            self.assertEqual(runs, ["run_01"])
+            self.assertEqual(result["survey_profile"], "sde0_hs2")
+            with open(os.path.join(mg5, "launch_order.txt"), encoding="utf-8") as handle:
+                order = handle.read()
+            self.assertIn("set sde_strategy = 0", order)
+            self.assertIn("set hard_survey = 2", order)
 
     def test_load_run_config_validates_core_schema_and_defaults(self):
         with tempfile.TemporaryDirectory() as root:

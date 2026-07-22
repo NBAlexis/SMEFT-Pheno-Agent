@@ -126,11 +126,16 @@ directory. Pass the returned `max_weighted_order` to the runner as
 the script JSON path, `max_weighted_order`, and runner-selected keyword under
 the operator entry in `scan_manifest.json` as `weighted_order_guard`.
 
-If `extract_weighted_order.py` fails, inspect its error, the SM/NP
-`matrix1.ps` files, and the UFO `coupling_orders.py`; then compute the same
-conservative maximum weighted order manually and record the reason in
-`weighted_order_guard`. Do not ask the user and do not perform diagram-count
-judgment in phase logic.
+If `extract_weighted_order.py` fails, preserve its complete error text. Report
+the model directory and every inspected `SubProcesses/subproc.mg`,
+`matrix1.ps`, and `coupling_orders.py` path. When a diagram uses an order absent
+from the model hierarchy, name each missing order explicitly, for example
+`Missing coupling-order hierarchies for: QCD`; do not return a generic
+"Weighted failed" message. Repair the parser or model-path selection, or
+compute the same conservative maximum weighted order manually from those files
+and record the formula, input values, and reason in `weighted_order_guard`.
+Do not guess an order silently, ask the user, or perform diagram-count judgment
+in phase logic.
 
 ## Step 6.2: Launch Scan Per Operator
 
@@ -236,7 +241,7 @@ If MG5 fails or ROOT-to-LHCO conversion fails for any operator scan:
    stdout/stderr paths.
 2. Update `phase6_progress.json` marking the current operator as
    `failed_retrying`.
-3. Clean temporary ROOT/LHE/HEPMC files in the process directory after required
+3. Clean temporary ROOT/HEPMC files in the process directory after required
    debug outputs are secured; keep logs, cards, banners, metadata, and the
    directory itself.
 4. Rename the runner-created process directory to a `_broken_{timestamp}` suffix

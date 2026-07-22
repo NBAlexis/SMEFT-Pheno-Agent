@@ -91,16 +91,18 @@ def _iter_matrix_paths(process_dirs: Iterable[str]) -> Iterable[str]:
 
 
 def extract_weighted_order(model_dir: str, process_dirs: Iterable[str]) -> Dict[str, Any]:
-    hierarchies = _parse_hierarchies(os.path.abspath(model_dir))
+    model_dir = os.path.abspath(model_dir)
+    coupling_orders_path = os.path.join(model_dir, "coupling_orders.py")
+    hierarchies = _parse_hierarchies(model_dir)
     diagrams: List[Dict[str, Any]] = []
-    missing_hierarchies = set()
+    missing_hierarchies: Dict[str, set] = {}
 
     for matrix_path in _iter_matrix_paths(process_dirs):
         for orders in _parse_matrix_orders(matrix_path):
             weighted = 0
             for name, value in orders.items():
                 if name not in hierarchies:
-                    missing_hierarchies.add(name)
+                    missing_hierarchies.setdefault(name, set()).add(matrix_path)
                     continue
                 weighted += value * hierarchies[name]
             diagrams.append({
@@ -112,16 +114,22 @@ def extract_weighted_order(model_dir: str, process_dirs: Iterable[str]) -> Dict[
     if not diagrams:
         raise ValueError("No diagram order labels found in supplied process folders")
     if missing_hierarchies:
+        missing_details = "; ".join(
+            f"{name} in {', '.join(sorted(paths))}"
+            for name, paths in sorted(missing_hierarchies.items())
+        )
         raise ValueError(
             "Missing coupling-order hierarchies for: "
             + ", ".join(sorted(missing_hierarchies))
+            + f". Model hierarchy file: {coupling_orders_path}. Diagram files: "
+            + missing_details
         )
 
     max_weighted = max(item["weighted"] for item in diagrams)
     max_diagrams = [item for item in diagrams if item["weighted"] == max_weighted]
     return {
         "schema_version": "1.0",
-        "model_dir": os.path.abspath(model_dir),
+        "model_dir": model_dir,
         "process_dirs": [os.path.abspath(p) for p in process_dirs],
         "hierarchies": hierarchies,
         "max_weighted_order": int(max_weighted),

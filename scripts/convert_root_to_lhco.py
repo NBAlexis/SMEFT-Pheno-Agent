@@ -82,6 +82,10 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
 
     if not os.path.exists(root_file):
         raise RuntimeError(f"ROOT file not found: {root_file}")
+    if not os.path.exists(delphes_card):
+        raise RuntimeError(
+            f"Delphes card not found: {delphes_card}\nROOT input: {root_file}"
+        )
 
     jet_branch = detect_jet_branch(delphes_card)
 
@@ -100,6 +104,20 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
         mg5path, process_folder, "Events", run_folder, "root2lhco.log"
     )
 
+    def diagnostic_context(log_content="", return_code=None):
+        command = " ".join(cmd)
+        details = (
+            f"ROOT input: {root_file}\n"
+            f"Delphes card: {delphes_card}\n"
+            f"Detected jet branch: {jet_branch or 'default Jet'}\n"
+            f"Command: {command}\n"
+            f"Return code: {return_code if return_code is not None else 'not available'}\n"
+            f"Log: {log_path}"
+        )
+        if log_content:
+            details += f"\nLog excerpt:\n{log_content[:2000]}"
+        return details
+
     with open(log_path, "w") as log_f:
         result = subprocess.run(
             cmd,
@@ -115,14 +133,14 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
             log_content = f.read()
         raise RuntimeError(
             f"root2lhco failed (exit {result.returncode}).\n"
-            f"Log: {log_path}\n{log_content[:2000]}"
+            f"{diagnostic_context(log_content, result.returncode)}"
         )
 
     # Validate LHCO output
     if not os.path.exists(lhco_file):
         raise RuntimeError(
             f"root2lhco ran but LHCO file not created: {lhco_file}\n"
-            f"Check log: {log_path}"
+            f"{diagnostic_context(return_code=result.returncode)}"
         )
 
     lhco_size = os.path.getsize(lhco_file)
@@ -131,7 +149,7 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
     if lhco_size == 0:
         raise RuntimeError(
             f"LHCO file is empty: {lhco_file}\n"
-            f"Check log: {log_path}"
+            f"{diagnostic_context(return_code=result.returncode)}"
         )
 
     # Check LHCO has actual event data (not just header)
@@ -142,7 +160,7 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
             log_content = f.read()
         raise RuntimeError(
             f"LHCO file has no events (only {len(lines)} line(s)).\n"
-            f"Log: {log_path}\n{log_content[:2000]}"
+            f"{diagnostic_context(log_content, result.returncode)}"
         )
 
     # Check root2lhco log for errors
@@ -150,7 +168,7 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
         log_content = f.read()
     if "contains 0 events" in log_content or "Error" in log_content or "Cannot find tree" in log_content:
         raise RuntimeError(
-            f"root2lhco log indicates failure:\n{log_content[:2000]}"
+            f"root2lhco log indicates failure.\n{diagnostic_context(log_content, result.returncode)}"
         )
 
     # If LHCO is tiny but ROOT is large, root2lhco failed silently
@@ -158,7 +176,7 @@ def convert_root_to_lhco(mg5path, process_folder, run_folder):
         raise RuntimeError(
             f"LHCO file suspiciously small ({lhco_size} B) while ROOT is large "
             f"({root_size / 1024 / 1024:.1f} MB). root2lhco likely failed.\n"
-            f"Log: {log_path}\n{log_content[:2000]}"
+            f"{diagnostic_context(log_content, result.returncode)}"
         )
 
     return lhco_file

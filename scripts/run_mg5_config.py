@@ -68,15 +68,12 @@ PROCESS_MODES = {
 }
 
 LARGE_INTERMEDIATE_NAMES = {
-    "unweighted_events.lhe.gz",
     "tag_1_pythia8_events.hepmc.gz",
     "tag_1_delphes_events.root",
 }
 
 LARGE_INTERMEDIATE_SUFFIXES = (
     ".root",
-    ".lhe",
-    ".lhe.gz",
     ".hepmc",
     ".hepmc.gz",
 )

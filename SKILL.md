@@ -175,7 +175,11 @@ scheduler when work may outlive the foreground session, and record resumable job
 state plus stdout/stderr paths.
 
 - Native Windows is not a local execution mode for this workflow. On Windows, use WSL2 or SSH as the execution target.
-- Storage pressure may trigger documented cleanup of intermediate ROOT/LHE/HEPMC files after required outputs are copied. Storage pressure must not trigger event-count reduction.
+- Storage pressure may trigger documented deletion of intermediate ROOT and
+  HEPMC files after required outputs are secured. LHE/LHE.GZ files, cards,
+  banners, logs, JSON, order files, scripts, and configuration files are not
+  deletion targets; archive them with the recorded MG5 process directories.
+  Storage pressure must not trigger event-count reduction.
 
 ## Workflow Logging Contract
 
