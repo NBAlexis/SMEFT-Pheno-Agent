@@ -47,6 +47,7 @@ def collect_dependencies(tcl_file, cards_root, collected, missing=None):
     dep_pattern = re.compile(
         r"^\s*(?:source|include)\s+(?:\"([^\"]+)\"|'([^']+)'|\{([^}]+)\}|(\S+))"
     )
+    command_pattern = re.compile(r"^\s*(?:source|include)\b\s*(.*)$")
 
     if not os.path.exists(tcl_file):
         return collected
@@ -63,6 +64,19 @@ def collect_dependencies(tcl_file, cards_root, collected, missing=None):
             m = dep_pattern.search(line)
             if m:
                 dep_path = next(group for group in m.groups() if group)
+                if "$" in dep_path or "[" in dep_path or "]" in dep_path:
+                    missing.append({
+                        "referenced_from": tcl_file,
+                        "dependency": command_pattern.search(line).group(1).strip(),
+                        "cards_root_path": "<not resolved>",
+                        "referencing_file_path": "<not resolved>",
+                        "outside_cards_root": False,
+                        "reason": (
+                            "uses Tcl substitution or a variable; static dependency copying "
+                            "cannot safely evaluate it"
+                        ),
+                    })
+                    continue
                 # Dependency paths in Delphes cards are relative to cards_root
                 dep_full = os.path.normpath(os.path.join(cards_root, dep_path))
                 alt_full = os.path.normpath(
@@ -85,6 +99,21 @@ def collect_dependencies(tcl_file, cards_root, collected, missing=None):
                         "cards_root_path": dep_full,
                         "referencing_file_path": alt_full,
                         "outside_cards_root": not candidates,
+                    })
+            else:
+                command = command_pattern.search(line)
+                if command:
+                    expression = command.group(1).strip() or "<empty argument>"
+                    missing.append({
+                        "referenced_from": tcl_file,
+                        "dependency": expression,
+                        "cards_root_path": "<not resolved>",
+                        "referencing_file_path": "<not resolved>",
+                        "outside_cards_root": False,
+                        "reason": (
+                            "uses Tcl substitution or a variable; static dependency copying "
+                            "cannot safely evaluate it"
+                        ),
                     })
 
     return collected
@@ -158,6 +187,7 @@ def setup_delphes_card(mg5path, delphes_card, process_folder):
             f"- {item['referenced_from']}: {item['dependency']!r}; tried "
             f"{item['cards_root_path']} and {item['referencing_file_path']}"
             + ("; dependency resolves outside Delphes/cards" if item["outside_cards_root"] else "")
+            + (f"; {item['reason']}" if item.get("reason") else "")
             for item in missing
         )
         raise FileNotFoundError(

@@ -112,6 +112,41 @@ def _all_labels_reached(totals: Dict[str, int], labels: List[str], requested: in
     return bool(labels) and all(totals.get(label, 0) >= threshold for label in labels)
 
 
+def _write_recovery_record(
+    metadata_path: str,
+    metadata: Dict[str, Any],
+    recovery_unit: Any = None,
+    required_units: Any = None,
+) -> Dict[str, Any]:
+    """Write one recovery result or update the phase-wide unit index."""
+    if recovery_unit is None:
+        _write_json(metadata_path, metadata)
+        return metadata
+
+    unit = str(recovery_unit)
+    required = [str(value) for value in (required_units or [])]
+    if unit not in required:
+        required.append(unit)
+    existing = _read_optional_json(metadata_path)
+    units = existing.get("units") if isinstance(existing.get("units"), dict) else {}
+    units[unit] = metadata
+    missing_units = sorted(set(required) - set(units))
+    incomplete_units = sorted(
+        key for key in required
+        if key in units and units[key].get("status") != "accepted"
+    )
+    aggregate = {
+        "schema_version": "2.0",
+        "required_units": required,
+        "units": units,
+        "missing_units": missing_units,
+        "incomplete_units": incomplete_units,
+        "status": "accepted" if not missing_units and not incomplete_units else "recovery_incomplete",
+    }
+    _write_json(metadata_path, aggregate)
+    return aggregate
+
+
 def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
     """Run attempts until merged loaded counts reach the 10% floor or profiles end."""
     base = config["base_mg5_config"]
@@ -120,6 +155,8 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
     attempt_root = os.path.abspath(os.path.expanduser(config["attempt_root"]))
     merged_output_dir = os.path.abspath(os.path.expanduser(config["merged_output_dir"]))
     metadata_path = os.path.abspath(os.path.expanduser(config["metadata_path"]))
+    recovery_unit = config.get("recovery_unit")
+    required_units = config.get("required_units")
     os.makedirs(attempt_root, exist_ok=True)
     os.makedirs(merged_output_dir, exist_ok=True)
 
@@ -182,7 +219,7 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
             "zero_event_failure": zero_event_failure,
             "status": "zero_event_failure",
         }
-        _write_json(metadata_path, metadata)
+        _write_recovery_record(metadata_path, metadata, recovery_unit, required_units)
         return metadata
 
     for label in labels:
@@ -248,9 +285,9 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
         "threshold_fraction": 0.1,
         "threshold_reached": threshold_reached,
         "warnings": warnings,
-        "status": "accepted" if threshold_reached else "exhausted_recovery_red_flag",
+        "status": "accepted" if threshold_reached else "recovery_incomplete",
     }
-    _write_json(metadata_path, metadata)
+    _write_recovery_record(metadata_path, metadata, recovery_unit, required_units)
     return metadata
 
 

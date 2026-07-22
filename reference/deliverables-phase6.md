@@ -17,14 +17,24 @@ Must deliver:
 - `results/data/phase6/event_count_recovery.json` with scan-point merged
   outputs, all source banners, loaded LHCO counts, and merged cross-sections.
 - For every claimed operator and every scan label `f0` through `f10`, the final
-  loaded LHCO event count after recovery must be greater than `10%` of the
+  loaded LHCO event count after recovery must be at least `10%` of the
   requested scan event count.
+
+Each operator recovery call updates the shared record rather than replacing it:
+
+```json
+{
+  "metadata_path": "results/data/phase6/event_count_recovery.json",
+  "recovery_unit": "o_N",
+  "required_units": ["o_1", "...", "o_N"]
+}
+```
 
 Manuscript dependency: coefficient scan datasets, scan coefficients, scan
 cross-sections, loaded event counts, and fit/plot source data.
 
 If missing or incomplete: resume from `phase6_progress.json` or rerun the
 specific operator scan. Runtime is never a reason to skip Phase 6. A missing
-operator, missing scan point, or scan point with loaded LHCO event count not
-greater than `10%` of the requested scan event count blocks Phase 7 until
+operator, missing scan point, or scan point with loaded LHCO event count below
+`10%` of the requested scan event count blocks Phase 7 until
 recovery succeeds or a structured `phase_fail` record permitted by `SKILL.md` is recorded.

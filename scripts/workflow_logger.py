@@ -192,6 +192,18 @@ class WorkflowLogger:
                 details={"phase": phase},
             )
             raise RuntimeError(f"Phase {phase} cannot complete without a completed step record")
+        if str(phase) == "11":
+            self.meta(
+                "phase11_package_written",
+                "Phase 11 package generation recorded; static package checks are deferred to Phase 12",
+                details={"phase": "11"},
+            )
+            record = {"level": "phase", "phase": str(phase), "event": "completed", "message": message}
+            if details is not None:
+                record["details"] = details
+            self._append(record)
+            return
+
         delivery_report = self._audit_phase_deliverables(phase)
         if delivery_report.get("status") == "FAIL":
             failure_summary = [

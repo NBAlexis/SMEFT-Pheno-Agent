@@ -145,9 +145,12 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
    ```
    cs_cut_x = cs_x * m_x / loaded_event_count_x
    ```
-   where `cs_x` is the banner cross-section parsed with the canonical parser in
-   [`madgraph-reference.md`](madgraph-reference.md), and
-   `loaded_event_count_x` is the actual LHCO event count from CutExperiment.
+   where `cs_x` is `outputs[*].cross_section_pb` from the corresponding Phase 6
+   runner result JSON, and `loaded_event_count_x` is the actual LHCO event
+   count from CutExperiment. The Phase 6 runner already parsed the banner and
+   recorded this value; Phase 8 does not run MadGraph or reload the complete
+   MadGraph reference. If the value is missing or non-finite, repair the Phase
+   6 result rather than inventing or reparsing it in Phase 8.
    The total selection efficiency is `m_x / loaded_event_count_x`. If useful,
    also record conditional ML efficiency as
    `m_x / surviving_final_state_event_count_x`.

@@ -6,18 +6,21 @@ the execution target or the local control environment. HTML must follow the
 same scientific content standard, but it is only a fallback when both LaTeX
 probes fail.
 
-## Required Reading Order
+## Step-Specific References
 
-Read these files in order during Phase 10:
+Do not load every manuscript reference at the start of Phase 10. Load each file
+when its step begins:
 
-1. [`manuscript-evidence-guide.md`](manuscript-evidence-guide.md): build the structured facts before drafting.
-2. [`manuscript-sections-guide.md`](manuscript-sections-guide.md): write each paper section from the evidence.
-3. [`manuscript-comparison-guide.md`](manuscript-comparison-guide.md): select user-list papers for writing/comparison guidance.
-4. [`manuscript-citation-guide.md`](manuscript-citation-guide.md): select actual citations from the toolchain and literature bank.
-5. [`manuscript-literature-bank.md`](manuscript-literature-bank.md): use the SMEFT/aQGC/nTGC/ML-in-HEP citation warehouse.
-6. [`significance-reference.md`](significance-reference.md): use the shared significance and root-selection rules.
-7. [`manuscript-checklist.md`](manuscript-checklist.md): run a concrete completeness checklist before validation.
-8. [`manuscript-validation-guide.md`](manuscript-validation-guide.md): validate and revise with a bounded retry loop.
+| Phase 10 step | References |
+|---|---|
+| Build evidence | [`manuscript-evidence-guide.md`](manuscript-evidence-guide.md) |
+| Plan comparisons and citations | [`manuscript-comparison-guide.md`](manuscript-comparison-guide.md), then [`manuscript-citation-guide.md`](manuscript-citation-guide.md) and [`manuscript-literature-bank.md`](manuscript-literature-bank.md) as directed |
+| Draft | [`manuscript-sections-guide.md`](manuscript-sections-guide.md) and [`significance-reference.md`](significance-reference.md) |
+| Check and revise | [`manuscript-checklist.md`](manuscript-checklist.md) and [`manuscript-validation-guide.md`](manuscript-validation-guide.md) |
+
+This changes only when instructions enter context. It does not remove any
+manuscript evidence, section, citation, equation, checklist, or validation
+requirement.
 
 ## Paper Structure
 

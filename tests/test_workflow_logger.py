@@ -46,6 +46,16 @@ class WorkflowLoggerPhaseGateTests(unittest.TestCase):
                 for record in records
             ))
 
+    def test_phase11_completion_does_not_run_delivery_audit(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            logger = WorkflowLogger(workdir)
+            logger.step_complete("11", "write_replay_package")
+            logger._audit_phase_deliverables = lambda phase: self.fail(
+                "Phase 11 must defer static package checks to Phase 12"
+            )
+            logger.phase_complete("11")
+            self.assertTrue(logger.is_phase_completed("11"))
+
     def test_phase_fail_requires_structured_failure_evidence(self):
         with tempfile.TemporaryDirectory() as workdir:
             logger = WorkflowLogger(workdir)

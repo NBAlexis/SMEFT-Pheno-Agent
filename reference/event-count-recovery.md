@@ -60,6 +60,18 @@ error text before trying the next repair. Do not interpret one failed profile
 as a scientific failure or continue the low-count ladder when the LHCO itself
 is zero or unreadable; diagnose the card, Delphes, ROOT, or root2lhco step first.
 
+`recovery_incomplete` means the configured attempts did not produce at least
+10% of the requested events for every required label. It requires further
+diagnosis and another contract-preserving method; it is not a scientific result
+and does not permit phase completion.
+
+Phase 5 and Phase 6 each write one aggregate `event_count_recovery.json` with
+`required_units`, `units`, `missing_units`, `incomplete_units`, and `status`.
+Each `units` value is the complete output of one recovery call. Phase 5 unit
+keys are `sm` and `np_o_N`; Phase 6 unit keys are `o_N`. Pass `recovery_unit`
+and the complete ordered `required_units` list to the orchestrator so updating
+one unit does not overwrite earlier records.
+
 ## LHCO Merge Rule
 
 Merge recovery attempts with the LHCO merge helper.

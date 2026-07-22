@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -37,7 +38,7 @@ CROSS_FILE_ACCEPTANCE_IMPLEMENTATIONS = {
     "phase8.numerical_content",
     "phase9.numerical_content",
     "phase10.analysis_notes_trace",
-    "phase11.replay_coverage_and_comparison",
+    "phase11.replay_package_static_checks",
 }
 
 
@@ -555,19 +556,111 @@ def _recovery_metadata_checks(root: str) -> List[Dict[str, Any]]:
             })
             continue
 
-        status = data.get("status")
-        if status not in {"accepted", "zero_event_failure", "exhausted_recovery_red_flag"}:
+        operators = _operators(root) or []
+        expected_units = (
+            ["sm"] + [f"np_{operator}" for operator in operators]
+            if phase == "phase5"
+            else operators
+        )
+        if not isinstance(data.get("units"), dict):
             checks.append({
                 "rel_path": rel_path,
                 "severity": "abort",
                 "source": "recovery_metadata",
                 "path": path,
                 "ok": False,
-                "error": f"Unexpected recovery status: {status!r}",
+                "error": "event_count_recovery.json must contain a units object covering the full phase",
             })
+            continue
 
-        if status == "accepted":
-            merged_outputs = data.get("merged_outputs")
+        units = data["units"]
+        actual_units = set(str(value) for value in units)
+        missing_units = sorted(set(expected_units) - actual_units)
+        extra_units = sorted(actual_units - set(expected_units))
+        declared_required = [str(value) for value in data.get("required_units") or []]
+        aggregate_ok = (
+            not missing_units
+            and not extra_units
+            and declared_required == expected_units
+            and data.get("status") == "accepted"
+            and not data.get("missing_units")
+            and not data.get("incomplete_units")
+        )
+        checks.append({
+            "rel_path": rel_path + ":unit_coverage",
+            "severity": "abort",
+            "source": "recovery_metadata",
+            "path": path,
+            "ok": aggregate_ok,
+            "expected_units": expected_units,
+            "actual_units": sorted(actual_units),
+            "missing_units": missing_units,
+            "extra_units": extra_units,
+            "declared_required_units": declared_required,
+            "aggregate_status": data.get("status"),
+        })
+
+        for unit_name in expected_units:
+            unit_data = units.get(unit_name)
+            if not isinstance(unit_data, dict):
+                continue
+            status = unit_data.get("status")
+            if status != "accepted":
+                checks.append({
+                    "rel_path": f"{rel_path}:{unit_name}",
+                    "severity": "abort",
+                    "source": "recovery_metadata",
+                    "path": path,
+                    "ok": False,
+                    "error": f"Recovery unit {unit_name} is not accepted: {status!r}",
+                })
+                continue
+            profile_lines = {
+                "default": [],
+                "sde0_hs0": ["set sde_strategy = 0", "set hard_survey = 0"],
+                "sde0_hs1": ["set sde_strategy = 0", "set hard_survey = 1"],
+                "sde0_hs2": ["set sde_strategy = 0", "set hard_survey = 2"],
+            }
+            for attempt in unit_data.get("attempts") or []:
+                if not isinstance(attempt, dict):
+                    continue
+                profile = attempt.get("survey_profile")
+                attempt_status = attempt.get("status")
+                result = attempt.get("result") if isinstance(attempt.get("result"), dict) else {}
+                launch = result.get("launch") if isinstance(result.get("launch"), dict) else {}
+                order_path = launch.get("order_file_path")
+                errors = []
+                if profile not in profile_lines:
+                    errors.append(f"unknown survey_profile: {profile!r}")
+                if attempt_status == "failed" and not launch:
+                    if not attempt.get("error"):
+                        errors.append("failed pre-launch attempt lacks exact error text")
+                    order_text = ""
+                else:
+                    if not order_path or not os.path.isfile(order_path):
+                        errors.append(f"launch order file is missing: {order_path!r}")
+                        order_text = ""
+                    else:
+                        with open(order_path, "r", encoding="utf-8-sig", errors="replace") as handle:
+                            order_text = handle.read()
+                if profile in profile_lines and not (attempt_status == "failed" and not launch):
+                    for expected_line in profile_lines[profile]:
+                        if expected_line not in order_text:
+                            errors.append(f"launch order lacks {expected_line!r}")
+                    if profile == "default" and (
+                        "set sde_strategy" in order_text or "set hard_survey" in order_text
+                    ):
+                        errors.append("default profile launch order contains recovery settings")
+                checks.append({
+                    "rel_path": f"{rel_path}:{unit_name}:attempt_{attempt.get('attempt_index')}",
+                    "severity": "abort",
+                    "source": "recovery_launch_order",
+                    "path": order_path or path,
+                    "ok": not errors,
+                    "survey_profile": profile,
+                    "errors": errors,
+                })
+            merged_outputs = unit_data.get("merged_outputs")
             if not isinstance(merged_outputs, list) or not merged_outputs:
                 checks.append({
                     "rel_path": rel_path,
@@ -575,14 +668,14 @@ def _recovery_metadata_checks(root: str) -> List[Dict[str, Any]]:
                     "source": "recovery_metadata",
                     "path": path,
                     "ok": False,
-                    "error": "accepted recovery metadata has no merged_outputs",
+                    "error": f"accepted recovery unit {unit_name} has no merged_outputs",
                 })
                 continue
             for item in merged_outputs:
                 label = item.get("label", "<missing>")
                 lhco_path = item.get("lhco_path")
                 count = int(item.get("loaded_lhco_event_count", 0))
-                requested = int(item.get("requested_event_count", data.get("requested_event_count", 0)) or 0)
+                requested = int(item.get("requested_event_count", unit_data.get("requested_event_count", 0)) or 0)
                 source_banners = item.get("source_banners_retained") or []
                 merged_cross_section = item.get("merged_cross_section_pb")
                 ok = True
@@ -612,7 +705,7 @@ def _recovery_metadata_checks(root: str) -> List[Dict[str, Any]]:
                     "errors": errors,
                 })
 
-            for warning in data.get("warnings", []):
+            for warning in unit_data.get("warnings", []):
                 fraction = warning.get("fraction")
                 if fraction is None or not (0.1 <= float(fraction) < 0.9):
                     checks.append({
@@ -624,15 +717,6 @@ def _recovery_metadata_checks(root: str) -> List[Dict[str, Any]]:
                         "error": f"Invalid warning fraction: {warning}",
                     })
 
-        if status == "zero_event_failure" and not data.get("zero_event_failure"):
-            checks.append({
-                "rel_path": rel_path,
-                "severity": "abort",
-                "source": "recovery_metadata",
-                "path": path,
-                "ok": False,
-                "error": "zero_event_failure status missing zero_event_failure details",
-            })
     return checks
 
 
@@ -1102,6 +1186,54 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
     return checks
 
 
+def _phase6_progress_checks(root: str) -> List[Dict[str, Any]]:
+    rel_path = os.path.join("data", "phase6", "phase6_progress.json")
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return []
+    record = {
+        "rel_path": rel_path + ":operator_status",
+        "severity": "abort",
+        "source": "phase6_progress",
+        "path": path,
+    }
+    try:
+        data = _load_json(path)
+        progress = data.get("operators")
+        expected = _operators(root) or []
+        if not isinstance(progress, dict):
+            raise ValueError("phase6_progress.json operators must be an object")
+        actual = set(str(value) for value in progress)
+        errors = []
+        if actual != set(expected):
+            errors.append(
+                f"operator keys must equal Phase 3 claims: expected={expected}, actual={sorted(actual)}"
+            )
+        allowed = {"pending", "running", "failed_retrying", "completed"}
+        for operator in expected:
+            item = progress.get(operator)
+            if not isinstance(item, dict):
+                errors.append(f"{operator} progress must be an object")
+                continue
+            status = item.get("status")
+            if status not in allowed:
+                errors.append(f"{operator} has invalid status {status!r}")
+            if status != "completed":
+                errors.append(f"{operator} is not completed: {status!r}")
+            labels = item.get("completed_labels")
+            if labels != [f"f{index}" for index in range(11)]:
+                errors.append(f"{operator}.completed_labels must equal f0 through f10 in order")
+        record.update({
+            "ok": not errors,
+            "expected_operators": expected,
+            "actual_operators": sorted(actual),
+            "errors": errors,
+        })
+    except Exception as exc:
+        _set_failure(record, "phase6_progress_invalid", str(exc))
+    return [record]
+
+
 def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
     checks: List[Dict[str, Any]] = []
     operators = _operators(root)
@@ -1356,16 +1488,70 @@ def _cleanup_log_checks(root: str) -> List[Dict[str, Any]]:
         path for path in deleted_paths
         if not path.lower().endswith((".root", ".hepmc", ".hepmc.gz"))
     ]
+    manifest_process_names = set()
+    manifest_order_names = set()
+    data_root = os.path.join(root, "data")
+    if os.path.isdir(data_root):
+        for current, _, filenames in os.walk(data_root):
+            for filename in filenames:
+                if not filename.endswith(".json"):
+                    continue
+                manifest_path = os.path.join(current, filename)
+                try:
+                    manifest_data = _load_json(manifest_path)
+                except Exception:
+                    continue
+                for item in _iter_json_objects(manifest_data):
+                    broken = item.get("broken_process_dir")
+                    process = item.get("process_dir")
+                    chosen_process = broken or process
+                    if isinstance(chosen_process, str) and chosen_process:
+                        manifest_process_names.add(os.path.basename(os.path.normpath(chosen_process)))
+                    order = item.get("order_file_path")
+                    if isinstance(order, str) and order:
+                        manifest_order_names.add(os.path.basename(os.path.normpath(order)))
+    accounting_errors = []
+    for kind in ("process_dirs", "order_files"):
+        expected_key = f"expected_{kind}"
+        moved_key = f"moved_{kind}"
+        missing_key = f"missing_{kind}"
+        expected_values = [str(value) for value in data.get(expected_key) or []]
+        moved_values = [str(value) for value in data.get(moved_key) or []]
+        missing_values = [str(value) for value in data.get(missing_key) or []]
+        expected_names = [os.path.basename(os.path.normpath(value)) for value in expected_values]
+        moved_names = [os.path.basename(os.path.normpath(value)) for value in moved_values]
+        missing_names = [os.path.basename(os.path.normpath(value)) for value in missing_values]
+        if len(expected_names) != len(set(expected_names)):
+            accounting_errors.append(f"{expected_key} contains duplicate basenames")
+        if set(expected_names) != set(moved_names) | set(missing_names):
+            accounting_errors.append(
+                f"{expected_key} must equal {moved_key} plus {missing_key} by basename"
+            )
+        overlap = sorted(set(moved_names) & set(missing_names))
+        if overlap:
+            accounting_errors.append(f"{moved_key} and {missing_key} overlap: {overlap}")
+        if missing_values:
+            accounting_errors.append(f"{missing_key} must be empty before cleanup completes")
+        absent_moved = [value for value in moved_values if not os.path.exists(value)]
+        if absent_moved:
+            accounting_errors.append(f"{moved_key} paths do not exist: {absent_moved}")
+        manifest_names = manifest_process_names if kind == "process_dirs" else manifest_order_names
+        if manifest_names and set(expected_names) != manifest_names:
+            accounting_errors.append(
+                f"{expected_key} does not match runner manifests: "
+                f"expected={sorted(manifest_names)}, logged={sorted(set(expected_names))}"
+            )
     checks.append({
         "rel_path": rel_path,
         "severity": "abort",
         "source": "cleanup_log",
         "path": path,
-        "ok": not missing and not no_expected_records and not forbidden_deleted,
+        "ok": not missing and not no_expected_records and not forbidden_deleted and not accounting_errors,
         "missing_or_nonlist_keys": missing,
         "no_expected_records": no_expected_records,
         "deleted_file_keys_checked": deletion_keys,
         "forbidden_deleted_files": forbidden_deleted,
+        "accounting_errors": accounting_errors,
     })
     return checks
 
@@ -1580,7 +1766,16 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
 def _normalized_manifest_path(value: Any) -> Optional[str]:
     if not isinstance(value, str) or not value.strip():
         return None
-    normalized = value.replace("\\", "/").lstrip("./")
+    normalized = value.strip().replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    if (
+        not normalized
+        or normalized.startswith("/")
+        or re.match(r"^[A-Za-z]:/", normalized)
+        or ".." in normalized.split("/")
+    ):
+        return None
     if normalized.startswith("replayed-results/"):
         normalized = normalized[len("replayed-results/"):]
     return normalized
@@ -1602,6 +1797,42 @@ def _replay_package_checks(root: str) -> List[Dict[str, Any]]:
         steps = manifest.get("steps")
         if not isinstance(steps, list) or not steps:
             raise ValueError("replay_manifest.json steps must be a non-empty list")
+        manifest_errors = []
+        if manifest.get("schema_version") != "1.0":
+            manifest_errors.append("schema_version must be 1.0")
+        if manifest.get("entrypoint") != "replay.sh":
+            manifest_errors.append("entrypoint must be replay.sh")
+        if manifest.get("phase_order") != [str(value) for value in range(2, 10)]:
+            manifest_errors.append("phase_order must equal 2 through 9")
+        if not isinstance(manifest.get("default_output"), str) or not manifest["default_output"].strip():
+            manifest_errors.append("default_output must be a non-empty relative path")
+        elif _normalized_manifest_path(manifest["default_output"]) is None:
+            manifest_errors.append("default_output must be package-relative")
+        if manifest.get("report") != "data_files_report.md":
+            manifest_errors.append("report must be data_files_report.md")
+
+        replay_root = os.path.join(root, "replay")
+        replay_path = os.path.join(replay_root, "replay.sh")
+        if os.path.isfile(replay_path):
+            with open(replay_path, "r", encoding="utf-8-sig", errors="replace") as handle:
+                replay_text = handle.read()
+            if not replay_text.startswith("#!/"):
+                manifest_errors.append("replay.sh must start with a shebang")
+            if "set -euo pipefail" not in replay_text:
+                manifest_errors.append("replay.sh must enable set -euo pipefail")
+        package_checksums = manifest.get("package_sha256")
+        package_checksum_errors = []
+        if not isinstance(package_checksums, dict) or not package_checksums:
+            package_checksum_errors.append("package_sha256 must be a non-empty map")
+            package_checksums = {}
+        mandatory_package_files = {
+            "replay.sh",
+            "run_config.json",
+            "research_contract.json",
+            "deliverables_contract.json",
+            "contract_lock.json",
+            "data_files_report.md",
+        }
         source_inputs = manifest.get("source_inputs")
         source_input_errors = []
         if not isinstance(source_inputs, list):
@@ -1617,8 +1848,54 @@ def _replay_package_checks(root: str) -> List[Dict[str, Any]]:
                 source_input_errors.append(f"source_inputs[{index}].provided_before_phase2 must be true")
             if not isinstance(item.get("path"), str) or not item["path"].strip():
                 source_input_errors.append(f"source_inputs[{index}].path must be non-empty")
+                continue
+            rel_path = _normalized_manifest_path(item["path"])
+            full_path = os.path.abspath(os.path.join(replay_root, rel_path or ""))
+            if not rel_path or not rel_path.startswith("inputs/") or not _path_is_within(full_path, replay_root):
+                source_input_errors.append(f"source_inputs[{index}].path must stay under replay/inputs")
+            elif not os.path.isfile(full_path):
+                source_input_errors.append(f"source_inputs[{index}] file is missing: {rel_path}")
             if not isinstance(item.get("sha256"), str) or re.fullmatch(r"[0-9a-fA-F]{64}", item["sha256"]) is None:
                 source_input_errors.append(f"source_inputs[{index}].sha256 must contain 64 hexadecimal characters")
+            elif os.path.isfile(full_path) and _file_sha256(full_path) != item["sha256"].lower():
+                source_input_errors.append(f"source_inputs[{index}] SHA-256 mismatch: {rel_path}")
+
+        external_dependency_errors = []
+        external_dependencies = manifest.get("external_dependencies")
+        if not isinstance(external_dependencies, list) or not external_dependencies:
+            external_dependency_errors.append("external_dependencies must be a non-empty list")
+        else:
+            dependency_names = []
+            for index, item in enumerate(external_dependencies):
+                if not isinstance(item, dict):
+                    external_dependency_errors.append(f"external_dependencies[{index}] must be an object")
+                    continue
+                for key in ("name", "path", "version"):
+                    if not isinstance(item.get(key), str) or not item[key].strip():
+                        external_dependency_errors.append(f"external_dependencies[{index}].{key} must be non-empty")
+                if isinstance(item.get("name"), str):
+                    dependency_names.append(item["name"].lower())
+                checksum = item.get("sha256")
+                if checksum is None:
+                    if not isinstance(item.get("checksum_unavailable_reason"), str) or not item["checksum_unavailable_reason"].strip():
+                        external_dependency_errors.append(
+                            f"external_dependencies[{index}] needs sha256 or checksum_unavailable_reason"
+                        )
+                elif not isinstance(checksum, str) or re.fullmatch(r"[0-9a-fA-F]{64}", checksum) is None:
+                    external_dependency_errors.append(f"external_dependencies[{index}].sha256 is invalid")
+            required_dependency_names = {
+                "MadGraph": ("madgraph", "mg5"),
+                "Pythia": ("pythia",),
+                "Delphes": ("delphes",),
+                "root2lhco": ("root2lhco",),
+                "CutExperiment": ("cutexperiment",),
+                "Python": ("python",),
+            }
+            for display_name, aliases in required_dependency_names.items():
+                if not any(any(alias in name for alias in aliases) for name in dependency_names):
+                    external_dependency_errors.append(
+                        f"external_dependencies lacks {display_name} identity"
+                    )
         observed_phases = [str(step.get("phase")) for step in steps if isinstance(step, dict)]
         unique_phase_order = []
         for phase in observed_phases:
@@ -1628,19 +1905,102 @@ def _replay_package_checks(root: str) -> List[Dict[str, Any]]:
 
         outputs: Dict[str, int] = {}
         forbidden_inputs = []
+        checksum_errors = []
+        declared_checksums: Dict[str, str] = {}
+        referenced_code = set()
+        referenced_packaged_files = set(mandatory_package_files)
         for index, step in enumerate(steps):
             if not isinstance(step, dict):
+                manifest_errors.append(f"steps[{index}] must be an object")
                 continue
+            command = step.get("command")
+            if not isinstance(command, list) or not command or not all(isinstance(token, str) for token in command):
+                manifest_errors.append(f"steps[{index}].command must be a non-empty string list")
+                command = []
+            for token in command:
+                normalized_token = _normalized_manifest_path(token)
+                if normalized_token is None:
+                    if token.replace("\\", "/").endswith((".py", ".sh")):
+                        manifest_errors.append(f"steps[{index}] command path escapes replay package: {token}")
+                    continue
+                if normalized_token.startswith(("steps/", "support/")) or normalized_token.endswith((".py", ".sh")):
+                    referenced_code.add(normalized_token)
+                    referenced_packaged_files.add(normalized_token)
+            checksums = step.get("sha256")
+            if not isinstance(checksums, dict) or not checksums:
+                checksum_errors.append(f"steps[{index}].sha256 must be a non-empty map")
+            else:
+                for rel, expected_hash in checksums.items():
+                    rel_norm = _normalized_manifest_path(str(rel))
+                    if rel_norm is None:
+                        checksum_errors.append(f"checksum path must be package-relative: {rel}")
+                        continue
+                    if rel_norm in declared_checksums and declared_checksums[rel_norm] != expected_hash:
+                        checksum_errors.append(f"conflicting SHA-256 values for {rel_norm}")
+                    declared_checksums[rel_norm] = expected_hash
             for value in step.get("outputs") or []:
                 normalized = _normalized_manifest_path(value)
                 if normalized:
                     outputs[normalized] = outputs.get(normalized, 0) + 1
+                else:
+                    manifest_errors.append(f"steps[{index}] output path must be package-relative: {value!r}")
             for value in step.get("inputs") or []:
                 normalized = _normalized_manifest_path(value)
+                if normalized:
+                    candidate = os.path.abspath(os.path.join(replay_root, normalized))
+                    if _path_is_within(candidate, replay_root) and os.path.isfile(candidate):
+                        referenced_packaged_files.add(normalized)
+                else:
+                    manifest_errors.append(f"steps[{index}] input path must be package-relative: {value!r}")
                 if normalized and any(
                     normalized.startswith(f"data/phase{phase}/") for phase in range(3, 10)
                 ):
                     forbidden_inputs.append({"step_index": index, "path": value})
+
+        for rel, expected_hash in sorted(declared_checksums.items()):
+            full_path = os.path.abspath(os.path.join(replay_root, rel))
+            if not _path_is_within(full_path, replay_root):
+                checksum_errors.append(f"checksum path escapes replay package: {rel}")
+            elif not os.path.isfile(full_path):
+                checksum_errors.append(f"checksummed package file is missing: {rel}")
+            elif not isinstance(expected_hash, str) or re.fullmatch(r"[0-9a-fA-F]{64}", expected_hash) is None:
+                checksum_errors.append(f"invalid SHA-256 for {rel}")
+            elif _file_sha256(full_path) != expected_hash.lower():
+                checksum_errors.append(f"SHA-256 mismatch for {rel}")
+        missing_code_checksums = sorted(referenced_code - set(declared_checksums))
+        if missing_code_checksums:
+            checksum_errors.append(
+                "referenced code lacks a step checksum: " + ", ".join(missing_code_checksums)
+            )
+        missing_package_checksums = sorted(referenced_packaged_files - set(package_checksums))
+        packaged_files = set()
+        if os.path.isdir(replay_root):
+            for current, directories, filenames in os.walk(replay_root):
+                directories[:] = [name for name in directories if name != "__pycache__"]
+                for filename in filenames:
+                    rel = os.path.relpath(os.path.join(current, filename), replay_root).replace("\\", "/")
+                    if rel != "replay_manifest.json" and not filename.endswith((".pyc", ".pyo")):
+                        packaged_files.add(rel)
+        missing_package_checksums.extend(sorted(packaged_files - set(package_checksums)))
+        missing_package_checksums = sorted(set(missing_package_checksums))
+        if missing_package_checksums:
+            package_checksum_errors.append(
+                "packaged files lack package_sha256 entries: " + ", ".join(missing_package_checksums)
+            )
+        for rel, expected_hash in sorted(package_checksums.items()):
+            rel_norm = _normalized_manifest_path(str(rel))
+            if rel_norm is None:
+                package_checksum_errors.append(f"package checksum path must be package-relative: {rel}")
+                continue
+            full_path = os.path.abspath(os.path.join(replay_root, rel_norm))
+            if not _path_is_within(full_path, replay_root):
+                package_checksum_errors.append(f"package checksum path escapes replay package: {rel}")
+            elif not os.path.isfile(full_path):
+                package_checksum_errors.append(f"package checksum file is missing: {rel}")
+            elif not isinstance(expected_hash, str) or re.fullmatch(r"[0-9a-fA-F]{64}", expected_hash) is None:
+                package_checksum_errors.append(f"invalid package SHA-256 for {rel}")
+            elif _file_sha256(full_path) != expected_hash.lower():
+                package_checksum_errors.append(f"package SHA-256 mismatch for {rel}")
 
         results_root = _global_results_root(root)
         config_path = os.path.join(results_root, "run_config.json")
@@ -1670,50 +2030,6 @@ def _replay_package_checks(root: str) -> List[Dict[str, Any]]:
         missing_outputs = sorted(path for path, count in coverage_counts.items() if count == 0)
         duplicate_outputs = sorted(path for path, count in coverage_counts.items() if count != 1 and count > 0)
 
-        report_path = os.path.join(root, "replay", "data_files_report.md")
-        report_text = ""
-        if os.path.isfile(report_path):
-            with open(report_path, "r", encoding="utf-8-sig") as handle:
-                report_text = handle.read().replace("\\", "/")
-        report_missing = sorted(
-            path
-            for path in expected_outputs
-            if path not in report_text
-            and not any(
-                fnmatch.fnmatchcase(path, declared) and declared in report_text
-                for declared in outputs
-            )
-        )
-
-        tolerance_policy = manifest.get("monte_carlo_comparison")
-        tolerance_errors = []
-        if not isinstance(tolerance_policy, dict):
-            tolerance_errors.append("monte_carlo_comparison must be an object")
-        else:
-            if tolerance_policy.get("production_inputs_exclude_reference_results") is not True:
-                tolerance_errors.append("production_inputs_exclude_reference_results must be true")
-            sigma_multiplier = tolerance_policy.get("combined_standard_error_multiplier")
-            if not _finite_number(sigma_multiplier) or not 1.0 <= float(sigma_multiplier) <= 5.0:
-                tolerance_errors.append("combined_standard_error_multiplier must be in [1, 5]")
-            fallback = tolerance_policy.get("fallback_limits")
-            required_fallback = {
-                "cross_sections": ("relative", 0.10),
-                "auc_and_thresholds": ("absolute", 0.05),
-                "fit_coefficients_and_constraint_endpoints": ("relative", 0.20),
-            }
-            if not isinstance(fallback, dict):
-                tolerance_errors.append("fallback_limits must be an object")
-            else:
-                for key, (difference_kind, maximum) in required_fallback.items():
-                    value = fallback.get(key)
-                    if not isinstance(value, dict) or value.get("difference") != difference_kind:
-                        tolerance_errors.append(f"{key} difference must be {difference_kind}")
-                        continue
-                    limit = value.get("maximum")
-                    if not _finite_number(limit) or not 0.0 < float(limit) <= maximum:
-                        tolerance_errors.append(f"{key} fallback tolerance must be in (0, {maximum}]")
-
-        replay_root = os.path.join(root, "replay")
         original_path_mentions = []
         original_root_text = os.path.abspath(root).replace("\\", "/")
         for directory in ("steps", "support"):
@@ -1740,17 +2056,30 @@ def _replay_package_checks(root: str) -> List[Dict[str, Any]]:
             if _load_json(source) != _load_json(packaged):
                 immutable_copy_errors.append({"file": name, "error": "packaged JSON content differs from source"})
 
-        ok = not any((source_input_errors, missing_outputs, duplicate_outputs, forbidden_inputs, report_missing, tolerance_errors, original_path_mentions, immutable_copy_errors)) and order_ok
+        ok = not any((
+            manifest_errors,
+            source_input_errors,
+            external_dependency_errors,
+            checksum_errors,
+            package_checksum_errors,
+            missing_outputs,
+            duplicate_outputs,
+            forbidden_inputs,
+            original_path_mentions,
+            immutable_copy_errors,
+        )) and order_ok
         record.update({
             "ok": ok,
             "observed_phase_order": unique_phase_order,
             "expected_phase_order": [str(value) for value in range(2, 10)],
+            "manifest_errors": manifest_errors,
             "source_input_errors": source_input_errors,
+            "external_dependency_errors": external_dependency_errors,
+            "checksum_errors": checksum_errors,
+            "package_checksum_errors": package_checksum_errors,
             "missing_manifest_outputs": missing_outputs,
             "duplicate_manifest_outputs": duplicate_outputs,
             "forbidden_original_result_inputs": forbidden_inputs,
-            "report_missing_outputs": report_missing,
-            "tolerance_policy_errors": tolerance_errors,
             "packaged_code_original_path_mentions": original_path_mentions,
             "immutable_copy_errors": immutable_copy_errors,
         })
@@ -2530,6 +2859,7 @@ def audit_expected_outputs(
     checks.extend(_phase3_runner_manifest_checks(root))
     checks.extend(_phase3_completeness_checks(root))
     checks.extend(_phase6_scan_matrix_checks(root))
+    checks.extend(_phase6_progress_checks(root))
     checks.extend(_phase6_weighted_order_checks(root))
     checks.extend(_phase7_content_checks(root))
     checks.extend(_phase8_numerical_checks(root))
@@ -2592,6 +2922,7 @@ def audit_phase_deliverables(
         checks.extend(_phase3_completeness_checks(root))
     elif phase == "6":
         checks.extend(_phase6_scan_matrix_checks(root))
+        checks.extend(_phase6_progress_checks(root))
         checks.extend(_phase6_weighted_order_checks(root))
     elif phase == "7":
         checks.extend(_phase7_content_checks(root))

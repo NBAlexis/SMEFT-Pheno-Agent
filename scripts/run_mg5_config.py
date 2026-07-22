@@ -252,7 +252,7 @@ def _run_mg5_with_recorded_logs(
         logs = _record_mg5_logs(cfg, stem, exc.result)
         raise RuntimeError(
             f"MG5 failed for {stem}; stdout/stderr saved at "
-            f"{logs['stdout_path']} and {logs['stderr_path']}"
+            f"{logs['stdout_path']} and {logs['stderr_path']}.\n{exc}"
         ) from exc
     logs = _record_mg5_logs(cfg, stem, result)
     return result, logs
@@ -269,10 +269,23 @@ def _diagram_counts_from_stdout(text: str) -> Dict[str, Any]:
     }
 
 
+def _is_weighted_keyword_syntax_failure(exc: Exception) -> bool:
+    """Return whether an MG5 failure supports retrying only the keyword spelling."""
+    text = str(exc).lower()
+    syntax_markers = (
+        "invalidcmd",
+        "invalid command",
+        "unknown command",
+        "syntax error",
+        "invalid syntax",
+        "not recognized",
+    )
+    return "weighted" in text and any(marker in text for marker in syntax_markers)
+
+
 def _mark_process_dir_broken(process_dir: Optional[str]) -> Tuple[Optional[str], List[str]]:
     if not process_dir or not os.path.isdir(process_dir):
         return None, []
-    removed = _remove_large_intermediates(process_dir)
     parent = os.path.dirname(process_dir)
     base = os.path.basename(process_dir)
     target = os.path.join(parent, f"{base}_broken_{_timestamp()}")
@@ -280,12 +293,12 @@ def _mark_process_dir_broken(process_dir: Optional[str]) -> Tuple[Optional[str],
         candidate = target if idx == 1 else f"{target}_{idx:02d}"
         if not os.path.exists(candidate):
             os.rename(process_dir, candidate)
-            return os.path.abspath(candidate), removed
+            return os.path.abspath(candidate), []
     raise RuntimeError(f"Could not mark failed process directory as broken: {process_dir}")
 
 
 def _remove_large_intermediates(process_dir: str) -> List[str]:
-    """Delete large MG5 intermediates inside a process dir before archiving it."""
+    """Delete ROOT/HEPMC files only after required outputs and diagnostics are secured."""
     removed = []
     for root, _, files in os.walk(process_dir):
         for filename in files:
@@ -430,6 +443,7 @@ def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
     logs: Dict[str, str] = {}
     selected_weighted_keyword = None
+    process_created = False
 
     for weighted_keyword in weighted_keywords:
         fixed_order_name = cfg.get("create_order_filename")
@@ -464,13 +478,22 @@ def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
             attempt["status"] = "success"
             attempts.append(attempt)
             selected_weighted_keyword = weighted_keyword
+            process_created = True
             break
         except Exception as exc:
             attempt["status"] = "failed"
             attempt["error"] = f"{type(exc).__name__}: {exc}"
             attempts.append(attempt)
             last_exc = exc
-    else:
+            has_fallback = weighted_keyword == "WEIGHTED"
+            if not has_fallback or not _is_weighted_keyword_syntax_failure(exc):
+                break
+            broken_dir, _ = _mark_process_dir_broken(
+                os.path.join(mg5path, process_folder)
+            )
+            if broken_dir:
+                attempt["broken_process_dir"] = broken_dir
+    if not process_created:
         raise RuntimeError(f"MG5 process creation failed for all weighted-order syntaxes: {attempts}") from last_exc
 
     diagram_counts = _diagram_counts_from_stdout(result.get("stdout", ""))
@@ -865,6 +888,7 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
                 broken_dir, removed_files = _mark_process_dir_broken(result.get("process_dir"))
                 result["broken_process_dir"] = broken_dir
                 result["broken_cleanup_removed_files"] = removed_files
+                result["failure_evidence_preserved"] = True
             except Exception as rename_exc:
                 result["broken_process_dir"] = None
                 result["broken_cleanup_removed_files"] = []

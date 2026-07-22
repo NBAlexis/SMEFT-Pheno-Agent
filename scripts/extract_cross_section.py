@@ -13,9 +13,20 @@ Exit codes:
     1  file not found
     2  parse error (no cross-section line found)
 """
+import math
+import os
 import re
 import sys
-import os
+
+
+def _parse_finite_cross_section(value, banner_path):
+    """Parse one banner value and reject values that cannot represent a cross-section."""
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError(
+            f"Cross-section in {banner_path} must be finite in pb; got {value!r}"
+        )
+    return parsed
 
 
 def extract_cross_section(banner_path):
@@ -29,11 +40,11 @@ def extract_cross_section(banner_path):
             # Primary: MG5_aMC v3.x format
             m = re.search(r"Integrated weight \(pb\)\s*:\s*([\d.eE+-]+)", line)
             if m:
-                return float(m.group(1))
+                return _parse_finite_cross_section(m.group(1), banner_path)
             # Fallback: older format with uncertainty
             m = re.search(r"([\d.eE+-]+)\s*\+/-\s*([\d.eE+-]+)\s*pb", line)
             if m:
-                return float(m.group(1))
+                return _parse_finite_cross_section(m.group(1), banner_path)
     raise ValueError(f"No cross-section found in {banner_path}")
 
 

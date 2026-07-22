@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.beam_energy import compute_sqrt_s
+from scripts.archive_mg5_outputs import archive_mg5_outputs
 from scripts.count_lhco_events import count_lhco_events
 from scripts.double_check_zero_cross_section import double_check_zero_cross_section
 from scripts.durable_exec import job_paths, remote_start_command, remote_status_command, safe_name
@@ -20,13 +21,16 @@ from scripts.normalize_process_name import normalize_process_name
 from scripts.parse_param_card import parse_coefficients
 from scripts.read_results import get_anchor_model, get_c_scan, get_operator_c_scan, get_cs_sm
 import scripts.recover_lhco_count as recover_module
+import scripts.run_mg5_config as mg5_config_module
 from scripts.run_mg5 import run_mg5
 from scripts.run_mg5_config import (
     _beam_lines,
     _cleanup_candidates,
     _coefficient_lines,
+    _create_process,
     _labels_for_runs,
     _launch_process,
+    _mark_process_dir_broken,
     _process_order_lines,
     _remove_large_intermediates,
     validate_config,
@@ -42,11 +46,43 @@ def write_text(path, text):
 
 
 class LightweightScriptBehaviorTests(unittest.TestCase):
+    def test_archive_mg5_outputs_moves_small_files_and_only_deletes_large_files(self):
+        with tempfile.TemporaryDirectory() as root:
+            run_root = os.path.join(root, "results")
+            process = os.path.join(root, "MG5", "proc")
+            order = os.path.join(root, "MG5", "order.txt")
+            write_text(os.path.join(process, "Events", "run_01", "events.root"), "large\n")
+            write_text(os.path.join(process, "Events", "run_01", "events.hepmc.gz"), "large\n")
+            write_text(os.path.join(process, "Events", "run_01", "events.lhe.gz"), "keep\n")
+            write_text(os.path.join(process, "Cards", "param_card.dat"), "keep\n")
+            write_text(order, "launch proc\n")
+            write_text(
+                os.path.join(run_root, "data", "phase5", "runner.json"),
+                json.dumps({"process_dir": process, "launch": {"order_file_path": order}}),
+            )
+
+            result = archive_mg5_outputs(run_root, delete_large=True)
+
+            archived = os.path.join(run_root, "mg5_processes", "proc")
+            self.assertTrue(os.path.isfile(os.path.join(archived, "Events", "run_01", "events.lhe.gz")))
+            self.assertTrue(os.path.isfile(os.path.join(archived, "Cards", "param_card.dat")))
+            self.assertFalse(os.path.exists(os.path.join(archived, "Events", "run_01", "events.root")))
+            self.assertFalse(os.path.exists(os.path.join(archived, "Events", "run_01", "events.hepmc.gz")))
+            self.assertTrue(os.path.isfile(os.path.join(run_root, "orders", "order.txt")))
+            self.assertEqual(len(result["deleted_files"]), 2)
+            self.assertEqual(result["missing_process_dirs"], [])
+            self.assertEqual(result["missing_order_files"], [])
+
     def test_small_parsers_accept_representative_mg5_text(self):
         with tempfile.TemporaryDirectory() as root:
             banner = os.path.join(root, "run_banner.txt")
             write_text(banner, "Integrated weight (pb) : 1.25e-03\n")
             self.assertAlmostEqual(extract_cross_section(banner), 1.25e-3)
+
+            infinite_banner = os.path.join(root, "infinite_banner.txt")
+            write_text(infinite_banner, "Integrated weight (pb) : 1e999\n")
+            with self.assertRaisesRegex(ValueError, "must be finite"):
+                extract_cross_section(infinite_banner)
 
             param_card = os.path.join(root, "param_card.dat")
             write_text(
@@ -75,6 +111,51 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
         self.assertEqual(lines[0], "generate e+ e- > a a WEIGHTED=4")
         self.assertEqual(lines[1], "add process e+ e- > z a WEIGHTED=4")
 
+    def test_weighted_keyword_fallback_preserves_partial_process_directory(self):
+        with tempfile.TemporaryDirectory() as mg5path:
+            calls = []
+
+            def fake_run(_cfg, stem, root, _order_name):
+                calls.append(stem)
+                if len(calls) == 1:
+                    os.makedirs(os.path.join(root, "weighted_proc"), exist_ok=True)
+                    raise RuntimeError("InvalidCmd: WEIGHTED is not recognized")
+                return ({"stdout": "2 diagrams\n", "stderr": "", "returncode": 0}, {})
+
+            cfg = {
+                "mg5path": mg5path,
+                "model": "toy_model",
+                "process": "e+ e- > a a",
+                "process_mode": "sm_np",
+                "weighted_order": 3,
+            }
+            with patch.object(mg5_config_module, "_run_mg5_with_recorded_logs", side_effect=fake_run):
+                created = _create_process(cfg, "weighted_proc")
+
+            self.assertEqual(calls, ["create_weighted_proc_WEIGHTED", "create_weighted_proc_Weighted"])
+            self.assertEqual(created["weighted_keyword"], "Weighted")
+            self.assertTrue(created["weighted_attempts"][0]["broken_process_dir"])
+            self.assertFalse(os.path.exists(os.path.join(mg5path, "weighted_proc")))
+
+    def test_weighted_keyword_does_not_retry_non_syntax_failure(self):
+        with tempfile.TemporaryDirectory() as mg5path:
+            cfg = {
+                "mg5path": mg5path,
+                "model": "toy_model",
+                "process": "e+ e- > a a",
+                "process_mode": "sm_np",
+                "weighted_order": 3,
+            }
+            with patch.object(
+                mg5_config_module,
+                "_run_mg5_with_recorded_logs",
+                side_effect=RuntimeError("Delphes card file is missing"),
+            ) as run:
+                with self.assertRaisesRegex(RuntimeError, "all weighted-order syntaxes"):
+                    _create_process(cfg, "weighted_proc")
+            self.assertEqual(run.call_count, 1)
+
+    def test_mg5_config_value_helpers_validate_without_starting_mg5(self):
         cfg = {
             "mg5path": "/unused",
             "model": "AQGCm_UFO",
@@ -170,6 +251,23 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertIn("MuonCollider/missing.tcl", message)
             self.assertIn(os.path.join(cards, "MuonCollider", "missing.tcl"), message)
             self.assertNotIn("ignored/commented.tcl", message)
+
+    def test_setup_delphes_card_reports_dynamic_tcl_dependency(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            cards = os.path.join(mg5, "Delphes", "cards")
+            process = "proc"
+            os.makedirs(os.path.join(mg5, process), exist_ok=True)
+            write_text(
+                os.path.join(cards, "dynamic.tcl"),
+                "source [file join $carddir modules helper.tcl]\n",
+            )
+
+            with self.assertRaises(FileNotFoundError) as caught:
+                setup_delphes_card(mg5, "dynamic.tcl", process)
+
+            message = str(caught.exception)
+            self.assertIn("[file join $carddir modules helper.tcl]", message)
+            self.assertIn("cannot safely evaluate", message)
 
     def test_setup_delphes_card_rejects_dependency_outside_cards_tree(self):
         with tempfile.TemporaryDirectory() as mg5:
@@ -432,6 +530,21 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertTrue(os.path.exists(banner_file))
             self.assertTrue(os.path.exists(order_file))
 
+    def test_marking_failed_process_preserves_root_and_hepmc_evidence(self):
+        with tempfile.TemporaryDirectory() as root:
+            process = os.path.join(root, "proc")
+            root_file = os.path.join(process, "Events", "run_01", "events.root")
+            hepmc_file = os.path.join(process, "Events", "run_01", "events.hepmc.gz")
+            write_text(root_file, "root evidence\n")
+            write_text(hepmc_file, "hepmc evidence\n")
+
+            broken, removed = _mark_process_dir_broken(process)
+
+            self.assertEqual(removed, [])
+            self.assertFalse(os.path.exists(process))
+            self.assertTrue(os.path.exists(os.path.join(broken, "Events", "run_01", "events.root")))
+            self.assertTrue(os.path.exists(os.path.join(broken, "Events", "run_01", "events.hepmc.gz")))
+
     def test_sde_survey_profile_is_written_to_launch_order(self):
         with tempfile.TemporaryDirectory() as mg5:
             process_folder = "proc"
@@ -570,6 +683,56 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                 zero_metadata = recover_module.recover_lhco_count(zero_config)
             self.assertEqual(zero_metadata["status"], "zero_event_failure")
             self.assertIn("zero_event_failure", zero_metadata)
+
+    def test_recovery_units_update_one_phase_file_without_overwriting(self):
+        with tempfile.TemporaryDirectory() as root:
+            source_lhco = os.path.join(root, "source.lhco")
+            source_banner = os.path.join(root, "banner.txt")
+            write_text(source_lhco, "event\n")
+            write_text(source_banner, "Integrated weight (pb) : 1.0\n")
+            metadata_path = os.path.join(root, "event_count_recovery.json")
+
+            def fake_run(cfg):
+                return {"outputs": [{
+                    "label": cfg["output_label"],
+                    "lhco_path": source_lhco,
+                    "banner_path": source_banner,
+                    "loaded_lhco_event_count": 10,
+                }]}
+
+            def fake_merge(_sources, output_lhco, **kwargs):
+                write_text(output_lhco, "merged\n")
+                write_text(kwargs["metadata_path"], "{}\n")
+                return {
+                    "merged_loaded_lhco_event_count": 10,
+                    "merged_cross_section_pb": 1.0,
+                    "source_banners_retained": kwargs["source_banner_paths"],
+                }
+
+            with patch.object(recover_module, "run_from_config", side_effect=fake_run), patch.object(
+                recover_module, "merge_lhco", side_effect=fake_merge
+            ):
+                for unit in ("sm", "np_o_1"):
+                    recover_module.recover_lhco_count({
+                        "base_mg5_config": {
+                            "process_mode": "pure_sm" if unit == "sm" else "pure_np",
+                            "operator": "o_1",
+                            "output_label": unit,
+                        },
+                        "requested_event_count": 100,
+                        "recovery_profiles": ["default"],
+                        "attempt_root": os.path.join(root, "attempts", unit),
+                        "merged_output_dir": os.path.join(root, "merged", unit),
+                        "metadata_path": metadata_path,
+                        "recovery_unit": unit,
+                        "required_units": ["sm", "np_o_1"],
+                    })
+
+            with open(metadata_path, encoding="utf-8") as handle:
+                aggregate = json.load(handle)
+            self.assertEqual(aggregate["status"], "accepted")
+            self.assertEqual(set(aggregate["units"]), {"sm", "np_o_1"})
+            self.assertEqual(aggregate["missing_units"], [])
 
 
 if __name__ == "__main__":

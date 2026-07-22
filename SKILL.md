@@ -132,6 +132,11 @@ autonomously. Do not advance to the next phase until the gate passes. Do not
 load other phase deliverable files unless repairing an upstream failure or
 running Phase 12 audit.
 
+Phase 11 is the only exception to this delivery gate. It only writes the replay
+package and data-file report; `WorkflowLogger.phase_complete("11")` records
+completion without invoking an audit. Phase 12 performs the non-executing
+static inspection of those files. Neither phase runs replay code.
+
 Run `python scripts/audit_expected_outputs.py {workdir} --phase N` and add
 `--run-dir {run_dir}` in multi-run mode. `WorkflowLogger.phase_complete()` runs
 the same check and raises an error instead of writing a completed record when a
@@ -222,7 +227,10 @@ In SSH/WSL2 mode, keep identical local-control and target copies of
 
 ## Phase Completion Contracts
 
-Every phase must satisfy all rules whose `phase` value equals that phase before completion:
+Every phase except Phase 11 must satisfy all rules whose `phase` value equals
+that phase before completion. Phase 11 follows the delivery-gate exception
+above: it records package generation without running an audit, and Phase 12
+performs the non-executing static inspection.
 
 | Phase | Completion unit |
 |---|---|
@@ -265,8 +273,19 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | 11 | Numerical replay package and data-file report | [`reference/phase11-replay.md`](reference/phase11-replay.md) |
 | 12 | Audit | [`reference/phase12-audit.md`](reference/phase12-audit.md) |
 
-Use the MadGraph conventions in [`reference/madgraph-reference.md`](reference/madgraph-reference.md), event-count/recovery rules in [`reference/event-count-recovery.md`](reference/event-count-recovery.md), model-copy rules in [`reference/model-dependencies.md`](reference/model-dependencies.md), CutExperiment rules in [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md), and manuscript guidance in [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md).
-Each phase reference links its own `deliverables-phaseN.md` completion contract. Read only the current phase's deliverable file during normal execution.
+Load shared references only when the current phase needs them:
+
+| Phases | Shared reference |
+|---|---|
+| 1-2 | [`reference/model-dependencies.md`](reference/model-dependencies.md) |
+| 3-6 | [`reference/madgraph-reference.md`](reference/madgraph-reference.md) |
+| 5-8 | [`reference/event-count-recovery.md`](reference/event-count-recovery.md) and [`reference/cutexperiment-reference.md`](reference/cutexperiment-reference.md) |
+| 10 | [`reference/manuscript-writing-guide.md`](reference/manuscript-writing-guide.md) and only the guides it selects |
+
+Each phase reference links its own `deliverables-phaseN.md` completion contract.
+During normal execution, read the current phase reference, its listed shared
+references, and only that phase's deliverable file. Load another phase only to
+repair a specific upstream artifact.
 
 ## Scripts
 

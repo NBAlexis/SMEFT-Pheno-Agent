@@ -39,8 +39,10 @@ Required behavior when the foreground session is not suitable:
    - `scan_manifest.json`: every required operator, model, `c_scan`, exact MG5
      scan expression, expected point count `11`, and expected output labels
      `f0` through `f10`.
-   - `phase6_progress.json`: completed, running, failed/retrying, and pending
-     units.
+   - `phase6_progress.json`: an `operators` object with exactly every Phase 3
+     `o_N` key. Each value contains `status` (`pending`, `running`,
+     `failed_retrying`, or `completed`) and `completed_labels`. A completed
+     operator lists `f0` through `f10` in order.
 3. Continue monitoring or resume from the manifest. Partial completion is a
    checkpoint, not a stop condition.
 4. Log time estimates only as diagnostics. They must not alter `nev_scan`,
@@ -89,13 +91,18 @@ progress_path = os.path.join(phase6_dir, "phase6_progress.json")
 `scan_manifest.json` records scan expressions and expected labels; it does not
 need the 11 numeric coefficient values.
 
+Write progress atomically after each state change. Before Phase 6 completion,
+every operator status must be `completed` and its `completed_labels` must be
+exactly `f0` through `f10`; file existence alone is not a completed state.
+
 ## Critical Rules: Fresh Retry After Failure
 
 - Never delete files from an existing `run_XX` and re-launch.
 - Never run `launch` on a process directory with already processed or modified runs.
 - If a scan attempt fails, treat that process directory as abandoned:
-  1. Remove large temporary files across all runs after required outputs are secured.
-  2. Rename the process directory to a `_broken_{timestamp}` suffix.
+  1. Rename the process directory to a `_broken_{timestamp}` suffix without
+     deleting ROOT, HEPMC, logs, cards, banners, or other diagnostic files.
+  2. Inspect and preserve the files needed to diagnose the failure.
   3. Create a fresh process directory and re-run from scratch.
 - "Abandoned" means renamed for later cleanup/audit, not deleted. Do not delete
   the process directory; deleting directories can trigger approval prompts and
@@ -241,9 +248,9 @@ If MG5 fails or ROOT-to-LHCO conversion fails for any operator scan:
    stdout/stderr paths.
 2. Update `phase6_progress.json` marking the current operator as
    `failed_retrying`.
-3. Clean temporary ROOT/HEPMC files in the process directory after required
-   debug outputs are secured; keep logs, cards, banners, metadata, and the
-   directory itself.
+3. Preserve ROOT/HEPMC, logs, cards, banners, metadata, and the directory until
+   the failure has been diagnosed. Delete ROOT/HEPMC only during final cleanup
+   after the relevant evidence and required outputs have been secured.
 4. Rename the runner-created process directory to a `_broken_{timestamp}` suffix
    if the runner has not already done so.
 5. Recreate a fresh process directory through the runner or an equivalent
@@ -329,7 +336,7 @@ representative Feynman diagrams.
 | Expanding 11 coefficient values in Python before launch | Use the MG5 `scan:[-c_scan + 0.2 * c_scan * n for n in range(11)]` expression |
 | Using the anchor range for all operators | Read `coefficient_ranges["operators"][op_key]["c_scan"]` per operator |
 | `runs[-11:]` heuristic | Use set-difference to identify new runs |
-| Re-launching on existing runs | Remove large temps, rename the process directory, create fresh |
+| Re-launching on existing runs | Preserve evidence, rename the process directory, create fresh |
 | Using model-internal index in filename | Always use global index `o_{g_idx}` |
 | Reusing a failed scan process directory | Create a fresh directory with the runner or equivalent custom orchestration and record it |
 | Reusing a failed process folder | Rename it to `_broken_{timestamp}` and create a fresh process folder |

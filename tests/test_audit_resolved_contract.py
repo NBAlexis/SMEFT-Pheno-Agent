@@ -11,10 +11,13 @@ from scripts.audit_expected_outputs import (
     _expected_files,
     _final_audit_artifact_checks,
     _phase6_scan_matrix_checks,
+    _phase6_progress_checks,
     _phase9_strategy_checks,
     _phase3_runner_manifest_checks,
+    _normalized_manifest_path,
     _replay_algorithm_lock_checks,
     _replay_package_checks,
+    _recovery_metadata_checks,
     _resolved_deliverable_checks,
     _validate_declared_artifact,
 )
@@ -27,6 +30,12 @@ def write_json(path, value):
 
 
 class ResolvedContractAuditTests(unittest.TestCase):
+    def test_replay_manifest_paths_reject_parent_and_absolute_paths(self):
+        self.assertEqual(_normalized_manifest_path("./inputs/model.dat"), "inputs/model.dat")
+        self.assertIsNone(_normalized_manifest_path("../../outside.py"))
+        self.assertIsNone(_normalized_manifest_path("/absolute/output"))
+        self.assertIsNone(_normalized_manifest_path("C:/absolute/output"))
+
     def test_zero_operator_expected_files_stop_at_phase3_report(self):
         with tempfile.TemporaryDirectory() as root:
             write_json(os.path.join(root, "data", "phase3", "operator_claims.json"), {})
@@ -211,14 +220,16 @@ class ResolvedContractAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             os.makedirs(os.path.join(root, "mg5_processes", "proc_archive"), exist_ok=True)
             os.makedirs(os.path.join(root, "orders"), exist_ok=True)
+            with open(os.path.join(root, "orders", "order.txt"), "w", encoding="utf-8") as handle:
+                handle.write("launch proc\n")
             write_json(
                 os.path.join(root, "mg5_processes", "cleanup_log.json"),
                 {
-                    "expected_process_dirs": ["proc"],
-                    "moved_process_dirs": ["mg5_processes/proc_archive"],
+                    "expected_process_dirs": ["proc_archive"],
+                    "moved_process_dirs": [os.path.join(root, "mg5_processes", "proc_archive")],
                     "missing_process_dirs": [],
                     "expected_order_files": ["order.txt"],
-                    "moved_order_files": ["orders/order.txt"],
+                    "moved_order_files": [os.path.join(root, "orders", "order.txt")],
                     "missing_order_files": [],
                     "deleted_files": [
                         "proc/Events/run_01/tag_1_delphes_events.root",
@@ -237,11 +248,11 @@ class ResolvedContractAuditTests(unittest.TestCase):
             write_json(
                 os.path.join(root, "mg5_processes", "cleanup_log.json"),
                 {
-                    "expected_process_dirs": ["proc"],
-                    "moved_process_dirs": ["mg5_processes/proc_archive"],
+                    "expected_process_dirs": ["proc_archive"],
+                    "moved_process_dirs": [os.path.join(root, "mg5_processes", "proc_archive")],
                     "missing_process_dirs": [],
                     "expected_order_files": ["order.txt"],
-                    "moved_order_files": ["orders/order.txt"],
+                    "moved_order_files": [os.path.join(root, "orders", "order.txt")],
                     "missing_order_files": [],
                     "deleted_large_files": [
                         "proc/Events/run_01/tag_1_delphes_events.root",
@@ -251,6 +262,87 @@ class ResolvedContractAuditTests(unittest.TestCase):
             )
             checks = _cleanup_log_checks(root)
             self.assertTrue(checks[-1]["ok"], checks[-1])
+
+            write_json(
+                os.path.join(root, "data", "phase5", "runner.json"),
+                {"process_dir": "/mg5/unlogged_process", "order_file_path": "/mg5/unlogged_order.txt"},
+            )
+            checks = _cleanup_log_checks(root)
+            self.assertFalse(checks[-1]["ok"])
+            self.assertTrue(checks[-1]["accounting_errors"])
+
+    def test_recovery_audit_requires_all_units_and_matching_launch_order(self):
+        with tempfile.TemporaryDirectory() as root:
+            write_json(os.path.join(root, "data", "phase3", "operator_claims.json"), {"o_1": {}})
+            lhco = os.path.join(root, "data", "phase5", "sm.lhco")
+            banner = os.path.join(root, "data", "phase5", "sm_banner.txt")
+            order = os.path.join(root, "orders", "launch.txt")
+            os.makedirs(os.path.dirname(lhco), exist_ok=True)
+            with open(lhco, "w", encoding="utf-8") as handle:
+                handle.write("event\n")
+            with open(banner, "w", encoding="utf-8") as handle:
+                handle.write("banner\n")
+            os.makedirs(os.path.dirname(order), exist_ok=True)
+            with open(order, "w", encoding="utf-8") as handle:
+                handle.write("set sde_strategy = 0\nset hard_survey = 2\n")
+            unit = {
+                "status": "accepted",
+                "requested_event_count": 100,
+                "attempts": [{
+                    "attempt_index": 0,
+                    "survey_profile": "sde0_hs2",
+                    "status": "completed",
+                    "result": {"launch": {"order_file_path": order}},
+                }],
+                "merged_outputs": [{
+                    "label": "sm",
+                    "lhco_path": lhco,
+                    "loaded_lhco_event_count": 10,
+                    "requested_event_count": 100,
+                    "source_banners_retained": [banner],
+                    "merged_cross_section_pb": 1.0,
+                }],
+                "warnings": [{"fraction": 0.1}],
+            }
+            write_json(
+                os.path.join(root, "data", "phase5", "event_count_recovery.json"),
+                {
+                    "required_units": ["sm", "np_o_1"],
+                    "units": {"sm": unit},
+                    "missing_units": ["np_o_1"],
+                    "incomplete_units": [],
+                    "status": "recovery_incomplete",
+                },
+            )
+            checks = _recovery_metadata_checks(root)
+            self.assertTrue(any(not item["ok"] for item in checks))
+
+            unit_np = dict(unit)
+            unit_np["merged_outputs"] = [dict(unit["merged_outputs"][0], label="np_o_1")]
+            write_json(
+                os.path.join(root, "data", "phase5", "event_count_recovery.json"),
+                {
+                    "required_units": ["sm", "np_o_1"],
+                    "units": {"sm": unit, "np_o_1": unit_np},
+                    "missing_units": [],
+                    "incomplete_units": [],
+                    "status": "accepted",
+                },
+            )
+            checks = _recovery_metadata_checks(root)
+            self.assertTrue(all(item["ok"] for item in checks), checks)
+
+    def test_phase6_progress_requires_every_operator_completed(self):
+        with tempfile.TemporaryDirectory() as root:
+            write_json(os.path.join(root, "data", "phase3", "operator_claims.json"), {"o_1": {}, "o_2": {}})
+            progress_path = os.path.join(root, "data", "phase6", "phase6_progress.json")
+            write_json(progress_path, {"operators": {"o_1": {"status": "completed", "completed_labels": [f"f{i}" for i in range(11)]}}})
+            self.assertFalse(_phase6_progress_checks(root)[0]["ok"])
+            write_json(progress_path, {"operators": {
+                key: {"status": "completed", "completed_labels": [f"f{i}" for i in range(11)]}
+                for key in ("o_1", "o_2")
+            }})
+            self.assertTrue(_phase6_progress_checks(root)[0]["ok"])
 
     def test_final_audit_artifact_schemas(self):
         with tempfile.TemporaryDirectory() as root:
@@ -335,7 +427,7 @@ class ResolvedContractAuditTests(unittest.TestCase):
             self.assertEqual(len(checks), 1)
             self.assertTrue(checks[0]["ok"], checks[0])
 
-    def test_replay_package_requires_bounded_monte_carlo_tolerances(self):
+    def test_replay_package_static_checks_require_real_files_and_checksums(self):
         with tempfile.TemporaryDirectory() as root:
             replay_root = os.path.join(root, "replay")
             os.makedirs(replay_root, exist_ok=True)
@@ -350,27 +442,73 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 write_json(os.path.join(replay_root, name), value)
             output = "data/phase2/environment_manifest.json"
             with open(os.path.join(replay_root, "data_files_report.md"), "w", encoding="utf-8") as handle:
-                handle.write(f"# Data files\n\n`{output}`\n")
+                handle.write(
+                    "# Replay usage\n\n"
+                    "Run `./replay.sh`. After completion, results are stored below "
+                    "`replayed-results/data/`.\n"
+                )
+            with open(os.path.join(replay_root, "replay.sh"), "w", encoding="utf-8") as handle:
+                handle.write("#!/usr/bin/env bash\nset -euo pipefail\nexit 99\n")
+            step_hashes = {}
+            for phase in range(2, 10):
+                rel = f"steps/phase{phase}.py"
+                path = os.path.join(replay_root, rel)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w", encoding="utf-8") as handle:
+                    handle.write(f"print('phase {phase}')\n")
+                with open(path, "rb") as handle:
+                    step_hashes[rel] = hashlib.sha256(handle.read()).hexdigest()
+
+            def file_sha(rel):
+                with open(os.path.join(replay_root, rel), "rb") as handle:
+                    return hashlib.sha256(handle.read()).hexdigest()
+
             manifest = {
+                "schema_version": "1.0",
+                "entrypoint": "replay.sh",
+                "phase_order": [str(phase) for phase in range(2, 10)],
+                "default_output": "replayed-results",
+                "report": "data_files_report.md",
                 "source_inputs": [],
+                "external_dependencies": [
+                    {
+                        "name": name,
+                        "path": f"/opt/{name}",
+                        "version": "test",
+                        "sha256": None,
+                        "checksum_unavailable_reason": "fake test dependency",
+                    }
+                    for name in (
+                        "MadGraph5_aMC@NLO",
+                        "Pythia8",
+                        "Delphes",
+                        "root2lhco",
+                        "CutExperiment",
+                        "Python",
+                    )
+                ],
                 "steps": [
                     {
                         "phase": str(phase),
                         "command": ["python", f"steps/phase{phase}.py"],
                         "inputs": ["run_config.json"],
                         "outputs": [output] if phase == 2 else [],
+                        "sha256": {f"steps/phase{phase}.py": step_hashes[f"steps/phase{phase}.py"]},
                     }
                     for phase in range(2, 10)
                 ],
-                "monte_carlo_comparison": {
-                    "production_inputs_exclude_reference_results": True,
-                    "combined_standard_error_multiplier": 3.0,
-                    "fallback_limits": {
-                        "cross_sections": {"difference": "relative", "maximum": 0.10},
-                        "auc_and_thresholds": {"difference": "absolute", "maximum": 0.05},
-                        "fit_coefficients_and_constraint_endpoints": {"difference": "relative", "maximum": 0.20},
-                    },
-                },
+            }
+            manifest["package_sha256"] = {
+                rel: file_sha(rel)
+                for rel in (
+                    "replay.sh",
+                    "run_config.json",
+                    "research_contract.json",
+                    "deliverables_contract.json",
+                    "contract_lock.json",
+                    "data_files_report.md",
+                    *step_hashes.keys(),
+                )
             }
             write_json(os.path.join(replay_root, "replay_manifest.json"), manifest)
             resolved = {
@@ -381,11 +519,22 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 checks = _replay_package_checks(root)
             self.assertTrue(checks[0]["ok"], checks[0])
 
-            manifest["monte_carlo_comparison"]["fallback_limits"]["cross_sections"]["maximum"] = 0.5
+            unlisted = os.path.join(replay_root, "support", "unlisted.py")
+            os.makedirs(os.path.dirname(unlisted), exist_ok=True)
+            with open(unlisted, "w", encoding="utf-8") as handle:
+                handle.write("print('unlisted')\n")
+            with patch("scripts.audit_expected_outputs.resolve_contract", return_value=resolved):
+                checks = _replay_package_checks(root)
+            self.assertFalse(checks[0]["ok"])
+            self.assertTrue(any("unlisted.py" in value for value in checks[0]["package_checksum_errors"]))
+            os.remove(unlisted)
+
+            manifest["steps"][0]["sha256"]["steps/phase2.py"] = "0" * 64
             write_json(os.path.join(replay_root, "replay_manifest.json"), manifest)
             with patch("scripts.audit_expected_outputs.resolve_contract", return_value=resolved):
                 checks = _replay_package_checks(root)
             self.assertFalse(checks[0]["ok"])
+            self.assertTrue(checks[0]["checksum_errors"])
 
 
 if __name__ == "__main__":

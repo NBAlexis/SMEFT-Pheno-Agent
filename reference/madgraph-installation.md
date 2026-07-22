@@ -12,7 +12,11 @@ This document describes how to automatically install a complete MadGraph5_aMC@NL
 
 ## System Dependencies
 
-Before installing MG5, the following system packages must be present. The auto-installer **detects** them; if any are missing, it prints the install command and aborts.
+Before installing MG5, the following system packages must be present. The
+standard installer reports missing packages and the exact install command. In
+Phase 1, request user action only when sudo or another interactive privilege is
+required. Otherwise install missing user-space dependencies, repair the
+installer, or use equivalent recorded commands and continue.
 
 | Package | Purpose | Check Command |
 |---------|---------|---------------|
@@ -51,7 +55,7 @@ As of this writing, the available versions are:
 | Type | Version | URL | Size |
 |------|---------|-----|------|
 | **LTS** (recommended) | v3.5.15 | `https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/LTS_MG5aMC_v3.5.15.tgz` | ~31 MB |
-| Latest stable | v3.7.1 | `https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/MG5_aMC_v3.7.1.tar.gz` | ~TBD |
+| Latest stable | v3.7.1 | `https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/MG5_aMC_v3.7.1.tar.gz` | Check at download time |
 
 The LTS version is preferred for reproducibility. Launchpad redirects to `launchpadlibrarian.net` (HTTP 303); the downloader must follow redirects.
 
@@ -130,7 +134,9 @@ The **LLM/skill inspects this report** and decides:
 
 ## Reusable Script
 
-**Use the script** (do not reimplement):
+Use the script as the standard path. If it cannot install the selected MG5
+release or target environment, inspect its logs, repair it, or use equivalent
+recorded installation commands:
 
 ```bash
 python scripts/install_mg5.py {install_dir} --url {download_url} --name {extracted_name}
@@ -185,14 +191,16 @@ If the user does **not** provide `madgraph_path` (or presses Enter without a pat
 
 ### Phase 1 / Phase 2 Boundary
 
-Phase 1 is responsible for accepting `madgraph_path` only after the full MG5
+Phase 1 normally accepts `madgraph_path` only after the full MG5
 stack has been verified: `bin/mg5_aMC` or `bin/mg5`, `HEPTools/pythia8/`,
-`HEPTools/lhapdf6_py3/`, and `Delphes/cards/`. Phase 2 assumes that
-verification has already happened and should not try to repair MG5 installs.
+`HEPTools/lhapdf6_py3/`, and `Delphes/cards/`. Phase 2 verifies again on the
+actual target. If a component is missing or broken, Phase 2 diagnoses and
+repairs it autonomously when no interactive privilege is required, preserving
+the selected path and physics inputs.
 
-If any of the MG5 components are missing, report: "MG5 installation incomplete
-— {component} missing. Re-run the Phase 1 installer or provide a different
-manual path."
+If a repair requires sudo, credentials, or another interactive action that
+cannot be performed unattended, record the exact missing component, command,
+and error. Do not classify a repairable component failure as research failure.
 
 **Environment decision:** The script does **not** modify any environment variable. It prints a report showing the current `PATH` / `LD_LIBRARY_PATH` and the recommended exports. The LLM/skill should:
 1. Inspect the printed report to see whether the MG5 paths are already in the current session

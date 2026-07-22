@@ -165,6 +165,14 @@ card and verify that the same relative path exists below the process `Cards/`
 directory. Paths may be unquoted, single-quoted, double-quoted, or enclosed in
 braces.
 
+The copy helper deliberately does not evaluate Tcl variables or command
+substitutions such as `source [file join $carddir helper.tcl]`. It stops with
+the exact source line and says that static copying cannot resolve it safely.
+Inspect that card and the installed `Delphes/cards/` tree, replace the dynamic
+reference with its observed relative path through a recorded adapter, or extend
+the helper with a narrowly tested static resolution rule. Then copy the needed
+path with the same relative structure and record the change.
+
 If Delphes reports a missing card, module, Tcl file, or tree, compare the
 selected source card and its dependency tree with the process `Cards/`
 directory, copy the missing path with its relative directory structure, and

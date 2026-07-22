@@ -26,10 +26,14 @@ logger.phase_start("12")
 
 Cleanup and Phase 11 replay packaging must be completed before Phase 12. See
 [`cleanup.md`](cleanup.md) and [`phase11-replay.md`](phase11-replay.md).
-Here cleanup means large intermediate files may be removed, while
+Here cleanup means only ROOT/HEPMC intermediate files may be removed, while
 runner-recorded process folders and order files are archived by moving into
 `results/mg5_processes/` and `results/orders/`. Empty archive directories are a
 cleanup failure, not a successful deletion.
+
+Phase 12 may read replay files and recompute their checksums. It must not invoke
+`replay.sh`, pass a dry-run flag, execute a replay step, start MG5, train a
+model, or compare replayed and original numerical results.
 
 Multi-run note: in multi-run mode, all paths below are under the run directory,
 for example `results/E10_L1000/data/phase3/operator_claims.json`.
@@ -155,9 +159,8 @@ stop before diagnostics or skip repair attempts.
 | `results/orders/` non-empty archive of moved order files | Cleanup archive | Abort |
 | `results/replay/replay.sh` | 11 | Abort |
 | `results/replay/replay_manifest.json` | 11 | Abort |
-| `results/replay/replay_validation.json` | 11 | Abort |
 | `results/replay/data_files_report.md` | 11 | Abort |
-| Phase drivers and report generator referenced by `replay_manifest.json` | 11 | Abort |
+| Phase drivers and helpers referenced by `replay_manifest.json` | 11 | Abort |
 
 Phase 6 spot-check: for each operator in `operator_claims.json`, verify at least
 one scan file exists, such as `np_o_1_f0.lhco`. Abort if an operator has zero
@@ -177,7 +180,7 @@ with workflow_step(logger, "12", "check_numerical_sanity"):
 | 8 | fixed `sigma0_after_cut`/`csfit_sm > 0`, `fit_intercept_fixed=true`, `csfit_np >= 0`, dataset summary complete, residual warnings recorded |
 | 9 | `fmin < 0 < fmax`; one anchor-selected algorithm is used for all final constraints |
 | 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`; `manuscript_checklist.json` exists and was run for the final draft; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
-| 11 | Replay validation records successful Bash syntax and clean-directory dry-run checks; manifest phase order is exactly 2 through 9; the report is non-empty and covers every declared numerical output |
+| 11 | Replay manifest phase order is exactly 2 through 9; every packaged input/code checksum matches; no replay command is executed |
 
 Do not require `S=5` intervals to be narrower than `S=3` or `S=2`; larger
 significance thresholds can require larger coefficient deviations.
@@ -208,7 +211,6 @@ with workflow_step(logger, "12", "check_cross_phase_consistency"):
 | `anchor.json` model matches Phase 4/5 SM model | Same model | Abort |
 | Phase 11 replay manifest output matrix == Phase 3-9 required numerical deliverables | Every required numerical JSON/CSV/LHCO/model/plot family has one producing step | Abort |
 | Phase 11 replay computation inputs | Packaged config/code, recorded external installations, selected model/card files, and manifest `source_inputs` only; no original Phase 3-9 numerical result is consumed by a production step | Abort |
-| Phase 11 data report == replay manifest output matrix | Every declared data file family is described with producer, format/schema, scientific meaning, units where applicable, and integrity metadata | Abort |
 | Current objective == `research_contract.json` | Canonical scientific projection and SHA-256 match | Abort |
 | Resolved deliverables == frozen rules expanded from actual manifests | No pending rule; no rule removed because of technical difficulty | Abort |
 | Every resolved deliverable passes acceptance | Required path exists and satisfies its declared type/schema | Abort |

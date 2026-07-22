@@ -27,18 +27,10 @@ logger = WorkflowLogger(config.workdir, run_dir)
 logger.phase_start("10")
 ```
 
-Read the manuscript guides in this order:
-
-1. [`manuscript-writing-guide.md`](manuscript-writing-guide.md)
-2. [`manuscript-evidence-guide.md`](manuscript-evidence-guide.md)
-3. [`manuscript-sections-guide.md`](manuscript-sections-guide.md)
-4. [`manuscript-comparison-guide.md`](manuscript-comparison-guide.md)
-5. [`manuscript-citation-guide.md`](manuscript-citation-guide.md)
-6. [`manuscript-literature-bank.md`](manuscript-literature-bank.md)
-7. [`significance-reference.md`](significance-reference.md)
-8. [`manuscript-checklist.md`](manuscript-checklist.md)
-9. [`manuscript-checklist-required-ids.json`](manuscript-checklist-required-ids.json)
-10. [`manuscript-validation-guide.md`](manuscript-validation-guide.md)
+Read [`manuscript-writing-guide.md`](manuscript-writing-guide.md) now. Load the
+remaining manuscript references only when the corresponding Phase 10 step
+begins. `manuscript-checklist-required-ids.json` is data consumed during Step
+10.5; it does not need to be loaded as prose at phase start.
 
 ## Step 10.1: Select Manuscript Build Environment
 

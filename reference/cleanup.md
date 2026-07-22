@@ -33,8 +33,8 @@ move it under `results/mg5_processes/` or `results/orders/` for audit/debugging.
 Identify all process directories created during this workflow.
 
 The config runner names process directories with the normalized process base, model name, mode suffix (`SM`, `NP`, `SMNP`, or `SCAN`), and timestamp. Failed runner-owned directories may have an additional `_broken_{timestamp}` suffix.
-Keep `_broken_*` process directories until cleanup. They may have had ROOT or
-HEPMC files removed already, but the directory itself must be moved
+Keep `_broken_*` process directories until cleanup. Preserve their ROOT and
+HEPMC files until the failure has been diagnosed; the directory itself must be moved
 into the project results for audit/debugging rather than deleted during the
 workflow.
 
@@ -50,101 +50,44 @@ values recorded in runner result JSON files.
 
 ## Collection Procedure
 
-1. Create destination directories:
-   ```bash
-   mkdir -p {workdir}/results/mg5_processes
-   mkdir -p {workdir}/results/orders
-   ```
+Use the bundled archiver with the current run root:
 
-2. Optionally remove `.root`, `.hepmc`, and `.hepmc.gz` files inside each process directory
-   after required banners, LHCO files, CSVs, plots, and manuscript evidence are
-   already secured in `results/`. Keep LHE/LHE.GZ, the directory tree, cards,
-   logs, banners, subprocess files, scripts, configurations, and metadata
-   available for archive/audit. Record every deleted ROOT/HEPMC path in
-   `cleanup_log.json`; deletion of any other suffix makes cleanup invalid.
+```bash
+python scripts/archive_mg5_outputs.py {current_run_root} --delete-large
+```
 
-3. Move each process directory:
-   ```python
-   import shutil, os, glob, json
+Omit `--delete-large` when storage does not require ROOT/HEPMC deletion. The
+script reads every JSON file below `data/`, prefers `broken_process_dir` over
+`process_dir`, collects every recorded `order_file_path`, moves the discovered
+items, and writes `mg5_processes/cleanup_log.json`. It refuses destination-name
+collisions and fails after writing the log when any recorded source is missing.
 
-   # In multi-run mode, prefix with the run subdirectory (e.g., results/E10_L1000/)
-   results_prefix = os.path.join(workdir, "results")
-   if run_subdir:  # e.g., "E10_L1000" in multi-run mode; None in single-run
-       results_prefix = os.path.join(results_prefix, run_subdir)
+The log has this structure:
 
-   mg5_processes_dir = os.path.join(results_prefix, "mg5_processes")
-   orders_dir = os.path.join(results_prefix, "orders")
-   os.makedirs(mg5_processes_dir, exist_ok=True)
-   os.makedirs(orders_dir, exist_ok=True)
+```json
+{
+  "cleanup_time": "2026-05-26T10:00:00+00:00",
+  "destination_processes": "/home/user/work/results/E10_L1000/mg5_processes",
+  "destination_orders": "/home/user/work/results/E10_L1000/orders",
+  "expected_process_dirs": ["/path/to/process_A", "/path/to/process_B_broken_20260526"],
+  "moved_process_dirs": ["/home/user/work/results/E10_L1000/mg5_processes/process_A"],
+  "missing_process_dirs": [],
+  "expected_order_files": ["/path/to/order_create_process_A.txt"],
+  "moved_order_files": ["/home/user/work/results/E10_L1000/orders/order_create_process_A.txt"],
+  "missing_order_files": [],
+  "deleted_files": ["/path/to/process_A/Events/run_01/events.root"],
+  "total_moved_dirs": 2,
+  "total_moved_orders": 1
+}
+```
 
-   def iter_json_objects(obj):
-       if isinstance(obj, dict):
-           yield obj
-           for value in obj.values():
-               yield from iter_json_objects(value)
-       elif isinstance(obj, list):
-           for item in obj:
-               yield from iter_json_objects(item)
+If a runner-recorded process directory or order file is absent, recover it if
+possible and rerun the script. Do not complete cleanup while either missing
+list is non-empty. The audit requires every expected basename to appear exactly
+once in moved or missing and every moved path to exist.
 
-   runner_manifests = glob.glob(os.path.join(results_prefix, "data", "**", "*.json"), recursive=True)
-   process_dirs = set()
-   order_files = set()
-   for manifest_path in runner_manifests:
-       try:
-           with open(manifest_path, encoding="utf-8") as f:
-               manifest = json.load(f)
-       except Exception:
-           continue
-       for record in iter_json_objects(manifest):
-           for key in ("process_dir", "broken_process_dir"):
-               value = record.get(key)
-               if value and os.path.isdir(value):
-                   process_dirs.add(value)
-           value = record.get("order_file_path")
-           if value and os.path.exists(value):
-               order_files.add(value)
-
-   moved_dirs = []
-   for src in sorted(process_dirs):
-       dst = os.path.join(mg5_processes_dir, os.path.basename(src))
-       if os.path.exists(dst):
-           raise RuntimeError(f"Destination already exists: {dst}")
-       shutil.move(src, dst)
-       moved_dirs.append(os.path.basename(src))
-   ```
-
-4. Move all order files created during this run:
-   ```python
-   moved_orders = []
-   for src in sorted(order_files):
-       dst = os.path.join(orders_dir, os.path.basename(src))
-       shutil.move(src, dst)
-       moved_orders.append(os.path.basename(src))
-   ```
-
-5. Record cleanup log:
-   ```json
-   {
-     "cleanup_time": "2026-05-26T10:00:00",
-     "source": "/home/user/MG5_aMC_v3_5_6",
-     "destination_processes": "/home/user/work/results/E10_L1000/mg5_processes",
-     "destination_orders": "/home/user/work/results/E10_L1000/orders",
-     "expected_process_dirs": ["/path/to/process_A", "/path/to/process_B_broken_20260526"],
-     "moved_process_dirs": ["/home/user/work/results/E10_L1000/mg5_processes/process_A"],
-     "missing_process_dirs": [],
-     "expected_order_files": ["/path/to/order_create_process_A.txt"],
-     "moved_order_files": ["/home/user/work/results/E10_L1000/orders/order_create_process_A.txt"],
-     "missing_order_files": [],
-     "total_moved_dirs": 5,
-     "total_moved_orders": 8
-   }
-   ```
-
-   If a runner-recorded process directory or order file is already absent, do
-   not silently skip it. Record it in `missing_process_dirs` or
-   `missing_order_files` with the manifest path that referenced it.
-
-   **Multi-run note**: In multi-run mode, the destination paths include the run subdirectory (e.g., `results/E10_L1000/mg5_processes`).
+**Multi-run note**: In multi-run mode, the destination paths include the run
+subdirectory, for example `results/E10_L1000/mg5_processes`.
 
 ## Safety Checks
 
