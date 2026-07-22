@@ -1,10 +1,14 @@
 import os
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.beam_energy import compute_sqrt_s
+from scripts.count_lhco_events import count_lhco_events
 from scripts.extract_cross_section import extract_cross_section
 from scripts.extract_weighted_order import extract_weighted_order
+from scripts.merge_lhco import merge_lhco
 from scripts.normalize_process_name import normalize_process_name
 from scripts.parse_param_card import parse_coefficients
 from scripts.run_mg5 import run_mg5
@@ -129,6 +133,89 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             with self.assertRaises(RuntimeError) as ctx:
                 run_mg5(mg5, "order.txt")
             self.assertIn("No MG5 binary", str(ctx.exception))
+
+    def test_run_mg5_parses_stage_markers_from_fake_process(self):
+        class FakePipe:
+            def __init__(self, lines):
+                self._lines = lines
+
+            def __iter__(self):
+                return iter(self._lines)
+
+        class FakeProcess:
+            def __init__(self):
+                self.stdout = FakePipe([
+                    "Generating subprocesses\n",
+                    "Running Pythia8\n",
+                    "Running Delphes\n",
+                ])
+                self.stderr = FakePipe([])
+
+            def wait(self):
+                return 0
+
+            def kill(self):
+                return None
+
+        with tempfile.TemporaryDirectory() as mg5:
+            write_text(os.path.join(mg5, "order.txt"), "quit\n")
+            write_text(os.path.join(mg5, "bin", "mg5_aMC"), "fake\n")
+            with patch("scripts.run_mg5.subprocess.Popen", return_value=FakeProcess()):
+                with patch("scripts.run_mg5.print"):
+                    result = run_mg5(mg5, "order.txt")
+            self.assertEqual(result["returncode"], 0)
+            self.assertIsNotNone(result["mg5_steps"]["madgraph"]["duration_sec"])
+            self.assertIsNotNone(result["mg5_steps"]["pythia8"]["duration_sec"])
+            self.assertIsNotNone(result["mg5_steps"]["delphes"]["duration_sec"])
+
+    def test_cutexperiment_count_and_merge_use_fake_lhco_interface(self):
+        with tempfile.TemporaryDirectory() as root:
+            fake_ce = os.path.join(root, "CutExperiment")
+            write_text(os.path.join(fake_ce, "Interfaces", "__init__.py"), "")
+            write_text(
+                os.path.join(fake_ce, "Interfaces", "LHCOlympics.py"),
+                "\n".join([
+                    "class EventSet:",
+                    "    def __init__(self, path):",
+                    "        with open(path, encoding='utf-8') as handle:",
+                    "            self.events = [line for line in handle if line.strip()]",
+                    "    def GetEventCount(self):",
+                    "        return len(self.events)",
+                    "    def AddEventSet(self, other):",
+                    "        self.events.extend(other.events)",
+                    "    def SaveToLHCO(self, path):",
+                    "        with open(path, 'w', encoding='utf-8') as handle:",
+                    "            handle.writelines(self.events)",
+                    "def LoadLHCOlympics(path):",
+                    "    return EventSet(path)",
+                ]),
+            )
+            first = os.path.join(root, "first.lhco")
+            second = os.path.join(root, "second.lhco")
+            first_banner = os.path.join(root, "first_banner.txt")
+            second_banner = os.path.join(root, "second_banner.txt")
+            write_text(first, "a\nb\n")
+            write_text(second, "c\n")
+            write_text(first_banner, "Integrated weight (pb) : 2.0\n")
+            write_text(second_banner, "Integrated weight (pb) : 5.0\n")
+
+            for name in list(sys.modules):
+                if name == "Interfaces" or name.startswith("Interfaces."):
+                    sys.modules.pop(name)
+            record = count_lhco_events(first, requested_event_count=4, cutexperiment_path=fake_ce)
+            self.assertEqual(record["loaded_lhco_event_count"], 2)
+            self.assertEqual(record["status"], "accepted_with_warning")
+
+            output = os.path.join(root, "merged", "out.lhco")
+            metadata = merge_lhco(
+                [first, second],
+                output,
+                cutexperiment_path=fake_ce,
+                source_banner_paths=[first_banner, second_banner],
+                requested_event_count=4,
+            )
+            self.assertEqual(metadata["merged_loaded_lhco_event_count"], 3)
+            self.assertAlmostEqual(metadata["merged_cross_section_pb"], 3.0)
 
 
 if __name__ == "__main__":

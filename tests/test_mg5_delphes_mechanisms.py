@@ -63,6 +63,27 @@ class Mg5DelphesMechanismTests(unittest.TestCase):
             self.assertTrue(lhco_path.endswith(f"{run_folder}.lhco"))
             self.assertTrue(os.path.exists(lhco_path))
 
+    def test_convert_root_to_lhco_reports_root2lhco_failure_log(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            process = "proc"
+            run_folder = "run_01"
+            root_dir = os.path.join(mg5, process, "Events", run_folder)
+            cards_dir = os.path.join(mg5, process, "Cards")
+            os.makedirs(root_dir, exist_ok=True)
+            os.makedirs(cards_dir, exist_ok=True)
+            write_text(os.path.join(cards_dir, "delphes_card.dat"), "add Branch Output/jets Jet Jet\n")
+            write_text(os.path.join(root_dir, "tag_1_delphes_events.root"), "fake-root")
+
+            def fake_run(cmd, cwd, stdout, stderr, text):
+                stdout.write("Cannot find tree Delphes\n")
+                return subprocess.CompletedProcess(cmd, 2)
+
+            with patch("scripts.convert_root_to_lhco.subprocess.run", side_effect=fake_run):
+                with self.assertRaises(RuntimeError) as ctx:
+                    convert_root_to_lhco(mg5, process, run_folder)
+            self.assertIn("root2lhco failed", str(ctx.exception))
+            self.assertIn("Cannot find tree", str(ctx.exception))
+
     @unittest.skipUnless(
         shutil.which("wsl.exe") or shutil.which("wsl"),
         "WSL is required for the real MG5 smoke test",
