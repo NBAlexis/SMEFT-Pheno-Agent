@@ -2963,6 +2963,12 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
 
         comparison = _load_json(os.path.join(root, "data", "phase7", "algorithm_comparison.json"))
         expected_algorithms = set((comparison.get("anchor") or {}).keys())
+        expected_selection_seed = comparison.get("algorithm_selection_seed")
+        selection_seed_ok = (
+            isinstance(expected_selection_seed, int)
+            and not isinstance(expected_selection_seed, bool)
+            and lock.get("algorithm_selection_seed") == expected_selection_seed
+        )
         descriptions = _algorithm_description_map(
             _load_json(os.path.join(root, "data", "phase7", "algorithm_descriptions.json"))
         )
@@ -2989,6 +2995,7 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
                 for key in (
                     "implementation",
                     "hyperparameters",
+                    "random_seed",
                     "score_definition",
                     "model_output",
                 )
@@ -2996,6 +3003,7 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
             ]
             mismatches = []
             source_params = source.get("hyperparameters", source.get("params"))
+            source_seed = source.get("random_seed", source.get("seed"))
             source_score = source.get("score_definition", source.get("score"))
             source_implementation = (
                 source.get("implementation")
@@ -3004,6 +3012,8 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
             )
             if source_params is not None and frozen.get("hyperparameters") != source_params:
                 mismatches.append("hyperparameters")
+            if source_seed is None or frozen.get("random_seed") != source_seed:
+                mismatches.append("random_seed")
             if source_score is not None and frozen.get("score_definition") != source_score:
                 mismatches.append("score_definition")
             if source_implementation is not None and frozen.get("implementation") != source_implementation:
@@ -3077,7 +3087,8 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
                     bad_files.append({"path": rel, "error": "SHA-256 mismatch"})
 
         ok = (
-            not bad_algorithms
+            selection_seed_ok
+            and not bad_algorithms
             and production_ok
             and scope_ok
             and operator_selections_ok
@@ -3087,6 +3098,7 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
         record.update({
             "ok": ok,
             "trained_algorithms": sorted(trained_map),
+            "algorithm_selection_seed_ok": selection_seed_ok,
             "bad_algorithms": bad_algorithms,
             "expected_production_algorithm": expected_production,
             "actual_production_algorithm": lock.get("production_algorithm"),
@@ -3099,7 +3111,7 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
         if not ok:
             record["failure_reason"] = (
                 "Phase 11 did not freeze the actual Phase 7/9 algorithms, parameters, "
-                "selection criterion, rationale, evidence, operator assignments, and "
+                "random seeds, selection criterion, rationale, evidence, operator assignments, and "
                 "packaged implementation checksums consistently"
             )
     except Exception as exc:
@@ -3665,39 +3677,81 @@ def _phase7_content_checks(root: str) -> List[Dict[str, Any]]:
                 if isinstance(configured_algorithms, list) and configured_algorithms
                 else None
             )
+            selection_seed = data.get("algorithm_selection_seed")
+            selection_seed_ok = (
+                isinstance(selection_seed, int)
+                and not isinstance(selection_seed, bool)
+            )
+            effective_algorithms = []
             for alg, record in sorted(anchor.items()):
                 if not isinstance(record, dict):
                     bad.append({"algorithm": alg, "error": "record is not an object"})
                     continue
                 auc = record.get("auc")
                 try:
-                    auc_ok = 0.5 < float(auc) <= 1.0
+                    auc_value = float(auc)
+                    auc_ok = 0.0 <= auc_value <= 1.0
                 except (TypeError, ValueError):
+                    auc_value = None
                     auc_ok = False
+                if auc_value is not None and 0.5 < auc_value <= 1.0:
+                    effective_algorithms.append(alg)
                 missing = [
                     key for key in ("algorithm_path", "score_definition")
                     if record.get(key) in (None, "", [], {})
                 ]
                 if not auc_ok or missing:
                     bad.append({"algorithm": alg, "auc": auc, "auc_ok": auc_ok, "missing": missing})
+            missing_configured = sorted(
+                expected_algorithm_keys - set(anchor)
+                if expected_algorithm_keys is not None
+                else set()
+            )
+            failure_reasons = []
+            if len(anchor) < 3:
+                failure_reasons.append(
+                    f"trained {len(anchor)} algorithms; Phase 7 requires at least 3"
+                )
+            if missing_configured:
+                failure_reasons.append(
+                    "missing user-configured algorithms: " + ", ".join(missing_configured)
+                )
+            if not effective_algorithms:
+                failure_reasons.append(
+                    "no trained algorithm has AUC > 0.5; diagnose the data and training, then try additional algorithms"
+                )
+            if not selection_seed_ok:
+                failure_reasons.append(
+                    "algorithm_selection_seed is missing or is not an integer"
+                )
+            if bad:
+                failure_reasons.append(
+                    "one or more algorithm records has an invalid AUC outside [0, 1] or missing output metadata"
+                )
             checks.append({
                 "rel_path": comparison_rel,
                 "severity": "abort",
                 "source": "phase7_algorithm_comparison_content",
                 "path": comparison_path,
                 "ok": (
-                    bool(anchor)
+                    len(anchor) >= 3
                     and not bad
+                    and bool(effective_algorithms)
+                    and selection_seed_ok
                     and (
-                        set(anchor) == expected_algorithm_keys
+                        expected_algorithm_keys.issubset(set(anchor))
                         if expected_algorithm_keys is not None
-                        else len(anchor) == 3
+                        else True
                     )
                 ),
                 "algorithm_count": len(anchor),
                 "configured_algorithm_keys": sorted(expected_algorithm_keys) if expected_algorithm_keys is not None else None,
-                "required_random_selection_count": 3 if expected_algorithm_keys is None else None,
+                "minimum_algorithm_count": 3,
+                "algorithm_selection_seed": selection_seed,
+                "algorithm_selection_seed_ok": selection_seed_ok,
+                "effective_algorithms_with_auc_above_0_5": effective_algorithms,
                 "bad_records": bad,
+                "failure_reasons": failure_reasons,
             })
         except Exception as exc:
             checks.append({

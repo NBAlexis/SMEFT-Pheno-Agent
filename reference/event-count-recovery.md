@@ -41,6 +41,13 @@ retry. Do not rename a successful low-count process folder to `_broken_*`, do
 not abandon it, and do not delete its LHCO/banner outputs. Run another attempt
 with the next survey profile and merge compatible LHCO outputs by label.
 
+Pass the original successful low-count runner JSON as
+`initial_result_json`. The recovery script records that run as attempt 0,
+includes its LHCO and banner files in the merge, and starts with the next survey
+profile. Do not rerun the initial profile merely because recovery has started.
+`base_mg5_config.result_json` remains the path where the script writes the final
+recovery summary; it is not a substitute for `initial_result_json`.
+
 The recovery orchestrator runs the MG5 config runner with survey profiles:
 
 | Profile | Meaning |

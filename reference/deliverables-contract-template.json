@@ -92,8 +92,8 @@
       "id": "phase7.complete_algorithm_set",
       "phase": "7",
       "requirements": [
-        "algorithm_comparison anchor keys equal user-configured algorithms when provided",
-        "otherwise algorithm_comparison anchor contains exactly three algorithms",
+        "algorithm_comparison anchor contains every user-configured algorithm when provided",
+        "algorithm_comparison anchor contains at least three algorithms and at least one has AUC above 0.5",
         "algorithm descriptions, score files, model files, and validation records use the same keys"
       ]
     },

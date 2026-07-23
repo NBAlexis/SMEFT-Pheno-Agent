@@ -80,10 +80,14 @@ class ResearchContractTests(unittest.TestCase):
         card_dir = os.path.join(self.mg5, "Delphes", "cards")
         os.makedirs(model_dir, exist_ok=True)
         os.makedirs(card_dir, exist_ok=True)
+        dependency_dir = os.path.join(card_dir, "detector_parts")
+        os.makedirs(dependency_dir, exist_ok=True)
         with open(os.path.join(model_dir, "parameters.py"), "w", encoding="utf-8") as handle:
             handle.write("MODEL = 'AQGCm_UFO'\n")
         with open(os.path.join(card_dir, "delphes_card_CEPC.tcl"), "w", encoding="utf-8") as handle:
-            handle.write("set DetectorName CEPC\n")
+            handle.write("source detector_parts/tracking.tcl\nset DetectorName CEPC\n")
+        with open(os.path.join(dependency_dir, "tracking.tcl"), "w", encoding="utf-8") as handle:
+            handle.write("set TrackingEfficiency 0.99\n")
         self.config_path = os.path.join(self.results, "run_config.json")
         self.config = base_config(self.temp.name)
         self.config["madgraph_path"] = self.mg5
@@ -196,6 +200,16 @@ class ResearchContractTests(unittest.TestCase):
         model_file = os.path.join(self.mg5, "models", "AQGCm_UFO", "parameters.py")
         with open(model_file, "a", encoding="utf-8") as handle:
             handle.write("DRIFT = True\n")
+        report = verify_contracts(self.config_path, self.results)
+        self.assertEqual(report["status"], "error")
+        self.assertTrue(any("scientific objective" in item for item in report["errors"]))
+
+    def test_delphes_card_dependency_content_drift_is_rejected(self):
+        dependency = os.path.join(
+            self.mg5, "Delphes", "cards", "detector_parts", "tracking.tcl"
+        )
+        with open(dependency, "a", encoding="utf-8") as handle:
+            handle.write("set TrackingEfficiency 0.95\n")
         report = verify_contracts(self.config_path, self.results)
         self.assertEqual(report["status"], "error")
         self.assertTrue(any("scientific objective" in item for item in report["errors"]))

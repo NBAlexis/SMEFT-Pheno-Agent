@@ -12,7 +12,13 @@ from scripts.count_lhco_events import count_lhco_events
 import scripts.calculate_shared_f5_background as shared_f5_module
 from scripts.calculate_shared_f5_background import calculate_shared_f5_background
 from scripts.double_check_zero_cross_section import double_check_zero_cross_section
-from scripts.durable_exec import job_paths, remote_start_command, remote_status_command, safe_name
+from scripts.durable_exec import (
+    existing_job_files,
+    job_paths,
+    remote_start_command,
+    remote_status_command,
+    safe_name,
+)
 from scripts.extract_cross_section import extract_cross_section
 from scripts.extract_weighted_order import extract_weighted_order
 from scripts.install_cutexperiment import validate_cutexperiment
@@ -607,9 +613,18 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
         self.assertIn("mkdir -p /tmp/jobs", command)
         self.assertIn("/tmp/work dir", command)
         self.assertIn("nohup bash", command)
+        self.assertIn("( nohup bash", command)
+        self.assertIn("pid=$!", command)
+        self.assertIn("already has status files", command)
         status_command = remote_status_command(paths, "phase_6")
         self.assertIn('"status":"running"', status_command)
-        self.assertIn('"status":"completed"', status_command)
+        self.assertIn("status=completed", status_command)
+        self.assertIn("status=failed", status_command)
+
+        with tempfile.TemporaryDirectory() as job_dir:
+            local_paths = job_paths(job_dir, "phase_6")
+            write_text(local_paths["stdout"], "previous run\n")
+            self.assertEqual(existing_job_files(local_paths), [local_paths["stdout"]])
 
         tracker = TimingTracker()
         with patch("scripts.timing_tracker.print"):
@@ -805,6 +820,8 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             write_text(source_lhco, "fake lhco\n")
             source_banner = os.path.join(root, "banner.txt")
             write_text(source_banner, "Integrated weight (pb) 1.0\n")
+            recovery_lhco = os.path.join(root, "recovery.lhco")
+            write_text(recovery_lhco, "recovery lhco\n")
             config = {
                 "base_mg5_config": {
                     "process_mode": "pure_np",
@@ -819,8 +836,26 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                 "metadata_path": os.path.join(root, "metadata.json"),
             }
 
+            initial_result_json = os.path.join(root, "initial_result.json")
+            write_text(
+                initial_result_json,
+                json.dumps({
+                    "survey_profile": "default",
+                    "outputs": [{
+                        "label": "np_o_1",
+                        "lhco_path": recovery_lhco,
+                        "banner_path": source_banner,
+                        "loaded_lhco_event_count": 3,
+                    }],
+                }),
+            )
+            config["initial_result_json"] = initial_result_json
+
+            executed_profiles = []
+
             def fake_run(cfg):
-                count = 3 if cfg["survey_profile"] == "default" else 8
+                executed_profiles.append(cfg["survey_profile"])
+                count = 8
                 return {
                     "outputs": [{
                         "label": "np_o_1",
@@ -830,7 +865,10 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                     }]
                 }
 
+            merged_sources = []
+
             def fake_merge(sources, output_lhco, **kwargs):
+                merged_sources.extend(sources)
                 write_text(output_lhco, "merged\n")
                 write_text(kwargs["metadata_path"], "{}\n")
                 return {
@@ -847,6 +885,9 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertEqual(metadata["status"], "accepted")
             self.assertEqual(metadata["final_loaded_counts"], {"np_o_1": 11})
             self.assertEqual(len(metadata["attempts"]), 2)
+            self.assertEqual(metadata["attempts"][0]["result_json"], initial_result_json)
+            self.assertEqual(executed_profiles, ["sde0_hs0"])
+            self.assertEqual(merged_sources, [recovery_lhco, source_lhco])
             with open(config["base_mg5_config"]["result_json"], encoding="utf-8") as handle:
                 canonical = json.load(handle)
             self.assertEqual(canonical["result_kind"], "event_count_recovery_summary")
@@ -856,6 +897,7 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
 
             zero_config = dict(config)
             zero_config["metadata_path"] = os.path.join(root, "zero.json")
+            zero_config.pop("initial_result_json")
 
             def fake_zero(_cfg):
                 return {

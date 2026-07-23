@@ -13,8 +13,10 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 try:
     from .load_run_config import load_run_config
+    from .setup_delphes_card import collect_dependencies
 except ImportError:  # Direct script execution.
     from load_run_config import load_run_config
+    from setup_delphes_card import collect_dependencies
 
 
 RESEARCH_CONTRACT_NAME = "research_contract.json"
@@ -172,6 +174,50 @@ def _detector_card_path(config: Dict[str, Any]) -> str:
     return path
 
 
+def _detector_card_identity(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Fingerprint the selected card and every statically resolved dependency."""
+    card_path = _detector_card_path(config)
+    cards_root = os.path.realpath(
+        os.path.join(
+            os.path.abspath(os.path.expanduser(str(config.get("madgraph_path") or ""))),
+            "Delphes",
+            "cards",
+        )
+    )
+    missing: List[Dict[str, Any]] = []
+    dependency_paths = collect_dependencies(card_path, cards_root, set(), missing)
+    if missing:
+        raise ValueError(
+            "Cannot fingerprint all selected Delphes card dependencies: "
+            + json.dumps(missing, ensure_ascii=False, sort_keys=True)
+        )
+
+    files = []
+    for path in sorted(dependency_paths):
+        relative_path = os.path.relpath(path, cards_root).replace("\\", "/")
+        if os.path.isdir(path):
+            digest, file_count = _directory_sha256(path)
+            files.append({
+                "path": relative_path + "/",
+                "kind": "directory",
+                "sha256": digest,
+                "file_count": file_count,
+            })
+        else:
+            files.append({
+                "path": relative_path,
+                "kind": "file",
+                "sha256": _file_sha256(path),
+                "size": os.path.getsize(path),
+            })
+    return {
+        "hash_kind": "delphes-card-and-dependencies-sha256-v1",
+        "sha256": _sha256(files),
+        "file_count": len(files),
+        "files": files,
+    }
+
+
 def _scientific_input_identities(config: Dict[str, Any]) -> Dict[str, Any]:
     model_identities: Dict[str, Any] = {}
     madgraph_path = os.path.abspath(os.path.expanduser(str(config.get("madgraph_path") or "")))
@@ -191,14 +237,9 @@ def _scientific_input_identities(config: Dict[str, Any]) -> Dict[str, Any]:
     if not model_identities:
         raise ValueError("models must contain at least one selected UFO model")
 
-    card_path = _detector_card_path(config)
     return {
         "models": model_identities,
-        "detector_card": {
-            "hash_kind": "file-sha256-v1",
-            "sha256": _file_sha256(card_path),
-            "size": os.path.getsize(card_path),
-        },
+        "detector_card": _detector_card_identity(config),
     }
 
 

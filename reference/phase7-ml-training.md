@@ -189,7 +189,9 @@ Maintain a pool of **at least 10 candidate algorithms**. Example pool (from scik
 | 12 | KNeighborsClassifier | Distance-based | - |
 | 13 | PyTorch NN (custom) | Neural Network | `torch` |
 
-If `config.algorithms` is set in `run_config.json`, use those instead of the pool.
+If `config.algorithms` is set in `run_config.json`, train all of them. If that
+list contains fewer than three algorithms, add randomly selected algorithms
+from the pool until at least three are present.
 
 **On-demand dependency installation:**
 If a selected algorithm requires a package not yet installed (e.g., `xgboost`, `lightgbm`, or `torch`), install it into the **same venv** created in Phase 2:
@@ -209,13 +211,29 @@ except ImportError:
 
 ### Step 7.2.2 Random Initial Selection
 
-Use a random seed (e.g., hash of `process_name + anchor_model + anchor_name`) to randomly select **3 algorithms** from the pool.
+Generate a new random selection seed for each new research run, record it, and
+use it to select algorithms from the pool. Start with at least **3 algorithms**.
+Do not derive this seed only from process or model names: independent users and
+independent new runs must not be forced to start with the same algorithms.
 
 ```python
 import random
-rng = random.Random(hash(process_name + anchor_model + anchor_name) % (2**32))
-selected = rng.sample(algorithm_pool, 3)
+import secrets
+
+algorithm_selection_seed = secrets.randbits(64)
+rng = random.Random(algorithm_selection_seed)
+selected = resolve_configured_algorithms(config.algorithms, algorithm_pool)
+remaining = [alg for alg in algorithm_pool if alg not in selected]
+selected.extend(rng.sample(remaining, max(0, 3 - len(selected))))
 ```
+
+Implement `resolve_configured_algorithms` as an explicit name-to-pool lookup and
+report an unknown requested name exactly. Do not place the raw name string into
+the list of trainable implementations.
+
+Generate and record the train/test and implementation random seeds actually
+used by every trained algorithm. A later Phase 11 replay must use the recorded
+algorithm list and all recorded seeds instead of generating new ones.
 
 ### Step 7.2.3 Write `compute_scores` Function
 
@@ -259,7 +277,17 @@ Train on the **anchor operator's** SM and NP samples:
 6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 - **this is for manuscript plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-> **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 uses the anchor-selected common strategy by default, but may record a user-requested or evidence-driven per-operator strategy when the common strategy is not usable under the selected `debug` setting.
+> **Production algorithm selection is deferred to Phases 8-9.** Phase 7 trains
+> at least three algorithms. Keep every trained result, including an algorithm
+> with `AUC <= 0.5`; do not silently discard it. At least one trained algorithm
+> must achieve `AUC > 0.5`. If none does, first diagnose labels, score direction,
+> preprocessing, data splitting, hyperparameters, and implementation errors,
+> then train additional algorithms from the pool. Do not complete Phase 7 while
+> all trained algorithms remain ineffective. Phase 8 optimizes thresholds on
+> the anchor operator for each algorithm. Phase 9 uses the anchor-selected common
+> strategy by default, but may record a user-requested or evidence-driven
+> per-operator strategy when the common strategy is not usable under the selected
+> `debug` setting.
 
 ## Step 7.3: Score Distribution Histograms
 
@@ -342,7 +370,7 @@ Record all AUCs in `algorithm_comparison.json`:
     }
   },
   "algorithm_pool": ["{alg1}", "{alg2}", "{alg3}", "..."],
-  "initial_random_seed": 12345,
+  "algorithm_selection_seed": 12345,
   "anchor_operator": "fS0",
   "anchor_model": "AQGCm_UFO"
 }
@@ -437,7 +465,10 @@ Relevant invariants:
 [`workflow-invariants.md`](workflow-invariants.md) Selection Scope,
 Publication Data, Actual Event Counts, and Execution Continuity.
 
-- `0.5 < AUC <= 1.0` for anchor training
+- every recorded AUC is in `[0, 1]`, and at least one trained algorithm has
+  `AUC > 0.5`
+- at least three algorithms are trained; all user-configured algorithms are
+  included, and additional algorithms are allowed
 - `event_counts.json` exists and every `loaded_lhco_event_count` is positive
 - `feature_schema.json` exists, is ordered, and includes units, definitions,
   particle assignments, ordering rules, and preprocessing metadata
@@ -454,13 +485,13 @@ Before calling `logger.phase_complete("7")`, satisfy
 [`deliverables-phase7.md`](deliverables-phase7.md). Missing deliverables require
 self-repair, not user interaction.
 
-After `logger.phase_complete("7")` is called and all algorithms are saved:
+After all algorithms are saved, but before calling `logger.phase_complete("7")`:
 
 1. **Check validation rules immediately**: If no algorithm achieves AUC > 0.5,
    inspect labels, feature extraction, leakage guards, train/test construction,
-   hyperparameters, seeds, and model code; repair or replace the affected
-   algorithm implementation and rerun all affected Phase 7-10 outputs. If valid data genuinely has no separability, preserve the complete
-   negative result and determine downstream outputs without silently dropping
-   algorithms or changing the research objective.
+   hyperparameters, seeds, and model code; repair implementation or data errors,
+   then train additional algorithms from the pool. Preserve ineffective results
+   as evidence, but do not complete Phase 7 while every trained algorithm has
+   `AUC <= 0.5`.
 2. **If validation passes**: **proceed immediately to Phase 8 without stopping.**
 3. **Do NOT**: summarize results, ask for confirmation, present options, or wait for user input.

@@ -8,7 +8,7 @@ import copy
 import json
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 try:
     from .merge_lhco import merge_lhco
@@ -124,6 +124,36 @@ def _group_counts(attempts: List[Dict[str, Any]]) -> Dict[str, int]:
     return totals
 
 
+def _initial_attempt(
+    config: Dict[str, Any], base: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
+    """Load the successful low-count run that triggered recovery, when provided."""
+    initial_path = config.get("initial_result_json")
+    if not initial_path:
+        return None
+    initial_path = os.path.abspath(os.path.expanduser(str(initial_path)))
+    result = _read_json(initial_path)
+    if result.get("result_kind") == "event_count_recovery_summary":
+        raise ValueError(
+            "initial_result_json points to an event-count recovery summary; "
+            "provide the original successful low-count MG5 result JSON"
+        )
+    if not isinstance(result.get("outputs"), list) or not result["outputs"]:
+        raise ValueError(
+            "initial_result_json does not contain the original MG5 outputs: " + initial_path
+        )
+    initial_config = copy.deepcopy(base)
+    initial_config["result_json"] = initial_path
+    return {
+        "attempt_index": 0,
+        "survey_profile": result.get("survey_profile", base.get("survey_profile", "default")),
+        "status": "completed",
+        "config": initial_config,
+        "result_json": initial_path,
+        "result": result,
+    }
+
+
 def _all_labels_reached(totals: Dict[str, int], labels: List[str], requested: int) -> bool:
     threshold = 0.1 * requested
     return bool(labels) and all(totals.get(label, 0) >= threshold for label in labels)
@@ -178,11 +208,31 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
     os.makedirs(merged_output_dir, exist_ok=True)
 
     labels = _expected_labels(base)
-    attempts: List[Dict[str, Any]] = []
+    initial_attempt = _initial_attempt(config, base)
+    attempts: List[Dict[str, Any]] = [initial_attempt] if initial_attempt else []
     totals: Dict[str, int] = {}
     zero_event_failure = None
 
-    for attempt_index, profile in enumerate(profiles):
+    if initial_attempt:
+        zeros = _zero_event_outputs(initial_attempt["result"])
+        if zeros:
+            initial_attempt["status"] = "zero_event_failure"
+            initial_attempt["zero_event_outputs"] = zeros
+            zero_event_failure = {
+                "attempt_index": 0,
+                "survey_profile": initial_attempt["survey_profile"],
+                "zero_event_outputs": zeros,
+                "action": "inspect/fix Delphes, root2lhco, card, or output generation before rerunning",
+            }
+        totals = _group_counts(attempts)
+
+    profiles_to_run = list(profiles)
+    if initial_attempt and initial_attempt["survey_profile"] in profiles_to_run:
+        profiles_to_run.remove(initial_attempt["survey_profile"])
+
+    for attempt_index, profile in enumerate(profiles_to_run, start=len(attempts)):
+        if zero_event_failure is not None or _all_labels_reached(totals, labels, requested):
+            break
         cfg = _attempt_config(base, profile, attempt_index, attempt_root)
         try:
             result = run_from_config(cfg)

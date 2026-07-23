@@ -12,6 +12,10 @@ Must deliver:
 - `results/data/phase7/algorithm_comparison.json` and
   `algorithm_descriptions.json` for every trained algorithm, including AUC,
   hyperparameters, score definition, pseudocode, and a stable `algorithm_key`.
+  Train at least three algorithms, include every user-configured algorithm, and
+  require at least one algorithm with `AUC > 0.5`; retain other valid AUC results.
+  Record the random algorithm-selection seed and every training seed actually
+  used.
 - `results/data/phase7/phase7_validation.json` with `status: "pass"`,
   algorithm keys, operator keys, passed validation records, and no failed
   checks.
@@ -29,6 +33,7 @@ Manuscript dependency: feature table, preprocessing statement, algorithm
 descriptions/pseudocode, mathematical score definitions, AUC/ROC evidence,
 score histograms, and public data paths.
 
-If missing or incomplete: rebuild conversions, retrain/rescore, or recreate
-plots from the saved data, then rerun `phase7_validation.json`. Do not filter
-algorithms early and do not omit non-anchor pure-NP histograms.
+If missing or incomplete: rebuild conversions, retrain/rescore, try additional
+algorithms when none has `AUC > 0.5`, or recreate plots from the saved data,
+then rerun `phase7_validation.json`. Do not filter algorithms early and do not
+omit non-anchor pure-NP histograms.

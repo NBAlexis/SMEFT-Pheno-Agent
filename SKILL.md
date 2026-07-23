@@ -75,7 +75,12 @@ The research contract also freezes these six method boundaries after Phase 1:
   `phase10_required_manuscript_items`. Earlier phases must provide the evidence
   needed for those items without inventing unrelated scientific requirements.
 
-ML algorithms, implementations, and hyperparameters remain changeable. With
+ML algorithms, implementations, and hyperparameters remain changeable. Phase 7
+must train at least three algorithms and retain every result; if none has
+`AUC > 0.5`, diagnose the run and try additional algorithms before completing
+the phase. Generate new random seeds for each new research run and record every
+seed actually used. Phase 11 freezes the final algorithm list and those seeds
+so replay uses them without generating new randomness. With
 `debug=false`, the LLM may reject or repair a candidate with inadequate event
 support, invalid fits, or numerical instability. With `debug=true`, repair
 technical failures and unusable numerical outputs, but do not add full-size runs

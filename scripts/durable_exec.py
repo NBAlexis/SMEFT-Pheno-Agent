@@ -9,6 +9,7 @@ the same local/SSH/WSL2 target model as remote_exec.py.
 import argparse
 import json
 import os
+import posixpath
 import shlex
 import subprocess
 import sys
@@ -34,17 +35,18 @@ def safe_name(name: str) -> str:
 
 def job_paths(job_dir: str, name: str) -> dict:
     name = safe_name(name)
+    join = posixpath.join if str(job_dir).startswith("/") else os.path.join
     return {
         "dir": job_dir,
-        "pid": os.path.join(job_dir, f"{name}.pid"),
-        "meta": os.path.join(job_dir, f"{name}.json"),
-        "stdout": os.path.join(job_dir, f"{name}.out.log"),
-        "stderr": os.path.join(job_dir, f"{name}.err.log"),
-        "exitcode": os.path.join(job_dir, f"{name}.exitcode"),
-        "started": os.path.join(job_dir, f"{name}.started_at"),
-        "finished": os.path.join(job_dir, f"{name}.finished_at"),
-        "script": os.path.join(job_dir, f"{name}.sh"),
-        "runner": os.path.join(job_dir, f"{name}_runner.py"),
+        "pid": join(job_dir, f"{name}.pid"),
+        "meta": join(job_dir, f"{name}.json"),
+        "stdout": join(job_dir, f"{name}.out.log"),
+        "stderr": join(job_dir, f"{name}.err.log"),
+        "exitcode": join(job_dir, f"{name}.exitcode"),
+        "started": join(job_dir, f"{name}.started_at"),
+        "finished": join(job_dir, f"{name}.finished_at"),
+        "script": join(job_dir, f"{name}.sh"),
+        "runner": join(job_dir, f"{name}_runner.py"),
     }
 
 
@@ -72,6 +74,11 @@ def local_running(pid: int) -> bool:
         return False
 
 
+def existing_job_files(paths: dict) -> List[str]:
+    """Return status/history files that would be overwritten by a repeated name."""
+    return [path for key, path in paths.items() if key != "dir" and os.path.exists(path)]
+
+
 def start_local(command_parts: List[str], cwd: Optional[str], job_dir: str, name: str) -> int:
     if os.name == "nt":
         raise RuntimeError(
@@ -81,6 +88,13 @@ def start_local(command_parts: List[str], cwd: Optional[str], job_dir: str, name
     job_dir = os.path.abspath(job_dir)
     paths = job_paths(job_dir, name)
     os.makedirs(job_dir, exist_ok=True)
+    existing = existing_job_files(paths)
+    if existing:
+        raise RuntimeError(
+            f"Job name {name!r} already has status or log files. "
+            "Inspect it with the status command or choose a new --name; existing files: "
+            + ", ".join(existing)
+        )
     runner = f"""#!/usr/bin/env python3
 import subprocess
 from datetime import datetime, timezone
@@ -157,14 +171,21 @@ exit "$rc"
         "stdout": paths["stdout"],
         "stderr": paths["stderr"],
     })
+    existing_test = " || ".join(
+        f"[ -e {shlex.quote(path)} ]" for key, path in paths.items() if key != "dir"
+    )
     return (
         f"mkdir -p {shlex.quote(paths['dir'])} && "
+        f"if {existing_test}; then "
+        f"echo {shlex.quote(f'ERROR: job name {name!r} already has status files; inspect it or choose a new --name')} >&2; "
+        "exit 4; fi && "
         f"printf %s {shlex.quote(script)} > {shlex.quote(paths['script'])} && "
         f"chmod +x {shlex.quote(paths['script'])} && "
         f"printf %s {shlex.quote(meta)} > {shlex.quote(paths['meta'])} && "
-        f"nohup bash {shlex.quote(paths['script'])} >/dev/null 2>&1 < /dev/null & "
-        f"echo $! > {shlex.quote(paths['pid'])} && "
-        f"echo started {shlex.quote(name)} pid=$(cat {shlex.quote(paths['pid'])})"
+        f"( nohup bash {shlex.quote(paths['script'])} >/dev/null 2>&1 < /dev/null & "
+        "pid=$!; "
+        f"echo \"$pid\" > {shlex.quote(paths['pid'])}; "
+        f"echo started {shlex.quote(name)} pid=\"$pid\" )"
     )
 
 
@@ -193,7 +214,10 @@ def status_local(job_dir: str, name: str) -> int:
         with open(paths["exitcode"], encoding="utf-8") as f:
             exitcode = f.read().strip()
     running = bool(pid and local_running(pid))
-    status = "running" if running else ("completed" if exitcode is not None else "unknown")
+    status = (
+        "running" if running
+        else ("completed" if exitcode == "0" else "failed" if exitcode is not None else "unknown")
+    )
     print(json.dumps({"name": name, "pid": pid, "status": status, "exitcode": exitcode}, indent=2))
     return 0
 
@@ -207,7 +231,8 @@ def remote_status_command(paths: dict, name: str) -> str:
         f"printf '{{\"name\":\"{name}\",\"pid\":%s,\"status\":\"running\"}}\\n' \"$pid\"; "
         f"elif [ -f {quoted_exit} ]; then "
         f"rc=$(cat {quoted_exit}); "
-        f"printf '{{\"name\":\"{name}\",\"pid\":%s,\"status\":\"completed\",\"exitcode\":%s}}\\n' \"${{pid:-null}}\" \"$rc\"; "
+        "if [ \"$rc\" = 0 ]; then status=completed; else status=failed; fi; "
+        f"printf '{{\"name\":\"{name}\",\"pid\":%s,\"status\":\"%s\",\"exitcode\":%s}}\\n' \"${{pid:-null}}\" \"$status\" \"$rc\"; "
         "else "
         f"printf '{{\"name\":\"{name}\",\"pid\":%s,\"status\":\"unknown\"}}\\n' \"${{pid:-null}}\"; "
         "fi"

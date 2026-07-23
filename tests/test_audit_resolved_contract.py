@@ -12,6 +12,7 @@ from scripts.audit_expected_outputs import (
     _final_audit_artifact_checks,
     _phase6_scan_matrix_checks,
     _phase6_progress_checks,
+    _phase7_content_checks,
     _phase8_numerical_checks,
     _phase8_shared_f5_checks,
     _phase9_numerical_checks,
@@ -1062,11 +1063,59 @@ class ResolvedContractAuditTests(unittest.TestCase):
             self.assertEqual(len(checks), 1)
             self.assertFalse(checks[0]["ok"])
 
+    def test_phase7_requires_three_algorithms_and_one_effective_algorithm(self):
+        with tempfile.TemporaryDirectory() as root:
+            write_json(os.path.join(root, "run_config.json"), {"algorithms": ["user_alg"]})
+
+            def comparison(aucs):
+                return {
+                    "algorithm_selection_seed": 12345,
+                    "anchor": {
+                        name: {
+                            "auc": auc,
+                            "algorithm_path": f"results/algorithms/anchor_{name}.pkl",
+                            "score_definition": "s(x)=P(NP|x)",
+                        }
+                        for name, auc in aucs.items()
+                    },
+                }
+
+            path = os.path.join(root, "data", "phase7", "algorithm_comparison.json")
+            write_json(
+                path,
+                comparison({"user_alg": 0.4, "alg_b": 0.5, "alg_c": 0.8, "alg_d": 0.3}),
+            )
+            check = next(
+                item for item in _phase7_content_checks(root)
+                if item.get("source") == "phase7_algorithm_comparison_content"
+            )
+            self.assertTrue(check["ok"], check)
+            self.assertEqual(check["effective_algorithms_with_auc_above_0_5"], ["alg_c"])
+
+            write_json(
+                path,
+                comparison({"user_alg": 0.4, "alg_b": 0.5, "alg_c": 0.2}),
+            )
+            check = next(
+                item for item in _phase7_content_checks(root)
+                if item.get("source") == "phase7_algorithm_comparison_content"
+            )
+            self.assertFalse(check["ok"])
+            self.assertTrue(any("no trained algorithm" in reason for reason in check["failure_reasons"]))
+
+            write_json(path, comparison({"user_alg": 0.8, "alg_b": 0.7}))
+            check = next(
+                item for item in _phase7_content_checks(root)
+                if item.get("source") == "phase7_algorithm_comparison_content"
+            )
+            self.assertFalse(check["ok"])
+            self.assertTrue(any("at least 3" in reason for reason in check["failure_reasons"]))
+
     def test_phase9_rejects_algorithm_not_trained_in_phase7(self):
         with tempfile.TemporaryDirectory() as root:
             write_json(
                 os.path.join(root, "data", "phase7", "algorithm_comparison.json"),
-                {"anchor": {"bdt": {}}},
+                {"algorithm_selection_seed": 12345, "anchor": {"bdt": {}}},
             )
             write_json(
                 os.path.join(root, "data", "phase9", "algorithm_selection.json"),
@@ -1487,12 +1536,13 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 step_sha = hashlib.sha256(handle.read()).hexdigest()
             write_json(
                 os.path.join(root, "data", "phase7", "algorithm_comparison.json"),
-                {"anchor": {"bdt": {}}},
+                {"algorithm_selection_seed": 12345, "anchor": {"bdt": {}}},
             )
             write_json(
                 os.path.join(root, "data", "phase7", "algorithm_descriptions.json"),
                 {"algorithms": {"bdt": {
                     "hyperparameters": {"depth": 3},
+                    "random_seed": 67890,
                     "score_definition": "predict_proba[:, 1]",
                 }}},
             )
@@ -1507,10 +1557,12 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 },
             )
             lock = {
+                "algorithm_selection_seed": 12345,
                 "trained_algorithms": [{
                     "key": "bdt",
                     "implementation": "example.BDT",
                     "hyperparameters": {"depth": 3},
+                    "random_seed": 67890,
                     "score_definition": "predict_proba[:, 1]",
                     "model_output": "algorithms/anchor_bdt.pkl",
                 }],

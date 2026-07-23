@@ -92,6 +92,7 @@ Write `replay_manifest.json` with this minimum structure:
     "data_files_report.md": "sha256"
   },
   "algorithm_lock": {
+    "algorithm_selection_seed": 12345,
     "trained_algorithms": [],
     "production_algorithm": "stable algorithm key",
     "selection_scope": "anchor_operator_only | per_operator_best",
@@ -139,6 +140,11 @@ provenance and copy the complete Phase 9 `operator_selections` map into the
 lock. Copy Phase 9 `selection_criterion`, `selection_rationale`, and
 `selection_evidence` exactly into `selection_provenance`. Replay steps must apply
 the recorded scope and map exactly.
+
+Copy `algorithm_selection_seed` from Phase 7. Each `trained_algorithms` entry
+must also copy the random seed used for that algorithm's data split and
+training. The packaged Phase 7 step must use the frozen algorithm list and
+these frozen seeds; it must not generate new randomness during replay.
 
 ## Replay Script
 
