@@ -240,6 +240,8 @@ def load_run_config(path):
 
     if "debug" not in data:
         data["debug"] = False
+    if not isinstance(data["debug"], bool):
+        raise ValueError("debug must be a boolean")
     if "madspin" not in data:
         data["madspin"] = {"enabled": False}
     if not isinstance(data["madspin"], dict):
@@ -263,15 +265,15 @@ def load_run_config(path):
         raise ValueError("execution.ssh_target is required when execution.mode is 'ssh'")
     if "event_counts_locked" not in data:
         data["event_counts_locked"] = True
-    if "locked_event_counts" not in data:
-        data["locked_event_counts"] = (
-            DEBUG_EVENT_COUNTS.copy() if data.get("debug") else NORMAL_EVENT_COUNTS.copy()
-        )
-
     expected_counts = DEBUG_EVENT_COUNTS if data.get("debug") else NORMAL_EVENT_COUNTS
+    if "locked_event_counts" not in data:
+        data["locked_event_counts"] = expected_counts.copy()
+
     if data["locked_event_counts"] != expected_counts:
+        mode_name = "debug=true workflow-test" if data.get("debug") else "debug=false scientific"
         raise ValueError(
-            "locked_event_counts do not match the selected debug mode. "
+            "locked_event_counts must exactly match the selected debug mode; "
+            f"{mode_name} mode requires {expected_counts}, "
             f"Expected {expected_counts}, got {data['locked_event_counts']}"
         )
     if data["event_counts_locked"] is not True:

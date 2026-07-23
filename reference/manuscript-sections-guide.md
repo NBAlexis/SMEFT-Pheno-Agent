@@ -89,8 +89,11 @@ Manuscript:
   constraint range as a function of threshold
 - final selection scope and selected algorithm or algorithms
 
-Do not choose a different best algorithm or threshold separately for each
-operator.
+Report the Phase 9 selection without changing it during manuscript writing.
+Use the common anchor-selected algorithm and threshold by default. If Phase 9
+records a user-requested or scientifically justified `per_operator_best` scope,
+report every operator-specific algorithm and threshold together with the
+recorded rationale and evidence.
 
 ## Numerical Results and Expected Constraints
 

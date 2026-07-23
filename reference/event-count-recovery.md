@@ -72,6 +72,13 @@ keys are `sm` and `np_o_N`; Phase 6 unit keys are `o_N`. Pass `recovery_unit`
 and the complete ordered `required_units` list to the orchestrator so updating
 one unit does not overwrite earlier records.
 
+Set `base_mg5_config.result_json` to the canonical Phase 5 or Phase 6 runner
+result path. After a successful merge, the orchestrator writes a recovery
+summary there and writes a canonical `_banner.txt` cross-section summary beside
+each merged LHCO. These summaries link all original attempt files and state that
+they are not original MG5 banners. Keep every original attempt runner, banner,
+LHCO, and merge record.
+
 ## LHCO Merge Rule
 
 Merge recovery attempts with the LHCO merge helper.
@@ -100,3 +107,6 @@ Merge recovery attempts with the LHCO merge helper.
   separate shared-`f5` zero-selection procedure is defined in
   `phase8-selection.md`; it adds anchor `f5` samples without changing
   `nev_scan` and is not the low-generated-event recovery ladder above.
+  When building the shared `f5` pool, use every actual recovery attempt source
+  that contributed to the accepted `f5` merge so its original banners and
+  runner records remain directly auditable.

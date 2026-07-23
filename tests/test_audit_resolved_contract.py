@@ -16,7 +16,9 @@ from scripts.audit_expected_outputs import (
     _phase8_shared_f5_checks,
     _phase9_numerical_checks,
     _phase9_strategy_checks,
+    _phase10_manuscript_checks,
     _phase3_runner_manifest_checks,
+    _runner_result_boundary_checks,
     _normalized_manifest_path,
     _replay_algorithm_lock_checks,
     _replay_package_checks,
@@ -112,6 +114,7 @@ def _shared_f5_fixture(root, rounds=3):
         )
         initial.append(
             {
+                "source_kind": "direct_phase6_scan",
                 "operator": operator,
                 "model": models[operator],
                 "scan_label": "f5",
@@ -173,6 +176,7 @@ def _shared_f5_fixture(root, rounds=3):
         )
         additional.append(
             {
+                "source_kind": "additional_anchor_f5",
                 "operator": "o_1",
                 "model": models["o_1"],
                 "scan_label": "f5",
@@ -298,8 +302,13 @@ def _write_threshold_fixture(root, shared):
             threshold = 0.02 * index
             shared_count = sum(score >= threshold for score in scores)
             anchor_count = 11 if threshold <= 0.98 else 0
-            effective = float(shared_count) if shared_count else 0.5
-            status = "observed_events" if shared_count else "half_event_after_three_zero_rounds"
+            effective = float(shared_count) if shared_count else (
+                0.5 if shared["additional_anchor_f5_rounds"] == 3 else None
+            )
+            status = "observed_events" if shared_count else (
+                "half_event_after_three_zero_rounds"
+                if shared["additional_anchor_f5_rounds"] == 3 else "unresolved_zero"
+            )
             width = 1.0 + abs(index - preferred_indices[algorithm]) / 100.0
             point = {
                 "threshold": threshold,
@@ -308,9 +317,11 @@ def _write_threshold_fixture(root, shared):
                 "effective_passing_event_count": effective,
                 "background_status": status,
                 "sigma0_after_cut_pb": (
-                    shared["merged_cross_section_pb"]
-                    * effective
-                    / shared["loaded_lhco_event_count"]
+                    None if effective is None else (
+                        shared["merged_cross_section_pb"]
+                        * effective
+                        / shared["loaded_lhco_event_count"]
+                    )
                 ),
                 "fit_intercept_fixed": True,
                 "lower_bound": -width / 2.0,
@@ -329,20 +340,205 @@ def _write_threshold_fixture(root, shared):
                         "constraint_width": None,
                     }
                 )
+            elif shared_count == 0 and shared["additional_anchor_f5_rounds"] < 3:
+                point.update(
+                    {
+                        "effective_passing_event_count": None,
+                        "sigma0_after_cut_pb": None,
+                        "fit_intercept_fixed": None,
+                        "lower_bound": None,
+                        "upper_bound": None,
+                        "constraint_width": None,
+                    }
+                )
             scan.append(point)
         preferred = preferred_indices[algorithm]
+        if shared["additional_anchor_f5_rounds"] < 3 and not any(
+            score >= 0.02 * preferred for score in scores
+        ):
+            preferred = max(index for index in range(51) if any(score >= 0.02 * index for score in scores))
         anchor[algorithm] = {
             "algorithm": algorithm,
             "optimal_threshold": 0.02 * preferred,
             "constraint_width_at_optimal": 1.0,
             "threshold_scan": scan,
         }
-    value = {"anchor": anchor}
+    value = {
+        "anchor": anchor,
+        "numerical_validation": {
+            "status": "pass",
+            "method": "independent fixture recalculation",
+            "evidence_paths": ["data/phase8/threshold_optimization.json"],
+        },
+    }
     write_json(os.path.join(root, "data", "phase8", "threshold_optimization.json"), value)
     return value
 
 
 class ResolvedContractAuditTests(unittest.TestCase):
+    def test_runner_boundary_audit_accepts_locked_debug_event_count(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            root = os.path.join(workdir, "results")
+            write_json(
+                os.path.join(root, "run_config.json"),
+                {
+                    "debug": True,
+                    "delphes_card": "card.tcl",
+                    "locked_event_counts": {"nev_phase3": 1000},
+                },
+            )
+            result_path = os.path.join(root, "data", "phase3", "runner.json")
+            lhco_path = os.path.join(root, "data", "phase3", "events.lhco")
+            write_text(lhco_path, "0 0 0\n")
+            write_json(
+                os.path.join(root, "data", "phase3", "model_status.json"),
+                {"model": {"result_json": "data/phase3/runner.json"}},
+            )
+            write_json(
+                result_path,
+                {
+                    "status": "completed",
+                    "process_mode": "pure_np",
+                    "event_generator": "MadGraph5",
+                    "detector_simulation": "Delphes",
+                    "analysis_event_format": "LHCO_from_Delphes_ROOT",
+                    "delphes_card": "card.tcl",
+                    "nevents": 1000,
+                    "outputs": [
+                        {
+                            "cross_section_pb": 1.0,
+                            "lhco_path": "data/phase3/events.lhco",
+                            "loaded_lhco_event_count": 100,
+                        }
+                    ],
+                },
+            )
+            checks = _runner_result_boundary_checks(root, "3")
+            self.assertEqual(len(checks), 1)
+            self.assertTrue(checks[0]["ok"], checks[0])
+
+    def test_runner_boundary_audit_rejects_missing_delphes_and_reduced_event_count(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            root = os.path.join(workdir, "results")
+            write_json(
+                os.path.join(root, "run_config.json"),
+                {
+                    "delphes_card": "card.tcl",
+                    "locked_event_counts": {"nev_phase3": 10000},
+                },
+            )
+            result_path = os.path.join(root, "data", "phase3", "runner.json")
+            write_json(
+                os.path.join(root, "data", "phase3", "model_status.json"),
+                {"model": {"result_json": "data/phase3/runner.json"}},
+            )
+            write_json(
+                result_path,
+                {
+                    "status": "completed",
+                    "process_mode": "pure_np",
+                    "event_generator": "MadGraph5",
+                    "detector_simulation": None,
+                    "analysis_event_format": "LHE",
+                    "delphes_card": "",
+                    "nevents": 1000,
+                    "outputs": [{"cross_section_pb": 0.0, "loaded_lhco_event_count": 0}],
+                },
+            )
+            checks = _runner_result_boundary_checks(root, "3")
+            self.assertEqual(len(checks), 1)
+            self.assertFalse(checks[0]["ok"], checks[0])
+            errors = " ".join(checks[0]["errors"])
+            self.assertIn("detector_simulation must be Delphes", errors)
+            self.assertIn("below the locked per-run minimum", errors)
+
+    def test_phase10_requires_frozen_items_and_disallows_missing_required_content(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            root = os.path.join(workdir, "results")
+            canonical_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "reference",
+                "manuscript-checklist-required-ids.json",
+            )
+            with open(canonical_path, encoding="utf-8") as handle:
+                required_items = json.load(handle)["required_items"]
+            write_json(
+                os.path.join(root, "deliverables_contract.json"),
+                {"template": {"phase10_required_manuscript_items": required_items}},
+            )
+            checklist_items = [
+                {
+                    "id": item["id"],
+                    "status": "missing" if index == 0 else "present",
+                    "manuscript_location": "Section 1" if index else None,
+                }
+                for index, item in enumerate(required_items)
+            ]
+            write_json(
+                os.path.join(root, "data", "phase10", "manuscript_checklist.json"),
+                {"draft_path": "data/phase10/manuscript_draft_v1.tex", "items": checklist_items},
+            )
+            write_json(
+                os.path.join(root, "data", "phase10", "manuscript_trace_map.json"),
+                {"items": [
+                    {
+                        "id": item["id"],
+                        "status": checklist_items[index]["status"],
+                        "evidence_path": "data/evidence.json",
+                        "manuscript_location": "Section 1",
+                    }
+                    for index, item in enumerate(required_items)
+                ]},
+            )
+            validation_path = os.path.join(root, "data", "phase10", "manuscript_validation.json")
+            write_json(
+                validation_path,
+                {
+                    "status": "issues_remaining",
+                    "drafts_written": 3,
+                    "max_revisions": 2,
+                    "checklist_path": "data/phase10/manuscript_checklist.json",
+                    "major_issues": [],
+                    "minor_issues": ["caption wording"],
+                    "continued_to_cleanup": True,
+                },
+            )
+            checks = _phase10_manuscript_checks(root, canonical_path)
+            frozen = next(item for item in checks if item.get("source") == "phase10_frozen_required_content")
+            validation = next(item for item in checks if item.get("source") == "phase10_validation_schema")
+            self.assertTrue(frozen["ok"], frozen)
+            self.assertFalse(validation["ok"], validation)
+            self.assertFalse(validation["required_content_complete"])
+
+            checklist_items[0]["status"] = "present"
+            checklist_items[0]["manuscript_location"] = "Section 1"
+            write_json(
+                os.path.join(root, "data", "phase10", "manuscript_checklist.json"),
+                {"draft_path": "data/phase10/manuscript_draft_v1.tex", "items": checklist_items},
+            )
+            write_json(
+                os.path.join(root, "data", "phase10", "manuscript_trace_map.json"),
+                {"items": [
+                    {
+                        "id": item["id"],
+                        "status": "present",
+                        "evidence_path": "data/evidence.json",
+                        "manuscript_location": "Section 1",
+                    }
+                    for item in required_items
+                ]},
+            )
+            checks = _phase10_manuscript_checks(root, canonical_path)
+            validation = next(item for item in checks if item.get("source") == "phase10_validation_schema")
+            self.assertTrue(validation["ok"], validation)
+            self.assertTrue(validation["required_content_complete"])
+
+            contract_path = os.path.join(root, "deliverables_contract.json")
+            write_json(contract_path, {"template": {"phase10_required_manuscript_items": required_items[:-1]}})
+            checks = _phase10_manuscript_checks(root, canonical_path)
+            frozen = next(item for item in checks if item.get("source") == "phase10_frozen_required_content")
+            self.assertFalse(frozen["ok"], frozen)
+
     def test_phase8_shared_f5_background_accepts_observed_and_half_event_records(self):
         with tempfile.TemporaryDirectory() as root:
             shared, _ = _shared_f5_fixture(root)
@@ -369,7 +565,7 @@ class ResolvedContractAuditTests(unittest.TestCase):
             write_json(os.path.join(root, "data", "phase8", "shared_f5_background.json"), shared)
             failed = _phase8_shared_f5_checks(root)[0]
             self.assertFalse(failed["ok"])
-            self.assertIn("exactly one f5 source", " ".join(failed["invalid_values"]))
+            self.assertIn("cover every claimed operator", " ".join(failed["invalid_values"]))
 
     def test_phase8_shared_f5_background_rejects_non_anchor_additional_source_and_wrong_formula(self):
         with tempfile.TemporaryDirectory() as root:
@@ -502,6 +698,119 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 result = _phase8_shared_f5_checks(root)[0]
                 self.assertFalse(result["ok"], result)
 
+    def test_phase8_shared_f5_accepts_all_attempts_from_phase6_recovery(self):
+        with tempfile.TemporaryDirectory() as root:
+            shared, merge = _shared_f5_fixture(root)
+            recovered_items = []
+            recovered_records = []
+            attempts = []
+            for attempt_index in (0, 1):
+                base_rel = f"data/phase6/recovery_attempts/o_1/attempt_{attempt_index}/np_o_1_f5"
+                lhco_rel = f"{base_rel}.lhco"
+                banner_rel = f"{base_rel}_banner.txt"
+                runner_rel = f"data/phase6/recovery_attempts/o_1/attempt_{attempt_index}/mg5_result.json"
+                lhco = os.path.join(root, *lhco_rel.split("/"))
+                banner = os.path.join(root, *banner_rel.split("/"))
+                runner = os.path.join(root, *runner_rel.split("/"))
+                write_text(lhco, "0 0 0\n")
+                write_text(banner, "Integrated weight (pb) : 1.0\n")
+                result = {
+                    "status": "completed",
+                    "process_mode": "scan",
+                    "operator": "o_1",
+                    "model": "model_a",
+                    "target_coefficient": {"index": 1},
+                    "nevents": 10,
+                    "process": "e+ e- > a a",
+                    "ebeam1": 1500.0,
+                    "ebeam2": 1500.0,
+                    "polarization": {"polbeam1": -0.8, "polbeam2": 0.3},
+                    "delphes_card": "Delphes/cards/delphes_card.tcl",
+                    "weighted_order": 4,
+                    "madspin": {"enabled": False},
+                    "outputs": [{
+                        "label": "np_o_1_f5",
+                        "lhco_path": lhco,
+                        "banner_path": banner,
+                        "cross_section_pb": 1.0,
+                        "loaded_lhco_event_count": 5,
+                    }],
+                }
+                write_json(runner, result)
+                attempts.append({
+                    "attempt_index": attempt_index,
+                    "status": "completed",
+                    "config": {"result_json": runner},
+                    "result": result,
+                })
+                recovered_items.append({
+                    "source_kind": "phase6_recovery_attempt",
+                    "operator": "o_1",
+                    "model": "model_a",
+                    "scan_label": "f5",
+                    "recovery_unit": "o_1",
+                    "recovery_attempt_index": attempt_index,
+                    "lhco_path": lhco_rel,
+                    "banner_path": banner_rel,
+                    "runner_result_json": runner_rel,
+                })
+                recovered_records.append({
+                    "lhco_path": lhco,
+                    "banner_path": banner,
+                    "loaded_lhco_event_count": 5,
+                    "cross_section_pb": 1.0,
+                })
+            write_json(
+                os.path.join(root, "data", "phase6", "event_count_recovery.json"),
+                {"units": {"o_1": {"status": "accepted", "attempts": attempts}}},
+            )
+            shared["initial_f5_sources"] = recovered_items + shared["initial_f5_sources"][1:]
+            merge["source_records"] = recovered_records + merge["source_records"][1:]
+            banner_values = [record["cross_section_pb"] for record in merge["source_records"]]
+            merged_cs = sum(banner_values) / len(banner_values)
+            shared["merged_cross_section_pb"] = merged_cs
+            merge["merged_cross_section_pb"] = merged_cs
+            for record in shared["algorithms"].values():
+                record["sigma0_after_cut_pb"] = (
+                    merged_cs * record["effective_passing_event_count"]
+                    / shared["loaded_lhco_event_count"]
+                )
+            write_json(os.path.join(root, "data", "phase8", "shared_f5_background.json"), shared)
+            write_json(os.path.join(root, "data", "phase8", "shared_f5_merge.json"), merge)
+            result = _phase8_shared_f5_checks(root)[0]
+            self.assertTrue(result["ok"], result)
+
+    def test_phase8_shared_f5_background_requires_explicit_source_kind(self):
+        for collection in ("initial_f5_sources", "additional_anchor_f5_sources"):
+            with self.subTest(collection=collection), tempfile.TemporaryDirectory() as root:
+                _shared_f5_fixture(root)
+                path = os.path.join(root, "data", "phase8", "shared_f5_background.json")
+                with open(path, "r", encoding="utf-8") as handle:
+                    shared = json.load(handle)
+                shared[collection][0].pop("source_kind")
+                write_json(path, shared)
+
+                result = _phase8_shared_f5_checks(root)[0]
+                self.assertFalse(result["ok"])
+                self.assertIn("source_kind", " ".join(result["invalid_values"]))
+
+    def test_phase8_score_audit_rejects_duplicate_event_indices(self):
+        with tempfile.TemporaryDirectory() as root:
+            _shared_f5_fixture(root)
+            score_path = os.path.join(root, "data", "phase8", "scores", "bdt", "shared_f5_scores.csv")
+            write_text(
+                score_path,
+                "event_index,score,source_csv\n"
+                "0,0.9,data/phase8/csv/shared_f5.csv\n"
+                "0,0.8,data/phase8/csv/shared_f5.csv\n"
+                "2,0.7,data/phase8/csv/shared_f5.csv\n"
+                "3,0.6,data/phase8/csv/shared_f5.csv\n"
+                "4,0.2,data/phase8/csv/shared_f5.csv\n",
+            )
+            result = _phase8_shared_f5_checks(root)[0]
+            self.assertFalse(result["ok"])
+            self.assertIn("duplicates event_index", " ".join(result["invalid_values"]))
+
     def test_phase8_threshold_audit_recomputes_counts_and_optimum(self):
         with tempfile.TemporaryDirectory() as root:
             shared, _ = _shared_f5_fixture(root)
@@ -529,6 +838,16 @@ class ResolvedContractAuditTests(unittest.TestCase):
             shared, _ = _shared_f5_fixture(root, rounds=2)
             threshold_data = _write_threshold_fixture(root, shared)
             threshold_data["anchor"]["bdt"]["threshold_scan"][1]["threshold"] = 0.021
+            zero_point = threshold_data["anchor"]["bdt"]["threshold_scan"][46]
+            zero_point.update({
+                "effective_passing_event_count": 0.5,
+                "background_status": "half_event_after_three_zero_rounds",
+                "sigma0_after_cut_pb": 1.0,
+                "fit_intercept_fixed": True,
+                "lower_bound": -1.0,
+                "upper_bound": 1.0,
+                "constraint_width": 2.0,
+            })
             write_json(os.path.join(root, "data", "phase8", "threshold_optimization.json"), threshold_data)
             result = _phase8_numerical_checks(root)[0]
             messages = " ".join(
@@ -538,7 +857,7 @@ class ResolvedContractAuditTests(unittest.TestCase):
             )
             self.assertFalse(result["ok"])
             self.assertIn("must be 0.02", messages)
-            self.assertIn("requires another anchor f5 round", messages)
+            self.assertIn("must remain unresolved", messages)
 
     def test_phase8_threshold_audit_excludes_threshold_with_no_anchor_scan_events(self):
         with tempfile.TemporaryDirectory() as root:
@@ -696,7 +1015,11 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 os.path.join(root, "data", "phase8", "threshold_optimization.json"),
                 {"anchor": {
                     "bdt": {"optimal_threshold": 0.4, "constraint_width_at_optimal": 0.8},
-                    "iforest": {"optimal_threshold": 0.6, "constraint_width_at_optimal": 1.1},
+                    "iforest": {
+                        "optimal_threshold": 0.6,
+                        "constraint_width_at_optimal": 1.1,
+                        "threshold_scan": [{"threshold": 0.5}, {"threshold": 0.6}],
+                    },
                 }},
             )
             operator_selections = {
@@ -719,10 +1042,18 @@ class ResolvedContractAuditTests(unittest.TestCase):
                     "anchor_operator": "o_1",
                     "selection_scope": "per_operator_best",
                     "selection_criterion": "narrowest_anchor_S2_constraint_width",
+                    "selection_rationale": "The common strategy is unusable for o_2.",
+                    "selection_evidence": ["data/phase8/csfit_o_2_iforest.json"],
                     "source_threshold_optimization_entry": (
                         "data/phase8/threshold_optimization.json:anchor.bdt"
                     ),
                     "operator_selections": operator_selections,
+                    "comparison_only_intervals": {
+                        "o_2": {
+                            "bdt": {"selected_threshold": 0.4, "S2": [-0.5, 0.5]},
+                            "iforest": {"selected_threshold": 0.6, "S2": [-0.3, 0.3]},
+                        }
+                    },
                 },
             )
             constraints = {
@@ -743,6 +1074,11 @@ class ResolvedContractAuditTests(unittest.TestCase):
                     "selected_algorithm": "bdt",
                     "operator_selections": operator_selections,
                     "constraints": constraints,
+                    "numerical_validation": {
+                        "status": "pass",
+                        "method": "independent fixture recalculation",
+                        "evidence_paths": ["data/phase9/constraint_table.json"],
+                    },
                 },
             )
             csv_path = os.path.join(root, "data", "phase9", "constraint_table.csv")
@@ -751,11 +1087,82 @@ class ResolvedContractAuditTests(unittest.TestCase):
                 handle.write(
                     "operator,selected_algorithm,selected_threshold,S2_lower,S2_upper,"
                     "S3_lower,S3_upper,S5_lower,S5_upper\n"
+                    "o_1,bdt,0.4,-0.1,0.1,-0.2,0.2,-0.3,0.3\n"
+                    "o_2,iforest,0.6,-0.1,0.1,-0.2,0.2,-0.3,0.3\n"
                 )
 
             self.assertTrue(_phase9_strategy_checks(root)[0]["ok"])
             checks = _phase9_numerical_checks(root)
             self.assertTrue(all(item["ok"] for item in checks), checks)
+
+            selection_path = os.path.join(root, "data", "phase9", "algorithm_selection.json")
+            with open(selection_path, encoding="utf-8") as handle:
+                wrong_width_selection = json.load(handle)
+            wrong_width_selection["comparison_only_intervals"]["o_2"]["bdt"]["S2"] = [-0.2, 0.2]
+            write_json(selection_path, wrong_width_selection)
+            selection_check = _phase9_numerical_checks(root)[0]
+            self.assertFalse(selection_check["ok"], selection_check)
+            self.assertIn(
+                "narrowest recorded S2 constraint interval",
+                " ".join(selection_check["invalid_values"]),
+            )
+            wrong_width_selection["comparison_only_intervals"]["o_2"]["bdt"]["S2"] = [-0.5, 0.5]
+            write_json(selection_path, wrong_width_selection)
+
+            with open(csv_path, "r", encoding="utf-8") as handle:
+                csv_text = handle.read().replace("o_2,iforest,0.6,-0.1", "o_2,iforest,0.6,-9.0")
+            write_text(csv_path, csv_text)
+            csv_check = _phase9_numerical_checks(root)[-1]
+            self.assertFalse(csv_check["ok"])
+            self.assertIn("S2 differs from JSON", " ".join(csv_check["errors"]))
+
+    def test_phase9_rejects_non_width_strategy_selection_criterion(self):
+        with tempfile.TemporaryDirectory() as root:
+            write_json(
+                os.path.join(root, "data", "phase3", "operator_claims.json"),
+                {"o_1": {}},
+            )
+            write_json(
+                os.path.join(root, "data", "phase3", "anchor.json"),
+                {"global_idx": 1},
+            )
+            write_json(
+                os.path.join(root, "data", "phase7", "algorithm_comparison.json"),
+                {"anchor": {"bdt": {}, "iforest": {}}},
+            )
+            write_json(
+                os.path.join(root, "data", "phase8", "threshold_optimization.json"),
+                {"anchor": {
+                    "bdt": {"optimal_threshold": 0.4, "constraint_width_at_optimal": 0.8},
+                    "iforest": {
+                        "optimal_threshold": 0.6,
+                        "constraint_width_at_optimal": 1.1,
+                        "threshold_scan": [{"threshold": 0.5}, {"threshold": 0.6}],
+                    },
+                }},
+            )
+            write_json(
+                os.path.join(root, "data", "phase9", "algorithm_selection.json"),
+                {
+                    "selected_algorithm": "iforest",
+                    "selected_threshold": 0.5,
+                    "anchor_operator": "o_1",
+                    "selection_scope": "anchor_operator_only",
+                    "selection_criterion": "selected_event_support_and_fit_stability_review",
+                    "selection_rationale": "The minimum-width point is numerically unstable.",
+                    "selection_evidence": ["data/phase8/csfit_o_1_iforest.json"],
+                    "source_threshold_optimization_entry": (
+                        "data/phase8/threshold_optimization.json:anchor.iforest"
+                    ),
+                },
+            )
+
+            check = _phase9_strategy_checks(root)[0]
+            self.assertFalse(check["ok"])
+            self.assertIn(
+                "narrowest_anchor_S2_constraint_width",
+                " ".join(check["invalid_values"]),
+            )
 
     def test_pending_rule_fails_contract_audit(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1004,7 +1411,13 @@ class ResolvedContractAuditTests(unittest.TestCase):
             )
             write_json(
                 os.path.join(root, "data", "phase9", "algorithm_selection.json"),
-                {"selected_algorithm": "bdt"},
+                {
+                    "selected_algorithm": "bdt",
+                    "selection_scope": "anchor_operator_only",
+                    "selection_criterion": "narrowest_anchor_S2_constraint_width",
+                    "selection_rationale": "The common strategy is adequate.",
+                    "selection_evidence": ["data/phase8/threshold_optimization.json"],
+                },
             )
             lock = {
                 "trained_algorithms": [{
@@ -1015,8 +1428,12 @@ class ResolvedContractAuditTests(unittest.TestCase):
                     "model_output": "algorithms/anchor_bdt.pkl",
                 }],
                 "production_algorithm": "bdt",
+                "selection_scope": "anchor_operator_only",
+                "operator_selections": {},
                 "selection_provenance": {
-                    "selection_method": "narrowest_anchor_S2_interval",
+                    "selection_method": "narrowest_anchor_S2_constraint_width",
+                    "selection_rationale": "The common strategy is adequate.",
+                    "selection_evidence": ["data/phase8/threshold_optimization.json"],
                     "source": "data/phase9/algorithm_selection.json",
                 },
                 "packaged_files": {"steps/phase7.py": step_sha},
@@ -1036,6 +1453,18 @@ class ResolvedContractAuditTests(unittest.TestCase):
             checks = _replay_algorithm_lock_checks(root)
             self.assertEqual(len(checks), 1)
             self.assertTrue(checks[0]["ok"], checks[0])
+
+            with open(os.path.join(replay_root, "replay_manifest.json"), encoding="utf-8") as handle:
+                manifest = json.load(handle)
+            manifest["algorithm_lock"].pop("selection_scope")
+            manifest["algorithm_lock"]["lock_sha256"] = _canonical_sha256(
+                {
+                    key: value for key, value in manifest["algorithm_lock"].items()
+                    if key != "lock_sha256"
+                }
+            )
+            write_json(os.path.join(replay_root, "replay_manifest.json"), manifest)
+            self.assertFalse(_replay_algorithm_lock_checks(root)[0]["ok"])
 
     def test_replay_package_static_checks_require_real_files_and_checksums(self):
         with tempfile.TemporaryDirectory() as root:

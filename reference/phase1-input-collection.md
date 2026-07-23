@@ -322,7 +322,9 @@ This question is a preferences gateway. It exists so the user can personalize th
 
 handle:
 - `skip`: keep defaults.
-- `debug=true`: use debug event counts.
+- `debug=true`: select the reduced event counts defined in `SKILL.md` to test the
+  complete workflow. Preserve all fixed analysis methods and deliverable paths,
+  but do not present the resulting numbers as a strict scientific study.
 - `polarization=a,b`: validate two floats in [-1, 1] and store
   `{"polbeam1": a, "polbeam2": b}`. Do not store a list or comma-separated
   string.

@@ -15,6 +15,11 @@ Must deliver:
   tests, with paths recorded in `model_status.json`. These manifests must
   retain runner metadata such as process directories, order files,
   stdout/stderr paths, zero-cross-section checks, and parsed cross-sections.
+  Every numerical result also records `event_generator=MadGraph5`,
+  `detector_simulation=Delphes`,
+  `analysis_event_format=LHCO_from_Delphes_ROOT`, the non-empty Delphes card,
+  and the requested event count. The create-NP result is exempt because it only
+  creates a process folder and does not produce analysis events.
 - If no operator is claimed, `results/data/phase3/phase3_report.txt` before the
   red-flag stop.
 

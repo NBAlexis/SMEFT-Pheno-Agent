@@ -209,6 +209,7 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             "model": "AQGCm_UFO",
             "process": "e+ e- > a a",
             "process_mode": "scan",
+            "delphes_card": "delphes_card.dat",
             "nevents": 100,
             "ebeam1": 1500.0,
             "ebeam2": 1500.0,
@@ -217,6 +218,16 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             "output_labels": [f"f{i}" for i in range(11)],
         }
         validate_config(cfg)
+        missing_card = dict(cfg)
+        missing_card.pop("delphes_card")
+        with self.assertRaisesRegex(ValueError, "undetected LHE events"):
+            validate_config(missing_card)
+        validate_config({
+            "mg5path": "/unused",
+            "model": "AQGCm_UFO",
+            "process": "e+ e- > a a",
+            "process_mode": "create_np",
+        })
         cfg["output_labels"] = ["f0"]
         with self.assertRaises(ValueError):
             validate_config(cfg)
@@ -243,6 +254,7 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             "model": "AQGCm_UFO",
             "process": "e+ e- > a a",
             "process_mode": "sm_np_point",
+            "delphes_card": "delphes_card.dat",
             "nevents": 100,
             "ebeam1": 1500.0,
             "ebeam2": 1500.0,
@@ -733,6 +745,30 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertEqual(cfg.analysis_notes.focused_operators, [])
             self.assertAlmostEqual(cfg.polarization.polbeam1, -0.8)
 
+            reduced = dict(base)
+            reduced["locked_event_counts"] = {
+                "nev_phase3": 1000,
+                "nev_phase4": 1000,
+                "nev_sm": 50000,
+                "nev_np": 10000,
+                "nev_scan": 100000,
+            }
+            write_text(config_path, json.dumps(reduced))
+            self.assertEqual(load_run_config(config_path).locked_event_counts.nev_sm, 50000)
+
+            too_small = dict(base)
+            too_small["locked_event_counts"] = dict(reduced["locked_event_counts"])
+            too_small["locked_event_counts"]["nev_scan"] = 99999
+            write_text(config_path, json.dumps(too_small))
+            with self.assertRaisesRegex(ValueError, "selected debug mode"):
+                load_run_config(config_path)
+
+            scientific_with_debug_counts = dict(reduced)
+            scientific_with_debug_counts["debug"] = False
+            write_text(config_path, json.dumps(scientific_with_debug_counts))
+            with self.assertRaisesRegex(ValueError, "selected debug mode"):
+                load_run_config(config_path)
+
             broken = dict(base)
             broken["luminosity"] = [5.0, 10.0]
             write_text(config_path, json.dumps(broken))
@@ -761,6 +797,7 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                     "process_mode": "pure_np",
                     "operator": "o_1",
                     "process_folder": os.path.join(root, "proc"),
+                    "result_json": os.path.join(root, "merged", "np_o_1_result.json"),
                 },
                 "requested_event_count": 100,
                 "recovery_profiles": ["default", "sde0_hs0"],
@@ -797,6 +834,12 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertEqual(metadata["status"], "accepted")
             self.assertEqual(metadata["final_loaded_counts"], {"np_o_1": 11})
             self.assertEqual(len(metadata["attempts"]), 2)
+            with open(config["base_mg5_config"]["result_json"], encoding="utf-8") as handle:
+                canonical = json.load(handle)
+            self.assertEqual(canonical["result_kind"], "event_count_recovery_summary")
+            self.assertEqual(canonical["outputs"][0]["loaded_lhco_event_count"], 11)
+            with open(canonical["outputs"][0]["banner_path"], encoding="utf-8") as handle:
+                self.assertIn("not an original MG5 banner", handle.read())
 
             zero_config = dict(config)
             zero_config["metadata_path"] = os.path.join(root, "zero.json")

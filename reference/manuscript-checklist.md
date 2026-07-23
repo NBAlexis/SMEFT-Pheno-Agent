@@ -95,18 +95,20 @@ Use every `required_items[].id` from that file in both
 - Every trained algorithm has manuscript pseudocode.
 - Every trained algorithm has a mathematical score definition `s(x)`, output
   range, and direction (`higher = more NP-like`).
-- AUC and score-distribution evidence are discussed for SM versus each pure NP
-  operator.
+- AUC and score-distribution evidence are reported descriptively for SM versus
+  each pure NP operator. The manuscript does not use AUC to rank or select the
+  final strategy; that comparison uses expected constraint-interval width only.
 - Score histograms for SM and every globally claimed pure-NP operator are
   included.
 - The anchor SM-vs-NP ROC plot is included.
 
 ## Selection and Fits
 
-- The final event-selection strategy is selected only from the first non-zero
-  anchor operator.
-- The paper states that the same final algorithm and threshold are used for all
-  operators in that collider configuration.
+- The paper states the recorded Phase 9 selection scope and its scientific
+  rationale. It uses the anchor-selected common strategy by default and explains
+  any user-requested or evidence-driven per-operator strategy.
+- Every operator is analyzed with the algorithm and threshold recorded for it by
+  the final selection scope.
 - Threshold scan range, selected threshold, and anchor-operator comparison are
   reported.
 - For the anchor operator, the `S_stat = 2` expected coefficient constraint

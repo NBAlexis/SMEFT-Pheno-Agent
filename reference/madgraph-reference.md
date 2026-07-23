@@ -383,7 +383,9 @@ Recovery wrapper for the Phase 6 scan above:
   "requested_event_count": 1000000,
   "attempt_root": "/work/results/data/phase6/recovery_attempts/np_o_3",
   "merged_output_dir": "/work/results/data/phase6",
-  "metadata_path": "/work/results/data/phase6/event_count_recovery_np_o_3.json",
+  "metadata_path": "/work/results/data/phase6/event_count_recovery.json",
+  "recovery_unit": "o_3",
+  "required_units": ["o_1", "o_2", "o_3"],
   "base_mg5_config": {
     "mg5path": "/opt/MG5_aMC",
     "model": "AQGCm_UFO",
@@ -399,10 +401,20 @@ Recovery wrapper for the Phase 6 scan above:
     "ebeam2": 5000.0,
     "nevents": 1000000,
     "delphes_card": "delphes_card_MuonColliderDet.tcl",
-    "cutexperiment_path": "/opt/CutExperiment"
+    "cutexperiment_path": "/opt/CutExperiment",
+    "output_prefix": "np_o_3",
+    "output_dir": "/work/results/data/phase6",
+    "result_json": "/work/results/data/phase6/np_o_3_scan_result.json"
   }
 }
 ```
+
+The recovery wrapper writes the accepted merged LHCO files, canonical
+cross-section summary files at the expected `_banner.txt` paths, and the
+canonical runner summary at `base_mg5_config.result_json`. The summary explicitly
+identifies itself as recovery output and links every original attempt runner,
+banner, LHCO, and merge record. Never present its `_banner.txt` file as an
+original MG5 banner.
 
 ### Beam Assignment
 

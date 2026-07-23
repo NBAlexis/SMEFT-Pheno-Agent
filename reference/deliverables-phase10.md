@@ -18,7 +18,9 @@ Must deliver:
   three passes listing missing required content and the repair actions taken
   before formal validation.
 - `results/data/phase10/manuscript_validation.json` with `status` equal to
-  `pass` or `issues_remaining`.
+  `pass` or `issues_remaining`; either status requires every frozen manuscript
+  item to be complete and `major_issues` to be empty. `issues_remaining` may
+  contain minor writing or presentation issues only.
 - `results/data/phase10/manuscript_draft_v1.*`. If revisions occur, also
   `manuscript_draft_v2.*` and `manuscript_draft_v3.*` as produced by the
   bounded revision loop. The final PDF/HTML deliverable is separate from these
@@ -39,7 +41,8 @@ a workflow summary.
 If missing or incomplete: rerun the LaTeX probes, choose PDF whenever target or
 local LaTeX is available, rebuild evidence, create missing figures from
 existing data, run the three-pass completeness loop, update the checklist and
-trace map, revise within the bounded revision loop, and archive remaining
-manuscript-writing issues after the revision limit. Missing upstream required
-artifacts are not manuscript-writing issues; repair the responsible phase
-artifact or let Phase 12 fail. Do not ask the user to choose missing content.
+trace map, and repair every missing frozen manuscript item. The revision limit
+applies only to optional prose and presentation improvements; it never permits
+Phase 10 to complete with missing required content or a major issue. Missing
+upstream required artifacts must be repaired in the responsible phase. Do not
+ask the user to choose missing content.

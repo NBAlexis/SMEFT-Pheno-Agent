@@ -50,6 +50,34 @@ keys/columns, and acceptance rules are fixed contract requirements; an
 alternative implementation must satisfy them exactly rather than weakening or
 renaming them.
 
+The research contract also freezes these six method boundaries after Phase 1:
+
+- Generate every numerical analysis sample with MG5 and Delphes. Never analyze
+  events taken directly from an undetected LHE file.
+- With `debug=false`, treat the five locked scientific event counts below as
+  per-run minima. If statistical support is still insufficient, add full-size
+  runs and merge them. With `debug=true`, use the locked reduced counts to test
+  the complete workflow and do not claim strict scientific reliability from
+  those results.
+- Convert Delphes LHCO events to CSV and make the final selection with a trained
+  ML score threshold. A fixed final-state particle-number preselection is
+  allowed; a traditional hand-designed kinematic cut analysis cannot replace
+  the ML selection.
+- Derive expected coefficient constraints only from fitted cross-sections after
+  ML selection and the declared signal-significance formula.
+- Compare scientifically valid strategies only by expected coefficient-
+  constraint interval width. AUC may describe or diagnose a classifier but must
+  never rank or select the final strategy.
+- Deliver every Phase 10 manuscript item frozen in
+  `phase10_required_manuscript_items`. Earlier phases must provide the evidence
+  needed for those items without inventing unrelated scientific requirements.
+
+ML algorithms, implementations, and hyperparameters remain changeable. The LLM
+may reject or repair a candidate with inadequate event support, invalid fits, or
+numerical instability, and may use `per_operator_best`; among the resulting
+scientifically valid candidates it must still choose the narrowest expected
+constraint interval.
+
 The phases and bundled scripts are the tested standard execution path, not the
 research objective. Start from them because they encode known-good conventions.
 When they fail or do not fit the actual run, inspect the evidence, diagnose the
@@ -107,6 +135,24 @@ Treat validator output as diagnostic evidence. When a deliverable check fails,
 read its `failure_code`, `failure_reason`, missing keys/columns, and path details,
 then repair the producer or artifact. Never delete or relax an acceptance rule to
 make a technical failure disappear.
+
+The scientific objective and the six fixed method boundaries have priority over
+a default implementation or bundled audit. An ML algorithm, its hyperparameters,
+a fitting implementation, or an audit check may be changed when the actual data
+or a user additional requirement gives a scientific reason. Record the reason,
+evidence paths, changed code and checksum, and affected outputs. Keep the frozen
+deliverable paths, file formats, required fields, and operator coverage. Changing
+an audit to validate the actual contract-preserving method is allowed; changing
+it only to turn an unexplained failure into a pass is not.
+
+Use `anchor_operator_only` as the default final-selection strategy because one
+anchor-trained selector is normally adequate for related operators. This is a
+rebuttable default, not a frozen research choice. Use `per_operator_best` when
+the user requested it in `analysis_notes.additional_requirements`, or when the
+data show that the common strategy lacks sufficient event support, a valid fit,
+numerical stability, or reportable constraints for one or more operators. Let
+the LLM judge that evidence, record the rationale and evidence in Phase 9, and
+freeze the actual final choice only in Phase 11.
 
 Follow the phase order by default because downstream artifacts depend on
 upstream results. It is acceptable to create diagnostic code, adapters, or
@@ -200,9 +246,16 @@ exceptions, and stdout/stderr paths.
 
 ## Locked Runtime Contract
 
-Phase 1 writes these locked event counts to `run_config.json`; every phase must read them from config and never recompute or resize them.
+Phase 1 writes the event counts selected by `debug` to `run_config.json`; every
+phase must read them from config and must not lower them. `debug=false` is the
+formal scientific mode: the scientific values below are per-run minima, and
+insufficient statistical support requires another full-size run followed by a
+merge of accepted events and metadata. `debug=true` is a workflow test: it must
+exercise the complete MG5/Delphes, LHCO-to-CSV, ML-selection, constraint, and
+deliverable path, but the reduced results are not strict scientific results and
+do not require full-size statistical convergence.
 
-| Key | Normal | Debug |
+| Key | Scientific (`debug=false`) | Workflow test (`debug=true`) |
 |---|---:|---:|
 | `nev_phase3` | 10000 | 1000 |
 | `nev_phase4` | 10000 | 1000 |
@@ -210,7 +263,10 @@ Phase 1 writes these locked event counts to `run_config.json`; every phase must 
 | `nev_np` | 100000 | 10000 |
 | `nev_scan` | 1000000 | 100000 |
 
-Only `debug=true`, explicitly collected in Phase 1, may select the debug values. No later phase may change them.
+The selected mode and all five corresponding values are frozen after Phase 1.
+Do not switch a formal run to debug or reduce either mode's locked values later
+because execution is slow. All other fixed method boundaries apply unchanged in
+both modes.
 
 ## Execution Target
 
@@ -298,8 +354,8 @@ counts, logs, checksums, and provenance. Package non-bundled production code in
 Phase 11 so the study remains replayable. Algorithms are execution methodology,
 not part of the Phase 1 research objective. Phase 11 must freeze the algorithms
 actually trained and selected, including implementations, hyperparameters,
-score definitions, model-output paths, selection provenance, and packaged
-code checksums.
+score definitions, model-output paths, the exact Phase 9 selection criterion,
+rationale, evidence, operator assignments, and packaged code checksums.
 Before Phase 11, an algorithm or its implementation may change to resolve a
 technical or scientific-validity problem. After such a change, rerun every
 affected Phase 7-10 producer so all algorithm keys, scores, fits, constraints,
@@ -329,6 +385,9 @@ Apply conflicting instructions in this order:
 3. `deliverables-phaseN.md` and the Phase reference explain how to produce those
    exact files. They may add scientific consistency checks but may not rename or
    remove a template item.
-4. `audit_expected_outputs.py` enforces the two JSON documents. If its behavior
-   differs from them, repair the script; do not change a frozen JSON document or
-   weaken a requirement.
+4. `audit_expected_outputs.py` is the tested default implementation for checking
+   the two JSON documents and cross-phase numerical consistency. If the actual
+   scientifically justified method requires a different check, modify or replace
+   the checker, record that implementation and its evidence, and keep the frozen
+   deliverable paths, formats, required fields, and operator coverage. Do not
+   weaken a check merely to hide an unexplained failure.

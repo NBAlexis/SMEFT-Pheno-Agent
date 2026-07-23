@@ -154,8 +154,10 @@ When resuming, still run all Phase 2 validation steps every time.
        assert config.event_counts_locked is True
    ```
    Validate positive `run_configurations[*].ebeam1`, `run_configurations[*].ebeam2`,
-   luminosity values, matching list lengths, and exact locked event counts for
-   the selected `debug` value. For ep, `config.energy` may be null.
+   luminosity values, matching list lengths, and event counts that exactly match
+   the selected `debug` mode in `SKILL.md`: full-size scientific minima for
+   `debug=false`, or reduced complete-workflow test values for `debug=true`. For
+   ep, `config.energy` may be null.
 
 6. **Create Python virtual environment**
    Create `{config.workdir}/venv/` on the selected target and install required packages directly into that venv:

@@ -6,6 +6,10 @@ Must deliver:
 - `results/data/phase5/sm.lhco`, `sm_banner.txt`, and `sm_result.json`.
 - `results/data/phase5/np_o_N.lhco`, `np_o_N_banner.txt`, and
   `np_o_N_result.json` for every globally claimed operator.
+- Every SM and pure-NP result JSON records `event_generator=MadGraph5`,
+  `detector_simulation=Delphes`,
+  `analysis_event_format=LHCO_from_Delphes_ROOT`, the selected Delphes card,
+  and at least the applicable `nev_sm` or `nev_np` per-run minimum.
 - `results/data/phase5/np_anchor.lhco`, `np_anchor_banner.txt`, and
   `np_anchor_alias.json`.
 - `results/data/phase5/event_count_recovery.json` with requested counts, actual

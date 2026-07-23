@@ -376,6 +376,11 @@ def validate_config(cfg: Dict[str, Any]) -> None:
     if cfg.get("weighted_order") is not None:
         _positive_int(cfg["weighted_order"], "weighted_order")
     if process_mode != "create_np":
+        if not isinstance(cfg.get("delphes_card"), str) or not cfg["delphes_card"].strip():
+            raise ValueError(
+                "delphes_card is required for every MG5 numerical event run; "
+                "undetected LHE events are not valid analysis inputs"
+            )
         if "nevents" not in cfg:
             raise ValueError("nevents is required unless process_mode='create_np'")
         if int(cfg["nevents"]) <= 0:
@@ -695,6 +700,15 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "ebeam2": cfg.get("ebeam2"),
         "polarization": cfg.get("polarization"),
         "delphes_card": cfg.get("delphes_card"),
+        "event_generator": "MadGraph5",
+        "detector_simulation": (
+            None if cfg.get("process_mode") == "create_np" else "Delphes"
+        ),
+        "analysis_event_format": (
+            None
+            if cfg.get("process_mode") == "create_np"
+            else "LHCO_from_Delphes_ROOT"
+        ),
         "madspin": cfg.get("madspin", {"enabled": False}),
         "survey_profile": cfg.get("survey_profile", "default"),
         "outputs": [],

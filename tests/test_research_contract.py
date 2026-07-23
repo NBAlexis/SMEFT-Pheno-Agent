@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from scripts.research_contract import (
+    FIXED_METHOD_REQUIREMENTS,
     _sha256,
     init_contracts,
     resolve_contract,
@@ -113,6 +114,36 @@ class ResearchContractTests(unittest.TestCase):
         self.assertEqual(report["status"], "error")
         self.assertTrue(any("scientific objective" in item for item in report["errors"]))
 
+    def test_debug_mode_and_its_reduced_counts_are_frozen(self):
+        debug_results = os.path.join(self.temp.name, "debug-results")
+        debug_config_path = os.path.join(debug_results, "run_config.json")
+        debug_config = copy.deepcopy(self.config)
+        debug_config["debug"] = True
+        debug_config["locked_event_counts"] = {
+            "nev_phase3": 1000,
+            "nev_phase4": 1000,
+            "nev_sm": 50000,
+            "nev_np": 10000,
+            "nev_scan": 100000,
+        }
+        write_json(debug_config_path, debug_config)
+        init_contracts(debug_config_path, debug_results, TEMPLATE)
+        self.assertEqual(verify_contracts(debug_config_path, debug_results)["status"], "ok")
+
+        changed = copy.deepcopy(debug_config)
+        changed["debug"] = False
+        changed["locked_event_counts"] = {
+            "nev_phase3": 10000,
+            "nev_phase4": 10000,
+            "nev_sm": 500000,
+            "nev_np": 100000,
+            "nev_scan": 1000000,
+        }
+        write_json(debug_config_path, changed)
+        report = verify_contracts(debug_config_path, debug_results)
+        self.assertEqual(report["status"], "error")
+        self.assertTrue(any("scientific objective" in item for item in report["errors"]))
+
     def test_technical_path_migration_is_allowed(self):
         changed = copy.deepcopy(self.config)
         new_mg5 = os.path.join(self.temp.name, "migrated", "MG5")
@@ -133,6 +164,33 @@ class ResearchContractTests(unittest.TestCase):
         changed["algorithms"] = ["different", "technical", "set"]
         write_json(self.config_path, changed)
         self.assertEqual(verify_contracts(self.config_path, self.results)["status"], "ok")
+
+    def test_fixed_method_boundaries_and_phase10_items_are_frozen(self):
+        with open(os.path.join(self.results, "research_contract.json"), encoding="utf-8") as handle:
+            research = json.load(handle)
+        self.assertEqual(
+            research["objective"]["fixed_method_requirements"],
+            FIXED_METHOD_REQUIREMENTS,
+        )
+        with open(os.path.join(self.results, "deliverables_contract.json"), encoding="utf-8") as handle:
+            deliverables = json.load(handle)
+        frozen_items = deliverables["template"]["phase10_required_manuscript_items"]
+        with open(
+            os.path.join(ROOT, "reference", "manuscript-checklist-required-ids.json"),
+            encoding="utf-8",
+        ) as handle:
+            canonical_items = json.load(handle)["required_items"]
+        self.assertEqual(frozen_items, canonical_items)
+
+        research["objective"]["fixed_method_requirements"][
+            "machine_learning_event_selection"
+        ] = "traditional cuts allowed"
+        research["objective_sha256"] = _sha256(research["objective"])
+        write_json(os.path.join(self.results, "research_contract.json"), research)
+        self.assertEqual(
+            verify_contracts(self.config_path, self.results)["status"],
+            "error",
+        )
 
     def test_model_or_card_content_drift_is_rejected(self):
         model_file = os.path.join(self.mg5, "models", "AQGCm_UFO", "parameters.py")
@@ -307,11 +365,34 @@ class ResearchContractTests(unittest.TestCase):
         )
         write_json(
             os.path.join(self.results, "data", "phase3", "results", "AQGCm_UFO_create_np.json"),
-            {"status": "ok"},
+            {
+                "status": "completed",
+                "process_mode": "create_np",
+                "event_generator": "MadGraph5",
+            },
         )
+        phase3_lhco = os.path.join(
+            self.results, "data", "phase3", "results", "AQGCm_UFO_fM0.lhco"
+        )
+        os.makedirs(os.path.dirname(phase3_lhco), exist_ok=True)
+        with open(phase3_lhco, "w", encoding="utf-8") as handle:
+            handle.write("0 1 0 0 0 0 0 0 0 0 0\n")
         write_json(
             os.path.join(self.results, "data", "phase3", "results", "AQGCm_UFO_fM0.json"),
-            {"status": "ok"},
+            {
+                "status": "completed",
+                "process_mode": "pure_np",
+                "event_generator": "MadGraph5",
+                "detector_simulation": "Delphes",
+                "analysis_event_format": "LHCO_from_Delphes_ROOT",
+                "delphes_card": "delphes_card_CEPC.tcl",
+                "nevents": 10000,
+                "outputs": [{
+                    "cross_section_pb": 1.23e-3,
+                    "lhco_path": phase3_lhco,
+                    "loaded_lhco_event_count": 1000,
+                }],
+            },
         )
         report = audit_phase_deliverables(self.temp.name, "3")
         self.assertEqual(report["status"], "PASS", report["failures"])

@@ -4,8 +4,14 @@ Consumes: Phase 6 scans and Phase 7 algorithms/features/scores.
 
 Must deliver:
 - A shared Phase 8 `f5` LHCO pool at `results/data/phase8/shared_f5.lhco`,
-  formed initially from exactly one `f5` sample for every Phase 3 claimed
-  operator and extended only by the allowed additional anchor `f5` rounds.
+  whose initial sources cover every Phase 3 claimed operator. Use one direct
+  source per operator, or every actual `f5` attempt contributing to an accepted
+  Phase 6 recovery merge. Extend it only with the allowed additional anchor
+  `f5` rounds.
+- Every additional anchor `f5` runner result records
+  `event_generator=MadGraph5`, `detector_simulation=Delphes`,
+  `analysis_event_format=LHCO_from_Delphes_ROOT`, the selected Delphes card,
+  and `nevents >= nev_scan`.
 - `results/data/phase8/shared_f5_merge.json`, retaining every source LHCO and
   banner record plus the merged loaded count and arithmetic mean of source
   banner cross-sections.
@@ -22,7 +28,9 @@ Must deliver:
 - `results/data/phase8/scan_event_counts.json` with loaded LHCO counts,
   final-state-cut counts, passing counts, and explicit denominators.
 - `results/data/phase8/threshold_optimization.json` with anchor-only threshold
-  scans for every algorithm, including lower/upper real-root bounds and widths.
+  scans for every algorithm, including lower/upper real-root bounds, widths, and
+  a `numerical_validation` record describing the independent LLM review and its
+  evidence paths.
 - `results/data/phase8/dataset_summary.json` with loaded counts, final-state
   counts, raw cross-sections, final-state-cut cross-sections, exact cuts, and
   public CSV/score paths.

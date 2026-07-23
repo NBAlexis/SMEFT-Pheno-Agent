@@ -6,17 +6,65 @@ without asking the user during Execution Mode.
 
 ## Selection Scope
 
+Here, a scientifically usable result means that the LLM judges the generated
+event support, fit validity, numerical stability, and resulting constraints
+sufficient for a defensible scientific report and records the supporting data.
+It is not the name of a scripted status or one fixed numerical cutoff.
+
 - `anchor_operator_only` is the default: choose one algorithm and one score
-  threshold from the anchor operator and use them for every operator.
-- `per_operator_best` is also valid: for each operator, select the narrowest
-  `S_stat=2` interval from the complete Phase 8 operator-by-algorithm fits.
-  Use each algorithm's already recorded Phase 8 optimal threshold; this is a
-  re-aggregation of existing results and does not rerun simulation or training.
-- Record the final scope in `algorithm_selection.json`. For
-  `per_operator_best`, record `operator_selections` for every claimed operator.
+  threshold from the anchor operator and use them for every operator when the
+  resulting fits and constraints are scientifically usable.
+- `per_operator_best` is valid when the user requested it in
+  `analysis_notes.additional_requirements`, or when the LLM finds evidence that
+  the common strategy cannot produce a scientifically usable result for one or
+  more operators. This decision is scientific judgment, not a fixed list of
+  scripted failure states.
+- For `per_operator_best`, choose the trained algorithm and threshold that give
+  the narrowest expected coefficient-constraint interval among the
+  scientifically usable candidates recorded for that operator in Phase 8.
+  Existing Phase 8 results may be
+  re-aggregated, or affected Phase 7-9 work may be repaired and rerun when the
+  evidence requires it.
+- Record `selection_scope`, a non-empty `selection_rationale`, and
+  `selection_evidence` paths in `algorithm_selection.json`. For
+  `per_operator_best`, also record `operator_selections` for every claimed
+  operator. The evidence may point to the user's additional requirement or to
+  Phase 7-9 data demonstrating why the default is inadequate.
 - Non-anchor pure NP samples are for public CSV data, score histograms, and
   manuscript evidence only.
 - Do not mix the two scopes silently or omit an operator selection.
+
+## Scientific Method and Audit
+
+- Generate every numerical analysis sample with MG5 and pass it through
+  Delphes. Undetected LHE events are not analysis inputs.
+- With `debug=false`, treat the locked scientific event counts as per-run minima;
+  if support is scientifically insufficient, add full-size runs and merge them.
+  With `debug=true`, use the locked reduced counts to test the complete workflow,
+  not strict statistical reliability. Never lower the values locked for either
+  mode after Phase 1.
+- Convert Delphes LHCO to CSV and use a trained ML score threshold for final
+  selection. A fixed final-state particle-number preselection is allowed, but a
+  traditional hand-designed kinematic cut analysis cannot replace the ML stage.
+- Compute coefficient constraints only from fitted selected cross-sections and
+  the declared signal-significance formula.
+- Compare scientifically usable strategies only by expected coefficient-
+  constraint interval width. AUC is descriptive or diagnostic only.
+- Deliver every manuscript item in the frozen Phase 10 list. Earlier evidence
+  requirements exist to support that list, not to add unrelated work.
+- The research objective, fixed method boundaries, and required scientific
+  outputs have priority over a default algorithm, implementation, or audit.
+- Keep the six fixed method boundaries, frozen deliverable paths, formats,
+  required fields, and full operator coverage. ML algorithms, implementations,
+  hyperparameters, fitting implementations, and audit code may change when the
+  actual data justify the change and the replacement validates the method that
+  was really used.
+- Record the reason, evidence paths, changed code checksum, and affected outputs.
+  Do not edit an audit only to convert an unexplained failure into a pass.
+- Use deterministic checks for facts without scientific discretion, including
+  file structure, event identities, arithmetic, checksums, and agreement between
+  JSON and CSV. Leave method choice and interpretation of unusual scientific
+  behavior to the LLM, supported by recorded evidence.
 
 ## Actual Event Counts
 

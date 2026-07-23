@@ -259,7 +259,7 @@ Train on the **anchor operator's** SM and NP samples:
 6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 - **this is for manuscript plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-> **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 selects the single production algorithm from the anchor operator by the narrowest `S_stat = 2` constraint width.
+> **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 uses the anchor-selected common strategy by default, but may record a user-requested or evidence-driven per-operator strategy when the common strategy is not scientifically adequate.
 
 ## Step 7.3: Score Distribution Histograms
 
@@ -283,6 +283,10 @@ Each score CSV must contain at least:
 ```
 event_index, score, label, source_csv
 ```
+
+`event_index` is the zero-based row identity in `source_csv`. It must cover
+`0` through `row_count-1` exactly once. Do not renumber after scoring, duplicate
+an identity, or omit a source row.
 
 Use `label=0` for SM and `label=1` for NP. Scores must be normalized in
 `[0, 1]`, where higher is more NP-like.

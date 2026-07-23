@@ -13,27 +13,24 @@ Use a bounded loop:
    repairing missing items whose evidence exists.
 3. Validate the resulting draft.
 4. If validation fails, revise within the remaining revision budget.
-5. Validate the final manuscript and archive remaining issues.
+5. Validate the final manuscript, repair every missing required item, and
+   archive only remaining minor issues.
 
 Maximum revisions after the first draft: `2`.
 
-Never block cleanup, Phase 11, or Phase 12 because the manuscript remains imperfect. After the
-revision limit, write `manuscript_validation.json` with `status: "issues_remaining"`
-and continue to cleanup, replay packaging, and audit.
-
-The revision limit applies only to manuscript-writing quality issues. Missing
-upstream required artifacts, missing required data tables, missing required
-plots when the underlying data exists, or missing final PDF/HTML format
-deliverables must trigger repair of the responsible phase artifact or produce a
-Phase 12 `FAIL`; do not hide them as acceptable `issues_remaining`.
+The revision limit applies only to optional prose and presentation improvements.
+Missing upstream evidence, required content, required tables or plots, or the
+required final format must trigger autonomous repair. Phase 10 cannot complete
+until every frozen required item is present or satisfies its explicit allowed
+missing-reason rule and `major_issues` is empty.
 
 ## Blocking During Phase 10
 
 Treat file-writing, parser, and output-generation errors as technical recovery
 tasks. Stop only with documented proof that the frozen manuscript deliverable
 cannot be produced by any reasonable equivalent implementation.
-Scientific/style validation failures are not stop conditions after the revision
-limit.
+Minor style issues are not stop conditions after the revision limit. Missing
+required content remains a Phase 10 repair task.
 
 ## Required Checks
 
@@ -79,7 +76,8 @@ Mark these as `major` if they fail:
 - trained algorithms lack clear mathematical score definitions
 - hyperparameter table is missing
 - anchor operator is missing
-- final algorithm is not selected by the first non-zero operator
+- anchor-comparison provenance is missing, or the reported final strategy does
+  not follow the Phase 9 scope, rationale, evidence, and recorded selections
 - final constraints do not follow the recorded `selection_scope`, or a
   `per_operator_best` result omits an operator's selected algorithm or threshold
 - numeric fit coefficients are missing
@@ -136,7 +134,7 @@ Mark these as `minor`:
 }
 ```
 
-Use `status: "pass"` only when `major_issues` is empty and every required
-checklist ID is `present`. Use `status: "issues_remaining"` when the revision
-limit has been reached and archive each remaining major issue with its
-checklist ID when possible.
+Use `status: "pass"` when `major_issues` and `minor_issues` are empty and every
+required checklist ID is `present`. Use `status: "issues_remaining"` only when
+every required checklist ID is `present`, `major_issues` is empty, and minor
+writing or presentation issues remain after the revision budget.

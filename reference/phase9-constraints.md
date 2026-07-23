@@ -6,8 +6,11 @@
 
 Compute expected Wilson-coefficient constraints at significance levels `S = 2, 3, 5`
 for **all globally claimed operators**. Use `anchor_operator_only` by default.
-Also accept `per_operator_best` when that scope is selected for the run and its
-per-operator choices are fully recorded.
+Use `per_operator_best` when the user requested it in
+`analysis_notes.additional_requirements`, or when the LLM finds scientific
+evidence that the common strategy cannot produce a usable result for one or
+more operators. This is an evidence-based research decision, not a fixed list of
+scripted conditions.
 
 ## Prerequisite
 
@@ -74,12 +77,20 @@ with workflow_step(logger, "9", "select_anchor_algorithm",
                    inputs={"anchor": anchor, "num_algorithms": len(alg_data["anchor"])}):
 ```
 
-Use only the anchor operator's Phase 8 fits to select the production algorithm:
+The standard selection procedure uses only the anchor operator's Phase 8 fits:
 
 1. Load the anchor operator from `anchor.json`; this is the first non-zero operator found in Phase 3.
 2. For each trained algorithm, compute the `S=2` constraint interval for the anchor operator.
 3. Select the algorithm with the narrowest `S=2` interval width.
 4. Record full anchor intervals for all algorithms.
+
+The LLM may judge a candidate scientifically unusable because of inadequate
+event support, an invalid fit, or numerical instability, and must repair the
+affected Phase 7-9 work when feasible. Among scientifically usable candidates,
+select only by expected `S=2` coefficient-constraint interval width. Do not use
+AUC or another classifier metric to rank or select the final strategy. Record
+the fixed comparison method in `selection_criterion` and support candidate
+validity decisions with `selection_rationale` and `selection_evidence`.
 
 Output field:
 
@@ -91,6 +102,8 @@ Output field:
   "selected_threshold": 0.62,
   "selection_scope": "anchor_operator_only",
   "selection_criterion": "narrowest_anchor_S2_constraint_width",
+  "selection_rationale": "The common anchor strategy gives usable fits and constraints for every claimed operator.",
+  "selection_evidence": ["data/phase8/threshold_optimization.json"],
   "source_threshold_optimization_entry": "results/data/phase8/threshold_optimization.json:anchor.RandomForestClassifier"
 }
 ```
@@ -98,14 +111,21 @@ Output field:
 For `anchor_operator_only`, the selected algorithm and its Phase 8 optimal
 threshold form the single final strategy for every operator.
 
-For `per_operator_best`, retain the same top-level anchor selection for anchor
-comparison provenance, then choose the narrowest finite `S=2` interval for each
-operator from the complete Phase 8 operator-by-algorithm fits. Use each
-algorithm's already recorded Phase 8 optimal threshold. Add:
+For `per_operator_best`, retain the top-level anchor comparison for provenance.
+For every operator, let the LLM determine which recorded candidates are
+scientifically usable, then choose the algorithm and evaluated threshold with
+the narrowest expected `S=2` coefficient-constraint interval. Fit validity,
+selected-event support, and numerical stability may exclude a candidate or
+trigger repair, but cannot become an alternative ranking metric. Add:
 
 ```json
 {
   "selection_scope": "per_operator_best",
+  "selection_rationale": "The common strategy does not produce a usable result for o_2; operator-specific selections are used.",
+  "selection_evidence": [
+    "run_config.json:analysis_notes.additional_requirements",
+    "data/phase8/csfit_o_2_RandomForestClassifier.json"
+  ],
   "operator_selections": {
     "o_1": {
       "selected_algorithm": "RandomForestClassifier",
@@ -117,8 +137,10 @@ algorithm's already recorded Phase 8 optimal threshold. Add:
 ```
 
 The keys of `operator_selections` must exactly equal the Phase 3 claimed
-operators. This mode only re-aggregates existing Phase 8 fits; it does not rerun
-event generation, feature extraction, or training.
+operators. Re-aggregate existing results when they are sufficient. If the
+evidence reveals a technical or scientific-validity problem in earlier work,
+repair and rerun the affected Phase 7-9 producers rather than forcing an
+existing result to fit the default procedure.
 
 ## Step 9.2: Compute Final Constraints
 
@@ -145,11 +167,13 @@ Still record comparison data for transparency:
 
 - anchor operator intervals for every algorithm
 - optional per-operator S=2 intervals for non-selected algorithms
-- AUC values from Phase 7
+- AUC values from Phase 7 as descriptive diagnostics only; never use them to
+  rank or select a final strategy
 - a bar plot comparing the anchor operator's `S_stat = 2` coefficient interval
   width for every trained algorithm
 
-This comparison data is not the final physical result.
+This descriptive data is not the strategy-selection rule or final physical
+result.
 
 Save the plot to:
 
@@ -208,6 +232,21 @@ from `algorithm_selection.json` into `constraint_table.json`. For
 `anchor_operator_only`, the per-constraint algorithm and threshold fields are
 recommended and must agree with the top-level selection when present.
 
+Add a top-level independent review record to `constraint_table.json`:
+
+```json
+"numerical_validation": {
+  "status": "pass",
+  "method": "independent recalculation of every S=2,3,5 interval from the recorded fits, luminosity, units, and significance definition",
+  "evidence_paths": ["data/phase9/constraint_table.json", "data/phase8/csfit_o_1_bdt.json"]
+}
+```
+
+The LLM checks the actual method used by the project. If that method differs
+from the bundled default, update or add the corresponding checker and record its
+path, checksum, command, and output in `workflow.log`; do not weaken validation
+only to hide a discrepancy.
+
 `constraint_table.csv` contains exactly one row per claimed operator and at
 least these columns:
 
@@ -224,6 +263,8 @@ operator,selected_algorithm,selected_threshold,S2_lower,S2_upper,S3_lower,S3_upp
   "selected_threshold": 0.62,
   "selection_criterion": "narrowest_anchor_S2_constraint_width",
   "selection_scope": "anchor_operator_only",
+  "selection_rationale": "The common anchor strategy gives usable fits and constraints for every claimed operator.",
+  "selection_evidence": ["data/phase8/threshold_optimization.json"],
   "source_threshold_optimization_entry": "results/data/phase8/threshold_optimization.json:anchor.RandomForestClassifier",
   "anchor_intervals_by_algorithm": {
     "RandomForestClassifier": {"S2": [-0.1, 0.1]},
@@ -231,12 +272,20 @@ operator,selected_algorithm,selected_threshold,S2_lower,S2_upper,S3_lower,S3_upp
   },
   "comparison_only_intervals": {
     "o_2": {
-      "RandomForestClassifier": {"S2": [-0.4, 0.4]},
-      "LogisticRegression": {"S2": [-0.3, 0.3]}
+      "RandomForestClassifier": {"selected_threshold": 0.62, "S2": [-0.4, 0.4]},
+      "LogisticRegression": {"selected_threshold": 0.54, "S2": [-0.3, 0.3]}
     }
   }
 }
 ```
+
+When `selection_scope=per_operator_best`, `comparison_only_intervals` must
+contain every non-anchor operator and every scientifically usable trained
+algorithm considered for that operator. Each candidate records the evaluated
+`selected_threshold` and its expected `S2` interval. If an algorithm cannot
+produce a scientifically usable interval after repair, omit it from this
+numeric comparison and explain the exclusion in `selection_rationale` with an
+entry in `selection_evidence`. Select the narrowest recorded interval.
 
 ```python
 logger.phase_complete("9")
@@ -248,7 +297,9 @@ logger.phase_complete("9")
   comparison result in both scopes.
 - `anchor_operator_only` uses that same pair for every operator.
 - `per_operator_best` records every operator in `operator_selections`, and each
-  constraint row uses its recorded algorithm and threshold.
+  constraint row uses its recorded algorithm and threshold. Its rationale and
+  evidence explain either the user request or why the common strategy was not
+  scientifically adequate.
 - All reported intervals have real numeric lower and upper bounds.
 - Fit coefficients and the fixed `f=0` intercept used for constraints are
   archived or referenced.
@@ -256,7 +307,9 @@ logger.phase_complete("9")
   three-parameter free-intercept fit is found, recompute Phase 8 fits before
   computing constraints.
 - Per-operator choices may be final only when `selection_scope` is
-  `per_operator_best`; otherwise they are labeled comparison-only.
+  `per_operator_best`; otherwise they are labeled comparison-only. For each
+  non-anchor operator, the selected candidate has the narrowest recorded finite
+  `S2` interval among scientifically usable candidates.
 - `results/plots/anchor_s2_algorithm_constraint_bar.pdf` exists and uses only
   anchor-operator `S=2` intervals.
 

@@ -108,6 +108,10 @@ Each score CSV must contain at least:
 event_index, score, source_csv
 ```
 
+`event_index` is the zero-based row identity in `source_csv`. It must cover
+`0` through `row_count-1` exactly once; duplicated, missing, negative, or
+non-integer identities are invalid.
+
 Before final Phase 9 selection, candidate score CSVs may include
 `pass_algorithm_optimal_threshold`. After the final selection scope is applied,
 the score CSVs used for each operator's final constraint may include
@@ -146,6 +150,8 @@ from the MG5 banner.
 For **each algorithm**, use exactly
 `[0.00, 0.02, ..., 0.98, 1.00]`. Apply the zero-count procedure in
 [`phase8-shared-f5.md`](phase8-shared-f5.md) before calculating an interval.
+An unresolved zero at an unselected threshold is excluded from the finite-width
+comparison and does not automatically request another MG5 run.
 
 ```python
 with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
@@ -228,6 +234,23 @@ Record per algorithm:
   ]
 }
 ```
+
+At the top level of `threshold_optimization.json`, record an independent review
+of the numerical calculation:
+
+```json
+"numerical_validation": {
+  "status": "pass",
+  "method": "independent recalculation of counts, fixed-intercept fits, significance roots, and selected widths using the method actually adopted",
+  "evidence_paths": ["data/phase8/threshold_optimization.json", "data/phase8/csfit_o_1_bdt.json"]
+}
+```
+
+The LLM performs this scientific review after reading the produced data. When
+the run uses a method not covered by the bundled audit, modify or add a checker
+for the actual method, record its path/checksum in the workflow log, and cite its
+output in `evidence_paths`. Do not change a check merely to accept unexplained
+numbers.
 
 Record per scan point:
 
@@ -383,11 +406,15 @@ Publication Data, Actual Event Counts, and Execution Continuity.
 - `csfit_sm > 0`
 - `csfit_sm` or `sigma0_after_cut` equals the accepted shared-`f5` background
   value and is not a fitted intercept
-- The initial shared pool contains exactly one `f5` source from every claimed
-  operator; additional sources, if needed, are anchor `f5` samples only
-- Before three additional rounds, a zero passing count is incomplete; after
-  three rounds it uses the half-event formula while preserving the observed
-  count as zero
+- The initial shared pool covers every claimed operator. A direct Phase 6 scan
+  contributes one source; when Phase 6 recovery was used, include every
+  successful attempt that actually entered its merged `f5` sample. Additional
+  Phase 8 sources, if needed, are anchor `f5` samples only.
+- Before three additional rounds, an unselected zero passing count remains null
+  and is excluded from automatic width comparison. A zero at an algorithm's
+  candidate final threshold requests the next anchor round. After three rounds,
+  a remaining zero uses the half-event formula while preserving the observed
+  count as zero.
 - For one algorithm and threshold, every operator fit has the same
   `sigma0_after_cut_pb`
 - `csfit_np >= 0`

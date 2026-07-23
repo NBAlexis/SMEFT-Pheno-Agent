@@ -301,6 +301,12 @@ with requested counts, actual LHCO counts, fractions, recovery profile enum,
 attempt numbers, merged output paths, all source banners, and merged
 cross-sections.
 
+Pass the canonical `np_o_N_scan_result.json` as
+`base_mg5_config.result_json`. The recovery orchestrator writes that summary and
+the canonical `np_o_N_fi_banner.txt` cross-section summaries after merging while
+retaining every original attempt runner and MG5 banner. Downstream code must use
+the linked original files when it needs original-banner provenance.
+
 After all operators have been processed:
 
 ```python
@@ -325,9 +331,10 @@ results/data/phase6/
   np_o_N_f10_banner.txt   np_o_N_f10.lhco
 ```
 
-Keep every `np_o_{g_idx}_scan_result.json`. Phase 10 uses these runner
-manifests to locate process folders, banners, LHCO paths, cross-sections, and
-representative Feynman diagrams.
+Keep every `np_o_{g_idx}_scan_result.json`. For recovered scans it is an explicit
+recovery summary linking all attempt runner manifests. Phase 10 follows those
+links to locate process folders and original banners for representative Feynman
+diagrams and provenance.
 
 ## Common Mistakes
 

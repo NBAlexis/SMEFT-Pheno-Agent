@@ -97,7 +97,9 @@ Write `replay_manifest.json` with this minimum structure:
     "selection_scope": "anchor_operator_only | per_operator_best",
     "operator_selections": {},
     "selection_provenance": {
-      "selection_method": "recorded Phase 9 method",
+      "selection_method": "exact Phase 9 selection_criterion",
+      "selection_rationale": "exact Phase 9 selection_rationale",
+      "selection_evidence": ["exact", "Phase 9", "evidence paths"],
       "source": "data/phase9/algorithm_selection.json"
     },
     "packaged_files": {"steps/phase7.py": "sha256"},
@@ -131,10 +133,12 @@ results. Original results are evidence used to construct this package, not
 inputs used by `replay.sh`.
 
 For `anchor_operator_only`, `production_algorithm` is the single final
-algorithm and `operator_selections` may be empty. For `per_operator_best`, keep
+algorithm and `operator_selections` is an empty object. For `per_operator_best`, keep
 `production_algorithm` as the anchor-comparison result for backward-compatible
 provenance and copy the complete Phase 9 `operator_selections` map into the
-lock. Replay steps must apply that map exactly.
+lock. Copy Phase 9 `selection_criterion`, `selection_rationale`, and
+`selection_evidence` exactly into `selection_provenance`. Replay steps must apply
+the recorded scope and map exactly.
 
 ## Replay Script
 

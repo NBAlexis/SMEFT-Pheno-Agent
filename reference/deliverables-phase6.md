@@ -12,6 +12,10 @@ Must deliver:
   keyword.
 - `results/data/phase6/phase6_progress.json`.
 - `results/data/phase6/np_o_N_scan_result.json` for every claimed operator.
+  Every result records `event_generator=MadGraph5`,
+  `detector_simulation=Delphes`,
+  `analysis_event_format=LHCO_from_Delphes_ROOT`, the selected Delphes card,
+  and `nevents >= nev_scan`.
 - For every claimed operator and every label `f0` through `f10`:
   `np_o_N_fi.lhco` and `np_o_N_fi_banner.txt`.
 - `results/data/phase6/event_count_recovery.json` with scan-point merged

@@ -38,6 +38,8 @@ PHASE7_VALIDATION_CHECK_IDS = {
 
 CROSS_FILE_ACCEPTANCE_IMPLEMENTATIONS = {
     "phase3.complete_coefficient_loop",
+    "phase4.mg5_delphes_lhco_and_event_minimum",
+    "phase5.mg5_delphes_lhco_and_event_minimum",
     "phase6.complete_scan_matrix",
     "phase7.complete_algorithm_set",
     "phase8.numerical_content",
@@ -85,6 +87,29 @@ def _phase10_required_checklist_ids(override_path: Optional[str] = None) -> Tupl
     if len(ids) != len(required_items):
         return set(), path, "canonical checklist ID JSON has duplicate or invalid id entries"
     return ids, path, None
+
+
+def _phase10_required_items(override_path: Optional[str] = None) -> Tuple[List[Dict[str, Any]], str, Optional[str]]:
+    path = _phase10_required_items_path(override_path)
+    if not os.path.exists(path):
+        return [], path, "Missing canonical checklist ID JSON"
+    try:
+        data = _load_json(path)
+    except Exception as exc:
+        return [], path, f"Could not parse canonical checklist ID JSON: {exc}"
+    items = data.get("required_items")
+    if not isinstance(items, list) or not items or any(
+        not isinstance(item, dict)
+        or not isinstance(item.get("id"), str)
+        or not item.get("id")
+        or not isinstance(item.get("required_content"), str)
+        or not item.get("required_content")
+        for item in items
+    ):
+        return [], path, "canonical checklist JSON has invalid required_items"
+    if len({item["id"] for item in items}) != len(items):
+        return [], path, "canonical checklist JSON has duplicate required item IDs"
+    return items, path, None
 
 
 def _load_json(path: str) -> Dict[str, Any]:
@@ -785,6 +810,136 @@ def _phase3_runner_manifest_checks(root: str) -> List[Dict[str, Any]]:
     return checks
 
 
+def _runner_result_boundary_checks(root: str, phase: str) -> List[Dict[str, Any]]:
+    """Verify numerical runner records prove the fixed MG5/Delphes/LHCO chain."""
+    result_paths: Set[str] = set()
+    operators = _operators(root)
+    if phase == "3":
+        status_path = os.path.join(root, "data", "phase3", "model_status.json")
+        if os.path.exists(status_path):
+            try:
+                for item in _iter_json_objects(_load_json(status_path)):
+                    for key in ("create_np_result_json", "result_json", "result_json_path", "runner_result_json"):
+                        value = item.get(key)
+                        if isinstance(value, str) and value:
+                            result_paths.add(_manifest_reference_path(root, value))
+            except Exception:
+                return []  # The Phase 3 manifest checks report the parse error.
+    elif phase == "5":
+        result_paths.add(os.path.join(root, "data", "phase5", "sm_result.json"))
+        result_paths.update(
+            os.path.join(root, "data", "phase5", f"np_{operator}_result.json")
+            for operator in operators
+        )
+    elif phase == "6":
+        result_paths.update(
+            os.path.join(root, "data", "phase6", f"np_{operator}_scan_result.json")
+            for operator in operators
+        )
+    elif phase == "4":
+        result_paths.add(os.path.join(root, "data", "phase4", "sm_baseline_result.json"))
+    elif phase == "8":
+        background_path = os.path.join(root, "data", "phase8", "shared_f5_background.json")
+        if os.path.exists(background_path):
+            try:
+                background = _load_json(background_path)
+                for item in background.get("additional_anchor_f5_sources") or []:
+                    if isinstance(item, dict) and isinstance(item.get("runner_result_json"), str):
+                        result_paths.add(
+                            _manifest_reference_path(root, item["runner_result_json"])
+                        )
+            except Exception:
+                return []  # The Phase 8 shared-background checks report the parse error.
+    else:
+        return []
+
+    config_path = os.path.join(_global_results_root(root), "run_config.json")
+    try:
+        config = _load_json(config_path)
+    except Exception:
+        config = {}
+    default_count_key = {
+        "3": "nev_phase3",
+        "4": "nev_phase4",
+        "5": None,
+        "6": "nev_scan",
+        "8": "nev_scan",
+    }[phase]
+    locked_counts = config.get("locked_event_counts") or {}
+    checks: List[Dict[str, Any]] = []
+    for path in sorted(result_paths):
+        if not os.path.isfile(path):
+            continue  # Frozen path checks report missing result files.
+        rel = os.path.relpath(path, root)
+        errors: List[str] = []
+        try:
+            data = _load_json(path)
+            mode = data.get("process_mode")
+            if data.get("event_generator") != "MadGraph5":
+                errors.append("event_generator must be MadGraph5")
+            if mode != "create_np":
+                if data.get("status") != "completed":
+                    errors.append("numerical runner result must have status=completed")
+                if data.get("detector_simulation") != "Delphes":
+                    errors.append("detector_simulation must be Delphes")
+                if data.get("analysis_event_format") != "LHCO_from_Delphes_ROOT":
+                    errors.append("analysis_event_format must be LHCO_from_Delphes_ROOT")
+                card = data.get("delphes_card")
+                if not isinstance(card, str) or not card.strip():
+                    errors.append("delphes_card must be non-empty")
+                elif config and card != config.get("delphes_card"):
+                    errors.append("delphes_card differs from run_config")
+                count_key = default_count_key
+                if phase == "5":
+                    count_key = "nev_sm" if mode == "pure_sm" else "nev_np"
+                expected_count = locked_counts.get(count_key) if count_key else None
+                nevents = data.get("nevents")
+                if not isinstance(nevents, int) or isinstance(nevents, bool):
+                    errors.append("nevents must be an integer")
+                elif isinstance(expected_count, int) and nevents < expected_count:
+                    errors.append(
+                        f"nevents {nevents} is below the locked per-run minimum {expected_count}"
+                    )
+                outputs = data.get("outputs")
+                if not isinstance(outputs, list) or not outputs:
+                    errors.append("numerical runner result must contain outputs")
+                else:
+                    for index, output in enumerate(outputs):
+                        if not isinstance(output, dict):
+                            errors.append(f"outputs[{index}] must be an object")
+                            continue
+                        cross_section = output.get("cross_section_pb")
+                        if not _finite_number(cross_section) or float(cross_section) < 0.0:
+                            errors.append(f"outputs[{index}].cross_section_pb must be finite and non-negative")
+                        elif float(cross_section) > 0.0:
+                            lhco_path = output.get("lhco_path")
+                            loaded = output.get("loaded_lhco_event_count")
+                            resolved_lhco = (
+                                _manifest_reference_path(root, lhco_path)
+                                if isinstance(lhco_path, str)
+                                else ""
+                            )
+                            if not resolved_lhco or not os.path.isfile(resolved_lhco) or os.path.getsize(resolved_lhco) <= 0:
+                                errors.append(f"outputs[{index}] positive cross-section lacks non-empty Delphes LHCO")
+                            if not isinstance(loaded, int) or isinstance(loaded, bool) or loaded <= 0:
+                                errors.append(f"outputs[{index}] positive cross-section lacks a positive loaded LHCO count")
+                            elif isinstance(nevents, int) and loaded < 0.1 * nevents:
+                                errors.append(
+                                    f"outputs[{index}] loaded LHCO count is below 10% of the requested per-run count"
+                                )
+        except Exception as exc:
+            errors.append(f"could not parse runner result: {exc}")
+        checks.append({
+            "rel_path": rel + ":fixed_method_boundaries",
+            "severity": "abort",
+            "source": "mg5_delphes_lhco_and_event_minimum",
+            "path": path,
+            "ok": not errors,
+            "errors": errors,
+        })
+    return checks
+
+
 def _global_results_root(root: str) -> str:
     current = os.path.abspath(root)
     while True:
@@ -1032,6 +1187,8 @@ def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
         "anchor_operator",
         "selection_scope",
         "selection_criterion",
+        "selection_rationale",
+        "selection_evidence",
         "source_threshold_optimization_entry",
     ]
     missing = [key for key in required if key not in data or data.get(key) in (None, "")]
@@ -1045,7 +1202,17 @@ def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
     if selection_scope not in {"anchor_operator_only", "per_operator_best"}:
         invalid.append("selection_scope must be anchor_operator_only or per_operator_best")
     if data.get("selection_criterion") != "narrowest_anchor_S2_constraint_width":
-        invalid.append("selection_criterion must be narrowest_anchor_S2_constraint_width")
+        invalid.append(
+            "selection_criterion must be narrowest_anchor_S2_constraint_width; "
+            "AUC or another metric cannot select the final strategy"
+        )
+    if not isinstance(data.get("selection_rationale"), str) or not data["selection_rationale"].strip():
+        invalid.append("selection_rationale must be non-empty")
+    evidence = data.get("selection_evidence")
+    if not isinstance(evidence, list) or not evidence or any(
+        not isinstance(value, str) or not value.strip() for value in evidence
+    ):
+        invalid.append("selection_evidence must be a non-empty list of evidence paths")
     try:
         threshold = float(data.get("selected_threshold"))
         if not 0.0 <= threshold <= 1.0:
@@ -1107,6 +1274,23 @@ def _valid_interval(value: Any) -> bool:
     )
 
 
+def _numerical_validation_errors(data: Dict[str, Any]) -> List[str]:
+    validation = data.get("numerical_validation")
+    if not isinstance(validation, dict):
+        return ["numerical_validation must be an object"]
+    errors = []
+    if validation.get("status") != "pass":
+        errors.append("numerical_validation.status must be pass")
+    if not isinstance(validation.get("method"), str) or not validation["method"].strip():
+        errors.append("numerical_validation.method must be non-empty")
+    evidence = validation.get("evidence_paths")
+    if not isinstance(evidence, list) or not evidence or any(
+        not isinstance(value, str) or not value.strip() for value in evidence
+    ):
+        errors.append("numerical_validation.evidence_paths must be a non-empty list")
+    return errors
+
+
 def _csv_data_row_count(path: str) -> int:
     with open(path, "r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.reader(handle)
@@ -1123,6 +1307,7 @@ def _shared_score_counts(
     differences = [0] * (len(thresholds) + 1)
     row_count = 0
     errors: List[str] = []
+    event_indices: Set[int] = set()
     expected_source_abs = os.path.normcase(os.path.abspath(expected_source_csv))
     with open(path, "r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -1133,6 +1318,17 @@ def _shared_score_counts(
             ]
         for row_number, row in enumerate(reader, start=2):
             row_count += 1
+            try:
+                event_index = int(row["event_index"])
+            except (TypeError, ValueError):
+                errors.append(f"row {row_number} event_index must be an integer")
+            else:
+                if event_index < 0:
+                    errors.append(f"row {row_number} event_index must be non-negative")
+                elif event_index in event_indices:
+                    errors.append(f"row {row_number} duplicates event_index {event_index}")
+                else:
+                    event_indices.add(event_index)
             try:
                 score = float(row["score"])
             except (TypeError, ValueError):
@@ -1151,6 +1347,14 @@ def _shared_score_counts(
             if last_passing >= 0:
                 differences[0] += 1
                 differences[last_passing + 1] -= 1
+    expected_indices = set(range(row_count))
+    if event_indices != expected_indices:
+        missing = sorted(expected_indices - event_indices)
+        unexpected = sorted(event_indices - expected_indices)
+        if missing:
+            errors.append(f"event_index is missing zero-based identities: {missing[:10]}")
+        if unexpected:
+            errors.append(f"event_index has identities outside the source row range: {unexpected[:10]}")
     counts = []
     running = 0
     for index in range(len(thresholds)):
@@ -1197,7 +1401,8 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
             initial = []
         initial_operators = []
         initial_runners: Dict[str, Dict[str, Any]] = {}
-        initial_outputs: Dict[str, Dict[str, Any]] = {}
+        initial_outputs_by_lhco: Dict[str, Dict[str, Any]] = {}
+        recovery_sources: Dict[str, List[Dict[str, Any]]] = {}
         for index, item in enumerate(initial):
             if not isinstance(item, dict):
                 errors.append(f"initial_f5_sources[{index}] must be an object")
@@ -1210,20 +1415,40 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
                 errors.append(f"initial_f5_sources[{index}] has an unclaimed operator")
             if item.get("model") != (claims.get(operator) or {}).get("model"):
                 errors.append(f"initial_f5_sources[{index}].model differs from Phase 3")
-            expected_paths = {
-                "lhco_path": os.path.join("data", "phase6", f"np_{operator}_f5.lhco"),
-                "banner_path": os.path.join("data", "phase6", f"np_{operator}_f5_banner.txt"),
-                "runner_result_json": os.path.join(
-                    "data", "phase6", f"np_{operator}_scan_result.json"
-                ),
-            }
+            source_kind = item.get("source_kind")
+            if source_kind not in {"direct_phase6_scan", "phase6_recovery_attempt"}:
+                errors.append(
+                    f"initial_f5_sources[{index}].source_kind must be direct_phase6_scan "
+                    "or phase6_recovery_attempt"
+                )
+            expected_paths = None
+            if source_kind == "direct_phase6_scan":
+                expected_paths = {
+                    "lhco_path": os.path.join("data", "phase6", f"np_{operator}_f5.lhco"),
+                    "banner_path": os.path.join("data", "phase6", f"np_{operator}_f5_banner.txt"),
+                    "runner_result_json": os.path.join(
+                        "data", "phase6", f"np_{operator}_scan_result.json"
+                    ),
+                }
+            elif source_kind == "phase6_recovery_attempt":
+                recovery_sources.setdefault(str(operator), []).append(item)
+                if item.get("recovery_unit") != operator:
+                    errors.append(f"initial_f5_sources[{index}].recovery_unit must equal operator")
+                attempt_index = item.get("recovery_attempt_index")
+                if not isinstance(attempt_index, int) or isinstance(attempt_index, bool) or attempt_index < 0:
+                    errors.append(
+                        f"initial_f5_sources[{index}].recovery_attempt_index must be a non-negative integer"
+                    )
             for key in ("lhco_path", "banner_path", "runner_result_json"):
                 if not isinstance(item.get(key), str) or not item[key].strip():
                     errors.append(f"initial_f5_sources[{index}].{key} must be non-empty")
                     continue
                 actual = _manifest_reference_path(root, item[key])
-                expected = os.path.abspath(os.path.join(root, expected_paths[key]))
-                if os.path.normcase(actual) != os.path.normcase(expected):
+                expected = (
+                    os.path.abspath(os.path.join(root, expected_paths[key]))
+                    if expected_paths is not None else None
+                )
+                if expected is not None and os.path.normcase(actual) != os.path.normcase(expected):
                     errors.append(
                         f"initial_f5_sources[{index}].{key} must be {expected_paths[key]}"
                     )
@@ -1232,7 +1457,7 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
             runner_path = _manifest_reference_path(root, str(item.get("runner_result_json") or ""))
             if os.path.isfile(runner_path):
                 runner = _load_json(runner_path)
-                initial_runners[str(operator)] = runner
+                initial_runners.setdefault(str(operator), runner)
                 if runner.get("status") != "completed" or runner.get("process_mode") != "scan":
                     errors.append(f"initial_f5_sources[{index}] runner must be a completed scan")
                 if runner.get("operator") != operator or runner.get("model") != item.get("model"):
@@ -1250,7 +1475,10 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
                 if output is None:
                     errors.append(f"initial_f5_sources[{index}] runner lacks an f5 output")
                 else:
-                    initial_outputs[str(operator)] = output
+                    lhco_key = os.path.normcase(
+                        _manifest_reference_path(root, str(item.get("lhco_path") or ""))
+                    )
+                    initial_outputs_by_lhco[lhco_key] = output
                     for output_key, source_key in (("lhco_path", "lhco_path"), ("banner_path", "banner_path")):
                         output_path = output.get(output_key)
                         source_path = item.get(source_key)
@@ -1261,8 +1489,56 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
                             errors.append(
                                 f"initial_f5_sources[{index}].{source_key} differs from runner f5 output"
                             )
-        if initial_operators != operators:
-            errors.append("initial_f5_sources must contain exactly one f5 source per operator")
+        if sorted(set(initial_operators), key=lambda key: operators.index(key) if key in operators else len(operators)) != operators:
+            errors.append("initial_f5_sources must cover every claimed operator")
+        for operator in operators:
+            operator_items = [item for item in initial if isinstance(item, dict) and item.get("operator") == operator]
+            direct_items = [
+                item for item in operator_items
+                if item.get("source_kind") == "direct_phase6_scan"
+            ]
+            recovered_items = recovery_sources.get(operator, [])
+            if direct_items and recovered_items:
+                errors.append(f"initial_f5_sources cannot mix direct and recovery sources for {operator}")
+            if len(direct_items) > 1:
+                errors.append(f"initial_f5_sources may contain only one direct source for {operator}")
+            if recovered_items:
+                recovery_path = os.path.join(root, "data", "phase6", "event_count_recovery.json")
+                try:
+                    aggregate = _load_json(recovery_path)
+                    unit = (aggregate.get("units") or {}).get(operator) or {}
+                    if unit.get("status") != "accepted":
+                        errors.append(f"Phase 6 recovery unit {operator} must be accepted")
+                    expected_sources = []
+                    for attempt in unit.get("attempts") or []:
+                        attempt_index = attempt.get("attempt_index")
+                        result = attempt.get("result") or {}
+                        config = attempt.get("config") or {}
+                        for output in result.get("outputs") or []:
+                            if (
+                                isinstance(output, dict)
+                                and output.get("label") == f"np_{operator}_f5"
+                                and int(output.get("loaded_lhco_event_count", 0)) > 0
+                            ):
+                                expected_sources.append((
+                                    attempt_index,
+                                    os.path.normcase(os.path.abspath(output.get("lhco_path", ""))),
+                                    os.path.normcase(os.path.abspath(output.get("banner_path", ""))),
+                                    os.path.normcase(os.path.abspath(config.get("result_json", ""))),
+                                ))
+                    actual_sources = sorted((
+                        item.get("recovery_attempt_index"),
+                        os.path.normcase(_manifest_reference_path(root, str(item.get("lhco_path") or ""))),
+                        os.path.normcase(_manifest_reference_path(root, str(item.get("banner_path") or ""))),
+                        os.path.normcase(_manifest_reference_path(root, str(item.get("runner_result_json") or ""))),
+                    ) for item in recovered_items)
+                    if actual_sources != sorted(expected_sources):
+                        errors.append(
+                            f"initial_f5_sources recovery entries for {operator} must exactly match "
+                            "the successful f5 attempts in Phase 6 recovery metadata"
+                        )
+                except (OSError, ValueError, TypeError) as exc:
+                    errors.append(f"could not verify Phase 6 recovery sources for {operator}: {exc}")
 
         run_config_path = os.path.join(_global_results_root(root), "run_config.json")
         run_config = _load_json(run_config_path) if os.path.exists(run_config_path) else {}
@@ -1309,6 +1585,10 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
             if item.get("operator") != anchor or item.get("scan_label") != "f5":
                 errors.append(
                     f"additional_anchor_f5_sources[{index}] must be anchor_operator f5"
+                )
+            if item.get("source_kind") != "additional_anchor_f5":
+                errors.append(
+                    f"additional_anchor_f5_sources[{index}].source_kind must be additional_anchor_f5"
                 )
             if item.get("round") != index + 1:
                 errors.append("additional anchor rounds must be numbered consecutively from 1")
@@ -1553,8 +1833,12 @@ def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
                                     "differs from shared_f5_merge.json"
                                 )
                             if index < len(initial):
-                                operator = str(declared.get("operator"))
-                                runner_output = initial_outputs.get(operator) or {}
+                                declared_lhco = _manifest_reference_path(
+                                    root, str(declared.get("lhco_path") or "")
+                                )
+                                runner_output = initial_outputs_by_lhco.get(
+                                    os.path.normcase(declared_lhco)
+                                ) or {}
                                 if runner_output.get("loaded_lhco_event_count") != source_count:
                                     errors.append(
                                         f"initial_f5_sources[{index}] loaded count differs from runner f5 output"
@@ -1727,6 +2011,7 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
             data = _load_json(threshold_path)
             anchor = data.get("anchor")
             bad = []
+            validation_errors = _numerical_validation_errors(data)
             if not isinstance(anchor, dict):
                 raise ValueError("threshold_optimization.json must contain an anchor object")
             expected_thresholds = [0.02 * index for index in range(51)]
@@ -1900,15 +2185,12 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
                             if valid_background_inputs:
                                 expected_sigma = float(merged_cs) * shared_count / loaded
                         elif valid_background_inputs and rounds < MAX_ADDITIONAL_ANCHOR_ROUNDS:
-                            expected_status = "additional_anchor_f5_required"
+                            expected_status = "unresolved_zero"
                             if any(item is not None for item in (effective, sigma, lower, upper, point_width)):
                                 errors.append(
                                     f"threshold_scan[{index}] must remain unresolved before three "
                                     "additional anchor rounds"
                                 )
-                            errors.append(
-                                f"threshold_scan[{index}] requires another anchor f5 round before Phase 8 can pass"
-                            )
                         elif valid_background_inputs:
                             expected_status = "half_event_after_three_zero_rounds"
                             expected_effective = 0.5
@@ -1923,7 +2205,7 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
                             errors.append(
                                 f"threshold_scan[{index}].background_status must be {expected_status}"
                             )
-                        if expected_status == "additional_anchor_f5_required":
+                        if expected_status == "unresolved_zero":
                             continue
                         if effective != expected_effective:
                             errors.append(
@@ -1974,10 +2256,11 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
                 if errors:
                     bad.append({"algorithm": algorithm, "errors": errors})
             record.update({
-                "ok": set(anchor) == set(algorithms) and not bad,
+                "ok": set(anchor) == set(algorithms) and not bad and not validation_errors,
                 "expected_algorithms": algorithms,
                 "actual_algorithms": sorted(anchor),
                 "bad_records": bad,
+                "validation_errors": validation_errors,
             })
         except Exception as exc:
             _set_failure(record, "phase8_threshold_content_invalid", str(exc))
@@ -2095,6 +2378,7 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
         selected_algorithm = selection.get("selected_algorithm")
         selected_threshold = selection.get("selected_threshold")
         selection_scope = selection.get("selection_scope")
+        selection_criterion = selection.get("selection_criterion")
         if selection_scope == "per_operator_best" and isinstance(selection.get("operator_selections"), dict):
             operator_selections = selection["operator_selections"]
         record = {
@@ -2104,6 +2388,7 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
             "path": selection_path,
         }
         errors = []
+        expected_anchor = None
         if selected_algorithm not in algorithms:
             errors.append("selected_algorithm is not present in Phase 7")
         anchor_path = os.path.join(root, "data", "phase3", "anchor.json")
@@ -2117,44 +2402,117 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
         if os.path.exists(threshold_path) and selected_algorithm in algorithms:
             threshold_data = _load_json(threshold_path)
             threshold_anchor = threshold_data.get("anchor") or {}
-            expected = (threshold_anchor.get(selected_algorithm) or {}).get("optimal_threshold")
-            if not (_finite_number(expected) and _finite_number(selected_threshold)) or not math.isclose(
-                float(expected), float(selected_threshold), rel_tol=0.0, abs_tol=1e-12
-            ):
-                errors.append("selected_threshold does not equal the Phase 8 optimal threshold")
-            widths = {
-                algorithm: value.get("constraint_width_at_optimal")
-                for algorithm, value in threshold_anchor.items()
-                if isinstance(value, dict) and _finite_number(value.get("constraint_width_at_optimal"))
-            }
-            if set(widths) != set(algorithms):
-                errors.append("Phase 8 optimal constraint widths do not cover every Phase 7 algorithm")
-            elif selected_algorithm in widths:
-                minimum = min(float(value) for value in widths.values())
-                if not math.isclose(float(widths[selected_algorithm]), minimum, rel_tol=1e-12, abs_tol=0.0):
-                    errors.append("selected_algorithm does not have the narrowest anchor S2 interval")
+            if selection_criterion == "narrowest_anchor_S2_constraint_width":
+                expected = (threshold_anchor.get(selected_algorithm) or {}).get("optimal_threshold")
+                if not (_finite_number(expected) and _finite_number(selected_threshold)) or not math.isclose(
+                    float(expected), float(selected_threshold), rel_tol=0.0, abs_tol=1e-12
+                ):
+                    errors.append("default selection threshold does not equal the Phase 8 optimal threshold")
+                widths = {
+                    algorithm: value.get("constraint_width_at_optimal")
+                    for algorithm, value in threshold_anchor.items()
+                    if isinstance(value, dict) and _finite_number(value.get("constraint_width_at_optimal"))
+                }
+                if set(widths) != set(algorithms):
+                    errors.append("Phase 8 optimal constraint widths do not cover every Phase 7 algorithm")
+                elif selected_algorithm in widths:
+                    minimum = min(float(value) for value in widths.values())
+                    if not math.isclose(float(widths[selected_algorithm]), minimum, rel_tol=1e-12, abs_tol=0.0):
+                        errors.append("default selected algorithm does not have the narrowest anchor S2 interval")
+            else:
+                evaluated = [
+                    item.get("threshold")
+                    for item in (threshold_anchor.get(selected_algorithm) or {}).get("threshold_scan") or []
+                    if isinstance(item, dict) and _finite_number(item.get("threshold"))
+                ]
+                if not _finite_number(selected_threshold) or not any(
+                    math.isclose(float(selected_threshold), float(value), rel_tol=0.0, abs_tol=1e-12)
+                    for value in evaluated
+                ):
+                    errors.append("nondefault selected_threshold is not an evaluated Phase 8 threshold")
             if selection_scope == "per_operator_best":
+                comparison_intervals = selection.get("comparison_only_intervals")
+                if not isinstance(comparison_intervals, dict):
+                    comparison_intervals = {}
+                    errors.append(
+                        "per_operator_best requires comparison_only_intervals for non-anchor operators"
+                    )
                 for operator in operators:
                     operator_selection = operator_selections.get(operator) or {}
                     algorithm = operator_selection.get("selected_algorithm")
-                    expected_operator_threshold = (
-                        threshold_anchor.get(algorithm) or {}
-                    ).get("optimal_threshold")
                     actual_operator_threshold = operator_selection.get("selected_threshold")
-                    if not (
-                        _finite_number(expected_operator_threshold)
-                        and _finite_number(actual_operator_threshold)
-                        and math.isclose(
-                            float(expected_operator_threshold),
-                            float(actual_operator_threshold),
-                            rel_tol=0.0,
-                            abs_tol=1e-12,
-                        )
-                    ):
-                        errors.append(
-                            f"operator_selections.{operator}.selected_threshold does not equal "
-                            "the selected algorithm's Phase 8 optimal threshold"
-                        )
+                    if operator == expected_anchor:
+                        if algorithm != selected_algorithm:
+                            errors.append(
+                                f"operator_selections.{operator}.selected_algorithm must equal the "
+                                "top-level anchor selection"
+                            )
+                        if not (
+                            _finite_number(actual_operator_threshold)
+                            and _finite_number(selected_threshold)
+                            and math.isclose(
+                                float(actual_operator_threshold),
+                                float(selected_threshold),
+                                rel_tol=0.0,
+                                abs_tol=1e-12,
+                            )
+                        ):
+                            errors.append(
+                                f"operator_selections.{operator}.selected_threshold must equal the "
+                                "top-level anchor threshold"
+                            )
+                    else:
+                        candidates = comparison_intervals.get(operator)
+                        if not isinstance(candidates, dict) or not candidates:
+                            errors.append(
+                                f"comparison_only_intervals.{operator} must contain at least one "
+                                "scientifically usable evaluated strategy"
+                            )
+                            continue
+                        widths: Dict[str, float] = {}
+                        for candidate_algorithm, candidate in candidates.items():
+                            if candidate_algorithm not in algorithms or not isinstance(candidate, dict):
+                                errors.append(
+                                    f"comparison_only_intervals.{operator}.{candidate_algorithm} is invalid"
+                                )
+                                continue
+                            interval = candidate.get("S2")
+                            threshold = candidate.get("selected_threshold")
+                            if not _valid_interval(interval) or not _finite_number(threshold):
+                                errors.append(
+                                    f"comparison_only_intervals.{operator}.{candidate_algorithm} must "
+                                    "contain a valid S2 interval and numeric selected_threshold"
+                                )
+                                continue
+                            widths[candidate_algorithm] = float(interval[1]) - float(interval[0])
+                        selected_candidate = candidates.get(algorithm) or {}
+                        expected_operator_threshold = selected_candidate.get("selected_threshold")
+                        if algorithm not in widths:
+                            errors.append(
+                                f"operator_selections.{operator}.selected_algorithm is not a valid "
+                                "recorded candidate"
+                            )
+                        elif not math.isclose(
+                            widths[algorithm], min(widths.values()), rel_tol=1e-12, abs_tol=0.0
+                        ):
+                            errors.append(
+                                f"operator_selections.{operator}.selected_algorithm does not have the "
+                                "narrowest recorded S2 constraint interval"
+                            )
+                        if not (
+                            _finite_number(expected_operator_threshold)
+                            and _finite_number(actual_operator_threshold)
+                            and math.isclose(
+                                float(expected_operator_threshold),
+                                float(actual_operator_threshold),
+                                rel_tol=0.0,
+                                abs_tol=1e-12,
+                            )
+                        ):
+                            errors.append(
+                                f"operator_selections.{operator}.selected_threshold differs from the "
+                                "recorded minimum-width candidate"
+                            )
         else:
             errors.append("Phase 8 threshold_optimization.json is missing or selected algorithm is invalid")
         record.update({"ok": not errors, "invalid_values": errors})
@@ -2172,7 +2530,7 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
         try:
             data = _load_json(table_path)
             constraints = data.get("constraints")
-            bad = []
+            bad = _numerical_validation_errors(data)
             if data.get("selection_scope") != selection_scope:
                 bad.append("selection_scope differs from algorithm_selection.json")
             if selection_scope == "anchor_operator_only":
@@ -2226,25 +2584,85 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
         checks.append(record)
 
     csv_rel = os.path.join("data", "phase9", "constraint_table.csv")
-    checks.append({
-        "rel_path": csv_rel + ":columns",
+    csv_path = os.path.join(root, csv_rel)
+    required_columns = (
+        "operator",
+        "selected_algorithm",
+        "selected_threshold",
+        "S2_lower",
+        "S2_upper",
+        "S3_lower",
+        "S3_upper",
+        "S5_lower",
+        "S5_upper",
+    )
+    csv_record = {
+        "rel_path": csv_rel + ":content",
         "severity": "abort",
-        "source": "phase9_constraint_csv_schema",
-        **_csv_has_columns(
-            os.path.join(root, csv_rel),
-            (
-                "operator",
-                "selected_algorithm",
-                "selected_threshold",
-                "S2_lower",
-                "S2_upper",
-                "S3_lower",
-                "S3_upper",
-                "S5_lower",
-                "S5_upper",
-            ),
-        ),
-    })
+        "source": "phase9_constraint_csv_content",
+        "path": csv_path,
+    }
+    csv_errors = []
+    try:
+        with open(csv_path, "r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            missing_columns = [
+                column for column in required_columns
+                if not reader.fieldnames or column not in reader.fieldnames
+            ]
+            rows = list(reader)
+        if missing_columns:
+            csv_errors.append(f"missing columns: {missing_columns}")
+        row_operators = [row.get("operator") for row in rows]
+        if len(rows) != len(operators) or set(row_operators) != set(operators):
+            csv_errors.append("CSV must contain exactly one row per claimed operator")
+        if len(row_operators) != len(set(row_operators)):
+            csv_errors.append("CSV contains duplicate operator rows")
+        table_data = _load_json(table_path) if os.path.exists(table_path) else {}
+        table_constraints = table_data.get("constraints") or {}
+        for row_number, row in enumerate(rows, start=2):
+            operator = row.get("operator")
+            expected_constraint = table_constraints.get(operator) or {}
+            if selection_scope == "per_operator_best":
+                expected_selection = operator_selections.get(operator) or {}
+                expected_algorithm = expected_selection.get("selected_algorithm")
+                expected_threshold = expected_selection.get("selected_threshold")
+            else:
+                expected_algorithm = selected_algorithm
+                expected_threshold = selected_threshold
+            if row.get("selected_algorithm") != expected_algorithm:
+                csv_errors.append(f"row {row_number} selected_algorithm differs from JSON")
+            try:
+                actual_threshold = float(row.get("selected_threshold", ""))
+                if not _finite_number(expected_threshold) or not math.isclose(
+                    actual_threshold, float(expected_threshold), rel_tol=0.0, abs_tol=1e-12
+                ):
+                    csv_errors.append(f"row {row_number} selected_threshold differs from JSON")
+            except (TypeError, ValueError):
+                csv_errors.append(f"row {row_number} selected_threshold must be numeric")
+            for significance in ("S2", "S3", "S5"):
+                expected_interval = expected_constraint.get(significance)
+                try:
+                    actual_interval = [
+                        float(row.get(f"{significance}_lower", "")),
+                        float(row.get(f"{significance}_upper", "")),
+                    ]
+                except (TypeError, ValueError):
+                    csv_errors.append(f"row {row_number} {significance} bounds must be numeric")
+                    continue
+                if not _valid_interval(expected_interval) or any(
+                    not math.isclose(actual, float(expected), rel_tol=1e-12, abs_tol=1e-15)
+                    for actual, expected in zip(actual_interval, expected_interval)
+                ):
+                    csv_errors.append(f"row {row_number} {significance} differs from JSON")
+        csv_record.update({
+            "ok": not csv_errors,
+            "row_count": len(rows),
+            "errors": csv_errors,
+        })
+    except Exception as exc:
+        _set_failure(csv_record, "phase9_constraint_csv_invalid", str(exc))
+    checks.append(csv_record)
     return checks
 
 
@@ -2603,19 +3021,23 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
         selection = _load_json(os.path.join(root, "data", "phase9", "algorithm_selection.json"))
         expected_production = selection.get("selected_algorithm")
         production_ok = lock.get("production_algorithm") == expected_production
-        expected_scope = selection.get("selection_scope", "anchor_operator_only")
-        actual_scope = lock.get("selection_scope", "anchor_operator_only")
+        expected_scope = selection.get("selection_scope")
+        actual_scope = lock.get("selection_scope")
         scope_ok = actual_scope == expected_scope
-        operator_selections_ok = True
+        operator_selections_ok = isinstance(lock.get("operator_selections"), dict)
         if expected_scope == "per_operator_best":
             operator_selections_ok = (
                 isinstance(selection.get("operator_selections"), dict)
                 and lock.get("operator_selections") == selection.get("operator_selections")
             )
+        elif expected_scope == "anchor_operator_only":
+            operator_selections_ok = operator_selections_ok and not lock.get("operator_selections")
         provenance = lock.get("selection_provenance")
         provenance_ok = (
             isinstance(provenance, dict)
-            and bool(provenance.get("selection_method"))
+            and provenance.get("selection_method") == selection.get("selection_criterion")
+            and provenance.get("selection_rationale") == selection.get("selection_rationale")
+            and provenance.get("selection_evidence") == selection.get("selection_evidence")
             and provenance.get("source") == "data/phase9/algorithm_selection.json"
         )
 
@@ -2677,7 +3099,8 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
         if not ok:
             record["failure_reason"] = (
                 "Phase 11 did not freeze the actual Phase 7/9 algorithms, parameters, "
-                "selection provenance, and packaged implementation checksums consistently"
+                "selection criterion, rationale, evidence, operator assignments, and "
+                "packaged implementation checksums consistently"
             )
     except Exception as exc:
         _set_failure(record, "algorithm_lock_invalid", str(exc))
@@ -3360,16 +3783,35 @@ def _phase7_content_checks(root: str) -> List[Dict[str, Any]]:
             })
 
     required_score_columns = ["event_index", "score", "label", "source_csv"]
+    datasets = [("sm", os.path.join("data", "phase7", "sm.csv"))]
+    datasets.extend(
+        (f"np_{op}", os.path.join("data", "phase7", f"np_{op}.csv"))
+        for op in operators
+    )
     for alg in algorithms:
-        rels = [os.path.join("data", "phase7", "scores", f"{alg}_sm_scores.csv")]
-        rels.extend(os.path.join("data", "phase7", "scores", f"{alg}_np_{op}_scores.csv") for op in operators)
-        for rel in rels:
+        for dataset, source_rel in datasets:
+            rel = os.path.join("data", "phase7", "scores", f"{alg}_{dataset}_scores.csv")
             path = os.path.join(root, rel)
+            schema = _csv_has_columns(path, required_score_columns)
+            identity_errors = []
+            if schema.get("ok"):
+                try:
+                    source_path = os.path.join(root, source_rel)
+                    source_rows = _csv_data_row_count(source_path)
+                    score_rows, _, identity_errors = _shared_score_counts(
+                        root, path, [], source_path
+                    )
+                    if score_rows != source_rows:
+                        identity_errors.append("score/source CSV row counts differ")
+                except (OSError, csv.Error) as exc:
+                    identity_errors.append(f"could not verify score identities: {exc}")
+            schema["ok"] = bool(schema.get("ok")) and not identity_errors
+            schema["identity_errors"] = identity_errors
             checks.append({
                 "rel_path": rel,
                 "severity": "abort",
-                "source": "phase7_score_csv_schema",
-                **_csv_has_columns(path, required_score_columns),
+                "source": "phase7_score_csv_schema_and_identity",
+                **schema,
             })
 
     return checks
@@ -3377,6 +3819,9 @@ def _phase7_content_checks(root: str) -> List[Dict[str, Any]]:
 
 def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = None) -> List[Dict[str, Any]]:
     checks: List[Dict[str, Any]] = []
+    required_items, checklist_reference_path, required_items_error = _phase10_required_items(
+        required_ids_json
+    )
     required_checklist_ids, checklist_reference_path, checklist_reference_error = _phase10_required_checklist_ids(
         required_ids_json
     )
@@ -3388,6 +3833,24 @@ def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = Non
         "ok": checklist_reference_error is None and bool(required_checklist_ids),
         "error": checklist_reference_error,
         "required_id_count": len(required_checklist_ids),
+    })
+    contract_path = os.path.join(_global_results_root(root), "deliverables_contract.json")
+    frozen_items = None
+    contract_error = None
+    try:
+        contract = _load_json(contract_path)
+        frozen_items = (contract.get("template") or {}).get("phase10_required_manuscript_items")
+    except Exception as exc:
+        contract_error = f"Could not read frozen Phase 10 manuscript items: {exc}"
+    checks.append({
+        "rel_path": "deliverables_contract.json:phase10_required_manuscript_items",
+        "severity": "abort",
+        "source": "phase10_frozen_required_content",
+        "path": contract_path,
+        "ok": required_items_error is None and contract_error is None and frozen_items == required_items,
+        "error": required_items_error or contract_error,
+        "frozen_item_count": len(frozen_items) if isinstance(frozen_items, list) else 0,
+        "canonical_item_count": len(required_items),
     })
 
     draft_glob = os.path.join(root, "data", "phase10", "manuscript_draft_v1.*")
@@ -3530,9 +3993,11 @@ def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = Non
                 (checklist_items_by_id.get(item_id) or {}).get("status") == "missing"
                 for item_id in required_checklist_ids
             )
-            pass_consistent = (
-                status != "pass"
-                or (not major_issues and not missing_checklist_ids and not missing_trace_ids and not checklist_has_missing_required)
+            required_content_complete = (
+                not major_issues
+                and not missing_checklist_ids
+                and not missing_trace_ids
+                and not checklist_has_missing_required
             )
             remaining_consistent = status != "issues_remaining" or validation.get("continued_to_cleanup") is True
             checks.append({
@@ -3544,14 +4009,14 @@ def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = Non
                     status in {"pass", "issues_remaining"}
                     and not validation_bad_fields
                     and checklist_path_exists
-                    and pass_consistent
+                    and required_content_complete
                     and remaining_consistent
                 ),
                 "status": status,
                 "bad_fields": validation_bad_fields,
                 "checklist_path_exists": checklist_path_exists,
                 "major_issue_count": len(major_issues) if isinstance(major_issues, list) else "non_list",
-                "pass_consistent": pass_consistent,
+                "required_content_complete": required_content_complete,
                 "issues_remaining_consistent": remaining_consistent,
             })
         except Exception as exc:
@@ -3778,6 +4243,8 @@ def audit_expected_outputs(
     checks.extend(_cross_file_acceptance_definition_checks(root))
     checks.extend(_recovery_metadata_checks(root))
     checks.extend(_phase3_runner_manifest_checks(root))
+    for numerical_phase in ("3", "4", "5", "6", "8"):
+        checks.extend(_runner_result_boundary_checks(root, numerical_phase))
     checks.extend(_phase3_completeness_checks(root))
     checks.extend(_phase6_scan_matrix_checks(root))
     checks.extend(_phase6_progress_checks(root))
@@ -3839,6 +4306,8 @@ def audit_phase_deliverables(
     phase = str(phase)
     if phase in {"5", "6"}:
         checks.extend(_recovery_metadata_checks(root))
+    if phase in {"3", "4", "5", "6", "8"}:
+        checks.extend(_runner_result_boundary_checks(root, phase))
     if phase == "3":
         checks.extend(_phase3_runner_manifest_checks(root))
         checks.extend(_phase3_completeness_checks(root))

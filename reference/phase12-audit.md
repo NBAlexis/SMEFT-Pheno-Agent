@@ -176,10 +176,10 @@ with workflow_step(logger, "12", "check_numerical_sanity"):
 |---|---|
 | 3 | At least one operator claimed globally; `anchor` is set |
 | 4 | `cs_sm > 0`; `coefficient_ranges.json` has one finite two-significant-digit `c_scan` in `(0, 1e3)` for every claimed operator |
-| 7 | All selected algorithms trained; AUC, model paths, feature schema, score definitions, and pseudocode recorded |
-| 8 | shared `f5` sources cover every claimed operator; extra sources are anchor `f5` only; the merged cross-section is the source-banner arithmetic mean; score-derived counts follow the three-round/half-event rule; every fit uses the matching shared `sigma0_after_cut`; `csfit_np >= 0`; dataset summary complete |
-| 9 | `fmin < 0 < fmax`; final constraints follow the recorded `anchor_operator_only` or `per_operator_best` scope |
-| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`; `manuscript_checklist.json` exists and was run for the final draft; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
+| 7 | All selected algorithms trained; AUC recorded as descriptive/diagnostic information only; model paths, feature schema, score definitions, and pseudocode recorded |
+| 8 | shared `f5` sources cover every claimed operator; repeated initial sources are proven Phase 6 recovery attempts; extra Phase 8 sources are anchor `f5` only; the merged cross-section is the source-banner arithmetic mean; score identities and counts follow the selected-threshold three-round/half-event rule; every fit uses the matching shared `sigma0_after_cut`; `csfit_np >= 0`; independent numerical review passes; dataset summary complete |
+| 9 | `fmin < 0 < fmax`; final constraints follow the recorded `anchor_operator_only` or `per_operator_best` scope; all scientifically valid strategies are compared only by expected constraint-interval width and never by AUC; JSON and CSV agree; independent numerical review passes |
+| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`, every frozen required manuscript item is present, and `major_issues` is empty; `issues_remaining` contains minor issues only; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
 | 11 | Replay manifest phase order is exactly 2 through 9; every packaged input/code checksum matches; no replay command is executed |
 
 Do not require `S=5` intervals to be narrower than `S=3` or `S=2`; larger
@@ -203,10 +203,10 @@ with workflow_step(logger, "12", "check_cross_phase_consistency"):
 | Phase 6 scanned points == Phase 8 scan CSV points | Same operator/point list | Abort |
 | Phase 6 weighted-order guard | Conservative bound extracted from Phase 4 SM and Phase 5 pure-NP process folders is used by the runner | Abort |
 | Event-count recovery records | No selected sample below `10%` requested; otherwise recovery remains incomplete and the producing Phase cannot pass | Abort |
-| Phase 9 selection scope | `anchor_operator_only` uses the anchor-selected strategy for all operators; `per_operator_best` records and uses one valid Phase 7 strategy for every claimed operator | Abort |
+| Phase 9 selection scope | `anchor_operator_only` is the default when scientifically adequate; user-requested or evidence-driven `per_operator_best` records rationale/evidence and uses the narrowest-interval scientifically valid recorded Phase 7 strategy for every claimed operator | Abort |
 | Phase 9 selection == manuscript final selection | Same scope and same per-operator algorithm/threshold assignments | Warn |
 | Phase 8 event denominators | Actual loaded LHCO counts from CutExperiment, positive for every scan point | Abort if missing, zero, equal-by-assumption to `nev_scan`, or taken from banner |
-| Phase 8 shared `f5` background | Initial sources equal all claimed operators; additional rounds are anchor `f5` only and no more than three; formulas match observed or half-event counts; same algorithm value is used by every operator fit | Abort |
+| Phase 8 shared `f5` background | The set of initial-source operators equals all claimed operators; accepted Phase 6 recovery may contribute multiple listed attempts for one operator; additional rounds are anchor `f5` only and no more than three; formulas match observed or half-event counts; each algorithm/threshold uses the same shared background value in every operator fit | Abort |
 | Manuscript table == Phase 9 table | Match | Warn and record in manuscript validation |
 | `reference_paper_plan.papers_to_cite` entries are included in `literature_plan.comparison_citations` | Same comparison-citation set | Warn |
 | `anchor.json` model matches Phase 4/5 SM model | Same model | Abort |

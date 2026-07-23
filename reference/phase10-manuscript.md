@@ -225,8 +225,10 @@ Mandatory manuscript content:
 - adequate references
 
 Do not use text such as `~2500` for event counts. Do not use event counts from
-MG5 banners as actual generated counts. Do not choose a different final
-algorithm per operator unless the user requested that mode.
+MG5 banners as actual generated counts. Follow the recorded Phase 9 selection
+scope. The anchor-selected common strategy is the default; a per-operator
+strategy is also valid when requested by the user or adopted from recorded
+scientific evidence that the common strategy was inadequate.
 
 ## Step 10.5: Validate and Revise
 
@@ -279,19 +281,25 @@ Bounded loop:
 2. Run completeness pass 2 and repair remaining missing content.
 3. Run completeness pass 3 and repair remaining missing content.
 4. Validate the resulting draft.
-5. If validation fails, revise within the remaining revision budget, validate
-   again, and archive remaining issues after the budget is exhausted.
+5. If validation finds a missing required manuscript item, repair it and
+   validate again. Use the remaining revision budget for optional prose and
+   presentation improvements.
 
 Maximum revisions after the first draft: `2`.
 
-Validation failures do not block cleanup, Phase 11, or Phase 12 after the revision limit.
+The revision limit does not excuse a missing required manuscript item. Phase 10
+cannot complete until every frozen required item is present (or uses the
+explicitly allowed documented missing reason, such as unavailable Feynman
+diagrams) and no major issue remains.
 Write:
 
 ```
 results/data/phase10/manuscript_validation.json
 ```
 
-with `status: "pass"` or `status: "issues_remaining"`.
+with `status: "pass"` or `status: "issues_remaining"`. Use
+`issues_remaining` only for minor writing or presentation issues after every
+required item is complete; it cannot contain a major issue.
 
 ## Feynman Diagram Evidence
 
@@ -366,6 +374,7 @@ require self-repair or bounded manuscript revision, not user interaction.
 
 After the final manuscript and validation file are written:
 
-1. Log remaining validation issues, if any.
+1. Confirm that every frozen required manuscript item is complete and log any
+   remaining minor validation issues.
 2. Proceed immediately to cleanup and then Phase 11.
 3. Do not ask for confirmation, present options, or wait for user input.

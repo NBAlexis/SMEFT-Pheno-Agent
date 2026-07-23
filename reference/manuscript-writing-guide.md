@@ -45,7 +45,10 @@ Use this section order unless the user explicitly requested a different journal 
 - Treat HTML as a formal paper output only when both target and local LaTeX are
   unavailable. If either side has `pdflatex` or `latexmk`, the final deliverable
   must include `manuscript.pdf` and `manuscript.tex`.
-- The final constraints must use the single algorithm selected by the first non-zero operator.
+- The final constraints must use the Phase 9 selection scope exactly. Treat the
+  anchor-selected common strategy as the default, and explain the recorded
+  scientific reason when a user-requested or evidence-driven per-operator
+  strategy is used.
 - The significance formula and constraint-root rules must match [`significance-reference.md`](significance-reference.md).
 - The reference-paper plan must not force user-list papers into the bibliography; cite them only when the manuscript makes a direct comparison or uses a specific claim.
 - The literature plan must use role-based citation groups and include relevant arXiv identifiers from [`manuscript-literature-bank.md`](manuscript-literature-bank.md).

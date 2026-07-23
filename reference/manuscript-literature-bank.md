@@ -82,4 +82,6 @@ Use these as claim templates. Select foundational citations for broad SMEFT/ML c
 - Dimension-8 operators are important in aQGC phenomenology, especially in channels where lower-dimensional contributions are absent or suppressed.
 - Muon colliders provide clean, high-energy environments for electroweak and gauge-coupling studies.
 - ML-assisted event selection can exploit correlations in multidimensional kinematic observables beyond rectangular cuts.
-- Algorithm performance for event selection is task-dependent; AUC alone is not the final physics criterion when constraints are optimized through fitted cross-sections.
+- Algorithm performance for event selection is task-dependent; AUC is
+  descriptive or diagnostic only, while final strategy comparison uses expected
+  coefficient-constraint interval width from fitted selected cross-sections.

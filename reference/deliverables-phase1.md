@@ -8,8 +8,8 @@ Must deliver:
   a valid canonical SHA-256 hash, plus the frozen deliverables-template hash.
 - `results/deliverables_contract.json`, bound to the research-objective hash and
   containing the immutable deliverable expansion template and template hash.
-- `results/contract_lock.json`, binding the exact research and deliverables
-  contract hashes as one immutable set.
+- `results/contract_lock.json`, binding the exact `objective_sha256` and
+  `template_sha256` values for the two contract files as one immutable set.
 - The research contract contains directory-tree SHA-256 identities for every
   selected UFO model and a file SHA-256 identity for the selected Delphes card.
 - In SSH/WSL2 mode, identical local-control and target copies of all four JSON

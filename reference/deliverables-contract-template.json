@@ -15,12 +15,45 @@
     "min_items": "Minimum number of entries in a top-level JSON array",
     "min_data_rows": "Minimum number of non-empty CSV data rows"
   },
+  "phase10_required_manuscript_items": [
+    {"id": "structure.logical_sections", "required_content": "scientific-paper section logic"},
+    {"id": "physics.process_setup", "required_content": "process, collider, beams, luminosity, detector, tool versions"},
+    {"id": "physics.model_anchor", "required_content": "UFO model, operators, anchor operator"},
+    {"id": "figures.feynman_diagrams", "required_content": "SM/NP diagrams or documented missing reasons"},
+    {"id": "scan.bounds_all_ops", "required_content": "scan lower/upper bounds for every claimed operator"},
+    {"id": "data.actual_lhco_counts", "required_content": "requested and actual loaded LHCO event counts"},
+    {"id": "data.final_state_cut", "required_content": "exact final-state particle-number cut"},
+    {"id": "data.dataset_table", "required_content": "loaded/cut counts, raw/cut cross-sections, units, cuts"},
+    {"id": "data.numeric_source_consistency", "required_content": "manuscript numeric event counts, cross-sections, fit coefficients, and constraints checked against upstream evidence files"},
+    {"id": "data.selection_denominators", "required_content": "threshold counts and efficiency denominators"},
+    {"id": "data.public_csv_score_paths", "required_content": "public CSV and score CSV paths"},
+    {"id": "features.table_units_order", "required_content": "ordered feature table with units"},
+    {"id": "features.preprocessing", "required_content": "preprocessing/standardization and fit sample"},
+    {"id": "ml.algorithm_descriptions", "required_content": "self-contained algorithm descriptions"},
+    {"id": "ml.algorithm_pseudocode", "required_content": "pseudocode for every trained algorithm"},
+    {"id": "ml.score_definitions", "required_content": "mathematical score definitions and direction"},
+    {"id": "ml.score_histograms_all_np", "required_content": "SM and all pure-NP score histograms"},
+    {"id": "ml.anchor_roc", "required_content": "anchor SM-vs-NP ROC plot"},
+    {"id": "selection.single_strategy", "required_content": "recorded selection scope and the strategy used for every operator"},
+    {"id": "selection.threshold_optimization", "required_content": "threshold scan and selected threshold"},
+    {"id": "selection.anchor_s2_vs_threshold", "required_content": "anchor S_stat=2 range versus threshold"},
+    {"id": "fits.scan_fit_plots_all_ops", "required_content": "SM+NP points versus fits for all claimed operators"},
+    {"id": "fits.fixed_intercept", "required_content": "fixed f=0 selected cross-section statement"},
+    {"id": "fits.numeric_coefficients", "required_content": "numeric fit coefficients with units"},
+    {"id": "fits.coefficient_table_all_ops", "required_content": "fit coefficient table for all claimed operators"},
+    {"id": "constraints.significance_formula", "required_content": "correct formula and units"},
+    {"id": "constraints.real_roots", "required_content": "real-root bound convention"},
+    {"id": "constraints.final_s235_table", "required_content": "final S_stat=2,3,5 table for all claimed operators"},
+    {"id": "constraints.algorithm_bar", "required_content": "anchor S_stat=2 algorithm-comparison bar plot"},
+    {"id": "citations.required_references", "required_content": "toolchain and relevant theory/ML citations"}
+  ],
   "cross_file_acceptance_rules": [
     {
       "id": "phase3.complete_coefficient_loop",
       "phase": "3",
       "requirements": [
         "model_status top-level keys equal run_config models",
+        "every numerical runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the locked per-run minimum event count",
         "diagram-producing models have positive coefficient_count",
         "tested_count and coefficient record count equal coefficient_count",
         "every coefficient has c_default, sigma, and result_json",
@@ -31,10 +64,25 @@
       ]
     },
     {
+      "id": "phase4.mg5_delphes_lhco_and_event_minimum",
+      "phase": "4",
+      "requirements": [
+        "the SM baseline runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and nev_phase4 as the per-run minimum"
+      ]
+    },
+    {
+      "id": "phase5.mg5_delphes_lhco_and_event_minimum",
+      "phase": "5",
+      "requirements": [
+        "the SM and every pure-NP runner result prove MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the applicable locked per-run minimum"
+      ]
+    },
+    {
       "id": "phase6.complete_scan_matrix",
       "phase": "6",
       "requirements": [
         "scan_manifest keys equal Phase 3 claimed operators",
+        "every numerical scan runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the locked per-run minimum event count",
         "every operator has point_count 11 and labels f0 through f10 in order",
         "every operator has positive numeric c_scan and non-empty scan_expression"
       ]
@@ -53,8 +101,9 @@
       "phase": "8",
       "requirements": [
         "threshold_optimization anchor keys equal Phase 7 algorithm keys",
-        "each threshold scan contains exactly 51 entries with finite required values",
-        "the shared f5 background contains every claimed operator exactly once",
+        "every additional anchor f5 numerical runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the locked per-run minimum event count",
+        "each threshold scan contains exactly 51 entries; unavailable numerical values are null only for a documented zero-event status",
+        "the initial shared f5 sources cover every claimed operator; repeated sources are allowed only when Phase 6 recovery metadata proves that they contributed to the accepted sample",
         "every operator-algorithm fit uses the shared f5 background value",
         "csfit_sm equals sigma0_after_cut_pb and csfit_np is non-negative"
       ]
@@ -64,7 +113,8 @@
       "phase": "9",
       "requirements": [
         "selected algorithm is a Phase 7 anchor algorithm",
-        "selected threshold equals its Phase 8 optimal threshold",
+        "scientifically valid strategies are compared only by expected S2 coefficient-constraint interval width; AUC is never a final selection criterion",
+        "the selected threshold minimizes the applicable S2 coefficient-constraint interval width among scientifically valid evaluated candidates",
         "constraint keys equal Phase 3 claimed operators",
         "every operator has finite negative-to-positive S2, S3, and S5 intervals"
       ]
@@ -285,7 +335,7 @@
         {"path": "data/phase8/shared_f5_merge.json", "type": "json", "json_type": "object", "required_keys": ["output_lhco_path", "merged_loaded_lhco_event_count", "source_count_sum", "merged_cross_section_pb", "cross_section_rule", "source_records"]},
         {"path": "data/phase8/csv/shared_f5.csv", "type": "csv"},
         {"path": "data/phase8/scan_event_counts.json", "type": "json"},
-        {"path": "data/phase8/threshold_optimization.json", "type": "json", "json_type": "object", "required_keys": ["anchor"]},
+        {"path": "data/phase8/threshold_optimization.json", "type": "json", "json_type": "object", "required_keys": ["anchor", "numerical_validation"]},
         {"path": "data/phase8/dataset_summary.json", "type": "json", "json_type": "object", "min_properties": 1},
         {"path": "plots/threshold_comparison.pdf", "type": "pdf"},
         {"path": "plots/anchor_s2_constraint_range_vs_threshold.pdf", "type": "pdf"}
@@ -339,8 +389,8 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "fixed",
       "items": [
-        {"path": "data/phase9/algorithm_selection.json", "type": "json", "json_type": "object", "required_keys": ["anchor_operator", "selected_algorithm", "selected_threshold", "selection_criterion", "selection_scope", "source_threshold_optimization_entry"]},
-        {"path": "data/phase9/constraint_table.json", "type": "json", "json_type": "object", "required_keys": ["selection_scope", "anchor_operator", "selected_algorithm", "constraints"]},
+        {"path": "data/phase9/algorithm_selection.json", "type": "json", "json_type": "object", "required_keys": ["anchor_operator", "selected_algorithm", "selected_threshold", "selection_criterion", "selection_scope", "selection_rationale", "selection_evidence", "source_threshold_optimization_entry"]},
+        {"path": "data/phase9/constraint_table.json", "type": "json", "json_type": "object", "required_keys": ["selection_scope", "anchor_operator", "selected_algorithm", "constraints", "numerical_validation"]},
         {"path": "data/phase9/constraint_table.csv", "type": "csv", "required_columns": ["operator", "selected_algorithm", "selected_threshold", "S2_lower", "S2_upper", "S3_lower", "S3_upper", "S5_lower", "S5_upper"]},
         {"path": "plots/anchor_s2_algorithm_constraint_bar.pdf", "type": "pdf"}
       ]

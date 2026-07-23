@@ -23,6 +23,40 @@ CONTRACT_LOCK_NAME = "contract_lock.json"
 RESOLVED_DELIVERABLES_NAME = "deliverables_resolved.json"
 
 
+FIXED_METHOD_REQUIREMENTS = {
+    "event_generation_and_detector_simulation": (
+        "Generate every numerical analysis sample with MadGraph5 and run Delphes; "
+        "events taken directly from an undetected LHE file are not analysis events."
+    ),
+    "minimum_event_statistics": (
+        "With debug=false, use the locked full-size event counts as per-run scientific "
+        "minima and add full-size runs and merge them whenever statistical support is "
+        "not scientifically sufficient. With debug=true, use the locked reduced event "
+        "counts only to test the complete workflow; do not claim strict scientific "
+        "reliability from debug results."
+    ),
+    "machine_learning_event_selection": (
+        "Convert Delphes LHCO events to CSV and perform final event selection with a "
+        "trained machine-learning score threshold; do not replace it with a traditional "
+        "hand-designed kinematic cut analysis."
+    ),
+    "coefficient_constraint_method": (
+        "Derive expected coefficient constraints only from fitted cross-sections after "
+        "machine-learning selection and the declared signal-significance formula."
+    ),
+    "strategy_comparison_method": (
+        "Compare scientifically valid selection strategies only by expected coefficient-"
+        "constraint interval width; AUC is descriptive or diagnostic and never a final "
+        "strategy-selection criterion."
+    ),
+    "phase10_publication_content": (
+        "Complete every manuscript item frozen in phase10_required_manuscript_items; "
+        "earlier phase evidence must support those items without adding unrelated "
+        "scientific requirements."
+    ),
+}
+
+
 def _load_json(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8-sig") as handle:
         data = json.load(handle)
@@ -200,6 +234,7 @@ def research_objective(config: Dict[str, Any]) -> Dict[str, Any]:
         "debug": bool(config.get("debug", False)),
         "event_counts_locked": config.get("event_counts_locked"),
         "locked_event_counts": config.get("locked_event_counts"),
+        "fixed_method_requirements": dict(FIXED_METHOD_REQUIREMENTS),
         "significance_strategy": {
             "levels": [2, 3, 5],
         },

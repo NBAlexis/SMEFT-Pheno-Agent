@@ -33,6 +33,23 @@ def _write_json(path: str, data: Dict[str, Any]) -> None:
         f.write("\n")
 
 
+def _write_cross_section_summary(
+    path: str,
+    label: str,
+    cross_section_pb: float,
+    source_banners: List[str],
+) -> None:
+    """Write the canonical Phase 5/6 cross-section text for a recovered sample."""
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write("# Recovery-merged cross-section summary; not an original MG5 banner.\n")
+        handle.write(f"# Dataset label: {label}\n")
+        handle.write(f"Integrated weight (pb) : {cross_section_pb:.17g}\n")
+        handle.write("# Source MG5 banners:\n")
+        for source in source_banners:
+            handle.write(f"# - {os.path.abspath(source)}\n")
+
+
 def _read_optional_json(path: str) -> Dict[str, Any]:
     try:
         if path and os.path.exists(path):
@@ -248,16 +265,27 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
             requested_event_count=requested,
             metadata_path=output_meta,
         )
+        output_banner = os.path.join(merged_output_dir, f"{label}_banner.txt")
+        _write_cross_section_summary(
+            output_banner,
+            label,
+            merge_meta["merged_cross_section_pb"],
+            merge_meta["source_banners_retained"],
+        )
         merged_outputs.append({
             "label": label,
             "status": "merged",
             "lhco_path": output_lhco,
+            "banner_path": output_banner,
             "merge_metadata_path": output_meta,
             "loaded_lhco_event_count": merge_meta["merged_loaded_lhco_event_count"],
             "requested_event_count": requested,
             "fraction": merge_meta["merged_loaded_lhco_event_count"] / float(requested),
             "merged_cross_section_pb": merge_meta["merged_cross_section_pb"],
             "source_banners_retained": merge_meta["source_banners_retained"],
+            "source_lhco_paths": [
+                record["lhco_path"] for record in merge_meta.get("source_records", [])
+            ] or list(sources),
         })
 
     final_totals = {
@@ -287,6 +315,43 @@ def recover_lhco_count(config: Dict[str, Any]) -> Dict[str, Any]:
         "warnings": warnings,
         "status": "accepted" if threshold_reached else "recovery_incomplete",
     }
+
+    canonical_result_path = base.get("result_json")
+    if canonical_result_path:
+        canonical_outputs = []
+        for item in merged_outputs:
+            canonical_outputs.append({
+                "label": item["label"],
+                "lhco_path": item.get("lhco_path"),
+                "banner_path": item.get("banner_path"),
+                "cross_section_pb": item.get("merged_cross_section_pb"),
+                "loaded_lhco_event_count": item.get("loaded_lhco_event_count"),
+                "recovery_merge_metadata_path": item.get("merge_metadata_path"),
+                "source_banner_paths": item.get("source_banners_retained", []),
+                "source_lhco_paths": item.get("source_lhco_paths", []),
+            })
+        canonical_result = copy.deepcopy(base)
+        canonical_result.update({
+            "status": "completed" if threshold_reached else "recovery_incomplete",
+            "result_kind": "event_count_recovery_summary",
+            "event_generator": "MadGraph5",
+            "detector_simulation": "Delphes",
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "outputs": canonical_outputs,
+            "run_folders": [
+                folder
+                for attempt in attempts
+                for folder in (attempt.get("result") or {}).get("run_folders", [])
+            ],
+            "recovery_attempt_result_jsons": [
+                attempt.get("config", {}).get("result_json")
+                for attempt in attempts
+                if attempt.get("config", {}).get("result_json")
+            ],
+            "recovery_metadata_path": metadata_path,
+        })
+        _write_json(os.path.abspath(os.path.expanduser(canonical_result_path)), canonical_result)
+
     _write_recovery_record(metadata_path, metadata, recovery_unit, required_units)
     return metadata
 

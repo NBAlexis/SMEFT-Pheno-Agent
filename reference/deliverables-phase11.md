@@ -13,8 +13,9 @@ Must deliver under each run root:
   Its `algorithm_lock` must
   freeze every actually trained algorithm and the Phase 9 production algorithm,
   including implementation identity, hyperparameters, score
-  definition, model-output path, selection provenance, packaged implementation
-  checksums, and a valid canonical lock hash.
+  definition, model-output path, explicit selection scope, exact Phase 9
+  rationale/evidence provenance, packaged implementation checksums, and a valid
+  canonical lock hash.
 - Frozen copies of `research_contract.json`, `deliverables_contract.json`, and
   `contract_lock.json` referenced by the replay manifest.
 - All phase drivers and helpers referenced by the manifest under
