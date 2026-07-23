@@ -117,8 +117,9 @@ Use every `required_items[].id` from that file in both
 - Numeric coefficients in
   `sigma(f) = sigma0_after_cut + f sigma_int + f^2 sigma_NP` are reported with
   units.
-- The manuscript states that `sigma0_after_cut` is fixed from the `f=0` scan
-  point after cuts/selection, not fitted.
+- The manuscript states that `sigma0_after_cut` is fixed from the shared Phase 8
+  `f5` pool after cuts/selection, not fitted. It states whether observed events
+  or the three-round half-event convention set the final value.
 - A fit-coefficient table covers every globally claimed operator.
 - Fit quality or residual information is included if Phase 8 produced it;
   otherwise the manuscript states that no fit-quality diagnostic was retained.
@@ -130,8 +131,9 @@ Use every `required_items[].id` from that file in both
   luminosity units, and cross-section units are defined.
 - Constraint bounds are described as real roots: upper is the smallest positive
   real root, lower is the largest negative real root.
-- Final constraints at the requested significance levels use the anchor-selected
-  algorithm.
+- Final constraints at the requested significance levels follow the recorded
+  `selection_scope`; for `per_operator_best`, every row identifies its selected
+  algorithm and threshold.
 - The final expected coefficient constraint table lists every globally claimed
   operator at `S_stat = 2, 3, 5`.
 - Toolchain citations and relevant SMEFT/aQGC/nTGC/ML-in-HEP citations are

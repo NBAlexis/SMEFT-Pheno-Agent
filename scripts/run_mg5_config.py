@@ -64,6 +64,7 @@ PROCESS_MODES = {
     "pure_sm": "NP=0",
     "pure_np": "NP>0",
     "sm_np": "",
+    "sm_np_point": "",
     "scan": "",
 }
 
@@ -201,6 +202,7 @@ def _default_process_folder(
         "pure_sm": "SM",
         "pure_np": "NP",
         "sm_np": "SMNP",
+        "sm_np_point": "SMNPPOINT",
         "scan": "SCAN",
     }[process_mode]
     label_part = f"_{run_label}" if run_label else ""
@@ -419,6 +421,15 @@ def validate_config(cfg: Dict[str, Any]) -> None:
                 raise ValueError(f"{process_mode} requires target_coefficient.index")
             if coefficient_mode == "explicit" and "value" not in target:
                 raise ValueError("coefficient_mode='explicit' requires target_coefficient.value")
+            if coefficient_mode == "explicit":
+                try:
+                    coefficient_value = float(target["value"])
+                except (TypeError, ValueError):
+                    raise ValueError("target_coefficient.value must be a finite number")
+                if not math.isfinite(coefficient_value):
+                    raise ValueError("target_coefficient.value must be a finite number")
+            if process_mode == "sm_np_point" and coefficient_mode != "explicit":
+                raise ValueError("sm_np_point requires coefficient_mode='explicit'")
 
 
 def _create_process(cfg: Dict[str, Any], process_folder: str) -> Dict[str, Any]:
@@ -679,8 +690,11 @@ def run_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "target_coefficient": cfg.get("target_coefficient"),
         "coefficient_mode": cfg.get("coefficient_mode"),
         "c_scan": cfg.get("c_scan"),
+        "weighted_order": cfg.get("weighted_order"),
         "ebeam1": cfg.get("ebeam1"),
         "ebeam2": cfg.get("ebeam2"),
+        "polarization": cfg.get("polarization"),
+        "delphes_card": cfg.get("delphes_card"),
         "madspin": cfg.get("madspin", {"enabled": False}),
         "survey_profile": cfg.get("survey_profile", "default"),
         "outputs": [],

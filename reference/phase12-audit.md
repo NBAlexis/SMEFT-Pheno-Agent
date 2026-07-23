@@ -177,8 +177,8 @@ with workflow_step(logger, "12", "check_numerical_sanity"):
 | 3 | At least one operator claimed globally; `anchor` is set |
 | 4 | `cs_sm > 0`; `coefficient_ranges.json` has one finite two-significant-digit `c_scan` in `(0, 1e3)` for every claimed operator |
 | 7 | All selected algorithms trained; AUC, model paths, feature schema, score definitions, and pseudocode recorded |
-| 8 | fixed `sigma0_after_cut`/`csfit_sm > 0`, `fit_intercept_fixed=true`, `csfit_np >= 0`, dataset summary complete, residual warnings recorded |
-| 9 | `fmin < 0 < fmax`; one anchor-selected algorithm is used for all final constraints |
+| 8 | shared `f5` sources cover every claimed operator; extra sources are anchor `f5` only; the merged cross-section is the source-banner arithmetic mean; score-derived counts follow the three-round/half-event rule; every fit uses the matching shared `sigma0_after_cut`; `csfit_np >= 0`; dataset summary complete |
+| 9 | `fmin < 0 < fmax`; final constraints follow the recorded `anchor_operator_only` or `per_operator_best` scope |
 | 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`; `manuscript_checklist.json` exists and was run for the final draft; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
 | 11 | Replay manifest phase order is exactly 2 through 9; every packaged input/code checksum matches; no replay command is executed |
 
@@ -188,7 +188,7 @@ significance thresholds can require larger coefficient deviations.
 ## Step 12.3: Cross-Phase Consistency
 
 Relevant invariants:
-[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+[`workflow-invariants.md`](workflow-invariants.md) Selection Scope,
 Publication Data, and Actual Event Counts.
 
 ```python
@@ -203,9 +203,10 @@ with workflow_step(logger, "12", "check_cross_phase_consistency"):
 | Phase 6 scanned points == Phase 8 scan CSV points | Same operator/point list | Abort |
 | Phase 6 weighted-order guard | Conservative bound extracted from Phase 4 SM and Phase 5 pure-NP process folders is used by the runner | Abort |
 | Event-count recovery records | No selected sample below `10%` requested; otherwise recovery remains incomplete and the producing Phase cannot pass | Abort |
-| Phase 9 selected algorithm is chosen from anchor operator comparison | Same anchor-selected algorithm | Abort |
-| Phase 9 selected algorithm == manuscript final algorithm | Same algorithm for all final constraints | Warn |
+| Phase 9 selection scope | `anchor_operator_only` uses the anchor-selected strategy for all operators; `per_operator_best` records and uses one valid Phase 7 strategy for every claimed operator | Abort |
+| Phase 9 selection == manuscript final selection | Same scope and same per-operator algorithm/threshold assignments | Warn |
 | Phase 8 event denominators | Actual loaded LHCO counts from CutExperiment, positive for every scan point | Abort if missing, zero, equal-by-assumption to `nev_scan`, or taken from banner |
+| Phase 8 shared `f5` background | Initial sources equal all claimed operators; additional rounds are anchor `f5` only and no more than three; formulas match observed or half-event counts; same algorithm value is used by every operator fit | Abort |
 | Manuscript table == Phase 9 table | Match | Warn and record in manuscript validation |
 | `reference_paper_plan.papers_to_cite` entries are included in `literature_plan.comparison_citations` | Same comparison-citation set | Warn |
 | `anchor.json` model matches Phase 4/5 SM model | Same model | Abort |

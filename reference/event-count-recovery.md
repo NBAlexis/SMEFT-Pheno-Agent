@@ -96,4 +96,7 @@ Merge recovery attempts with the LHCO merge helper.
 - Phase 7: when converting pure samples to CSV, record loaded counts from the
   exact LHCO file being converted.
 - Phase 8: when computing `cs_cut`, use each scan point's loaded count as the
-  denominator. If the scan point is merged, use the merged loaded count.
+  denominator. If the scan point is merged, use the merged loaded count. The
+  separate shared-`f5` zero-selection procedure is defined in
+  `phase8-selection.md`; it adds anchor `f5` samples without changing
+  `nev_scan` and is not the low-generated-event recovery ladder above.

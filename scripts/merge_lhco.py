@@ -88,10 +88,19 @@ def merge_lhco(
     source_banner_paths: Optional[List[Optional[str]]] = None,
     requested_event_count: Optional[int] = None,
     metadata_path: Optional[str] = None,
+    cross_section_rule: str = "loaded_event_count_weighted_average",
 ) -> Dict[str, Any]:
     """Merge parseable non-empty LHCO files and return metadata."""
     if not source_lhco_paths:
         raise ValueError("At least one source LHCO path is required")
+    if cross_section_rule not in {
+        "loaded_event_count_weighted_average",
+        "banner_arithmetic_mean",
+    }:
+        raise ValueError(
+            "cross_section_rule must be loaded_event_count_weighted_average "
+            "or banner_arithmetic_mean"
+        )
 
     output_abs = os.path.abspath(os.path.expanduser(output_lhco_path))
     os.makedirs(os.path.dirname(output_abs), exist_ok=True)
@@ -125,12 +134,17 @@ def merge_lhco(
             f"{merged_count_record['loaded_lhco_event_count']} != {source_total}"
         )
 
-    weighted_cross_section_pb = None
+    merged_cross_section_pb = None
     if all(r["cross_section_pb"] is not None for r in records):
-        weighted_cross_section_pb = sum(
-            float(r["cross_section_pb"]) * int(r["loaded_lhco_event_count"])
-            for r in records
-        ) / float(source_total)
+        if cross_section_rule == "banner_arithmetic_mean":
+            merged_cross_section_pb = sum(
+                float(r["cross_section_pb"]) for r in records
+            ) / float(len(records))
+        else:
+            merged_cross_section_pb = sum(
+                float(r["cross_section_pb"]) * int(r["loaded_lhco_event_count"])
+                for r in records
+            ) / float(source_total)
 
     metadata = {
         "output_lhco_path": output_abs,
@@ -140,10 +154,8 @@ def merge_lhco(
         "source_count_sum": source_total,
         "source_banners_retained": [r["banner_path"] for r in records],
         "source_records": records,
-        "merged_cross_section_pb": weighted_cross_section_pb,
-        "cross_section_rule": (
-            "loaded-LHCO-event-count-weighted average of source banner cross-sections"
-        ),
+        "merged_cross_section_pb": merged_cross_section_pb,
+        "cross_section_rule": cross_section_rule,
     }
 
     if metadata_path:
@@ -165,6 +177,11 @@ def main() -> int:
     parser.add_argument("--requested-event-count", type=int, default=None)
     parser.add_argument("--source", action="append", default=[], help="Source LHCO path")
     parser.add_argument("--banner", action="append", default=[], help="Source banner path")
+    parser.add_argument(
+        "--cross-section-rule",
+        choices=("loaded_event_count_weighted_average", "banner_arithmetic_mean"),
+        default="loaded_event_count_weighted_average",
+    )
     args = parser.parse_args()
 
     try:
@@ -177,6 +194,9 @@ def main() -> int:
                 source_banner_paths=cfg.get("source_banner_paths"),
                 requested_event_count=cfg.get("requested_event_count", args.requested_event_count),
                 metadata_path=cfg.get("metadata_path", args.metadata),
+                cross_section_rule=cfg.get(
+                    "cross_section_rule", "loaded_event_count_weighted_average"
+                ),
             )
         else:
             metadata = merge_lhco(
@@ -186,6 +206,7 @@ def main() -> int:
                 source_banner_paths=args.banner or None,
                 requested_event_count=args.requested_event_count,
                 metadata_path=args.metadata,
+                cross_section_rule=args.cross_section_rule,
             )
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)

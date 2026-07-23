@@ -94,6 +94,8 @@ Write `replay_manifest.json` with this minimum structure:
   "algorithm_lock": {
     "trained_algorithms": [],
     "production_algorithm": "stable algorithm key",
+    "selection_scope": "anchor_operator_only | per_operator_best",
+    "operator_selections": {},
     "selection_provenance": {
       "selection_method": "recorded Phase 9 method",
       "source": "data/phase9/algorithm_selection.json"
@@ -128,6 +130,12 @@ expansion is recorded. Production steps must not read original Phase 3-9
 results. Original results are evidence used to construct this package, not
 inputs used by `replay.sh`.
 
+For `anchor_operator_only`, `production_algorithm` is the single final
+algorithm and `operator_selections` may be empty. For `per_operator_best`, keep
+`production_algorithm` as the anchor-comparison result for backward-compatible
+provenance and copy the complete Phase 9 `operator_selections` map into the
+lock. Replay steps must apply that map exactly.
+
 ## Replay Script
 
 Generate a POSIX Bash entry point that:
@@ -143,8 +151,9 @@ Generate a POSIX Bash entry point that:
 6. permits resume only when the recorded completed-step checksums still match;
 7. writes outputs below the output root documented in `data_files_report.md`.
 
-Writing the script is the Phase 11 action. Do not invoke it during Phase 11 or
-Phase 12.
+After packaging, read the finished replay package and record your judgment on
+whether one command can produce the expected Phase 2-9 numerical results.
+Trust that judgment; do not execute the replay or use a prescribed checklist.
 
 ## Replay User Guide
 

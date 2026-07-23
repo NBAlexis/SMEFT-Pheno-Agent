@@ -17,7 +17,7 @@ Required top-level keys:
 | `algorithms` | trained algorithms, hyperparameters, AUC, score interpretation |
 | `selection` | threshold scan, selected threshold, efficiencies |
 | `fits` | quadratic fit coefficients and scan points |
-| `constraints` | final constraints at S=2,3,5 using the anchor-selected algorithm |
+| `constraints` | final constraints at S=2,3,5, recorded selection scope, and the algorithm and threshold used for each operator |
 | `figures` | available figure paths, captions, and section placement |
 | `reference_papers` | user-list papers used for writing style, method comparison, or result comparison |
 | `citations` | mandatory toolchain citations and selected literature citations, grouped by role |
@@ -138,7 +138,9 @@ For every reported fit, record:
 - threshold
 - scan coefficient values
 - coefficient scan lower and upper bounds
-- fixed `sigma0_after_cut` from the `f=0` scan point after cuts/selection
+- fixed `sigma0_after_cut` from the shared `f5` pool after cuts/selection,
+  including its source operators, additional anchor rounds, observed passing
+  count, and any half-event convention
 - fitted coefficients in
   `sigma(f) = sigma0_after_cut + f sigma_int + f^2 sigma_NP`
 - `fit_intercept_fixed=true` and `f0_label="f5"` for the standard 11-point scan

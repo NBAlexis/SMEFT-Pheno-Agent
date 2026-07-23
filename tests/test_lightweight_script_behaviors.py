@@ -9,6 +9,8 @@ from unittest.mock import patch
 from scripts.beam_energy import compute_sqrt_s
 from scripts.archive_mg5_outputs import archive_mg5_outputs
 from scripts.count_lhco_events import count_lhco_events
+import scripts.calculate_shared_f5_background as shared_f5_module
+from scripts.calculate_shared_f5_background import calculate_shared_f5_background
 from scripts.double_check_zero_cross_section import double_check_zero_cross_section
 from scripts.durable_exec import job_paths, remote_start_command, remote_status_command, safe_name
 from scripts.extract_cross_section import extract_cross_section
@@ -46,6 +48,52 @@ def write_text(path, text):
 
 
 class LightweightScriptBehaviorTests(unittest.TestCase):
+    def test_shared_f5_background_uses_observed_count(self):
+        result = calculate_shared_f5_background(2.0, 100, 4, 0)
+        self.assertEqual(result["status"], "accepted")
+        self.assertEqual(result["convention"], "observed_events")
+        self.assertEqual(result["effective_passing_event_count"], 4.0)
+        self.assertAlmostEqual(result["sigma0_after_cut_pb"], 0.08)
+
+    def test_shared_f5_background_requires_three_anchor_rounds_for_zero(self):
+        for rounds in (0, 1, 2):
+            result = calculate_shared_f5_background(2.0, 100, 0, rounds)
+            self.assertEqual(result["status"], "additional_anchor_f5_required")
+            self.assertIsNone(result["sigma0_after_cut_pb"])
+            self.assertIsNone(result["effective_passing_event_count"])
+
+    def test_shared_f5_background_uses_half_event_after_three_rounds(self):
+        result = calculate_shared_f5_background(2.0, 100, 0, 3)
+        self.assertEqual(result["convention"], "half_event_after_three_zero_rounds")
+        self.assertEqual(result["passing_event_count"], 0)
+        self.assertEqual(result["effective_passing_event_count"], 0.5)
+        self.assertAlmostEqual(result["sigma0_after_cut_pb"], 0.01)
+
+    def test_shared_f5_background_rejects_invalid_counts(self):
+        with self.assertRaisesRegex(ValueError, "positive integer"):
+            calculate_shared_f5_background(1.0, 0, 0, 0)
+        with self.assertRaisesRegex(ValueError, "between zero"):
+            calculate_shared_f5_background(1.0, 10, 11, 0)
+        with self.assertRaisesRegex(ValueError, r"in \[0, 3\]"):
+            calculate_shared_f5_background(1.0, 10, 0, 4)
+
+    def test_shared_f5_background_cli_writes_json(self):
+        with tempfile.TemporaryDirectory() as root:
+            input_path = os.path.join(root, "input.json")
+            output_path = os.path.join(root, "nested", "output.json")
+            with open(input_path, "w", encoding="utf-8") as handle:
+                json.dump({
+                    "merged_cross_section_pb": 2.0,
+                    "loaded_lhco_event_count": 100,
+                    "passing_event_count": 0,
+                    "additional_anchor_f5_rounds": 3,
+                }, handle)
+            with patch.object(sys, "argv", ["calculate_shared_f5_background.py", "--input", input_path, "--output", output_path]):
+                with patch("builtins.print"):
+                    self.assertEqual(shared_f5_module.main(), 0)
+            with open(output_path, encoding="utf-8") as handle:
+                self.assertEqual(json.load(handle)["sigma0_after_cut_pb"], 0.01)
+
     def test_archive_mg5_outputs_moves_small_files_and_only_deletes_large_files(self):
         with tempfile.TemporaryDirectory() as root:
             run_root = os.path.join(root, "results")
@@ -190,6 +238,39 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             _beam_lines(launch_cfg),
             ["set ebeam1 = 1500", "set ebeam2 = 1500", "set polbeam1 = -0.8", "set polbeam2 = 0.3"],
         )
+        point_cfg = {
+            "mg5path": "/unused",
+            "model": "AQGCm_UFO",
+            "process": "e+ e- > a a",
+            "process_mode": "sm_np_point",
+            "nevents": 100,
+            "ebeam1": 1500.0,
+            "ebeam2": 1500.0,
+            "operator": "o_1",
+            "coefficient_mode": "explicit",
+            "target_coefficient": {"index": 2, "value": 0.0},
+            "output_label": "shared_f5_anchor_round_1",
+        }
+        validate_config(point_cfg)
+        self.assertEqual(
+            _coefficient_lines(point_cfg, parsed),
+            ["set anoinputs 1 0.0", "set anoinputs 2 0.0"],
+        )
+        self.assertEqual(
+            _labels_for_runs(point_cfg, 1),
+            ["shared_f5_anchor_round_1"],
+        )
+        point_cfg["output_labels"] = ["one", "two"]
+        with self.assertRaisesRegex(ValueError, "exactly 1"):
+            validate_config(point_cfg)
+        point_cfg["output_labels"] = ["one"]
+        point_cfg["coefficient_mode"] = "default"
+        with self.assertRaisesRegex(ValueError, "requires coefficient_mode='explicit'"):
+            validate_config(point_cfg)
+        point_cfg["coefficient_mode"] = "explicit"
+        point_cfg["target_coefficient"]["value"] = float("nan")
+        with self.assertRaisesRegex(ValueError, "finite number"):
+            validate_config(point_cfg)
         self.assertEqual(
             _labels_for_runs({"process_mode": "scan", "operator": "o_1"}, 3),
             ["np_o_1_f0", "np_o_1_f1", "np_o_1_f2"],
@@ -414,8 +495,29 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertAlmostEqual(metadata["merged_cross_section_pb"], 3.0)
             self.assertEqual(
                 metadata["cross_section_rule"],
-                "loaded-LHCO-event-count-weighted average of source banner cross-sections",
+                "loaded_event_count_weighted_average",
             )
+
+            arithmetic_output = os.path.join(root, "merged", "arithmetic.lhco")
+            arithmetic = merge_lhco(
+                [first, second],
+                arithmetic_output,
+                cutexperiment_path=fake_ce,
+                source_banner_paths=[first_banner, second_banner],
+                requested_event_count=4,
+                cross_section_rule="banner_arithmetic_mean",
+            )
+            self.assertAlmostEqual(arithmetic["merged_cross_section_pb"], 3.5)
+            self.assertEqual(arithmetic["cross_section_rule"], "banner_arithmetic_mean")
+
+            with self.assertRaisesRegex(ValueError, "cross_section_rule"):
+                merge_lhco(
+                    [first],
+                    os.path.join(root, "merged", "invalid.lhco"),
+                    cutexperiment_path=fake_ce,
+                    source_banner_paths=[first_banner],
+                    cross_section_rule="invalid",
+                )
 
     def test_zero_cross_section_checker_requires_logs_and_no_substantial_lhe(self):
         with tempfile.TemporaryDirectory() as root:
@@ -574,6 +676,37 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
                 order = handle.read()
             self.assertIn("set sde_strategy = 0", order)
             self.assertIn("set hard_survey = 2", order)
+
+    def test_sm_np_point_launches_one_explicit_zero_coefficient_run(self):
+        with tempfile.TemporaryDirectory() as mg5:
+            process_folder = "proc"
+            events_dir = os.path.join(mg5, process_folder, "Events")
+            os.makedirs(events_dir, exist_ok=True)
+            cfg = {
+                "mg5path": mg5,
+                "process_mode": "sm_np_point",
+                "nevents": 10,
+                "ebeam1": 120,
+                "ebeam2": 120,
+                "coefficient_mode": "explicit",
+                "target_coefficient": {"index": 2, "value": 0.0},
+                "launch_order_filename": "point_order.txt",
+                "log_dir": os.path.join(mg5, "logs"),
+            }
+
+            def fake_run(_mg5path, _order_name):
+                os.makedirs(os.path.join(events_dir, "run_01"), exist_ok=True)
+                return {"returncode": 0, "stdout": "ok", "stderr": "", "mg5_steps": {}}
+
+            parsed = {"block_name": "anoinputs", "coefficients": {"1": 2.0, "2": 3.0}}
+            with patch("scripts.run_mg5_config.run_mg5", side_effect=fake_run):
+                _, runs = _launch_process(cfg, process_folder, parsed)
+
+            self.assertEqual(runs, ["run_01"])
+            with open(os.path.join(mg5, "point_order.txt"), encoding="utf-8") as handle:
+                order = handle.read()
+            self.assertIn("set anoinputs 1 0.0", order)
+            self.assertIn("set anoinputs 2 0.0", order)
 
     def test_load_run_config_validates_core_schema_and_defaults(self):
         with tempfile.TemporaryDirectory() as root:

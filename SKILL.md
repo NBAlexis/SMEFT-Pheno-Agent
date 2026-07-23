@@ -266,7 +266,7 @@ Only after `tested_count == total_coefficients_across_all_models` may Phase 3 ch
 | 5 | Pure SM/NP samples | [`reference/phase5-pure-samples.md`](reference/phase5-pure-samples.md) |
 | 6 | Coefficient scans | [`reference/phase6-scan.md`](reference/phase6-scan.md) |
 | 7 | ML training | [`reference/phase7-ml-training.md`](reference/phase7-ml-training.md) |
-| 8 | Selection and fitting | [`reference/phase8-selection.md`](reference/phase8-selection.md) |
+| 8 | Selection and fitting | [`reference/phase8-selection.md`](reference/phase8-selection.md) and [`reference/phase8-shared-f5.md`](reference/phase8-shared-f5.md) |
 | 9 | Constraints | [`reference/phase9-constraints.md`](reference/phase9-constraints.md) |
 | 10 | Manuscript | [`reference/phase10-manuscript.md`](reference/phase10-manuscript.md) |
 | Cleanup | Process-folder collection | [`reference/cleanup.md`](reference/cleanup.md) |

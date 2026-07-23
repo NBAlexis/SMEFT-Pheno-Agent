@@ -430,7 +430,7 @@ results/algorithms/
 ## Validation
 
 Relevant invariants:
-[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+[`workflow-invariants.md`](workflow-invariants.md) Selection Scope,
 Publication Data, Actual Event Counts, and Execution Continuity.
 
 - `0.5 < AUC <= 1.0` for anchor training

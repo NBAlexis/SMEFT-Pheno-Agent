@@ -75,7 +75,7 @@
     },
     {
       "id": "selection.single_strategy",
-      "required_content": "one anchor-selected strategy for all operators"
+      "required_content": "recorded selection scope and the strategy used for every operator"
     },
     {
       "id": "selection.threshold_optimization",

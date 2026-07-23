@@ -54,7 +54,8 @@
       "requirements": [
         "threshold_optimization anchor keys equal Phase 7 algorithm keys",
         "each threshold scan contains exactly 51 entries with finite required values",
-        "every operator-algorithm fit fixes the f5 intercept and has finite coefficients",
+        "the shared f5 background contains every claimed operator exactly once",
+        "every operator-algorithm fit uses the shared f5 background value",
         "csfit_sm equals sigma0_after_cut_pb and csfit_np is non-negative"
       ]
     },
@@ -279,6 +280,10 @@
       "condition": "at_least_one_claimed_operator",
       "selector": "fixed",
       "items": [
+        {"path": "data/phase8/shared_f5_background.json", "type": "json", "json_type": "object", "required_keys": ["schema_version", "source_operators", "anchor_operator", "initial_f5_sources", "additional_anchor_f5_sources", "additional_anchor_f5_rounds", "loaded_lhco_event_count", "surviving_final_state_event_count", "merged_cross_section_pb", "cross_section_rule", "algorithms"]},
+        {"path": "data/phase8/shared_f5.lhco", "type": "lhco"},
+        {"path": "data/phase8/shared_f5_merge.json", "type": "json", "json_type": "object", "required_keys": ["output_lhco_path", "merged_loaded_lhco_event_count", "source_count_sum", "merged_cross_section_pb", "cross_section_rule", "source_records"]},
+        {"path": "data/phase8/csv/shared_f5.csv", "type": "csv"},
         {"path": "data/phase8/scan_event_counts.json", "type": "json"},
         {"path": "data/phase8/threshold_optimization.json", "type": "json", "json_type": "object", "required_keys": ["anchor"]},
         {"path": "data/phase8/dataset_summary.json", "type": "json", "json_type": "object", "min_properties": 1},
@@ -304,6 +309,16 @@
       "selector": "operator_scan_label_algorithm",
       "items": [
         {"path": "data/phase8/scores/{algorithm}/np_{operator}_{scan_label}_scores.csv", "type": "csv", "required_columns": ["event_index", "score", "source_csv"]}
+      ]
+    },
+    {
+      "id": "phase8.shared-f5-score",
+      "phase": "8",
+      "scope": "run_root",
+      "condition": "at_least_one_claimed_operator",
+      "selector": "algorithm",
+      "items": [
+        {"path": "data/phase8/scores/{algorithm}/shared_f5_scores.csv", "type": "csv", "required_columns": ["event_index", "score", "source_csv"]}
       ]
     },
     {

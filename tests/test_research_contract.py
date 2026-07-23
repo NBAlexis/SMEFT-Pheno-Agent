@@ -194,6 +194,8 @@ class ResearchContractTests(unittest.TestCase):
         paths = {item["path"] for item in report["resolved"]}
         self.assertIn("data/phase6/np_o_1_f1.lhco", paths)
         self.assertIn("data/phase8/scores/mlp/np_o_2_f0_scores.csv", paths)
+        self.assertIn("data/phase8/shared_f5_background.json", paths)
+        self.assertIn("data/phase8/scores/mlp/shared_f5_scores.csv", paths)
         self.assertIn("data/phase8/csfit_o_2_bdt.json", paths)
         self.assertIn("data/phase3/results/model_a.json", paths)
         self.assertNotIn("results/data/phase3/results/model_a.json", paths)

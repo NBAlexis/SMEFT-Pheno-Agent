@@ -66,12 +66,12 @@ claimed = {
 ```
 
 ### `operator_claims.json`
-Maps global index -> operator metadata:
+Maps each global operator key `o_N` to its metadata:
 ```json
 {
-  "1": {"model": "AQGCm_UFO", "anoinput_idx": 1, "name": "fS0"},
-  "2": {"model": "AQGCm_UFO", "anoinput_idx": 2, "name": "fS1"},
-  "3": {"model": "AQGCs_UFO", "anoinput_idx": 1, "name": "fM0"},
+  "o_1": {"model": "AQGCm_UFO", "anoinput_idx": 1, "name": "fS0"},
+  "o_2": {"model": "AQGCm_UFO", "anoinput_idx": 2, "name": "fS1"},
+  "o_3": {"model": "AQGCs_UFO", "anoinput_idx": 1, "name": "fM0"},
   ...
 }
 ```
@@ -204,7 +204,7 @@ For each coefficient `fi` in this model:
    - If `sigma_i > 0` and `fi` NOT in `claimed`:
      - Assign next global index `g_idx`
      - `claimed[fi] = model_name`
-     - `operator_claims[g_idx] = {"model": model_name, "anoinput_idx": idx, "name": fi}`
+     - `operator_claims[f"o_{g_idx}"] = {"model": model_name, "anoinput_idx": idx, "name": fi}`
      - Record cross-section: `cross_sections[fi] = {"sigma": sigma_i, "c_default": c_default, "model": model_name, "global_idx": g_idx}`
      - If this is the first non-zero operator across all models, set it as `anchor`
    - If `sigma_i > 0` and `fi` IS in `claimed`, log the duplicate and do not assign a new global index.
@@ -295,7 +295,7 @@ logger.phase_complete("3")
 
 ```
 results/data/phase3/
-  operator_claims.json       # {global_idx: {model, anoinput_idx, name}}
+  operator_claims.json       # {o_N: {model, anoinput_idx, name}}
   cross_sections.json        # {"model:coefficient": {sigma, c_default, model, global_idx}} for all tested
   model_status.json          # {model: {has_feynman_diagrams, create_np_result_json, coefficient_count, tested_count, coefficients: {fi: {c_default, sigma, result_json}}}}
   anchor.json                # {global_idx, model, anoinput_idx, name}

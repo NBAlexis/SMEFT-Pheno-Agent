@@ -6,8 +6,9 @@ reading the workflow logs.
 
 ## Abstract
 
-Include process, collider energy, luminosity, model family, anchor-selected
-algorithm, and the main constraints. Do not mention workflow internals.
+Include process, collider energy, luminosity, model family, recorded selection
+scope, selected algorithm or algorithms, and the main constraints. Do not
+mention workflow internals.
 
 ## Introduction
 
@@ -86,7 +87,7 @@ Manuscript:
   trained algorithms
 - curve showing the anchor operator's `S_stat = 2` expected coefficient
   constraint range as a function of threshold
-- final anchor-selected algorithm
+- final selection scope and selected algorithm or algorithms
 
 Do not choose a different best algorithm or threshold separately for each
 operator.
@@ -105,7 +106,7 @@ Include:
   globally claimed operator
 - significance formula from [`significance-reference.md`](significance-reference.md), with all symbols defined
 - final constraint table for every globally claimed operator at S=2,3,5 using
-  the anchor-selected algorithm
+  the algorithm and threshold recorded for each operator by the final selection scope
 - optional comparison table for non-selected algorithms, clearly labeled
 
 When discussing constraint intervals, state that the upper bound is the smallest

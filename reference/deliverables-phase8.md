@@ -3,6 +3,17 @@
 Consumes: Phase 6 scans and Phase 7 algorithms/features/scores.
 
 Must deliver:
+- A shared Phase 8 `f5` LHCO pool at `results/data/phase8/shared_f5.lhco`,
+  formed initially from exactly one `f5` sample for every Phase 3 claimed
+  operator and extended only by the allowed additional anchor `f5` rounds.
+- `results/data/phase8/shared_f5_merge.json`, retaining every source LHCO and
+  banner record plus the merged loaded count and arithmetic mean of source
+  banner cross-sections.
+- `results/data/phase8/csv/shared_f5.csv`, produced from the merged LHCO with
+  the same feature extraction used for scan data.
+- `results/data/phase8/shared_f5_background.json`, recording the source
+  operators, anchor-only additional `f5` rounds, merged counts, and one fixed
+  background record for every trained algorithm.
 - Public scan CSV files for every claimed operator and every `f0`-`f10` point.
 - Per-event scan score CSVs for every trained algorithm, every claimed
   operator, and every scan point:

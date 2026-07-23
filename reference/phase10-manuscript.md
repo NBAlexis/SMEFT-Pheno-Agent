@@ -100,7 +100,7 @@ HTML requirements:
 ## Step 10.2: Build Manuscript Evidence
 
 Relevant invariants:
-[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+[`workflow-invariants.md`](workflow-invariants.md) Selection Scope,
 Publication Data, and Actual Event Counts.
 
 ```python
@@ -221,7 +221,7 @@ Mandatory manuscript content:
 - fit-coefficient table covering every globally claimed operator
 - anchor-operator `S_stat = 2` algorithm-comparison bar plot
 - final `S_stat = 2, 3, 5` constraint table for all globally claimed operators
-  using the anchor-selected algorithm from Phase 9
+  using the algorithm and threshold required by the recorded Phase 9 selection scope
 - adequate references
 
 Do not use text such as `~2500` for event counts. Do not use event counts from

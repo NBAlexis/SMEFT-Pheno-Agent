@@ -3,7 +3,7 @@
 > **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
 ## Purpose
-For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold. In multi-model mode, threshold optimization uses the **anchor operator's** scan data only. The optimal threshold is then applied to ALL globally claimed operators.
+For each trained ML algorithm, apply its threshold to scan samples, fit the selected cross-section, and find the optimal threshold. In multi-model mode, threshold optimization uses the **anchor operator's** scan data. Every operator fit uses one shared `f5` event pool for the fixed background term.
 
 ## Prerequisite
 
@@ -28,6 +28,14 @@ for fitting and plotting:
 ```python
 scan_coeffs = [-c_scan + 0.2 * c_scan * n for n in range(11)]
 ```
+
+## Step 8.0: Build the Shared `f5` Event Pool
+
+Follow [`phase8-shared-f5.md`](phase8-shared-f5.md) completely. It defines the
+canonical Phase 6 sources, banner arithmetic mean, single-point anchor runner,
+score-derived event counts, three-round zero handling, output fields, and
+required checks. Do not use a half-event value before the third additional
+round.
 
 ## Step 8.1: Convert Scan LHCO to CSV
 
@@ -101,9 +109,10 @@ event_index, score, source_csv
 ```
 
 Before final Phase 9 selection, candidate score CSVs may include
-`pass_algorithm_optimal_threshold`. After the single final production strategy
-is selected, final-strategy score CSVs may include `pass_final_strategy`. Do not
-write any generic or ambiguous optimal-threshold pass flag.
+`pass_algorithm_optimal_threshold`. After the final selection scope is applied,
+the score CSVs used for each operator's final constraint may include
+`pass_final_strategy`. Do not write any generic or ambiguous optimal-threshold
+pass flag.
 
 ## Step 8.3: Optimize Threshold Per Algorithm (using anchor operator)
 
@@ -134,13 +143,17 @@ from the MG5 banner.
 
 ### Threshold Scan Per Algorithm
 
-For **each algorithm**, for each threshold in 51 points on [0, 1]:
+For **each algorithm**, use exactly
+`[0.00, 0.02, ..., 0.98, 1.00]`. Apply the zero-count procedure in
+[`phase8-shared-f5.md`](phase8-shared-f5.md) before calculating an interval.
 
 ```python
 with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
                    inputs={"algorithm": alg_name, "num_thresholds": 51}):
 ```
 1. Count passing events per scan point: `m_x` for each scan coefficient value `c_x`. Reconstruct `c_x` from the operator's Phase 6 manifest `c_scan` using `[-c_scan + 0.2 * c_scan * n for n in range(11)]`.
+   A threshold with zero passing events in every anchor scan point is recorded
+   as `no_selected_scan_events` and excluded from optimization.
 2. Compute cut cross-section:
    ```
    cs_cut_x = cs_x * m_x / loaded_event_count_x
@@ -148,9 +161,10 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
    where `cs_x` is `outputs[*].cross_section_pb` from the corresponding Phase 6
    runner result JSON, and `loaded_event_count_x` is the actual LHCO event
    count from CutExperiment. The Phase 6 runner already parsed the banner and
-   recorded this value; Phase 8 does not run MadGraph or reload the complete
-   MadGraph reference. If the value is missing or non-finite, repair the Phase
-   6 result rather than inventing or reparsing it in Phase 8.
+   recorded this value. Except for the explicitly defined additional anchor `f5`
+   rounds in Step 8.0, Phase 8 does not rerun MadGraph. If the value is missing
+   or non-finite, repair the Phase 6 result rather than inventing or reparsing it
+   in Phase 8.
    The total selection efficiency is `m_x / loaded_event_count_x`. If useful,
    also record conditional ML efficiency as
    `m_x / surviving_final_state_event_count_x`.
@@ -158,11 +172,11 @@ with workflow_step(logger, "8", f"optimize_threshold_{alg_name}",
    ```
    csfit(f) = sigma0_after_cut + f*csfit_int + f^2*csfit_np
    ```
-   where `sigma0_after_cut` is the cut cross-section of the scan point with
-   coefficient `f = 0`. For the required scan expression
-   `[-c_scan + 0.2 * c_scan * n for n in range(11)]`, this is the `n = 5`
-   point (`f5`). Do not fit the constant term and do not replace it with an
-   uncut SM cross-section or a Phase 5 pure-SM value.
+   where `sigma0_after_cut` is the accepted shared-`f5` value for this
+   algorithm and threshold from `shared_f5_background.json`. For the required
+   scan expression, `f5` is the coefficient-zero point. Do not fit the constant
+   term and do not replace it with an individual operator's `f5`, an uncut SM
+   cross-section, or a Phase 5 pure-SM value.
 
    Fit only `csfit_int` and `csfit_np` using:
    ```
@@ -201,6 +215,10 @@ Record per algorithm:
   "threshold_scan": [
     {
       "threshold": 0.62,
+      "anchor_scan_passing_event_count": 24891,
+      "shared_f5_passing_event_count": 18520,
+      "effective_passing_event_count": 18520.0,
+      "background_status": "observed_events",
       "sigma0_after_cut_pb": 0.0012,
       "fit_intercept_fixed": true,
       "lower_bound": -0.021,
@@ -255,7 +273,7 @@ For **each algorithm**, using **its own** optimal threshold from Step 8.3, repea
 For each operator `o_{g_idx}`:
 - Load its scan data: `np_o_{g_idx}_f0.lhco` through `np_o_{g_idx}_f10.lhco`
 - Apply the algorithm's threshold
-- Fit the quadratic with the fixed `f=0` cut cross-section as the intercept and
+- Fit the quadratic with that algorithm's shared `f5` background as the fixed intercept and
   record `sigma0_after_cut`, `csfit_int`, `csfit_np`,
   `fit_intercept_fixed=true`, and `f0_label="f5"`
 - Use each scan point's own `loaded_lhco_event_count` as the denominator for
@@ -315,7 +333,12 @@ logger.phase_complete("8")
 
 ```
 results/data/phase8/
+  shared_f5.lhco
+  shared_f5_merge.json
+  shared_f5_background.json
+  csv/shared_f5.csv
   csv/np_o_1_f0.csv, ..., csv/np_o_N_f10.csv
+  scores/{alg}/shared_f5_scores.csv
   scores/{alg}/np_o_1_f0_scores.csv, ..., scores/{alg}/np_o_N_f10_scores.csv
   threshold_optimization.json    # per-algorithm optimal thresholds (from anchor)
   scan_event_counts.json         # requested, loaded, surviving, and passing counts
@@ -348,17 +371,25 @@ Each `csfit_o_*_{alg}.json` must include at least:
 ```
 
 `csfit_sm` is retained only as a backward-compatible alias for
-`sigma0_after_cut_pb`; it must equal the `f=0` scan point's cut cross-section.
+`sigma0_after_cut_pb`; it must equal the algorithm's accepted shared-`f5`
+background value.
 
 ## Validation
 
 Relevant invariants:
-[`workflow-invariants.md`](workflow-invariants.md) Single Selection Strategy,
+[`workflow-invariants.md`](workflow-invariants.md) Selection Scope,
 Publication Data, Actual Event Counts, and Execution Continuity.
 
 - `csfit_sm > 0`
-- `csfit_sm` or `sigma0_after_cut` equals the `f=0` scan point's cut
-  cross-section and is not a fitted intercept
+- `csfit_sm` or `sigma0_after_cut` equals the accepted shared-`f5` background
+  value and is not a fitted intercept
+- The initial shared pool contains exactly one `f5` source from every claimed
+  operator; additional sources, if needed, are anchor `f5` samples only
+- Before three additional rounds, a zero passing count is incomplete; after
+  three rounds it uses the half-event formula while preserving the observed
+  count as zero
+- For one algorithm and threshold, every operator fit has the same
+  `sigma0_after_cut_pb`
 - `csfit_np >= 0`
 - every `csfit_o_*_{alg}.json` records `fit_intercept_fixed=true` and
   `f0_label="f5"`

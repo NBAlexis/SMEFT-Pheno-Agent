@@ -80,7 +80,8 @@ Mark these as `major` if they fail:
 - hyperparameter table is missing
 - anchor operator is missing
 - final algorithm is not selected by the first non-zero operator
-- final constraints use per-operator best algorithms or thresholds
+- final constraints do not follow the recorded `selection_scope`, or a
+  `per_operator_best` result omits an operator's selected algorithm or threshold
 - numeric fit coefficients are missing
 - manuscript treats the quadratic-fit constant term as a free fitted parameter
   instead of the fixed `f=0` selected cross-section after cuts/selection

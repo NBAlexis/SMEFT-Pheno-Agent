@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+from bisect import bisect_right
 import csv
 import fnmatch
 import glob
@@ -18,8 +19,12 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 try:
     from .research_contract import resolve_contract
+    from .calculate_shared_f5_background import MAX_ADDITIONAL_ANCHOR_ROUNDS
+    from .extract_cross_section import extract_cross_section
 except ImportError:  # Direct script execution.
     from research_contract import resolve_contract
+    from calculate_shared_f5_background import MAX_ADDITIONAL_ANCHOR_ROUNDS
+    from extract_cross_section import extract_cross_section
 
 
 PHASE7_VALIDATION_CHECK_IDS = {
@@ -1031,12 +1036,14 @@ def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
     ]
     missing = [key for key in required if key not in data or data.get(key) in (None, "")]
     algorithms = _algorithm_names(root)
+    operators = _operators(root)
     selected_algorithm = data.get("selected_algorithm")
+    selection_scope = data.get("selection_scope")
     invalid = []
     if selected_algorithm not in algorithms:
         invalid.append("selected_algorithm is not a Phase 7 anchor algorithm")
-    if data.get("selection_scope") != "anchor_operator_only":
-        invalid.append("selection_scope must be anchor_operator_only")
+    if selection_scope not in {"anchor_operator_only", "per_operator_best"}:
+        invalid.append("selection_scope must be anchor_operator_only or per_operator_best")
     if data.get("selection_criterion") != "narrowest_anchor_S2_constraint_width":
         invalid.append("selection_criterion must be narrowest_anchor_S2_constraint_width")
     try:
@@ -1045,6 +1052,37 @@ def _phase9_strategy_checks(root: str) -> List[Dict[str, Any]]:
             invalid.append("selected_threshold must be in [0, 1]")
     except (TypeError, ValueError):
         invalid.append("selected_threshold must be numeric")
+    if selection_scope == "per_operator_best":
+        operator_selections = data.get("operator_selections")
+        if not isinstance(operator_selections, dict):
+            invalid.append("operator_selections must be an object for per_operator_best")
+        elif set(operator_selections) != set(operators):
+            invalid.append("operator_selections keys must exactly match Phase 3 claimed operators")
+        else:
+            for operator in operators:
+                value = operator_selections.get(operator)
+                if not isinstance(value, dict):
+                    invalid.append(f"operator_selections.{operator} must be an object")
+                    continue
+                if value.get("selected_algorithm") not in algorithms:
+                    invalid.append(
+                        f"operator_selections.{operator}.selected_algorithm is not present in Phase 7"
+                    )
+                try:
+                    operator_threshold = float(value.get("selected_threshold"))
+                    if not 0.0 <= operator_threshold <= 1.0:
+                        invalid.append(
+                            f"operator_selections.{operator}.selected_threshold must be in [0, 1]"
+                        )
+                except (TypeError, ValueError):
+                    invalid.append(
+                        f"operator_selections.{operator}.selected_threshold must be numeric"
+                    )
+                if value.get("selection_criterion") != "narrowest_operator_S2_constraint_width":
+                    invalid.append(
+                        f"operator_selections.{operator}.selection_criterion must be "
+                        "narrowest_operator_S2_constraint_width"
+                    )
     return [{
         "rel_path": rel_path,
         "severity": "abort",
@@ -1069,6 +1107,609 @@ def _valid_interval(value: Any) -> bool:
     )
 
 
+def _csv_data_row_count(path: str) -> int:
+    with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        next(reader, None)
+        return sum(1 for row in reader if row)
+
+
+def _shared_score_counts(
+    root: str,
+    path: str,
+    thresholds: List[float],
+    expected_source_csv: str,
+) -> Tuple[int, List[int], List[str]]:
+    differences = [0] * (len(thresholds) + 1)
+    row_count = 0
+    errors: List[str] = []
+    expected_source_abs = os.path.normcase(os.path.abspath(expected_source_csv))
+    with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        required = {"event_index", "score", "source_csv"}
+        if not reader.fieldnames or not required.issubset(reader.fieldnames):
+            return 0, [0] * len(thresholds), [
+                "score CSV must contain event_index, score, and source_csv"
+            ]
+        for row_number, row in enumerate(reader, start=2):
+            row_count += 1
+            try:
+                score = float(row["score"])
+            except (TypeError, ValueError):
+                errors.append(f"row {row_number} score must be numeric")
+                continue
+            if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+                errors.append(f"row {row_number} score must be finite and in [0, 1]")
+                continue
+            source_value = row.get("source_csv") or ""
+            source_abs = _manifest_reference_path(root, source_value)
+            if os.path.normcase(os.path.abspath(source_abs)) != expected_source_abs:
+                errors.append(
+                    f"row {row_number} source_csv must name {os.path.basename(expected_source_csv)}"
+                )
+            last_passing = bisect_right(thresholds, score) - 1
+            if last_passing >= 0:
+                differences[0] += 1
+                differences[last_passing + 1] -= 1
+    counts = []
+    running = 0
+    for index in range(len(thresholds)):
+        running += differences[index]
+        counts.append(running)
+    return row_count, counts, errors
+
+
+def _phase8_shared_f5_checks(root: str) -> List[Dict[str, Any]]:
+    """Audit the shared Phase 8 f5 pool and its zero-event convention."""
+    rel_path = os.path.join("data", "phase8", "shared_f5_background.json")
+    path = os.path.join(root, rel_path)
+    if not os.path.exists(path):
+        return []
+    record: Dict[str, Any] = {
+        "rel_path": rel_path + ":shared_pool_and_background",
+        "severity": "abort",
+        "source": "phase8_shared_f5_background",
+        "path": path,
+    }
+    try:
+        data = _load_json(path)
+        operators = _operators(root)
+        algorithms = _algorithm_names(root)
+        claims_path = os.path.join(root, "data", "phase3", "operator_claims.json")
+        claims = _load_json(claims_path) if os.path.exists(claims_path) else {}
+        errors: List[str] = []
+        if data.get("schema_version") != "1.0":
+            errors.append("schema_version must be 1.0")
+        if data.get("source_operators") != operators:
+            errors.append("source_operators must equal Phase 3 claimed operators in order")
+        anchor = data.get("anchor_operator")
+        anchor_path = os.path.join(root, "data", "phase3", "anchor.json")
+        expected_anchor = operators[0] if operators else None
+        if os.path.exists(anchor_path):
+            anchor_data = _load_json(anchor_path)
+            expected_anchor = f"o_{anchor_data.get('global_idx')}"
+        if anchor != expected_anchor:
+            errors.append("anchor_operator must match Phase 3 anchor.json")
+
+        initial = data.get("initial_f5_sources")
+        if not isinstance(initial, list):
+            errors.append("initial_f5_sources must be a list")
+            initial = []
+        initial_operators = []
+        initial_runners: Dict[str, Dict[str, Any]] = {}
+        initial_outputs: Dict[str, Dict[str, Any]] = {}
+        for index, item in enumerate(initial):
+            if not isinstance(item, dict):
+                errors.append(f"initial_f5_sources[{index}] must be an object")
+                continue
+            if item.get("scan_label") != "f5":
+                errors.append(f"initial_f5_sources[{index}].scan_label must be f5")
+            operator = item.get("operator")
+            initial_operators.append(operator)
+            if operator not in operators:
+                errors.append(f"initial_f5_sources[{index}] has an unclaimed operator")
+            if item.get("model") != (claims.get(operator) or {}).get("model"):
+                errors.append(f"initial_f5_sources[{index}].model differs from Phase 3")
+            expected_paths = {
+                "lhco_path": os.path.join("data", "phase6", f"np_{operator}_f5.lhco"),
+                "banner_path": os.path.join("data", "phase6", f"np_{operator}_f5_banner.txt"),
+                "runner_result_json": os.path.join(
+                    "data", "phase6", f"np_{operator}_scan_result.json"
+                ),
+            }
+            for key in ("lhco_path", "banner_path", "runner_result_json"):
+                if not isinstance(item.get(key), str) or not item[key].strip():
+                    errors.append(f"initial_f5_sources[{index}].{key} must be non-empty")
+                    continue
+                actual = _manifest_reference_path(root, item[key])
+                expected = os.path.abspath(os.path.join(root, expected_paths[key]))
+                if os.path.normcase(actual) != os.path.normcase(expected):
+                    errors.append(
+                        f"initial_f5_sources[{index}].{key} must be {expected_paths[key]}"
+                    )
+                if not os.path.isfile(actual) or os.path.getsize(actual) <= 0:
+                    errors.append(f"initial_f5_sources[{index}].{key} is missing or empty")
+            runner_path = _manifest_reference_path(root, str(item.get("runner_result_json") or ""))
+            if os.path.isfile(runner_path):
+                runner = _load_json(runner_path)
+                initial_runners[str(operator)] = runner
+                if runner.get("status") != "completed" or runner.get("process_mode") != "scan":
+                    errors.append(f"initial_f5_sources[{index}] runner must be a completed scan")
+                if runner.get("operator") != operator or runner.get("model") != item.get("model"):
+                    errors.append(f"initial_f5_sources[{index}] runner operator/model mismatch")
+                target = runner.get("target_coefficient") or {}
+                if str(target.get("index")) != str((claims.get(operator) or {}).get("anoinput_idx")):
+                    errors.append(f"initial_f5_sources[{index}] runner coefficient index mismatch")
+                output = next(
+                    (
+                        value for value in runner.get("outputs") or []
+                        if isinstance(value, dict) and value.get("label") == f"np_{operator}_f5"
+                    ),
+                    None,
+                )
+                if output is None:
+                    errors.append(f"initial_f5_sources[{index}] runner lacks an f5 output")
+                else:
+                    initial_outputs[str(operator)] = output
+                    for output_key, source_key in (("lhco_path", "lhco_path"), ("banner_path", "banner_path")):
+                        output_path = output.get(output_key)
+                        source_path = item.get(source_key)
+                        if not isinstance(output_path, str) or not isinstance(source_path, str) or (
+                            os.path.normcase(os.path.abspath(output_path))
+                            != os.path.normcase(_manifest_reference_path(root, source_path))
+                        ):
+                            errors.append(
+                                f"initial_f5_sources[{index}].{source_key} differs from runner f5 output"
+                            )
+        if initial_operators != operators:
+            errors.append("initial_f5_sources must contain exactly one f5 source per operator")
+
+        run_config_path = os.path.join(_global_results_root(root), "run_config.json")
+        run_config = _load_json(run_config_path) if os.path.exists(run_config_path) else {}
+        nev_scan = ((run_config.get("locked_event_counts") or {}).get("nev_scan"))
+        active_run = None
+        run_configurations = run_config.get("run_configurations") or []
+        if len(run_configurations) == 1:
+            active_run = run_configurations[0]
+        else:
+            root_name = os.path.basename(os.path.abspath(root))
+            active_run = next(
+                (
+                    value for value in run_configurations
+                    if isinstance(value, dict) and value.get("run_dir") == root_name
+                ),
+                None,
+            )
+        for operator, runner in initial_runners.items():
+            if nev_scan is not None and runner.get("nevents") != nev_scan:
+                errors.append(f"initial {operator} runner nevents differs from locked nev_scan")
+            if run_config and runner.get("process") != run_config.get("process"):
+                errors.append(f"initial {operator} runner process differs from run_config")
+            if active_run:
+                for key in ("ebeam1", "ebeam2"):
+                    if not (
+                        _finite_number(runner.get(key))
+                        and _finite_number(active_run.get(key))
+                        and math.isclose(float(runner[key]), float(active_run[key]), rel_tol=0.0, abs_tol=1e-12)
+                    ):
+                        errors.append(f"initial {operator} runner {key} differs from run_config")
+            if run_config and runner.get("polarization") != run_config.get("polarization"):
+                errors.append(f"initial {operator} runner polarization differs from run_config")
+            if run_config and runner.get("delphes_card") != run_config.get("delphes_card"):
+                errors.append(f"initial {operator} runner delphes_card differs from run_config")
+
+        additional = data.get("additional_anchor_f5_sources", [])
+        if not isinstance(additional, list):
+            errors.append("additional_anchor_f5_sources must be a list")
+            additional = []
+        for index, item in enumerate(additional):
+            if not isinstance(item, dict):
+                errors.append(f"additional_anchor_f5_sources[{index}] must be an object")
+                continue
+            if item.get("operator") != anchor or item.get("scan_label") != "f5":
+                errors.append(
+                    f"additional_anchor_f5_sources[{index}] must be anchor_operator f5"
+                )
+            if item.get("round") != index + 1:
+                errors.append("additional anchor rounds must be numbered consecutively from 1")
+            round_number = index + 1
+            expected_paths = {
+                "lhco_path": os.path.join(
+                    "data", "phase8", "shared_f5_sources",
+                    f"shared_f5_anchor_round_{round_number}.lhco",
+                ),
+                "banner_path": os.path.join(
+                    "data", "phase8", "shared_f5_sources",
+                    f"shared_f5_anchor_round_{round_number}_banner.txt",
+                ),
+                "runner_result_json": os.path.join(
+                    "data", "phase8", "shared_f5_sources",
+                    f"anchor_round_{round_number}_result.json",
+                ),
+            }
+            if item.get("model") != (claims.get(anchor) or {}).get("model"):
+                errors.append(f"additional_anchor_f5_sources[{index}].model differs from anchor")
+            for key in ("lhco_path", "banner_path", "runner_result_json"):
+                if not isinstance(item.get(key), str) or not item[key].strip():
+                    errors.append(f"additional_anchor_f5_sources[{index}].{key} must be non-empty")
+                    continue
+                actual = _manifest_reference_path(root, item[key])
+                expected = os.path.abspath(os.path.join(root, expected_paths[key]))
+                if os.path.normcase(actual) != os.path.normcase(expected):
+                    errors.append(
+                        f"additional_anchor_f5_sources[{index}].{key} must be {expected_paths[key]}"
+                    )
+                if not os.path.isfile(actual) or os.path.getsize(actual) <= 0:
+                    errors.append(f"additional_anchor_f5_sources[{index}].{key} is missing or empty")
+            if item.get("requested_event_count") != nev_scan:
+                errors.append(f"additional_anchor_f5_sources[{index}] must use locked nev_scan")
+            result_path = _manifest_reference_path(root, str(item.get("runner_result_json") or ""))
+            if os.path.isfile(result_path):
+                runner = _load_json(result_path)
+                if runner.get("status") != "completed" or runner.get("process_mode") != "sm_np_point":
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner must be completed sm_np_point")
+                if runner.get("operator") != anchor or runner.get("model") != item.get("model"):
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner operator/model mismatch")
+                if runner.get("coefficient_mode") != "explicit":
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner coefficient_mode must be explicit")
+                target = runner.get("target_coefficient") or {}
+                if str(target.get("index")) != str((claims.get(anchor) or {}).get("anoinput_idx")):
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner coefficient index mismatch")
+                try:
+                    target_value = float(target.get("value"))
+                except (TypeError, ValueError):
+                    target_value = math.nan
+                if target_value != 0.0:
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner coefficient value must be zero")
+                if runner.get("nevents") != nev_scan:
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner nevents differs from locked nev_scan")
+                baseline = initial_runners.get(str(anchor)) or {}
+                for key in (
+                    "process", "ebeam1", "ebeam2", "polarization", "delphes_card",
+                    "weighted_order", "madspin",
+                ):
+                    if runner.get(key) != baseline.get(key):
+                        errors.append(f"additional_anchor_f5_sources[{index}] runner {key} differs from anchor scan")
+                expected_label = f"shared_f5_anchor_round_{round_number}"
+                output = next(
+                    (
+                        value for value in runner.get("outputs") or []
+                        if isinstance(value, dict) and value.get("label") == expected_label
+                    ),
+                    None,
+                )
+                if output is None:
+                    errors.append(f"additional_anchor_f5_sources[{index}] runner lacks {expected_label}")
+                else:
+                    if output.get("loaded_lhco_event_count") != item.get("loaded_lhco_event_count"):
+                        errors.append(f"additional_anchor_f5_sources[{index}] loaded count differs from runner")
+                    if not (
+                        _finite_number(output.get("cross_section_pb"))
+                        and _finite_number(item.get("banner_cross_section_pb"))
+                        and math.isclose(
+                            float(output["cross_section_pb"]),
+                            float(item["banner_cross_section_pb"]),
+                            rel_tol=1e-12,
+                            abs_tol=1e-15,
+                        )
+                    ):
+                        errors.append(f"additional_anchor_f5_sources[{index}] banner cross-section differs from runner")
+                    for output_key, source_key in (("lhco_path", "lhco_path"), ("banner_path", "banner_path")):
+                        output_path = output.get(output_key)
+                        source_path = item.get(source_key)
+                        if not isinstance(output_path, str) or not isinstance(source_path, str) or (
+                            os.path.normcase(os.path.abspath(output_path))
+                            != os.path.normcase(_manifest_reference_path(root, source_path))
+                        ):
+                            errors.append(
+                                f"additional_anchor_f5_sources[{index}].{source_key} differs from runner output"
+                            )
+        if data.get("additional_anchor_f5_rounds") != len(additional):
+            errors.append("additional_anchor_f5_rounds must equal additional source count")
+        if not 0 <= len(additional) <= MAX_ADDITIONAL_ANCHOR_ROUNDS:
+            errors.append("additional anchor f5 rounds must be between 0 and 3")
+        declared_sources = initial + additional
+        for key in ("lhco_path", "banner_path", "runner_result_json"):
+            values = [
+                os.path.normcase(_manifest_reference_path(root, item[key]))
+                for item in declared_sources
+                if isinstance(item, dict) and isinstance(item.get(key), str)
+            ]
+            if len(values) != len(set(values)):
+                errors.append(f"all shared f5 {key} values must be unique")
+
+        loaded = data.get("loaded_lhco_event_count")
+        merged_cs = data.get("merged_cross_section_pb")
+        valid_loaded = isinstance(loaded, int) and not isinstance(loaded, bool) and loaded > 0
+        valid_merged_cs = _finite_number(merged_cs) and float(merged_cs) > 0.0
+        if not valid_loaded:
+            errors.append("loaded_lhco_event_count must be a positive integer")
+        if not valid_merged_cs:
+            errors.append("merged_cross_section_pb must be a finite positive number")
+        if data.get("cross_section_rule") != "banner_arithmetic_mean":
+            errors.append("cross_section_rule must be banner_arithmetic_mean")
+
+        surviving = data.get("surviving_final_state_event_count")
+        if not isinstance(surviving, int) or isinstance(surviving, bool) or surviving < 0:
+            errors.append("surviving_final_state_event_count must be a non-negative integer")
+            surviving = None
+        elif valid_loaded and surviving > loaded:
+            errors.append(
+                "surviving_final_state_event_count cannot exceed loaded_lhco_event_count"
+            )
+        shared_lhco_path = os.path.join(root, "data", "phase8", "shared_f5.lhco")
+        if not os.path.isfile(shared_lhco_path) or os.path.getsize(shared_lhco_path) <= 0:
+            errors.append("data/phase8/shared_f5.lhco is missing or empty")
+        shared_csv_path = os.path.join(root, "data", "phase8", "csv", "shared_f5.csv")
+        if not os.path.isfile(shared_csv_path) or os.path.getsize(shared_csv_path) <= 0:
+            errors.append("data/phase8/csv/shared_f5.csv is missing or empty")
+        elif surviving is not None:
+            try:
+                if _csv_data_row_count(shared_csv_path) != surviving:
+                    errors.append(
+                        "shared_f5.csv row count differs from surviving_final_state_event_count"
+                    )
+            except (OSError, csv.Error) as exc:
+                errors.append(f"could not read shared_f5.csv: {exc}")
+
+        merge_path = os.path.join(root, "data", "phase8", "shared_f5_merge.json")
+        if not os.path.exists(merge_path):
+            errors.append("data/phase8/shared_f5_merge.json is missing")
+        else:
+            merge = _load_json(merge_path)
+            expected_output_path = os.path.abspath(shared_lhco_path)
+            merge_output_path = merge.get("output_lhco_path")
+            if not isinstance(merge_output_path, str) or (
+                os.path.normcase(_manifest_reference_path(root, merge_output_path))
+                != os.path.normcase(expected_output_path)
+            ):
+                errors.append("shared_f5_merge.json output_lhco_path must name data/phase8/shared_f5.lhco")
+            if merge.get("cross_section_rule") != "banner_arithmetic_mean":
+                errors.append("shared_f5_merge.json cross_section_rule must be banner_arithmetic_mean")
+            if merge.get("merged_loaded_lhco_event_count") != loaded:
+                errors.append("loaded_lhco_event_count differs from shared_f5_merge.json")
+            merge_cs = merge.get("merged_cross_section_pb")
+            if not (_finite_number(merge_cs) and _finite_number(merged_cs)) or not math.isclose(
+                float(merge_cs), float(merged_cs), rel_tol=1e-12, abs_tol=1e-15
+            ):
+                errors.append("merged_cross_section_pb differs from shared_f5_merge.json")
+            merge_sources = merge.get("source_records")
+            if not isinstance(merge_sources, list):
+                errors.append("shared_f5_merge.json source_records must be a list")
+            else:
+                if len(merge_sources) != len(declared_sources):
+                    errors.append("shared_f5_merge.json source count differs from declared f5 sources")
+                else:
+                    parsed_banner_cross_sections: List[float] = []
+                    source_count_sum = 0
+                    for index, (declared, merged_source) in enumerate(zip(declared_sources, merge_sources)):
+                        banner_cross_section = None
+                        if not isinstance(declared, dict):
+                            errors.append(f"shared_f5_background.json source {index} must be an object")
+                            continue
+                        if not isinstance(merged_source, dict):
+                            errors.append(f"shared_f5_merge.json source_records[{index}] must be an object")
+                            continue
+                        for declared_key, merged_key in (("lhco_path", "lhco_path"), ("banner_path", "banner_path")):
+                            declared_path = declared.get(declared_key)
+                            merged_source_path = merged_source.get(merged_key)
+                            if not isinstance(declared_path, str) or not isinstance(merged_source_path, str):
+                                errors.append(
+                                    f"shared_f5_merge.json source_records[{index}].{merged_key} must be a path"
+                                )
+                                continue
+                            expected_path = _manifest_reference_path(root, declared_path)
+                            if os.path.normcase(os.path.abspath(merged_source_path)) != os.path.normcase(expected_path):
+                                errors.append(
+                                    f"shared_f5_merge.json source_records[{index}].{merged_key} "
+                                    "differs from shared_f5_background.json"
+                                )
+                        banner_path = declared.get("banner_path")
+                        if isinstance(banner_path, str):
+                            banner_abs = _manifest_reference_path(root, banner_path)
+                            try:
+                                banner_cross_section = extract_cross_section(banner_abs)
+                            except (OSError, ValueError) as exc:
+                                errors.append(f"could not read source banner {index}: {exc}")
+                            else:
+                                parsed_banner_cross_sections.append(float(banner_cross_section))
+                                merged_source_cs = merged_source.get("cross_section_pb")
+                                if not _finite_number(merged_source_cs) or not math.isclose(
+                                    float(merged_source_cs),
+                                    float(banner_cross_section),
+                                    rel_tol=1e-12,
+                                    abs_tol=1e-15,
+                                ):
+                                    errors.append(
+                                        f"shared_f5_merge.json source_records[{index}].cross_section_pb "
+                                        "differs from its banner"
+                                    )
+                                declared_cs = declared.get("banner_cross_section_pb")
+                                if declared_cs is not None and (
+                                    not _finite_number(declared_cs)
+                                    or not math.isclose(
+                                        float(declared_cs),
+                                        float(banner_cross_section),
+                                        rel_tol=1e-12,
+                                        abs_tol=1e-15,
+                                    )
+                                ):
+                                    errors.append(
+                                        f"shared_f5_background.json source {index} banner_cross_section_pb "
+                                        "differs from its banner"
+                                    )
+                        source_count = merged_source.get("loaded_lhco_event_count")
+                        if not isinstance(source_count, int) or isinstance(source_count, bool) or source_count <= 0:
+                            errors.append(
+                                f"shared_f5_merge.json source_records[{index}].loaded_lhco_event_count "
+                                "must be a positive integer"
+                            )
+                        else:
+                            source_count_sum += source_count
+                            declared_count = declared.get("loaded_lhco_event_count")
+                            if declared_count is not None and declared_count != source_count:
+                                errors.append(
+                                    f"shared_f5_background.json source {index} loaded_lhco_event_count "
+                                    "differs from shared_f5_merge.json"
+                                )
+                            if index < len(initial):
+                                operator = str(declared.get("operator"))
+                                runner_output = initial_outputs.get(operator) or {}
+                                if runner_output.get("loaded_lhco_event_count") != source_count:
+                                    errors.append(
+                                        f"initial_f5_sources[{index}] loaded count differs from runner f5 output"
+                                    )
+                                if banner_cross_section is not None and (
+                                    not _finite_number(runner_output.get("cross_section_pb"))
+                                    or not math.isclose(
+                                        float(runner_output["cross_section_pb"]),
+                                        float(banner_cross_section),
+                                        rel_tol=1e-12,
+                                        abs_tol=1e-15,
+                                    )
+                                ):
+                                    errors.append(
+                                        f"initial_f5_sources[{index}] cross-section differs from runner f5 output"
+                                    )
+                    if merge.get("source_count_sum") != source_count_sum:
+                        errors.append("shared_f5_merge.json source_count_sum differs from source records")
+                    if valid_loaded and source_count_sum != loaded:
+                        errors.append("loaded_lhco_event_count differs from sum of source records")
+                    if len(parsed_banner_cross_sections) == len(declared_sources) and parsed_banner_cross_sections:
+                        banner_mean = sum(parsed_banner_cross_sections) / len(parsed_banner_cross_sections)
+                        if not valid_merged_cs or not math.isclose(
+                            float(merged_cs), banner_mean, rel_tol=1e-12, abs_tol=1e-15
+                        ):
+                            errors.append(
+                                "merged_cross_section_pb must equal the arithmetic mean of source banners"
+                            )
+
+        backgrounds = data.get("algorithms")
+        if not isinstance(backgrounds, dict):
+            errors.append("algorithms must be an object")
+            backgrounds = {}
+        if set(backgrounds) != set(algorithms):
+            errors.append("algorithms must exactly equal Phase 7 algorithm keys")
+        for algorithm in algorithms:
+            item = backgrounds.get(algorithm)
+            if not isinstance(item, dict):
+                errors.append(f"algorithms.{algorithm} must be an object")
+                continue
+            if not _finite_number(item.get("threshold")) or not 0.0 <= float(item["threshold"]) <= 1.0:
+                errors.append(f"algorithms.{algorithm}.threshold must be in [0, 1]")
+            threshold_path = os.path.join(root, "data", "phase8", "threshold_optimization.json")
+            if os.path.exists(threshold_path):
+                threshold_data = _load_json(threshold_path)
+                expected_threshold = ((threshold_data.get("anchor") or {}).get(algorithm) or {}).get("optimal_threshold")
+                if not (
+                    _finite_number(item.get("threshold"))
+                    and _finite_number(expected_threshold)
+                    and math.isclose(float(item["threshold"]), float(expected_threshold), rel_tol=0.0, abs_tol=1e-12)
+                ):
+                    errors.append(f"algorithms.{algorithm}.threshold differs from threshold_optimization.json")
+            passing = item.get("passing_event_count")
+            if not isinstance(passing, int) or isinstance(passing, bool) or passing < 0:
+                errors.append(f"algorithms.{algorithm}.passing_event_count must be non-negative integer")
+                continue
+            sigma = item.get("sigma0_after_cut_pb")
+            effective = item.get("effective_passing_event_count")
+            rounds = len(additional)
+            if passing > 0:
+                expected_effective = float(passing)
+                expected_convention = "observed_events"
+                if not valid_loaded or not valid_merged_cs:
+                    errors.append(f"algorithms.{algorithm} formula needs valid merged inputs")
+                elif not _finite_number(sigma) or not math.isclose(
+                    float(sigma), float(merged_cs) * passing / loaded, rel_tol=1e-12, abs_tol=1e-15
+                ):
+                    errors.append(f"algorithms.{algorithm} has the wrong observed-event formula")
+            elif rounds < MAX_ADDITIONAL_ANCHOR_ROUNDS:
+                expected_effective = None
+                expected_convention = "unresolved_zero"
+                errors.append(
+                    f"algorithms.{algorithm} requires another anchor f5 round before Phase 8 can pass"
+                )
+                if sigma is not None or effective is not None:
+                    errors.append(
+                        f"algorithms.{algorithm} must remain unresolved before three zero rounds"
+                    )
+            else:
+                expected_effective = 0.5
+                expected_convention = "half_event_after_three_zero_rounds"
+                if not valid_loaded or not valid_merged_cs:
+                    errors.append(f"algorithms.{algorithm} formula needs valid merged inputs")
+                elif not _finite_number(sigma) or not math.isclose(
+                    float(sigma), float(merged_cs) * 0.5 / loaded, rel_tol=1e-12, abs_tol=1e-15
+                ):
+                    errors.append(f"algorithms.{algorithm} has the wrong half-event formula")
+            if item.get("effective_passing_event_count") != expected_effective:
+                errors.append(f"algorithms.{algorithm}.effective_passing_event_count is inconsistent")
+            if item.get("convention") != expected_convention:
+                errors.append(f"algorithms.{algorithm}.convention is inconsistent")
+            expected_status = "accepted" if passing > 0 or rounds == MAX_ADDITIONAL_ANCHOR_ROUNDS else "additional_anchor_f5_required"
+            if item.get("status") != expected_status:
+                errors.append(f"algorithms.{algorithm}.status is inconsistent")
+            if valid_loaded and passing > loaded:
+                errors.append(f"algorithms.{algorithm}.passing_event_count exceeds loaded count")
+            score_path = os.path.join(
+                root, "data", "phase8", "scores", algorithm, "shared_f5_scores.csv"
+            )
+            if not os.path.isfile(score_path) or os.path.getsize(score_path) <= 0:
+                errors.append(f"shared_f5_scores.csv is missing or empty for {algorithm}")
+            elif _finite_number(item.get("threshold")) and surviving is not None:
+                try:
+                    score_rows, score_counts, score_errors = _shared_score_counts(
+                        root,
+                        score_path,
+                        [float(item["threshold"])],
+                        shared_csv_path,
+                    )
+                    errors.extend(
+                        f"{algorithm} shared score CSV: {message}" for message in score_errors
+                    )
+                    if score_rows != surviving:
+                        errors.append(
+                            f"{algorithm} shared score CSV row count differs from "
+                            "surviving_final_state_event_count"
+                        )
+                    if score_counts[0] != passing:
+                        errors.append(
+                            f"algorithms.{algorithm}.passing_event_count differs from scores at threshold"
+                        )
+                except (OSError, csv.Error) as exc:
+                    errors.append(f"could not read shared score CSV for {algorithm}: {exc}")
+
+        fit_values: Dict[str, float] = {}
+        for operator in operators:
+            for algorithm in algorithms:
+                fit_path = os.path.join(root, "data", "phase8", f"csfit_{operator}_{algorithm}.json")
+                if not os.path.exists(fit_path):
+                    continue
+                fit = _load_json(fit_path)
+                value = fit.get("sigma0_after_cut_pb")
+                expected = (backgrounds.get(algorithm) or {}).get("sigma0_after_cut_pb")
+                if not _finite_number(value) or not _finite_number(expected) or not math.isclose(
+                    float(value), float(expected), rel_tol=1e-12, abs_tol=1e-15
+                ):
+                    errors.append(f"{operator}/{algorithm} does not use the shared background value")
+                if _finite_number(value):
+                    prior = fit_values.get(algorithm)
+                    if prior is not None and not math.isclose(float(value), prior, rel_tol=1e-12, abs_tol=1e-15):
+                        errors.append(f"all operators must share sigma0_after_cut_pb for {algorithm}")
+                    fit_values[algorithm] = float(value)
+
+        record.update({
+            "ok": not errors,
+            "expected_operators": operators,
+            "expected_algorithms": algorithms,
+            "additional_anchor_f5_rounds": len(additional),
+            "invalid_values": errors,
+        })
+    except Exception as exc:
+        _set_failure(record, "phase8_shared_f5_background_invalid", str(exc))
+    return [record]
+
+
 def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
     checks: List[Dict[str, Any]] = []
     operators = _operators(root)
@@ -1088,6 +1729,29 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
             bad = []
             if not isinstance(anchor, dict):
                 raise ValueError("threshold_optimization.json must contain an anchor object")
+            expected_thresholds = [0.02 * index for index in range(51)]
+            background_path = os.path.join(root, "data", "phase8", "shared_f5_background.json")
+            background_data = _load_json(background_path) if os.path.exists(background_path) else {}
+            loaded = background_data.get("loaded_lhco_event_count")
+            merged_cs = background_data.get("merged_cross_section_pb")
+            rounds = background_data.get("additional_anchor_f5_rounds")
+            valid_background_inputs = (
+                isinstance(loaded, int)
+                and not isinstance(loaded, bool)
+                and loaded > 0
+                and _finite_number(merged_cs)
+                and float(merged_cs) > 0.0
+                and isinstance(rounds, int)
+                and not isinstance(rounds, bool)
+                and 0 <= rounds <= MAX_ADDITIONAL_ANCHOR_ROUNDS
+            )
+            shared_csv_path = os.path.join(root, "data", "phase8", "csv", "shared_f5.csv")
+            anchor_operator = background_data.get("anchor_operator")
+            anchor_labels = (
+                _scan_labels(root, [anchor_operator]).get(anchor_operator, [])
+                if isinstance(anchor_operator, str) and anchor_operator
+                else []
+            )
             for algorithm in algorithms:
                 value = anchor.get(algorithm)
                 errors = []
@@ -1097,10 +1761,61 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
                 threshold = value.get("optimal_threshold")
                 width = value.get("constraint_width_at_optimal")
                 scan = value.get("threshold_scan")
-                if not _finite_number(threshold) or not 0.0 <= float(threshold) <= 1.0:
-                    errors.append("optimal_threshold must be a finite number in [0, 1]")
-                if not _finite_number(width) or float(width) <= 0.0:
-                    errors.append("constraint_width_at_optimal must be positive")
+                score_counts = None
+                score_path = os.path.join(
+                    root, "data", "phase8", "scores", algorithm, "shared_f5_scores.csv"
+                )
+                if os.path.isfile(score_path):
+                    try:
+                        _, score_counts, score_errors = _shared_score_counts(
+                            root, score_path, expected_thresholds, shared_csv_path
+                        )
+                        errors.extend(
+                            f"shared score CSV: {message}" for message in score_errors
+                        )
+                    except (OSError, csv.Error) as exc:
+                        errors.append(f"could not read shared score CSV: {exc}")
+                else:
+                    errors.append("shared_f5_scores.csv is missing")
+
+                anchor_score_counts = [0] * len(expected_thresholds)
+                anchor_scores_complete = bool(anchor_operator and anchor_labels)
+                for label in anchor_labels:
+                    anchor_source_csv = os.path.join(
+                        root, "data", "phase8", "csv", f"np_{anchor_operator}_{label}.csv"
+                    )
+                    anchor_score_path = os.path.join(
+                        root,
+                        "data",
+                        "phase8",
+                        "scores",
+                        algorithm,
+                        f"np_{anchor_operator}_{label}_scores.csv",
+                    )
+                    if not os.path.isfile(anchor_source_csv) or not os.path.isfile(anchor_score_path):
+                        errors.append(f"anchor score/source CSV is missing for {label}")
+                        anchor_scores_complete = False
+                        continue
+                    try:
+                        source_rows = _csv_data_row_count(anchor_source_csv)
+                        score_rows, point_counts, point_errors = _shared_score_counts(
+                            root,
+                            anchor_score_path,
+                            expected_thresholds,
+                            anchor_source_csv,
+                        )
+                        errors.extend(
+                            f"anchor {label} score CSV: {message}" for message in point_errors
+                        )
+                        if score_rows != source_rows:
+                            errors.append(f"anchor {label} score/source CSV row counts differ")
+                        for index, count in enumerate(point_counts):
+                            anchor_score_counts[index] += count
+                    except (OSError, csv.Error) as exc:
+                        errors.append(f"could not read anchor score/source CSV for {label}: {exc}")
+                        anchor_scores_complete = False
+
+                candidates: List[Tuple[float, float]] = []
                 if not isinstance(scan, list) or len(scan) != 51:
                     errors.append("threshold_scan must contain exactly 51 entries")
                 else:
@@ -1109,6 +1824,10 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
                             key not in point
                             for key in (
                                 "threshold",
+                                "anchor_scan_passing_event_count",
+                                "shared_f5_passing_event_count",
+                                "effective_passing_event_count",
+                                "background_status",
                                 "sigma0_after_cut_pb",
                                 "fit_intercept_fixed",
                                 "lower_bound",
@@ -1118,13 +1837,140 @@ def _phase8_numerical_checks(root: str) -> List[Dict[str, Any]]:
                         ):
                             errors.append(f"threshold_scan[{index}] is missing required fields")
                             continue
+                        point_threshold = point.get("threshold")
+                        if not _finite_number(point_threshold) or not math.isclose(
+                            float(point_threshold),
+                            expected_thresholds[index],
+                            rel_tol=0.0,
+                            abs_tol=1e-12,
+                        ):
+                            errors.append(
+                                f"threshold_scan[{index}].threshold must be {expected_thresholds[index]:.2f}"
+                            )
+                        anchor_count = point.get("anchor_scan_passing_event_count")
+                        if not isinstance(anchor_count, int) or isinstance(anchor_count, bool) or anchor_count < 0:
+                            errors.append(
+                                f"threshold_scan[{index}].anchor_scan_passing_event_count "
+                                "must be a non-negative integer"
+                            )
+                            continue
+                        if anchor_scores_complete and anchor_count != anchor_score_counts[index]:
+                            errors.append(
+                                f"threshold_scan[{index}].anchor_scan_passing_event_count "
+                                "differs from the eleven anchor score CSVs"
+                            )
+                        shared_count = point.get("shared_f5_passing_event_count")
+                        if not isinstance(shared_count, int) or isinstance(shared_count, bool) or shared_count < 0:
+                            errors.append(
+                                f"threshold_scan[{index}].shared_f5_passing_event_count "
+                                "must be a non-negative integer"
+                            )
+                            continue
+                        if score_counts is not None and shared_count != score_counts[index]:
+                            errors.append(
+                                f"threshold_scan[{index}].shared_f5_passing_event_count "
+                                "differs from shared_f5_scores.csv"
+                            )
+
+                        status = point.get("background_status")
+                        effective = point.get("effective_passing_event_count")
+                        sigma = point.get("sigma0_after_cut_pb")
+                        lower = point.get("lower_bound")
+                        upper = point.get("upper_bound")
+                        point_width = point.get("constraint_width")
+                        if anchor_count == 0:
+                            if status != "no_selected_scan_events":
+                                errors.append(
+                                    f"threshold_scan[{index}].background_status must be "
+                                    "no_selected_scan_events"
+                                )
+                            if any(item is not None for item in (effective, sigma, lower, upper, point_width)):
+                                errors.append(
+                                    f"threshold_scan[{index}] must not contain a background or interval "
+                                    "when no anchor scan event passes"
+                                )
+                            continue
+
+                        expected_status = None
+                        expected_effective = None
+                        expected_sigma = None
+                        if shared_count > 0:
+                            expected_status = "observed_events"
+                            expected_effective = float(shared_count)
+                            if valid_background_inputs:
+                                expected_sigma = float(merged_cs) * shared_count / loaded
+                        elif valid_background_inputs and rounds < MAX_ADDITIONAL_ANCHOR_ROUNDS:
+                            expected_status = "additional_anchor_f5_required"
+                            if any(item is not None for item in (effective, sigma, lower, upper, point_width)):
+                                errors.append(
+                                    f"threshold_scan[{index}] must remain unresolved before three "
+                                    "additional anchor rounds"
+                                )
+                            errors.append(
+                                f"threshold_scan[{index}] requires another anchor f5 round before Phase 8 can pass"
+                            )
+                        elif valid_background_inputs:
+                            expected_status = "half_event_after_three_zero_rounds"
+                            expected_effective = 0.5
+                            expected_sigma = float(merged_cs) * 0.5 / loaded
+                        else:
+                            errors.append(
+                                f"threshold_scan[{index}] cannot verify background because shared_f5_background.json "
+                                "has invalid merged inputs"
+                            )
+
+                        if expected_status is not None and status != expected_status:
+                            errors.append(
+                                f"threshold_scan[{index}].background_status must be {expected_status}"
+                            )
+                        if expected_status == "additional_anchor_f5_required":
+                            continue
+                        if effective != expected_effective:
+                            errors.append(
+                                f"threshold_scan[{index}].effective_passing_event_count is inconsistent"
+                            )
+                        if expected_sigma is None or not _finite_number(sigma) or not math.isclose(
+                            float(sigma), expected_sigma, rel_tol=1e-12, abs_tol=1e-15
+                        ):
+                            errors.append(
+                                f"threshold_scan[{index}].sigma0_after_cut_pb has the wrong formula"
+                            )
                         if point.get("fit_intercept_fixed") is not True:
                             errors.append(f"threshold_scan[{index}].fit_intercept_fixed must be true")
-                        if not all(
-                            _finite_number(point.get(key))
-                            for key in ("threshold", "sigma0_after_cut_pb", "lower_bound", "upper_bound", "constraint_width")
+                        if not _valid_interval([lower, upper]):
+                            errors.append(f"threshold_scan[{index}] must contain a valid lower/upper interval")
+                        if not _finite_number(point_width) or float(point_width) <= 0.0:
+                            errors.append(f"threshold_scan[{index}].constraint_width must be positive")
+                        elif _finite_number(lower) and _finite_number(upper) and not math.isclose(
+                            float(point_width), float(upper) - float(lower), rel_tol=1e-12, abs_tol=1e-15
                         ):
-                            errors.append(f"threshold_scan[{index}] contains a non-finite number")
+                            errors.append(
+                                f"threshold_scan[{index}].constraint_width must equal upper_bound-lower_bound"
+                            )
+                        elif _finite_number(point_threshold):
+                            candidates.append((float(point_width), float(point_threshold)))
+
+                if not candidates:
+                    errors.append("threshold_scan contains no usable finite positive constraint width")
+                else:
+                    minimum_width = min(item[0] for item in candidates)
+                    selected_candidates = [
+                        item for item in candidates
+                        if math.isclose(item[0], minimum_width, rel_tol=1e-12, abs_tol=1e-15)
+                    ]
+                    if not _finite_number(threshold) or not any(
+                        math.isclose(float(threshold), item[1], rel_tol=0.0, abs_tol=1e-12)
+                        for item in selected_candidates
+                    ):
+                        errors.append(
+                            "optimal_threshold must select a threshold with the minimum finite positive width"
+                        )
+                    if not _finite_number(width) or not math.isclose(
+                        float(width), minimum_width, rel_tol=1e-12, abs_tol=1e-15
+                    ):
+                        errors.append(
+                            "constraint_width_at_optimal must equal the selected minimum width"
+                        )
                 if errors:
                     bad.append({"algorithm": algorithm, "errors": errors})
             record.update({
@@ -1242,10 +2088,15 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
     threshold_path = os.path.join(root, "data", "phase8", "threshold_optimization.json")
     selected_algorithm = None
     selected_threshold = None
+    selection_scope = None
+    operator_selections: Dict[str, Any] = {}
     if os.path.exists(selection_path):
         selection = _load_json(selection_path)
         selected_algorithm = selection.get("selected_algorithm")
         selected_threshold = selection.get("selected_threshold")
+        selection_scope = selection.get("selection_scope")
+        if selection_scope == "per_operator_best" and isinstance(selection.get("operator_selections"), dict):
+            operator_selections = selection["operator_selections"]
         record = {
             "rel_path": "data/phase9/algorithm_selection.json:phase8_match",
             "severity": "abort",
@@ -1282,6 +2133,28 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
                 minimum = min(float(value) for value in widths.values())
                 if not math.isclose(float(widths[selected_algorithm]), minimum, rel_tol=1e-12, abs_tol=0.0):
                     errors.append("selected_algorithm does not have the narrowest anchor S2 interval")
+            if selection_scope == "per_operator_best":
+                for operator in operators:
+                    operator_selection = operator_selections.get(operator) or {}
+                    algorithm = operator_selection.get("selected_algorithm")
+                    expected_operator_threshold = (
+                        threshold_anchor.get(algorithm) or {}
+                    ).get("optimal_threshold")
+                    actual_operator_threshold = operator_selection.get("selected_threshold")
+                    if not (
+                        _finite_number(expected_operator_threshold)
+                        and _finite_number(actual_operator_threshold)
+                        and math.isclose(
+                            float(expected_operator_threshold),
+                            float(actual_operator_threshold),
+                            rel_tol=0.0,
+                            abs_tol=1e-12,
+                        )
+                    ):
+                        errors.append(
+                            f"operator_selections.{operator}.selected_threshold does not equal "
+                            "the selected algorithm's Phase 8 optimal threshold"
+                        )
         else:
             errors.append("Phase 8 threshold_optimization.json is missing or selected algorithm is invalid")
         record.update({"ok": not errors, "invalid_values": errors})
@@ -1300,10 +2173,16 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
             data = _load_json(table_path)
             constraints = data.get("constraints")
             bad = []
-            if data.get("selection_scope") != "anchor_operator_only":
-                bad.append("selection_scope must be anchor_operator_only")
-            if data.get("selected_algorithm") != selected_algorithm:
-                bad.append("selected_algorithm differs from algorithm_selection.json")
+            if data.get("selection_scope") != selection_scope:
+                bad.append("selection_scope differs from algorithm_selection.json")
+            if selection_scope == "anchor_operator_only":
+                if data.get("selected_algorithm") != selected_algorithm:
+                    bad.append("selected_algorithm differs from algorithm_selection.json")
+            elif selection_scope == "per_operator_best":
+                if data.get("operator_selections") != operator_selections:
+                    bad.append("operator_selections differs from algorithm_selection.json")
+            else:
+                bad.append("selection_scope must be anchor_operator_only or per_operator_best")
             if not isinstance(constraints, dict):
                 bad.append("constraints must be an object")
                 constraints = {}
@@ -1315,6 +2194,29 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
                 if not isinstance(value, dict):
                     invalid_intervals.append({"operator": operator, "error": "missing constraint object"})
                     continue
+                if selection_scope == "per_operator_best":
+                    expected_selection = operator_selections.get(operator) or {}
+                    if value.get("selected_algorithm") != expected_selection.get("selected_algorithm"):
+                        invalid_intervals.append({
+                            "operator": operator,
+                            "error": "selected_algorithm differs from operator_selections",
+                        })
+                    expected_threshold = expected_selection.get("selected_threshold")
+                    actual_threshold = value.get("selected_threshold")
+                    if not (
+                        _finite_number(expected_threshold)
+                        and _finite_number(actual_threshold)
+                        and math.isclose(
+                            float(expected_threshold),
+                            float(actual_threshold),
+                            rel_tol=0.0,
+                            abs_tol=1e-12,
+                        )
+                    ):
+                        invalid_intervals.append({
+                            "operator": operator,
+                            "error": "selected_threshold differs from operator_selections",
+                        })
                 for significance in ("S2", "S3", "S5"):
                     if not _valid_interval(value.get(significance)):
                         invalid_intervals.append({"operator": operator, "significance": significance, "value": value.get(significance)})
@@ -1701,6 +2603,15 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
         selection = _load_json(os.path.join(root, "data", "phase9", "algorithm_selection.json"))
         expected_production = selection.get("selected_algorithm")
         production_ok = lock.get("production_algorithm") == expected_production
+        expected_scope = selection.get("selection_scope", "anchor_operator_only")
+        actual_scope = lock.get("selection_scope", "anchor_operator_only")
+        scope_ok = actual_scope == expected_scope
+        operator_selections_ok = True
+        if expected_scope == "per_operator_best":
+            operator_selections_ok = (
+                isinstance(selection.get("operator_selections"), dict)
+                and lock.get("operator_selections") == selection.get("operator_selections")
+            )
         provenance = lock.get("selection_provenance")
         provenance_ok = (
             isinstance(provenance, dict)
@@ -1743,13 +2654,23 @@ def _replay_algorithm_lock_checks(root: str) -> List[Dict[str, Any]]:
                 elif _file_sha256(full_path) != expected_hash:
                     bad_files.append({"path": rel, "error": "SHA-256 mismatch"})
 
-        ok = not bad_algorithms and production_ok and provenance_ok and not bad_files
+        ok = (
+            not bad_algorithms
+            and production_ok
+            and scope_ok
+            and operator_selections_ok
+            and provenance_ok
+            and not bad_files
+        )
         record.update({
             "ok": ok,
             "trained_algorithms": sorted(trained_map),
             "bad_algorithms": bad_algorithms,
             "expected_production_algorithm": expected_production,
             "actual_production_algorithm": lock.get("production_algorithm"),
+            "expected_selection_scope": expected_scope,
+            "actual_selection_scope": actual_scope,
+            "operator_selections_ok": operator_selections_ok,
             "selection_provenance_ok": provenance_ok,
             "bad_packaged_files": bad_files,
         })
@@ -2862,6 +3783,7 @@ def audit_expected_outputs(
     checks.extend(_phase6_progress_checks(root))
     checks.extend(_phase6_weighted_order_checks(root))
     checks.extend(_phase7_content_checks(root))
+    checks.extend(_phase8_shared_f5_checks(root))
     checks.extend(_phase8_numerical_checks(root))
     checks.extend(_phase9_strategy_checks(root))
     checks.extend(_phase9_numerical_checks(root))
@@ -2927,6 +3849,7 @@ def audit_phase_deliverables(
     elif phase == "7":
         checks.extend(_phase7_content_checks(root))
     elif phase == "8":
+        checks.extend(_phase8_shared_f5_checks(root))
         checks.extend(_phase8_numerical_checks(root))
     elif phase == "9":
         checks.extend(_phase9_strategy_checks(root))
