@@ -376,6 +376,93 @@ def _write_threshold_fixture(root, shared):
 
 
 class ResolvedContractAuditTests(unittest.TestCase):
+    def test_runner_boundary_audit_uses_each_locked_debug_count(self):
+        cases = (
+            ("3", "pure_np", 1000),
+            ("4", "pure_sm", 1000),
+            ("5", "pure_sm", 50000),
+            ("5", "pure_np", 10000),
+            ("6", "scan", 100000),
+            ("8", "sm_np_point", 100000),
+        )
+        locked_counts = {
+            "nev_phase3": 1000,
+            "nev_phase4": 1000,
+            "nev_sm": 50000,
+            "nev_np": 10000,
+            "nev_scan": 100000,
+        }
+        for phase, mode, nevents in cases:
+            with self.subTest(phase=phase, mode=mode), tempfile.TemporaryDirectory() as workdir:
+                root = os.path.join(workdir, "results")
+                write_json(
+                    os.path.join(root, "run_config.json"),
+                    {
+                        "debug": True,
+                        "delphes_card": "card.tcl",
+                        "locked_event_counts": locked_counts,
+                    },
+                )
+                write_json(
+                    os.path.join(root, "data", "phase3", "operator_claims.json"),
+                    {"o_1": {"model": "model", "anoinput_idx": 1}},
+                )
+                lhco_path = os.path.join(root, "data", f"phase{phase}", "events.lhco")
+                write_text(lhco_path, "0 0 0\n")
+                result = {
+                    "status": "completed",
+                    "process_mode": mode,
+                    "event_generator": "MadGraph5",
+                    "detector_simulation": "Delphes",
+                    "analysis_event_format": "LHCO_from_Delphes_ROOT",
+                    "delphes_card": "card.tcl",
+                    "nevents": nevents,
+                    "outputs": [{
+                        "cross_section_pb": 1.0,
+                        "lhco_path": lhco_path,
+                        "loaded_lhco_event_count": nevents // 10,
+                    }],
+                }
+                if phase == "3":
+                    result_path = os.path.join(root, "data", "phase3", "runner.json")
+                    write_json(
+                        os.path.join(root, "data", "phase3", "model_status.json"),
+                        {"model": {"result_json": "data/phase3/runner.json"}},
+                    )
+                elif phase == "4":
+                    result_path = os.path.join(root, "data", "phase4", "sm_baseline_result.json")
+                elif phase == "5":
+                    result_path = os.path.join(
+                        root,
+                        "data",
+                        "phase5",
+                        "sm_result.json" if mode == "pure_sm" else "np_o_1_result.json",
+                    )
+                    other_path = os.path.join(
+                        root,
+                        "data",
+                        "phase5",
+                        "np_o_1_result.json" if mode == "pure_sm" else "sm_result.json",
+                    )
+                    other = dict(result)
+                    other["process_mode"] = "pure_np" if mode == "pure_sm" else "pure_sm"
+                    other["nevents"] = 10000 if mode == "pure_sm" else 50000
+                    other["outputs"] = [dict(result["outputs"][0])]
+                    other["outputs"][0]["loaded_lhco_event_count"] = other["nevents"] // 10
+                    write_json(other_path, other)
+                elif phase == "6":
+                    result_path = os.path.join(root, "data", "phase6", "np_o_1_scan_result.json")
+                else:
+                    result_path = os.path.join(root, "data", "phase8", "anchor_result.json")
+                    write_json(
+                        os.path.join(root, "data", "phase8", "shared_f5_background.json"),
+                        {"additional_anchor_f5_sources": [{"runner_result_json": result_path}]},
+                    )
+                write_json(result_path, result)
+                checks = _runner_result_boundary_checks(root, phase)
+                self.assertTrue(checks)
+                self.assertTrue(all(check["ok"] for check in checks), checks)
+
     def test_runner_boundary_audit_accepts_locked_debug_event_count(self):
         with tempfile.TemporaryDirectory() as workdir:
             root = os.path.join(workdir, "results")

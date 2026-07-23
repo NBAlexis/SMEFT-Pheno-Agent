@@ -1,6 +1,6 @@
 ---
 name: automated-smeft-ml-pheno
-description: "Use for serious long-running SMEFT collider phenomenology studies: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML selectors, scan Wilson coefficients, compute constraints, and produce a scientific manuscript."
+description: "Use for full SMEFT collider phenomenology studies or debug-mode workflow tests: collect inputs, run MadGraph5/Delphes/root2lhco/CutExperiment, train ML selectors, scan Wilson coefficients, compute constraints, and produce the required manuscript and replay artifacts."
 ---
 
 # Automated SMEFT Phenomenology with Machine Learning
@@ -9,16 +9,19 @@ Run an end-to-end SMEFT collider phenomenology workflow: collect study inputs, v
 
 ## Research Mission
 
-This skill is for serious scientific research, not quick demonstration runs. The
-goal is to produce a scientifically usable manuscript after numerical
-simulation, with reproducible data, plots, fit coefficients, constraints, and
-audit logs.
+With `debug=false`, use this skill for serious scientific research whose goal is
+a scientifically usable manuscript with reproducible data, plots, fit
+coefficients, constraints, and audit logs. With `debug=true`, test the same
+complete workflow and deliverable structure with the reduced locked event
+counts; do not describe its numerical results as statistically reliable or
+publication-ready.
 
-After Phase 1 collects the required inputs, Phases 2-12 are an automated,
-unattended research workflow. Week-scale or longer computation is expected and
-normal. Do not downgrade the workflow to a progress summary, run report,
-partial result, informal answer, reduced scan, reduced event count, or HTML
-fallback while LaTeX is available or build errors are recoverable.
+After Phase 1 collects the required inputs, Phases 2-12 are automated and
+unattended. Week-scale or longer computation is normal for `debug=false`.
+Do not downgrade either `debug` setting to a progress summary, partial result,
+informal answer, reduced scan, event counts below the values locked for that
+setting, or an HTML fallback while LaTeX is available or build errors are
+recoverable.
 
 ## Highest-Priority Contract
 
@@ -65,18 +68,20 @@ The research contract also freezes these six method boundaries after Phase 1:
   the ML selection.
 - Derive expected coefficient constraints only from fitted cross-sections after
   ML selection and the declared signal-significance formula.
-- Compare scientifically valid strategies only by expected coefficient-
-  constraint interval width. AUC may describe or diagnose a classifier but must
-  never rank or select the final strategy.
+- Compare strategies usable under the selected `debug` setting only by expected
+  coefficient-constraint interval width. AUC may describe or diagnose a
+  classifier but must never rank or select the final strategy.
 - Deliver every Phase 10 manuscript item frozen in
   `phase10_required_manuscript_items`. Earlier phases must provide the evidence
   needed for those items without inventing unrelated scientific requirements.
 
-ML algorithms, implementations, and hyperparameters remain changeable. The LLM
-may reject or repair a candidate with inadequate event support, invalid fits, or
-numerical instability, and may use `per_operator_best`; among the resulting
-scientifically valid candidates it must still choose the narrowest expected
-constraint interval.
+ML algorithms, implementations, and hyperparameters remain changeable. With
+`debug=false`, the LLM may reject or repair a candidate with inadequate event
+support, invalid fits, or numerical instability. With `debug=true`, repair
+technical failures and unusable numerical outputs, but do not add full-size runs
+only to obtain formal statistical reliability. Under either `debug` setting it
+may use `per_operator_best`; among candidates usable under that setting it must
+still choose the narrowest expected constraint interval.
 
 The phases and bundled scripts are the tested standard execution path, not the
 research objective. Start from them because they encode known-good conventions.
@@ -219,8 +224,10 @@ Delivery definitions:
 
 ## Long-Run Execution Contract
 
-Runtime from hours to months is normal. Never change physics, event counts,
-operators, scan points, or algorithms because of time estimates. Use
+Runtime from hours to months is normal for `debug=false`; `debug=true` uses the
+locked reduced counts specifically to test the workflow at lower cost. Never
+change physics, event counts locked for the selected `debug` setting, operators,
+scan points, or algorithms because of time estimates. Use
 `scripts/durable_exec.py`, `tmux`, `screen`, `nohup`, `systemd-run`, or a site
 scheduler when work may outlive the foreground session, and record resumable job
 state plus stdout/stderr paths.
@@ -263,10 +270,10 @@ do not require full-size statistical convergence.
 | `nev_np` | 100000 | 10000 |
 | `nev_scan` | 1000000 | 100000 |
 
-The selected mode and all five corresponding values are frozen after Phase 1.
-Do not switch a formal run to debug or reduce either mode's locked values later
-because execution is slow. All other fixed method boundaries apply unchanged in
-both modes.
+The selected `debug` setting and all five corresponding values are frozen after
+Phase 1. Do not switch a formal run to debug or reduce the locked values for
+either setting later because execution is slow. All other fixed method
+boundaries apply unchanged under both settings.
 
 ## Execution Target
 
@@ -294,7 +301,7 @@ performs the non-executing static inspection.
 | 3 | Every coefficient in every requested model tested; zero-result branch reported |
 | 4-6 | Baselines, per-operator ranges, pure samples, and all 11-point scans |
 | 7-9 | Recorded trained algorithms, fits, selected production algorithm, and S=2,3,5 constraints |
-| 10 | Publication manuscript and evidence |
+| 10 | Manuscript and evidence; publication-ready only for `debug=false`, clearly labeled workflow-test output for `debug=true` |
 | Cleanup | Process/order provenance archived |
 | 11 | One-command numerical replay package and data-file report |
 | 12 | Fully resolved deliverables contract and final audit |

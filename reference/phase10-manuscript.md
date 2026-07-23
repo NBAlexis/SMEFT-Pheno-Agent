@@ -1,4 +1,4 @@
-# Phase 10: Generate Publication-Quality Manuscript
+# Phase 10: Generate Manuscript
 
 > **Contract priority**: Preserve the research objective and deliverables. Apply the technical-failure and `phase_fail` definitions in `SKILL.md`.
 
@@ -13,6 +13,13 @@ environment. HTML is a fallback format only when both places lack usable
 Phase 10 must not write a loose workflow summary. It must read the manuscript
 guides, build evidence, draft, validate, revise with a bounded loop, and archive
 remaining issues.
+
+When `config.debug` is true, still produce every Phase 10 artifact and scientific
+section so the workflow is tested end to end. Clearly state in the title page or
+front matter, abstract, numerical-results section, and conclusion that this is a
+reduced-event workflow test whose numerical constraints are not statistically
+reliable or publication-ready. Do not add full-size runs to remove that label.
+When `config.debug` is false, apply the normal publication-quality standard.
 
 ## Prerequisite
 

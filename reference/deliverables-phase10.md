@@ -36,7 +36,9 @@ Must deliver:
   `manuscript_validation.json`.
 
 Manuscript dependency: this is the manuscript phase. It must write a paper, not
-a workflow summary.
+a workflow summary. With `debug=true`, the paper must clearly identify itself as
+a reduced-event workflow test and must not claim publication-ready numerical
+results; all other Phase 10 files and sections remain required.
 
 If missing or incomplete: rerun the LaTeX probes, choose PDF whenever target or
 local LaTeX is available, rebuild evidence, create missing figures from

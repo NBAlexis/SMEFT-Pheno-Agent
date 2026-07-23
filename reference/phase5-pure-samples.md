@@ -7,7 +7,8 @@ Phase 5 can be long-running because it produces pure NP samples for every
 globally claimed operator. Runtime length is not a reason to ask whether to
 continue, reduce event counts, or skip non-anchor samples.
 
-Generate high-statistics pure samples. In multi-model mode, ML training is
+Use the locked high-statistics counts with `debug=false`, or the locked reduced
+workflow-test counts with `debug=true`. In multi-model mode, ML training is
 performed **once** using the **anchor operator only**, but pure NP samples for
 all globally claimed operators are still required for publication data and score
 distribution plots.

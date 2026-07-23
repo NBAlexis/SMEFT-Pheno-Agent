@@ -2466,7 +2466,7 @@ def _phase9_numerical_checks(root: str) -> List[Dict[str, Any]]:
                         if not isinstance(candidates, dict) or not candidates:
                             errors.append(
                                 f"comparison_only_intervals.{operator} must contain at least one "
-                                "scientifically usable evaluated strategy"
+                                "evaluated strategy usable under the selected debug setting"
                             )
                             continue
                         widths: Dict[str, float] = {}

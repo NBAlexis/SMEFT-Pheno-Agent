@@ -6,6 +6,12 @@ the execution target or the local control environment. HTML must follow the
 same scientific content standard, but it is only a fallback when both LaTeX
 probes fail.
 
+For `debug=true`, preserve the complete paper structure but label the title page
+or front matter, abstract, numerical-results section, and conclusion as a
+reduced-event workflow test. Do not present its constraints as statistically
+reliable or publication-ready. For `debug=false`, write the normal
+publication-quality manuscript.
+
 ## Step-Specific References
 
 Do not load every manuscript reference at the start of Phase 10. Load each file

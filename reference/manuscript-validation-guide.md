@@ -62,6 +62,9 @@ Mark these as `major` if they fail:
   available
 - manuscript uses approximate event counts such as `~2500`
 - requested event counts or actual loaded LHCO event counts are missing or inconsistent with evidence
+- the manuscript omits the `debug` setting, or `debug=true` is not identified as
+  a reduced-event workflow test in the title page or front matter, abstract,
+  numerical-results section, and conclusion
 - manuscript uses banner event counts as actual event counts
 - selection efficiencies do not state or use actual LHCO loaded counts as denominators
 - final-state particle cut is missing

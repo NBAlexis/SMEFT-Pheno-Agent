@@ -745,6 +745,19 @@ class LightweightScriptBehaviorTests(unittest.TestCase):
             self.assertEqual(cfg.analysis_notes.focused_operators, [])
             self.assertAlmostEqual(cfg.polarization.polbeam1, -0.8)
 
+            non_boolean_debug = dict(base)
+            non_boolean_debug["debug"] = "true"
+            write_text(config_path, json.dumps(non_boolean_debug))
+            with self.assertRaisesRegex(ValueError, "debug must be a boolean"):
+                load_run_config(config_path)
+
+            normal = dict(base)
+            normal.pop("debug")
+            write_text(config_path, json.dumps(normal))
+            normal_cfg = load_run_config(config_path)
+            self.assertFalse(normal_cfg.debug)
+            self.assertEqual(normal_cfg.locked_event_counts.nev_scan, 1000000)
+
             reduced = dict(base)
             reduced["locked_event_counts"] = {
                 "nev_phase3": 1000,

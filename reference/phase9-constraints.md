@@ -84,13 +84,17 @@ The standard selection procedure uses only the anchor operator's Phase 8 fits:
 3. Select the algorithm with the narrowest `S=2` interval width.
 4. Record full anchor intervals for all algorithms.
 
-The LLM may judge a candidate scientifically unusable because of inadequate
-event support, an invalid fit, or numerical instability, and must repair the
-affected Phase 7-9 work when feasible. Among scientifically usable candidates,
-select only by expected `S=2` coefficient-constraint interval width. Do not use
-AUC or another classifier metric to rank or select the final strategy. Record
-the fixed comparison method in `selection_criterion` and support candidate
-validity decisions with `selection_rationale` and `selection_evidence`.
+With `debug=false`, the LLM may judge a candidate scientifically unusable
+because of inadequate event support, an invalid fit, or numerical instability,
+and must repair the affected Phase 7-9 work when feasible. With `debug=true`, a
+candidate is usable for workflow testing when it yields finite, internally
+consistent, traceable fit and constraint outputs; repair technical or numerical
+failure, but do not add full-size runs only to establish formal statistical
+reliability. Among candidates usable under the selected `debug` setting, select
+only by expected `S=2` coefficient-constraint interval width. Do not use AUC or
+another classifier metric to rank or select the final strategy. Record the fixed
+comparison method in `selection_criterion` and support candidate validity
+decisions with `selection_rationale` and `selection_evidence`.
 
 Output field:
 
@@ -112,11 +116,11 @@ For `anchor_operator_only`, the selected algorithm and its Phase 8 optimal
 threshold form the single final strategy for every operator.
 
 For `per_operator_best`, retain the top-level anchor comparison for provenance.
-For every operator, let the LLM determine which recorded candidates are
-scientifically usable, then choose the algorithm and evaluated threshold with
-the narrowest expected `S=2` coefficient-constraint interval. Fit validity,
-selected-event support, and numerical stability may exclude a candidate or
-trigger repair, but cannot become an alternative ranking metric. Add:
+For every operator, let the LLM determine which recorded candidates are usable
+under the selected `debug` setting, then choose the algorithm and evaluated
+threshold with the narrowest expected `S=2` coefficient-constraint interval.
+Fit validity, selected-event support, and numerical stability may exclude a
+candidate or trigger repair, but cannot become an alternative ranking metric. Add:
 
 ```json
 {
@@ -280,12 +284,12 @@ operator,selected_algorithm,selected_threshold,S2_lower,S2_upper,S3_lower,S3_upp
 ```
 
 When `selection_scope=per_operator_best`, `comparison_only_intervals` must
-contain every non-anchor operator and every scientifically usable trained
-algorithm considered for that operator. Each candidate records the evaluated
-`selected_threshold` and its expected `S2` interval. If an algorithm cannot
-produce a scientifically usable interval after repair, omit it from this
-numeric comparison and explain the exclusion in `selection_rationale` with an
-entry in `selection_evidence`. Select the narrowest recorded interval.
+contain every non-anchor operator and every trained algorithm usable under the
+selected `debug` setting and considered for that operator. Each candidate
+records the evaluated `selected_threshold` and its expected `S2` interval. If an algorithm cannot
+produce an interval usable under the selected `debug` setting after repair,
+omit it from this numeric comparison and explain the exclusion in
+`selection_rationale` with an entry in `selection_evidence`. Select the narrowest recorded interval.
 
 ```python
 logger.phase_complete("9")
@@ -299,7 +303,7 @@ logger.phase_complete("9")
 - `per_operator_best` records every operator in `operator_selections`, and each
   constraint row uses its recorded algorithm and threshold. Its rationale and
   evidence explain either the user request or why the common strategy was not
-  scientifically adequate.
+  usable under the selected `debug` setting.
 - All reported intervals have real numeric lower and upper bounds.
 - Fit coefficients and the fixed `f=0` intercept used for constraints are
   archived or referenced.
@@ -309,7 +313,7 @@ logger.phase_complete("9")
 - Per-operator choices may be final only when `selection_scope` is
   `per_operator_best`; otherwise they are labeled comparison-only. For each
   non-anchor operator, the selected candidate has the narrowest recorded finite
-  `S2` interval among scientifically usable candidates.
+  `S2` interval among candidates usable under the selected `debug` setting.
 - `results/plots/anchor_s2_algorithm_constraint_bar.pdf` exists and uses only
   anchor-operator `S=2` intervals.
 

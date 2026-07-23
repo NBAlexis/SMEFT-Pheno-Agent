@@ -6,22 +6,26 @@ without asking the user during Execution Mode.
 
 ## Selection Scope
 
-Here, a scientifically usable result means that the LLM judges the generated
+With `debug=false`, a scientifically usable result means that the LLM judges the
 event support, fit validity, numerical stability, and resulting constraints
 sufficient for a defensible scientific report and records the supporting data.
-It is not the name of a scripted status or one fixed numerical cutoff.
+With `debug=true`, a result usable for the workflow test need only provide
+finite, internally consistent, traceable outputs that exercise the complete
+workflow; it is not a claim of statistical reliability. Neither judgment is the
+name of a scripted status or one fixed numerical cutoff.
 
 - `anchor_operator_only` is the default: choose one algorithm and one score
   threshold from the anchor operator and use them for every operator when the
-  resulting fits and constraints are scientifically usable.
+  resulting fits and constraints are usable under the selected `debug` setting.
 - `per_operator_best` is valid when the user requested it in
   `analysis_notes.additional_requirements`, or when the LLM finds evidence that
-  the common strategy cannot produce a scientifically usable result for one or
-  more operators. This decision is scientific judgment, not a fixed list of
-  scripted failure states.
+  the common strategy cannot produce a result usable under the selected `debug`
+  setting for one or more operators. Let the LLM make this decision from the
+  recorded evidence; do not reduce it to a fixed list of scripted failure states.
 - For `per_operator_best`, choose the trained algorithm and threshold that give
   the narrowest expected coefficient-constraint interval among the
-  scientifically usable candidates recorded for that operator in Phase 8.
+  candidates usable under the selected `debug` setting and recorded for that
+  operator in Phase 8.
   Existing Phase 8 results may be
   re-aggregated, or affected Phase 7-9 work may be repaired and rerun when the
   evidence requires it.
@@ -48,8 +52,8 @@ It is not the name of a scripted status or one fixed numerical cutoff.
   traditional hand-designed kinematic cut analysis cannot replace the ML stage.
 - Compute coefficient constraints only from fitted selected cross-sections and
   the declared signal-significance formula.
-- Compare scientifically usable strategies only by expected coefficient-
-  constraint interval width. AUC is descriptive or diagnostic only.
+- Compare strategies usable under the selected `debug` setting only by expected
+  coefficient-constraint interval width. AUC is descriptive or diagnostic only.
 - Deliver every manuscript item in the frozen Phase 10 list. Earlier evidence
   requirements exist to support that list, not to add unrelated work.
 - The research objective, fixed method boundaries, and required scientific
@@ -93,6 +97,6 @@ It is not the name of a scripted status or one fixed numerical cutoff.
 ## Execution Continuity
 
 - Runtime length is not a stop condition.
-- Do not reduce event counts, operators, scan points, algorithms, or thresholds
-  for speed.
+- Do not reduce event counts below the values locked for the selected `debug`
+  setting, or reduce operators, scan points, algorithms, or thresholds for speed.
 - Do not ask the user whether to continue after Execution Mode begins.

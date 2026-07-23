@@ -18,6 +18,7 @@
   "phase10_required_manuscript_items": [
     {"id": "structure.logical_sections", "required_content": "scientific-paper section logic"},
     {"id": "physics.process_setup", "required_content": "process, collider, beams, luminosity, detector, tool versions"},
+    {"id": "physics.debug_status", "required_content": "debug setting and, when true, an explicit reduced-event workflow-test limitation"},
     {"id": "physics.model_anchor", "required_content": "UFO model, operators, anchor operator"},
     {"id": "figures.feynman_diagrams", "required_content": "SM/NP diagrams or documented missing reasons"},
     {"id": "scan.bounds_all_ops", "required_content": "scan lower/upper bounds for every claimed operator"},
@@ -113,8 +114,8 @@
       "phase": "9",
       "requirements": [
         "selected algorithm is a Phase 7 anchor algorithm",
-        "scientifically valid strategies are compared only by expected S2 coefficient-constraint interval width; AUC is never a final selection criterion",
-        "the selected threshold minimizes the applicable S2 coefficient-constraint interval width among scientifically valid evaluated candidates",
+        "strategies usable under the selected debug mode are compared only by expected S2 coefficient-constraint interval width; AUC is never a final selection criterion",
+        "the selected threshold minimizes the applicable S2 coefficient-constraint interval width among evaluated candidates usable under the selected debug mode",
         "constraint keys equal Phase 3 claimed operators",
         "every operator has finite negative-to-positive S2, S3, and S5 intervals"
       ]

@@ -7,8 +7,10 @@ reading the workflow logs.
 ## Abstract
 
 Include process, collider energy, luminosity, model family, recorded selection
-scope, selected algorithm or algorithms, and the main constraints. Do not
-mention workflow internals.
+scope, selected algorithm or algorithms, and the main constraints. State the
+`debug` setting. When it is true, identify the work as a reduced-event workflow
+test and state that its numerical constraints are not publication-ready. Do not
+mention other workflow internals.
 
 ## Introduction
 

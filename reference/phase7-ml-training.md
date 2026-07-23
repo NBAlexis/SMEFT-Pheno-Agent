@@ -259,7 +259,7 @@ Train on the **anchor operator's** SM and NP samples:
 6. **Compute and record AUC for each** using the `compute_scores` function from Step 7.2.3 - **this is for manuscript plotting only, NOT for algorithm selection**
 7. Plot ROC curves and save to `results/plots/roc_anchor.pdf`
 
-> **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 uses the anchor-selected common strategy by default, but may record a user-requested or evidence-driven per-operator strategy when the common strategy is not scientifically adequate.
+> **Algorithm selection is deferred to Phases 8-9.** Phase 7 trains exactly the 3 randomly selected algorithms (or user-specified algorithms). No expansion, no AUC-based filtering. Phase 8 optimizes thresholds on the anchor operator for each algorithm. Phase 9 uses the anchor-selected common strategy by default, but may record a user-requested or evidence-driven per-operator strategy when the common strategy is not usable under the selected `debug` setting.
 
 ## Step 7.3: Score Distribution Histograms
 

@@ -10,6 +10,10 @@
       "required_content": "process, collider, beams, luminosity, detector, tool versions"
     },
     {
+      "id": "physics.debug_status",
+      "required_content": "debug setting and, when true, an explicit reduced-event workflow-test limitation"
+    },
+    {
       "id": "physics.model_anchor",
       "required_content": "UFO model, operators, anchor operator"
     },

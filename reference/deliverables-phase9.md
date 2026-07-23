@@ -13,7 +13,7 @@ Must deliver:
   `selection_evidence`, and the source entry in `threshold_optimization.json`.
   The rationale explains why the recorded scope was used. For every non-anchor
   operator it also records `comparison_only_intervals` with the evaluated
-  threshold and finite `S2` interval for every scientifically usable candidate;
+  threshold and finite `S2` interval for every candidate usable under the selected `debug` setting;
   the selected candidate must have the narrowest interval. Excluded candidates
   require a reason and evidence, not an alternative ranking metric.
 - `results/data/phase9/constraint_table.json` and `.csv` with final

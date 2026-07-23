@@ -56,6 +56,9 @@ Use every `required_items[].id` from that file in both
   cases.
 - Collider type, beam energies, displayed `sqrt(s)`, luminosity, detector card,
   and toolchain versions are stated.
+- The `debug` setting is stated. If true, the title page or front matter,
+  abstract, numerical-results section, and conclusion identify the calculation
+  as a reduced-event workflow test and do not claim publication-ready numbers.
 - UFO model, active coefficients/operators, and anchor operator are stated at
   the highest supported evidence level.
 - Representative SM and NP Feynman diagrams are included or their absence is

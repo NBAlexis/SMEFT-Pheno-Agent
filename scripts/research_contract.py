@@ -45,9 +45,9 @@ FIXED_METHOD_REQUIREMENTS = {
         "machine-learning selection and the declared signal-significance formula."
     ),
     "strategy_comparison_method": (
-        "Compare scientifically valid selection strategies only by expected coefficient-"
-        "constraint interval width; AUC is descriptive or diagnostic and never a final "
-        "strategy-selection criterion."
+        "Compare selection strategies usable under the selected debug mode only by "
+        "expected coefficient-constraint interval width; AUC is descriptive or "
+        "diagnostic and never a final strategy-selection criterion."
     ),
     "phase10_publication_content": (
         "Complete every manuscript item frozen in phase10_required_manuscript_items; "

@@ -434,6 +434,10 @@ target copy at `{workdir}/results/run_config.json`.
 }
 ```
 
+This example is for `debug=false`. For `debug=true`, write the five reduced
+values from the `SKILL.md` Locked Runtime Contract instead; do not copy the
+formal counts from this example.
+
 Every `run_configurations` entry must include explicit MG5 beam energies in GeV.
 For ep colliders, `energy` remains null because `sqrt(s)` is not used for
 event generation and is produced only by `scripts/beam_energy.py` in Phase 10:
