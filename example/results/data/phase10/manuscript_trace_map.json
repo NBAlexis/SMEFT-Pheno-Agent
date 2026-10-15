@@ -1,0 +1,160 @@
+{
+  "draft_path": "results/manuscript/manuscript.tex",
+  "items": {
+    "structure.logical_sections": {
+      "evidence_path": "results/manuscript/manuscript.tex",
+      "manuscript_location": "Sections 1-7 + Appendix A",
+      "status": "present"
+    },
+    "physics.process_setup": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#run",
+      "manuscript_location": "Abstract; Secs. 1, 3",
+      "status": "present"
+    },
+    "physics.debug_status": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#run.debug_mode",
+      "manuscript_location": "Abstract (last sentence)",
+      "status": "present"
+    },
+    "physics.model_anchor": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#model_description",
+      "manuscript_location": "Sec. 2, Table 1",
+      "status": "present"
+    },
+    "figures.feynman_diagrams": {
+      "evidence_path": "results/manuscript/manuscript.tex (Fig. 1, TikZ source)",
+      "manuscript_location": "Sec. 3, Fig. 1",
+      "status": "present"
+    },
+    "scan.bounds_all_ops": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#model_description.claimed_operators",
+      "manuscript_location": "Sec. 2 after Eq. (1); Table 1",
+      "status": "present"
+    },
+    "data.actual_lhco_counts": {
+      "evidence_path": "results/data/phase8/dataset_summary.json",
+      "manuscript_location": "Sec. 3; Table 3",
+      "status": "present"
+    },
+    "data.final_state_cut": {
+      "evidence_path": "results/data/phase7/feature_schema.json#final_state_cut",
+      "manuscript_location": "Sec. 3; Table 3 header",
+      "status": "present"
+    },
+    "data.dataset_table": {
+      "evidence_path": "results/data/phase8/dataset_summary.json",
+      "manuscript_location": "Table 3",
+      "status": "present"
+    },
+    "data.numeric_source_consistency": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json",
+      "manuscript_location": "Tables 3, 5, 6, 7",
+      "status": "present"
+    },
+    "data.selection_denominators": {
+      "evidence_path": "results/data/phase8/shared_f5_background.json",
+      "manuscript_location": "Sec. 5 Eq. (2); Table 5",
+      "status": "present"
+    },
+    "data.public_csv_score_paths": {
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#datasets",
+      "manuscript_location": "Sec. 3 data-availability paragraph",
+      "status": "present"
+    },
+    "features.table_units_order": {
+      "evidence_path": "results/data/phase7/feature_schema.json",
+      "manuscript_location": "Sec. 4; Table 4",
+      "status": "present"
+    },
+    "features.preprocessing": {
+      "evidence_path": "results/data/phase7/feature_schema.json#preprocessing",
+      "manuscript_location": "Sec. 4 second paragraph",
+      "status": "present"
+    },
+    "ml.algorithm_descriptions": {
+      "evidence_path": "results/data/phase7/algorithm_descriptions.json",
+      "manuscript_location": "Sec. 4 itemize",
+      "status": "present"
+    },
+    "ml.algorithm_pseudocode": {
+      "evidence_path": "results/data/phase7/algorithm_descriptions.json",
+      "manuscript_location": "Sec. 4 pseudocode block",
+      "status": "present"
+    },
+    "ml.score_definitions": {
+      "evidence_path": "results/data/phase7/algorithm_comparison.json",
+      "manuscript_location": "Sec. 4 itemize",
+      "status": "present"
+    },
+    "ml.score_histograms_all_np": {
+      "evidence_path": "results/plots/score_dist_all_pure_np_*.pdf",
+      "manuscript_location": "Fig. 3",
+      "status": "present"
+    },
+    "ml.anchor_roc": {
+      "evidence_path": "results/plots/roc_anchor.pdf",
+      "manuscript_location": "Fig. 2",
+      "status": "present"
+    },
+    "selection.single_strategy": {
+      "evidence_path": "results/data/phase9/algorithm_selection.json",
+      "manuscript_location": "Sec. 5; Sec. 6",
+      "status": "present"
+    },
+    "selection.threshold_optimization": {
+      "evidence_path": "results/data/phase8/threshold_optimization.json",
+      "manuscript_location": "Sec. 5; Table 5",
+      "status": "present"
+    },
+    "selection.anchor_s2_vs_threshold": {
+      "evidence_path": "results/plots/anchor_s2_constraint_range_vs_threshold.pdf",
+      "manuscript_location": "Fig. 5",
+      "status": "present"
+    },
+    "fits.scan_fit_plots_all_ops": {
+      "evidence_path": "results/plots/csfit_plot_o_*_mlp.pdf",
+      "manuscript_location": "Fig. 6 (MLP); Figs. 7-8 (GB/IF, Appendix A)",
+      "status": "present"
+    },
+    "fits.fixed_intercept": {
+      "evidence_path": "results/data/phase8/csfit_o_1_mlp.json",
+      "manuscript_location": "Sec. 6 Eq. (3) and following paragraph",
+      "status": "present"
+    },
+    "fits.numeric_coefficients": {
+      "evidence_path": "results/data/phase8/csfit_o_*_mlp.json",
+      "manuscript_location": "Table 6",
+      "status": "present"
+    },
+    "fits.coefficient_table_all_ops": {
+      "evidence_path": "results/data/phase8/csfit_o_*_mlp.json",
+      "manuscript_location": "Table 6",
+      "status": "present"
+    },
+    "constraints.significance_formula": {
+      "evidence_path": "reference/significance-reference.md",
+      "manuscript_location": "Sec. 6 Eq. (4)",
+      "status": "present"
+    },
+    "constraints.real_roots": {
+      "evidence_path": "reference/significance-reference.md",
+      "manuscript_location": "Sec. 6 after Eq. (4)",
+      "status": "present"
+    },
+    "constraints.final_s235_table": {
+      "evidence_path": "results/data/phase9/constraint_table.json",
+      "manuscript_location": "Table 7",
+      "status": "present"
+    },
+    "constraints.algorithm_bar": {
+      "evidence_path": "results/plots/anchor_s2_algorithm_constraint_bar.pdf",
+      "manuscript_location": "Fig. 4",
+      "status": "present"
+    },
+    "citations.required_references": {
+      "evidence_path": "results/data/phase10/literature_plan.json",
+      "manuscript_location": "Bibliography (18 entries, BibTeX/natbib)",
+      "status": "present"
+    }
+  }
+}

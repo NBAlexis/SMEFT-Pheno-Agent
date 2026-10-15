@@ -4,6 +4,15 @@ Before formal validation, complete the three-pass manuscript completeness loop
 defined in `phase10-manuscript.md`. Write validation output to
 `results/data/phase10/manuscript_validation.json`.
 
+Completeness is not the same as paper quality. The final validation must also
+review `manuscript_blueprint.json` and the draft as a scientific argument.
+
+The following fields have fixed meanings in the quality review: `pass` means
+the check is supported by the draft and evidence; `not_applicable` means the
+topic does not apply and includes a reason; `not_implemented` means it could
+matter but was not done and is stated as a limitation. A missing reason is a
+validation failure, not a silent pass.
+
 ## Revision Loop
 
 Use a bounded loop:
@@ -36,7 +45,8 @@ required content remains a Phase 10 repair task.
 
 First inspect `results/data/phase10/manuscript_completeness_passes.json`,
 `results/data/phase10/manuscript_checklist.json`, and
-`results/data/phase10/manuscript_trace_map.json`. The checklist must contain
+`results/data/phase10/manuscript_trace_map.json`. Also inspect
+`results/data/phase10/manuscript_blueprint.json`. The checklist must contain
 every required ID from `manuscript-checklist-required-ids.json`; the trace map
 must contain the same IDs and point to both evidence and a manuscript location.
 Missing IDs, missing trace records, or `present` items without manuscript
@@ -48,6 +58,29 @@ each with `missing_items`, `repair_actions`, and `remaining_missing_items`.
 Any checklist item marked `missing` while the corresponding evidence field is
 non-null is a validation issue.
 
+### Paper-level quality review
+
+Record a `quality_review` object in `manuscript_validation.json` with these
+checks:
+
+- `question_and_contribution`: the paper states a concrete question and what
+  the study contributes;
+- `claim_evidence_alignment`: every central claim points to evidence and does
+  not exceed it;
+- `result_interpretation`: the anchor choice, fitted dependence, final
+  intervals, and important operator/algorithm differences are interpreted in
+  prose, not only displayed;
+- `quality_and_robustness`: applicable fit-quality, sample-quality, statistical,
+  or robustness observations are discussed, while non-applicable or
+  unimplemented topics have reasons;
+- `scope_and_limitations`: the paper states what the study does not establish,
+  including debug or statistics-only limitations when relevant.
+
+Each record should contain `status`, `evidence_paths`, and a short `note`.
+`status="fail"` is a major issue; `status="not_applicable"` is allowed only
+with a non-empty reason. This review is intentionally semantic: do not replace
+it with a fixed list of physics analyses that may not fit every process.
+
 Mark these as `major` if they fail:
 
 - `manuscript_build_environment.json` is missing target/local LaTeX probe
@@ -56,6 +89,12 @@ Mark these as `major` if they fail:
   motivation/background, theory/model, event generation and data preparation,
   ML methodology, event-selection optimization, numerical fits/constraints, and
   conclusions in a logical order
+- `manuscript_blueprint.json` is missing, does not identify a research question
+  and contribution, or has no evidence-linked section plan and result ledger
+- the draft lists central numerical results without interpreting their meaning,
+  relevant comparison/context, and limitation
+- the draft makes claims outside the recorded process, model, data, or
+  applicability decisions
 - `pdf_required=true` but the final non-empty `results/manuscript.pdf` and
   `results/manuscript.tex` are missing
 - HTML is treated as the final deliverable even though target or local LaTeX is
@@ -130,6 +169,14 @@ Mark these as `minor`:
   "drafts_written": 3,
   "max_revisions": 2,
   "completeness_passes": 3,
+  "blueprint_path": "results/data/phase10/manuscript_blueprint.json",
+  "quality_review": {
+    "question_and_contribution": {"status": "pass", "evidence_paths": [], "note": ""},
+    "claim_evidence_alignment": {"status": "pass", "evidence_paths": [], "note": ""},
+    "result_interpretation": {"status": "pass", "evidence_paths": [], "note": ""},
+    "quality_and_robustness": {"status": "pass", "evidence_paths": [], "note": ""},
+    "scope_and_limitations": {"status": "pass", "evidence_paths": [], "note": ""}
+  },
   "checklist_path": "results/data/phase10/manuscript_checklist.json",
   "major_issues": [],
   "minor_issues": [],

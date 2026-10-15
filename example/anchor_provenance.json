@@ -1,0 +1,12 @@
+{
+  "selection_policy": "first_nonzero_in_declared_order",
+  "operator": {
+    "global_idx": 1,
+    "model": "gQGC_UFO",
+    "anoinput_idx": 1,
+    "name": "FgT0"
+  },
+  "role": "representative_common_anomaly_class",
+  "common_event_schema_sha256": "a40001bb77f8e88cf2c8bf2ecb141225a86329f03279774b31b09fc9a7881cee",
+  "rationale": "Common SM-versus-NP selection with the same reconstructed topology and representation; no assertion of identical operator distributions or individual optimality."
+}

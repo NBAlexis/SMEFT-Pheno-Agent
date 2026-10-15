@@ -1,0 +1,178 @@
+{
+  "contract_kind": "automated-smeft-ml-pheno-research-objective",
+  "deliverables_template_sha256": "aa3691f95c3c92286c7e66689d5130877dbac2def7198ce30596a766294ba5f6",
+  "mutable_technical_fields": [
+    "execution",
+    "madgraph_path",
+    "cutexperiment_path",
+    "workdir",
+    "auto_installed_mg5",
+    "algorithms",
+    "collected_at",
+    "run_configurations[*].run_dir",
+    "host paths, virtual environments, schedulers, and implementation scripts"
+  ],
+  "objective": {
+    "analysis_notes": {
+      "additional_requirements": [
+        {
+          "applies_to_phases": [
+            "11",
+            "12"
+          ],
+          "id": "requirement_1",
+          "text": "After the replay script is generated at the end of the workflow (Phase 11 package, Phase 12 audit), run it once and save the replay results in a newly created separate folder, so they can be compared against the original deliverables for validation."
+        }
+      ],
+      "focused_operators": [],
+      "manuscript_preferences": []
+    },
+    "collider_type": "mumu",
+    "debug": false,
+    "detector_card_content_identity": {
+      "file_count": 9,
+      "files": [
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_BTag_50.tcl",
+          "sha256": "944b073a3174b105bd506702e5aaf249980f4368648ef17e36df51fb878272ff",
+          "size": 6163
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_BTag_70.tcl",
+          "sha256": "bda0571734221ceaea2e3d078d37564abeeb54a70f12b8ad5e8171657ecb07af",
+          "size": 6247
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_BTag_90.tcl",
+          "sha256": "f6b3039501d891cf32e77bf0785936935822baf7e71fc33f84de0c1e50f247b6",
+          "size": 6006
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_BTagging.tcl",
+          "sha256": "e83ca5ac268bb90023441090aeff71d0dd1bd22ac33250db6784f7d285e99378",
+          "size": 18983
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_JetFlavorAssociation.tcl",
+          "sha256": "e8b39a71ff2a7518cc99aa74154be8ac33e1f65ca12fdc32ad4313e1f152ec5a",
+          "size": 12523
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_JetReco.tcl",
+          "sha256": "cf4c38d514e4ee310a0c9001d0e7474d2902fbe03e5513838b9d83fe2c04896a",
+          "size": 11555
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_JetSmearing.tcl",
+          "sha256": "8e7c0ec5734b65a765381f1f161c8fea0b7fb065cb2defd6f3c9be9c62791644",
+          "size": 8696
+        },
+        {
+          "kind": "file",
+          "path": "MuonCollider/MuonColliderDet_TauTagging.tcl",
+          "sha256": "20e07a07341c0a9d38cea8e1f414280e8368cb1efe084bc925ed2fc18402cde3",
+          "size": 14491
+        },
+        {
+          "kind": "file",
+          "path": "delphes_card_MuonColliderDet.tcl",
+          "sha256": "5b36e7642e2fadf26dca32af6232692bb77f796b974d29cbc1b136f31abddba5",
+          "size": 101303
+        }
+      ],
+      "hash_kind": "delphes-card-and-dependencies-sha256-v1",
+      "sha256": "ab87ac056464a8405ebc6481c5bfb5a4ff2f572bba0e61423a0159865664ef3f"
+    },
+    "ebeam_electron": null,
+    "ebeam_proton": null,
+    "energy": [
+      10.0
+    ],
+    "event_counts_locked": true,
+    "fixed_method_requirements": {
+      "coefficient_constraint_method": "Derive expected coefficient constraints only from fitted cross-sections after machine-learning selection and the declared signal-significance formula.",
+      "event_generation_and_detector_simulation": "Generate every numerical analysis sample with MadGraph5 and run Delphes; events taken directly from an undetected LHE file are not analysis events.",
+      "machine_learning_event_selection": "Convert Delphes LHCO events to CSV and perform final event selection with a trained machine-learning score threshold; do not replace it with a traditional hand-designed kinematic cut analysis.",
+      "minimum_event_statistics": "With debug=false, use the locked full-size event counts as per-run scientific minima and add full-size runs and merge them whenever statistical support is not scientifically sufficient. With debug=true, use the locked reduced event counts only to test the complete workflow; do not claim strict scientific reliability from debug results.",
+      "phase10_publication_content": "Complete every manuscript item frozen in phase10_required_manuscript_items; earlier phase evidence must support those items without adding unrelated scientific requirements.",
+      "strategy_comparison_method": "Compare selection strategies usable under the selected debug mode only by expected coefficient-constraint interval width; AUC is descriptive or diagnostic and never a final strategy-selection criterion."
+    },
+    "locked_event_counts": {
+      "nev_np": 100000,
+      "nev_phase3": 10000,
+      "nev_phase4": 10000,
+      "nev_scan": 1000000,
+      "nev_sm": 500000
+    },
+    "luminosity": [
+      10000.0
+    ],
+    "madspin": {
+      "enabled": false
+    },
+    "model_content_identities": {
+      "gQGC_UFO": {
+        "file_count": 16,
+        "hash_kind": "directory-tree-sha256-v1",
+        "sha256": "3dcebc9987d646fa7f981d450e0521a2580a147264eacb61a7e22aafbd4ebb4d"
+      }
+    },
+    "models": [
+      "gQGC_UFO"
+    ],
+    "output_strategy": {
+      "audit": "expanded_deliverables_and_cross_phase_consistency",
+      "manuscript": "publication_style_with_pdf_when_latex_is_usable",
+      "numerical_phases": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "replay": "one_command_ordered_numerical_reproduction"
+    },
+    "polarization": null,
+    "process": "mu+ mu- > vl vl~ j j",
+    "process_validation": {
+      "final": [
+        "vl",
+        "vl~",
+        "j",
+        "j"
+      ],
+      "initial": [
+        "mu+",
+        "mu-"
+      ],
+      "status": "ok"
+    },
+    "run_configurations": [
+      {
+        "ebeam1": 5000.0,
+        "ebeam2": 5000.0,
+        "energy": 10.0,
+        "luminosity": 10000.0
+      }
+    ],
+    "significance_strategy": {
+      "levels": [
+        2,
+        3,
+        5
+      ]
+    }
+  },
+  "objective_sha256": "6361aeb293971a17eb85971e6a4282ce5fa8c9c3e9e30c5ecc45e774f0efe2a1",
+  "schema_version": "1.0"
+}

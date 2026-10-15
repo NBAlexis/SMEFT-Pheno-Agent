@@ -1,0 +1,49 @@
+{
+  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+  "cross_section_rule": "loaded_event_count_weighted_average",
+  "merged_cross_section_pb": 1.4513737918639513,
+  "merged_loaded_lhco_event_count": 1102491,
+  "output_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f1.lhco",
+  "requested_event_count": 1000000,
+  "source_banners_retained": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260907_131336_01/Events/run_02/run_02_tag_1_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f1_banner.txt"
+  ],
+  "source_count_sum": 1102491,
+  "source_records": [
+    {
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260907_131336_01/Events/run_02/run_02_tag_1_banner.txt",
+      "count_record": {
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+        "dataset_id": "source_0",
+        "fraction": 1.0,
+        "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260907_131336_01/Events/run_02/run_02.lhco",
+        "loaded_lhco_event_count": 1000000,
+        "requested_event_count": 1000000,
+        "status": "ok"
+      },
+      "cross_section_pb": 1.4535532175,
+      "index": 0,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260907_131336_01/Events/run_02/run_02.lhco",
+      "loaded_lhco_event_count": 1000000
+    },
+    {
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f1_banner.txt",
+      "count_record": {
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+        "dataset_id": "source_1",
+        "fraction": 0.102491,
+        "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f1.lhco",
+        "loaded_lhco_event_count": 102491,
+        "requested_event_count": 1000000,
+        "status": "accepted_with_warning"
+      },
+      "cross_section_pb": 1.4301092356,
+      "index": 1,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f1.lhco",
+      "loaded_lhco_event_count": 102491
+    }
+  ]
+}

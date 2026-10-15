@@ -11,8 +11,10 @@ environment. HTML is a fallback format only when both places lack usable
 `pdflatex`/`latexmk`.
 
 Phase 10 must not write a loose workflow summary. It must read the manuscript
-guides, build evidence, draft, validate, revise with a bounded loop, and archive
-remaining issues.
+guides, build evidence, make a paper blueprint, draft, validate, revise with a
+bounded loop, and archive remaining issues. The blueprint is a planning and
+traceability artifact; it does not freeze the scientific method or force
+analyses that are not appropriate for the actual process.
 
 When `config.debug` is true, still produce every Phase 10 artifact and scientific
 section so the workflow is tested end to end. Clearly state in the title page or
@@ -185,6 +187,85 @@ SMEFT/aQGC/nTGC/ML-in-HEP citations. Add user-list papers only under
 `comparison_citations` when the final manuscript directly compares with that
 paper or relies on a specific claim from it.
 
+When user-supplied PDFs or `List.txt` are present, inspect the relevant papers
+before drafting. Record which paper was used for analysis context, sample/detail
+level, algorithm explanation, fit/constraint presentation, or discussion and
+limitations. This is a depth calibration step, not a requirement to cite every
+paper or to reproduce its physics.
+
+## Step 10.3b: Build the Manuscript Blueprint and Argument Map
+
+```python
+with workflow_step(logger, "10", "build_manuscript_blueprint",
+                   inputs={"evidence": "manuscript_evidence.json"}):
+```
+
+Before writing prose, create:
+
+```
+results/data/phase10/manuscript_blueprint.json
+```
+
+This file turns the numerical evidence into a scientific paper plan. It must
+contain, at minimum:
+
+```json
+{
+  "research_question": "...",
+  "main_contribution": "...",
+  "scope_and_boundaries": ["..."],
+  "section_plan": [
+    {
+      "section": "Numerical Results",
+      "purpose": "...",
+      "claims": ["..."],
+      "evidence_paths": ["results/data/phase9/constraint_table.json"],
+      "figures_tables_equations": ["..."],
+      "interpretation_to_write": ["..."],
+      "limitations_to_state": ["..."]
+    }
+  ],
+  "result_ledger": [
+    {
+      "result": "...",
+      "observation": "...",
+      "interpretation": "...",
+      "comparison_or_context": "...",
+      "limitation": "...",
+      "evidence_paths": ["..."]
+    }
+  ],
+  "applicability_review": [
+    {
+      "topic": "fit quality / finite MC uncertainty / EFT validity / systematic effects / external comparison",
+      "status": "completed | not_applicable | not_implemented",
+      "reason": "...",
+      "evidence_paths": ["..."]
+    }
+  ]
+}
+```
+
+Rules for the blueprint:
+
+- The research question and contribution must be supported by `run_config.json`
+  and the phase evidence. Do not invent a physics claim merely to make the
+  paper sound more complete.
+- Every major table, plot, or numerical conclusion must have an evidence path,
+  a statement of what was observed, and a planned interpretation. A result
+  without an interpretation is incomplete even when its number is correct.
+- `comparison_or_context` may describe an internal comparison (algorithms,
+  operators, thresholds), a literature comparison, or why no comparison is
+  scientifically justified. It must not imply an external result that was not
+  actually checked.
+- The applicability review is a decision record, not a demand to perform every
+  possible analysis. If a topic is not applicable or was not implemented, state
+  the reason and the resulting limitation plainly in the manuscript.
+- Use the reference papers to calibrate depth: explain the analysis context,
+  sample construction, method, fit, results, and limitations with enough detail
+  for a reader to follow the argument. Do not copy a paper's process-specific
+  physics into a different study.
+
 ## Step 10.4: Draft the Manuscript
 
 ```python
@@ -197,6 +278,7 @@ Write `manuscript_draft_v1.html` or `manuscript_draft_v1.tex` from:
 - `manuscript_evidence.json`
 - `reference_paper_plan.json`
 - `literature_plan.json`
+- `manuscript_blueprint.json`
 - the section rules in [`manuscript-sections-guide.md`](manuscript-sections-guide.md)
 
 Mandatory manuscript content:
@@ -230,6 +312,14 @@ Mandatory manuscript content:
 - final `S_stat = 2, 3, 5` constraint table for all globally claimed operators
   using the algorithm and threshold required by the recorded Phase 9 selection scope
 - adequate references
+
+For every central result, the surrounding prose must answer four questions:
+what was measured or calculated, why it has that behavior, how it compares with
+the relevant alternative or context, and what limitation qualifies the claim.
+Tables and plots are evidence, not substitutes for this explanation. The answer
+may be short when the result is straightforward, but it must be present for the
+anchor strategy, fitted coefficients, final intervals, and any anomalous or
+surprising behavior.
 
 Do not use text such as `~2500` for event counts. Do not use event counts from
 MG5 banners as actual generated counts. Follow the recorded Phase 9 selection
@@ -281,6 +371,14 @@ and the required evidence exists, revise before calling the draft valid.
 
 After the three completeness passes, follow
 [`manuscript-validation-guide.md`](manuscript-validation-guide.md).
+
+In addition to field-level completeness, perform a paper-level review using
+`manuscript_blueprint.json`: check that the central question is answered, every
+major result has interpretation and evidence, claims do not exceed the recorded
+scope, and applicable quality/robustness observations and limitations are
+discussed. Record this review in `manuscript_validation.json` under
+`quality_review`; do not replace the existing checklist or numeric consistency
+checks.
 
 Bounded loop:
 
@@ -360,6 +458,7 @@ results/data/phase10/
   manuscript_evidence.json
   reference_paper_plan.json
   literature_plan.json
+  manuscript_blueprint.json
   manuscript_completeness_passes.json
   manuscript_checklist.json
   manuscript_trace_map.json

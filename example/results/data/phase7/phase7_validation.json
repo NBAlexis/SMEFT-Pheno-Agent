@@ -1,0 +1,51 @@
+{
+  "status": "pass",
+  "algorithm_keys": [
+    "gradient_boosting",
+    "isolation_forest",
+    "mlp"
+  ],
+  "operator_keys": [
+    "o_1",
+    "o_2",
+    "o_3",
+    "o_4",
+    "o_5",
+    "o_6",
+    "o_7",
+    "o_8"
+  ],
+  "checks": [
+    {
+      "id": "feature_schema_complete",
+      "status": "pass",
+      "evidence": "results/data/phase7/feature_schema.json"
+    },
+    {
+      "id": "algorithm_keys_consistent",
+      "status": "pass",
+      "evidence": "algorithm_comparison.json / algorithm_descriptions.json / anchor_*.pkl / scores/"
+    },
+    {
+      "id": "public_csv_complete",
+      "status": "pass",
+      "evidence": "results/data/phase7/*.csv"
+    },
+    {
+      "id": "score_csv_complete",
+      "status": "pass",
+      "evidence": "results/data/phase7/scores/"
+    },
+    {
+      "id": "plots_complete",
+      "status": "pass",
+      "evidence": "results/plots/roc_anchor.pdf"
+    },
+    {
+      "id": "algorithm_descriptions_complete",
+      "status": "pass",
+      "evidence": "results/data/phase7/algorithm_descriptions.json"
+    }
+  ],
+  "failed_checks": []
+}

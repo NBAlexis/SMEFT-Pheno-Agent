@@ -1,0 +1,9 @@
+{
+  "contract_kind": "automated-smeft-ml-pheno-contract-lock",
+  "contract_set_sha256": "dbdc8ca0836c5a28c3f170a55b998d9f685c773fb312c9bced30da16b9a5f5fa",
+  "deliverables_contract_sha256": "8a960f54ccc4fb1df92f60d20dfd964f3de276ec772eba347539914408a379a9",
+  "objective_sha256": "6361aeb293971a17eb85971e6a4282ce5fa8c9c3e9e30c5ecc45e774f0efe2a1",
+  "research_contract_sha256": "3f4834e739ee2d2ce52f80b9da28f183a0f76ca5e9cec560d48d6c118a13b10b",
+  "schema_version": "1.0",
+  "template_sha256": "aa3691f95c3c92286c7e66689d5130877dbac2def7198ce30596a766294ba5f6"
+}

@@ -1,0 +1,377 @@
+{
+  "scope": "historical_regeneration_with_unfrozen_algorithm_draw",
+  "exact_replay_passed": false,
+  "original_algorithm": "mlp",
+  "original_threshold": 0.98,
+  "regeneration_algorithm": "extra_trees",
+  "regeneration_threshold": 1.0,
+  "scan_points_compared": 88,
+  "max_cross_section_relative_difference": 0.015725797225966173,
+  "cross_section_points_below_0_001": 34,
+  "intervals": [
+    {
+      "operator": "o_1",
+      "level": "S2",
+      "original": [
+        -1.6237066501090978e-15,
+        1.7295843361256761e-15
+      ],
+      "regeneration": [
+        -1.3609314216192056e-15,
+        1.0391041347544599e-15
+      ],
+      "width_ratio": 0.7157254071375814,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_1",
+      "level": "S3",
+      "original": [
+        -2.001940737660437e-15,
+        2.107818423677024e-15
+      ],
+      "regeneration": [
+        -1.6288158052615723e-15,
+        1.3069885183968256e-15
+      ],
+      "width_ratio": 0.714349480932353,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_1",
+      "level": "S5",
+      "original": [
+        -2.604069150001987e-15,
+        2.709946836018569e-15
+      ],
+      "regeneration": [
+        -2.0580776022022545e-15,
+        1.7362503153375077e-15
+      ],
+      "width_ratio": 0.7140226765447079,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_2",
+      "level": "S2",
+      "original": [
+        -2.561504074717272e-15,
+        2.5303489516568556e-15
+      ],
+      "regeneration": [
+        -1.8732483760546985e-15,
+        1.7771650541621143e-15
+      ],
+      "width_ratio": 0.7169125682357422,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_2",
+      "level": "S3",
+      "original": [
+        -3.1363398907399985e-15,
+        3.1051847676795826e-15
+      ],
+      "regeneration": [
+        -2.2872049360583828e-15,
+        2.191121614165797e-15
+      ],
+      "width_ratio": 0.717505224333783,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_2",
+      "level": "S5",
+      "original": [
+        -4.051315475130196e-15,
+        4.020160352069774e-15
+      ],
+      "regeneration": [
+        -2.9487931227684223e-15,
+        2.8527098008758354e-15
+      ],
+      "width_ratio": 0.7187660655680641,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_3",
+      "level": "S2",
+      "original": [
+        -4.407138815083971e-15,
+        4.717715599660533e-15
+      ],
+      "regeneration": [
+        -3.766263102341586e-15,
+        2.9070542796617445e-15
+      ],
+      "width_ratio": 0.7313341209280195,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_3",
+      "level": "S3",
+      "original": [
+        -5.436224650587142e-15,
+        5.746801435163697e-15
+      ],
+      "regeneration": [
+        -4.512085027643669e-15,
+        3.652876204963831e-15
+      ],
+      "width_ratio": 0.7301209145001557,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_3",
+      "level": "S5",
+      "original": [
+        -7.074514070017363e-15,
+        7.38509085459392e-15
+      ],
+      "regeneration": [
+        -5.7069444100746905e-15,
+        4.847735587394855e-15
+      ],
+      "width_ratio": 0.729942488228342,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_4",
+      "level": "S2",
+      "original": [
+        -4.605413215453882e-15,
+        4.891299757678098e-15
+      ],
+      "regeneration": [
+        -3.5376576322676777e-15,
+        3.166726078131706e-15
+      ],
+      "width_ratio": 0.7059688683197406,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_4",
+      "level": "S3",
+      "original": [
+        -5.676682210488066e-15,
+        5.96256875271227e-15
+      ],
+      "regeneration": [
+        -4.29629860865195e-15,
+        3.925367054515973e-15
+      ],
+      "width_ratio": 0.7063741205651679,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_4",
+      "level": "S5",
+      "original": [
+        -7.382061776521046e-15,
+        7.667948318745259e-15
+      ],
+      "regeneration": [
+        -5.509198407100201e-15,
+        5.138266852964231e-15
+      ],
+      "width_ratio": 0.7074723001955586,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_5",
+      "level": "S2",
+      "original": [
+        -4.6250948360418836e-15,
+        4.515296000060005e-15
+      ],
+      "regeneration": [
+        -3.3570305363801334e-15,
+        2.9085748219487805e-15
+      ],
+      "width_ratio": 0.6854854973576833,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_5",
+      "level": "S3",
+      "original": [
+        -5.656883107803987e-15,
+        5.547084271822102e-15
+      ],
+      "regeneration": [
+        -4.0646898968860104e-15,
+        3.616234182454655e-15
+      ],
+      "width_ratio": 0.6855539488010365,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_5",
+      "level": "S5",
+      "original": [
+        -7.299223829963867e-15,
+        7.189424993981991e-15
+      ],
+      "regeneration": [
+        -5.196434925218141e-15,
+        4.747979210786791e-15
+      ],
+      "width_ratio": 0.6863589736241986,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_6",
+      "level": "S2",
+      "original": [
+        -6.442646541587874e-15,
+        5.840151245060557e-15
+      ],
+      "regeneration": [
+        -5.238875443810856e-15,
+        3.736512808274986e-15
+      ],
+      "width_ratio": 0.7307283249295377,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_6",
+      "level": "S3",
+      "original": [
+        -7.826308760734188e-15,
+        7.223813464206873e-15
+      ],
+      "regeneration": [
+        -6.231366606906691e-15,
+        4.72900397137082e-15
+      ],
+      "width_ratio": 0.7282579114283859,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_6",
+      "level": "S5",
+      "original": [
+        -1.0029492885207e-14,
+        9.426997588679685e-15
+      ],
+      "regeneration": [
+        -7.8242004492259e-15,
+        6.321837813690023e-15
+      ],
+      "width_ratio": 0.7270601181596379,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_7",
+      "level": "S2",
+      "original": [
+        -1.2281474181455539e-14,
+        1.3619281726688186e-14
+      ],
+      "regeneration": [
+        -8.757350325236245e-15,
+        9.323303161675959e-15
+      ],
+      "width_ratio": 0.6980743554757519,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_7",
+      "level": "S3",
+      "original": [
+        -1.519850975972791e-14,
+        1.6536317304960552e-14
+      ],
+      "regeneration": [
+        -1.0807160426318454e-14,
+        1.1373113262758158e-14
+      ],
+      "width_ratio": 0.6989253051187015,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_7",
+      "level": "S5",
+      "original": [
+        -1.9843444145844527e-14,
+        2.118125169107715e-14
+      ],
+      "regeneration": [
+        -1.4083323045909232e-14,
+        1.4649275882348932e-14
+      ],
+      "width_ratio": 0.7003732347577629,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_8",
+      "level": "S2",
+      "original": [
+        -1.1623756809961216e-14,
+        1.1079849336891562e-14
+      ],
+      "regeneration": [
+        -8.046283652169697e-15,
+        8.013379228263049e-15
+      ],
+      "width_ratio": 0.7073617634376982,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_8",
+      "level": "S3",
+      "original": [
+        -1.4185592062743907e-14,
+        1.3641684589674193e-14
+      ],
+      "regeneration": [
+        -9.868586873779935e-15,
+        9.835682449873273e-15
+      ],
+      "width_ratio": 0.7080919045644724,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    },
+    {
+      "operator": "o_8",
+      "level": "S5",
+      "original": [
+        -1.8263636698431862e-14,
+        1.7719729225362213e-14
+      ],
+      "regeneration": [
+        -1.278070106968257e-14,
+        1.2747796645775929e-14
+      ],
+      "width_ratio": 0.7094527446243635,
+      "straddles_zero_original": true,
+      "straddles_zero_regeneration": true
+    }
+  ],
+  "width_ratio_min": 0.6854854973576833,
+  "width_ratio_max": 0.7313341209280195,
+  "historical_report_caveat": "Historical report contains null Phase-5 values and an empty Phase-9 mapping; null equality is not evidence of bit-identical samples. This supplement compares actual Phase-9 tables.",
+  "origin": "The recorded whole-pipeline regeneration reused external tools and some recovered samples; not an independently provisioned environment or a controlled multi-session study."
+}

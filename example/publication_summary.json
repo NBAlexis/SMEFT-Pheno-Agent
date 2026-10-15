@@ -1,0 +1,216 @@
+{
+  "process": "mu+ mu- > vl vl~ j j",
+  "polarization": null,
+  "energy_TeV": 10,
+  "luminosity_pb_inv": 10000000.0,
+  "selection": {
+    "anchor_operator": "o_1",
+    "anchor_model": "gQGC_UFO",
+    "selected_algorithm": "mlp",
+    "selected_threshold": 0.98,
+    "selection_scope": "anchor_operator_only",
+    "selection_criterion": "narrowest_anchor_S2_constraint_width",
+    "selection_rationale": "The common anchor strategy gives usable fixed-intercept fits and finite S=2,3,5 constraints for every claimed operator.",
+    "selection_evidence": [
+      "data/phase8/threshold_optimization.json"
+    ],
+    "source_threshold_optimization_entry": "results/data/phase8/threshold_optimization.json:anchor.mlp",
+    "anchor_intervals_by_algorithm": {
+      "gradient_boosting": {
+        "S2": [
+          -1.792873561012336e-15,
+          1.9131757931388e-15
+        ],
+        "width": 3.7060493541511364e-15,
+        "threshold": 0.98
+      },
+      "isolation_forest": {
+        "S2": [
+          -1.2806471169211673e-14,
+          1.3681861668689987e-14
+        ],
+        "width": 2.648833283790166e-14,
+        "threshold": 0.0
+      },
+      "mlp": {
+        "S2": [
+          -1.6237066501090978e-15,
+          1.7295843361256761e-15
+        ],
+        "width": 3.353290986234774e-15,
+        "threshold": 0.98
+      }
+    },
+    "comparison_only_intervals": {}
+  },
+  "constraints": {
+    "o_1": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -1.6237066501090978e-15,
+        1.7295843361256761e-15
+      ],
+      "S3": [
+        -2.001940737660437e-15,
+        2.107818423677024e-15
+      ],
+      "S5": [
+        -2.604069150001987e-15,
+        2.709946836018569e-15
+      ],
+      "csfit_int": -729971127.5671967,
+      "csfit_np": 6.89447564478199e+24,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_2": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -2.561504074717272e-15,
+        2.5303489516568556e-15
+      ],
+      "S3": [
+        -3.1363398907399985e-15,
+        3.1051847676795826e-15
+      ],
+      "S5": [
+        -4.051315475130196e-15,
+        4.020160352069774e-15
+      ],
+      "csfit_int": 93068894.92056112,
+      "csfit_np": 2.9872741873008115e+24,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_3": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -4.407138815083971e-15,
+        4.717715599660533e-15
+      ],
+      "S3": [
+        -5.436224650587142e-15,
+        5.746801435163697e-15
+      ],
+      "S5": [
+        -7.074514070017363e-15,
+        7.38509085459392e-15
+      ],
+      "csfit_int": -289221821.79681826,
+      "csfit_np": 9.312409560526133e+23,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_4": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -4.605413215453882e-15,
+        4.891299757678098e-15
+      ],
+      "S3": [
+        -5.676682210488066e-15,
+        5.96256875271227e-15
+      ],
+      "S5": [
+        -7.382061776521046e-15,
+        7.667948318745259e-15
+      ],
+      "csfit_int": -245726154.85269466,
+      "csfit_np": 8.59523337268455e+23,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_5": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -4.6250948360418836e-15,
+        4.515296000060005e-15
+      ],
+      "S3": [
+        -5.656883107803987e-15,
+        5.547084271822102e-15
+      ],
+      "S5": [
+        -7.299223829963867e-15,
+        7.189424993981991e-15
+      ],
+      "csfit_int": 101798510.30180229,
+      "csfit_np": 9.271365164435608e+23,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_6": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -6.442646541587874e-15,
+        5.840151245060557e-15
+      ],
+      "S3": [
+        -7.826308760734188e-15,
+        7.223813464206873e-15
+      ],
+      "S5": [
+        -1.0029492885207e-14,
+        9.426997588679685e-15
+      ],
+      "csfit_int": 310038634.53417593,
+      "csfit_np": 5.145909624874892e+23,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_7": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -1.2281474181455539e-14,
+        1.3619281726688186e-14
+      ],
+      "S3": [
+        -1.519850975972791e-14,
+        1.6536317304960552e-14
+      ],
+      "S5": [
+        -1.9843444145844527e-14,
+        2.118125169107715e-14
+      ],
+      "csfit_int": -154860084.6621316,
+      "csfit_np": 1.1575662374904922e+23,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    },
+    "o_8": {
+      "selected_algorithm": "mlp",
+      "selected_threshold": 0.98,
+      "S2": [
+        -1.1623756809961216e-14,
+        1.1079849336891562e-14
+      ],
+      "S3": [
+        -1.4185592062743907e-14,
+        1.3641684589674193e-14
+      ],
+      "S5": [
+        -1.8263636698431862e-14,
+        1.7719729225362213e-14
+      ],
+      "csfit_int": 81770228.32606357,
+      "csfit_np": 1.5033849022991538e+23,
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    }
+  },
+  "anchor_fit_quality": {
+    "number_of_points": 11,
+    "fitted_parameters": 2,
+    "residual_degrees_of_freedom": 9,
+    "r_squared": 0.9706754734137858,
+    "residual_sum_squares_pb2": 3.2575269251126584e-07,
+    "max_relative_residual": 0.4141432917628677,
+    "passing_events_min": 1029,
+    "passing_events_max": 9784,
+    "finite_mc_uncertainty_propagated": false,
+    "note": "Unweighted central-value diagnostics; R^2 is not a chi-square or an uncertainty estimate."
+  },
+  "archived_bulk_event_data": false,
+  "version_doi": null,
+  "release_tag": null,
+  "release_status": "local_upload_preparation_only"
+}

@@ -627,6 +627,81 @@ class ResolvedContractAuditTests(unittest.TestCase):
             frozen = next(item for item in checks if item.get("source") == "phase10_frozen_required_content")
             self.assertFalse(frozen["ok"], frozen)
 
+    def test_phase10_blueprint_schema_requires_evidence_linked_result_entries(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            root = os.path.join(workdir, "results")
+            blueprint_path = os.path.join(root, "data", "phase10", "manuscript_blueprint.json")
+            write_json(blueprint_path, {
+                "research_question": "Can the selected ML strategy constrain the active coefficient?",
+                "main_contribution": "An evidence-linked expected constraint study.",
+                "scope_and_boundaries": ["statistics-only expected result"],
+                "section_plan": [{
+                    "section": "Results",
+                    "purpose": "Report the expected constraint.",
+                    "claims": ["constraint"],
+                    "evidence_paths": ["data/phase9/constraint_table.json"],
+                    "interpretation_to_write": ["The interval is finite."],
+                    "limitations_to_state": ["Statistics-only expected result."],
+                }],
+                "result_ledger": [{
+                    "result": "constraint interval",
+                    "observation": "finite interval",
+                    "interpretation": "the selected strategy retains sensitivity",
+                    "comparison_or_context": "Compared with the anchor threshold scan.",
+                    "limitation": "No finite-MC uncertainty propagation.",
+                    "evidence_paths": ["data/phase9/constraint_table.json"],
+                }],
+                "applicability_review": [{
+                    "topic": "finite MC uncertainty",
+                    "status": "not_implemented",
+                    "reason": "no uncertainty model is part of this workflow",
+                    "evidence_paths": [],
+                }],
+            })
+            checks = _phase10_manuscript_checks(root)
+            blueprint = next(item for item in checks if item.get("source") == "phase10_blueprint_schema")
+            self.assertTrue(blueprint["ok"], blueprint)
+
+            quality = {
+                key: {"status": "pass", "evidence_paths": ["data/phase10/manuscript_blueprint.json"], "note": "checked"}
+                for key in (
+                    "question_and_contribution",
+                    "claim_evidence_alignment",
+                    "result_interpretation",
+                    "quality_and_robustness",
+                    "scope_and_limitations",
+                )
+            }
+            write_json(os.path.join(root, "data", "phase10", "manuscript_validation.json"), {"quality_review": quality})
+            checks = _phase10_manuscript_checks(root)
+            quality_check = next(item for item in checks if item.get("source") == "phase10_quality_review")
+            self.assertTrue(quality_check["ok"], quality_check)
+
+            quality["scope_and_limitations"] = {"status": "not_implemented", "evidence_paths": [], "note": "not part of this run"}
+            write_json(os.path.join(root, "data", "phase10", "manuscript_validation.json"), {"quality_review": quality})
+            checks = _phase10_manuscript_checks(root)
+            quality_check = next(item for item in checks if item.get("source") == "phase10_quality_review")
+            self.assertTrue(quality_check["ok"], quality_check)
+
+            quality["scope_and_limitations"] = {"status": "not_implemented", "evidence_paths": []}
+            write_json(os.path.join(root, "data", "phase10", "manuscript_validation.json"), {"quality_review": quality})
+            checks = _phase10_manuscript_checks(root)
+            quality_check = next(item for item in checks if item.get("source") == "phase10_quality_review")
+            self.assertFalse(quality_check["ok"], quality_check)
+
+            write_json(blueprint_path, {
+                "research_question": "q",
+                "main_contribution": "c",
+                "scope_and_boundaries": [],
+                "section_plan": [{"section": "Results"}],
+                "result_ledger": [{"result": "missing evidence"}],
+                "applicability_review": [],
+            })
+            checks = _phase10_manuscript_checks(root)
+            blueprint = next(item for item in checks if item.get("source") == "phase10_blueprint_schema")
+            self.assertFalse(blueprint["ok"], blueprint)
+            self.assertTrue(any("observation" in error for error in blueprint["errors"]))
+
     def test_phase8_shared_f5_background_accepts_observed_and_half_event_records(self):
         with tempfile.TemporaryDirectory() as root:
             shared, _ = _shared_f5_fixture(root)

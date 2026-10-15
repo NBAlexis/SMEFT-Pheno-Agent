@@ -1,0 +1,61 @@
+{
+  "target_latex_available": false,
+  "local_latex_available": true,
+  "pdf_required": true,
+  "selected_format": "pdf",
+  "build_location": "local",
+  "target_probe": {
+    "command": [
+      "sh",
+      "-lc",
+      "command -v latexmk || command -v pdflatex"
+    ],
+    "returncode": 127,
+    "stdout_tail": ""
+  },
+  "local_probe": {
+    "commands": [
+      "latexmk --version",
+      "pdflatex --version"
+    ],
+    "available": true,
+    "details": [
+      {
+        "command": [
+          "latexmk",
+          "--version"
+        ],
+        "returncode": 127,
+        "stdout_tail": ""
+      },
+      {
+        "command": [
+          "pdflatex",
+          "--version"
+        ],
+        "returncode": 127,
+        "stdout_tail": ""
+      },
+      {
+        "command": [
+          "cmd.exe",
+          "/c",
+          "latexmk --version"
+        ],
+        "returncode": 0,
+        "stdout_tail": "Latexmk, John Collins, 9 March 2026. Version 4.88"
+      },
+      {
+        "command": [
+          "cmd.exe",
+          "/c",
+          "pdflatex --version"
+        ],
+        "returncode": 0,
+        "stdout_tail": "MiKTeX-pdfTeX 4.23 (MiKTeX 25.12)\n\u00a9 1982 D. E. Knuth, \u00a9 1996-2025 H\u00e0n Th\u1ebf Th\u00e0nh\nTeX is a trademark of the American Mathematical Society.\nusing bzip2 version 1.0.8, 13-Jul-2019\ncompiled with curl version 8.4.0; using libcurl/8.4.0 Schannel\ncompiled with expat version 2.5; using expat_2.5.0\ncompiled w"
+      }
+    ]
+  },
+  "html_allowed": false,
+  "reason": "local control LaTeX is available; build locally and sync back"
+}

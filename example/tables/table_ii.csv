@@ -1,0 +1,4 @@
+algorithm,threshold,width_TeV_m4,selected
+gradient_boosting,0.98,0.0037060493541511363,False
+isolation_forest,0.0,0.02648833283790166,False
+mlp,0.98,0.003353290986234774,True

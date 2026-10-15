@@ -1,0 +1,10 @@
+{
+  "single_coefficient_hypothesis": true,
+  "expected_asimov_sensitivity": true,
+  "finite_mc_uncertainty_propagated": false,
+  "experimental_systematics": false,
+  "partial_wave_unitarity_treatment": "not_included",
+  "eft_validity_assessment": "separate_analysis_required",
+  "range_comparison_role": "numerical_bracket_not_final_signal_model",
+  "training_sample_provenance": "results/data/phase7/algorithm_descriptions.json"
+}

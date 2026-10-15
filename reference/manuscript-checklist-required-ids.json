@@ -6,6 +6,10 @@
       "required_content": "scientific-paper section logic"
     },
     {
+      "id": "structure.argument_evidence_map",
+      "required_content": "paper blueprint linking claims, evidence, interpretation, and limitations"
+    },
+    {
       "id": "physics.process_setup",
       "required_content": "process, collider, beams, luminosity, detector, tool versions"
     },
@@ -104,6 +108,18 @@
     {
       "id": "fits.coefficient_table_all_ops",
       "required_content": "fit coefficient table for all claimed operators"
+    },
+    {
+      "id": "results.interpretation",
+      "required_content": "main numerical results are interpreted rather than only listed"
+    },
+    {
+      "id": "results.quality_and_robustness",
+      "required_content": "applicable quality checks and robustness evidence, or explicit evidence-based non-applicability"
+    },
+    {
+      "id": "scope.limitations",
+      "required_content": "scope, limitations, and unsupported claims are stated"
     },
     {
       "id": "constraints.significance_formula",

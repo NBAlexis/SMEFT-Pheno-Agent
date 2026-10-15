@@ -1,0 +1,8 @@
+{
+  "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "model": "gQGC_UFO",
+  "process": "mu+ mu- > vl vl~ j j",
+  "process_mode": "create_np",
+  "log_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase3/logs",
+  "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase3/gQGC_UFO_create_np_result.json"
+}

@@ -11,6 +11,9 @@ Must deliver:
 - `results/data/phase10/manuscript_evidence.json`.
 - `results/data/phase10/reference_paper_plan.json` and
   `literature_plan.json`.
+- `results/data/phase10/manuscript_blueprint.json` linking the research
+  question, contribution, section claims, evidence, interpretation, and
+  applicability/limitations decisions.
 - `results/data/phase10/manuscript_checklist.json` for the final draft.
 - `results/data/phase10/manuscript_trace_map.json` mapping every required
   checklist ID to evidence and to a manuscript location.
@@ -36,7 +39,8 @@ Must deliver:
   `manuscript_validation.json`.
 
 Manuscript dependency: this is the manuscript phase. It must write a paper, not
-a workflow summary. With `debug=true`, the paper must clearly identify itself as
+a workflow summary. The paper must explain the meaning and scope of its main
+results, not merely reproduce phase tables. With `debug=true`, the paper must clearly identify itself as
 a reduced-event workflow test and must not claim publication-ready numerical
 results; all other Phase 10 files and sections remain required.
 

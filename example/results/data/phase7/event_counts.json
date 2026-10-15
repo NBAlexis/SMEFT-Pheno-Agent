@@ -1,0 +1,84 @@
+{
+  "sm": {
+    "loaded_lhco_event_count": 549272,
+    "surviving_final_state_event_count": 450284,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/sm.csv",
+    "requested_event_count": 500000
+  },
+  "np_o_1": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 100000,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_1.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_2": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 99584,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_2.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_3": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 99901,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_3.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_4": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 99628,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_4.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_5": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 99999,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_5.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_6": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 98975,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_6.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_7": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 99603,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_7.csv",
+    "requested_event_count": 100000
+  },
+  "np_o_8": {
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 99155,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_o_8.csv",
+    "requested_event_count": 100000
+  },
+  "np_anchor": {
+    "alias_for": "o_1",
+    "requested_event_count": 100000,
+    "loaded_lhco_event_count": 100000,
+    "surviving_final_state_event_count": 100000,
+    "final_state_cut": "N_j >= 2",
+    "feature_columns": 10,
+    "csv_path": "results/data/phase7/np_anchor.csv"
+  },
+  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+}

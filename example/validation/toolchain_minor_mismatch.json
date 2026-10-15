@@ -1,0 +1,26 @@
+{
+  "status": "FAIL",
+  "mismatches": [
+    {
+      "field": "madgraph_version",
+      "expected": "3.7.1",
+      "observed": "3.7.2"
+    }
+  ],
+  "observed": {
+    "schema_version": "1.0",
+    "madgraph_version": "3.7.2",
+    "cutexperiment_commit": "5e4c7fa8f485a556569a5cf8d3f1b1accd9ec867",
+    "python_version": "3.12.3",
+    "packages": {
+      "numpy": "2.5.2",
+      "scipy": "1.18.1",
+      "scikit-learn": "1.9.0",
+      "joblib": "1.6.0",
+      "matplotlib": "3.11.1"
+    },
+    "madgraph_version_file_sha256": "f44deabeaa4759ef2f9ed9f4a71b465fc2f6469b2d5d76f9ac5f88f73e67ca37",
+    "detector_card_sha256": "5b36e7642e2fadf26dca32af6232692bb77f796b974d29cbc1b136f31abddba5"
+  },
+  "scope": "installation identity; not cross-version physics certification"
+}

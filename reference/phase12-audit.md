@@ -143,6 +143,7 @@ stop before diagnostics or skip repair attempts.
 | `results/data/phase10/manuscript_evidence.json` | 10 | Abort |
 | `results/data/phase10/reference_paper_plan.json` | 10 | Abort |
 | `results/data/phase10/literature_plan.json` | 10 | Abort |
+| `results/data/phase10/manuscript_blueprint.json` | 10 | Abort |
 | `results/data/phase10/manuscript_checklist.json` | 10 | Abort |
 | `results/data/phase10/manuscript_trace_map.json` | 10 | Abort |
 | `results/data/phase10/manuscript_validation.json` | 10 | Abort |
@@ -179,7 +180,7 @@ with workflow_step(logger, "12", "check_numerical_sanity"):
 | 7 | All selected algorithms trained; AUC recorded as descriptive/diagnostic information only; model paths, feature schema, score definitions, and pseudocode recorded |
 | 8 | shared `f5` sources cover every claimed operator; repeated initial sources are proven Phase 6 recovery attempts; extra Phase 8 sources are anchor `f5` only; the merged cross-section is the source-banner arithmetic mean; score identities and counts follow the selected-threshold three-round/half-event rule; every fit uses the matching shared `sigma0_after_cut`; `csfit_np >= 0`; independent numerical review passes; dataset summary complete |
 | 9 | `fmin < 0 < fmax`; final constraints follow the recorded `anchor_operator_only` or `per_operator_best` scope; all strategies usable under the selected `debug` setting are compared only by expected constraint-interval width and never by AUC; JSON and CSV agree; independent numerical review passes |
-| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`, every frozen required manuscript item is present, and `major_issues` is empty; `issues_remaining` contains minor issues only; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
+| 10 | `manuscript_validation.json` status is `pass` or `issues_remaining`, every frozen required manuscript item is present, and `major_issues` is empty; `issues_remaining` contains minor issues only; `reference_paper_plan.json` exists; `literature_plan.json` has `toolchain`, `foundational`, `comparison_citations`, and `section_usage` groups; `manuscript_blueprint.json` has an evidence-linked section plan and result ledger; the quality review is complete or explicitly records non-applicability/non-implementation with reasons; if `pdf_required=true`, `manuscript.pdf` and `.tex` exist |
 | 11 | Replay manifest phase order is exactly 2 through 9; every packaged input/code checksum matches; no replay command is executed |
 
 Do not require `S=5` intervals to be narrower than `S=3` or `S=2`; larger

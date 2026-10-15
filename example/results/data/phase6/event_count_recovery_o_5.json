@@ -1,0 +1,1524 @@
+{
+  "schema_version": "2.0",
+  "required_units": [
+    "o_5"
+  ],
+  "units": {
+    "o_5": {
+      "schema_version": "1.0",
+      "requested_event_count": 1000000,
+      "requested_event_count_definition": "original target dataset size, not sum of attempts",
+      "recovery_profiles": [
+        "default",
+        "sde2_hs0"
+      ],
+      "attempts": [
+        {
+          "attempt_index": 0,
+          "survey_profile": "default",
+          "status": "completed",
+          "source_kind": "default_profile_initial_scan",
+          "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_scan_initial_result.json",
+          "result": {
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "available_coefficients": {
+              "1": 1e-12,
+              "2": 1e-12,
+              "3": 1e-12,
+              "4": 1e-12,
+              "5": 1e-12,
+              "6": 1e-12,
+              "7": 1e-12,
+              "8": 1e-12
+            },
+            "c_scan": 5.2e-14,
+            "cleanup_candidates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/tag_1_delphes_events.root",
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "coefficient_block": "anoinputs",
+            "coefficient_mode": null,
+            "copied_delphes_card": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Cards/delphes_card.dat",
+            "create_process": {
+              "diagram_count_max": 175,
+              "diagram_count_total": 638,
+              "diagram_counts": {
+                "count_max": 175,
+                "count_total": 638,
+                "counts": [
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  3,
+                  20,
+                  2,
+                  2,
+                  20,
+                  20,
+                  2,
+                  2,
+                  20,
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  175,
+                  175,
+                  113
+                ],
+                "source": "mg5_create_stdout_regex"
+              },
+              "mg5_steps": {
+                "delphes": null,
+                "madgraph": {
+                  "duration_sec": 90.11,
+                  "end": 1788579407.42691,
+                  "start": 1788579317.3202477
+                },
+                "pythia8": null
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_WEIGHTED_01.txt",
+              "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_WEIGHTED_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/logs/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_WEIGHTED.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/logs/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_WEIGHTED.stdout.log",
+              "stdout_tail": "e ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g @1 \nINFO: Combined process mu+ mu- > vt vt~ g g WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nINFO: Creating files in directory P1_mupmum_vlvlgg \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 12 subprocesses (113 diagrams) in 0.574 s\nWrote files for 321 helas calls in 1.459 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 13 routines in  18.353 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+              "weighted_attempts": [
+                {
+                  "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_WEIGHTED_01.txt",
+                  "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_WEIGHTED_01.txt",
+                  "status": "success",
+                  "weighted_keyword": "WEIGHTED",
+                  "weighted_order": 8
+                }
+              ],
+              "weighted_keyword": "WEIGHTED",
+              "weighted_order": 8
+            },
+            "created_process": true,
+            "delphes_card": "delphes_card_MuonColliderDet.tcl",
+            "detector_simulation": "Delphes",
+            "ebeam1": 5000.0,
+            "ebeam2": 5000.0,
+            "event_generator": "MadGraph5",
+            "launch": {
+              "mg5_steps": {
+                "delphes": {
+                  "duration_sec": 332.51,
+                  "end": 1788756915.664371,
+                  "start": 1788756583.1514297
+                },
+                "madgraph": {
+                  "duration_sec": 10364.6,
+                  "end": 1788589772.136224,
+                  "start": 1788579407.5362794
+                },
+                "pythia8": {
+                  "duration_sec": 28.95,
+                  "end": 1788756583.1514297,
+                  "start": 1788756554.198119
+                }
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_default_01.txt",
+              "order_filename": "order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_default_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/logs/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_default.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\nstty: 'standard input': Inappropriate ioctl for device\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_01/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_02/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_03/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_04/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_05/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_06/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_07/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_08/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_09/tag_1_pythia8_events.hepmc: No such file or directory\ngzip: /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_10/tag_1_pythia8_events.hepmc: No such file or directory\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/logs/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01_default.stdout.log",
+              "stdout_tail": "0 [  1h 41m  ] \nINFO:  Idle: 0,  Running: 8,  Completed: 521 [  1h 41m  ] \nINFO:  Idle: 0,  Running: 7,  Completed: 522 [  1h 41m  ] \nINFO:  Idle: 0,  Running: 6,  Completed: 523 [  1h 41m  ] \nINFO:  Idle: 0,  Running: 5,  Completed: 524 [  1h 42m  ] \nINFO:  Idle: 0,  Running: 4,  Completed: 525 [  1h 42m  ] \nINFO:  Idle: 0,  Running: 3,  Completed: 526 [  1h 42m  ] \nINFO:  Idle: 0,  Running: 2,  Completed: 527 [  1h 42m  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 529 [  1h 43m  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 529 [  1h 43m  ] \nINFO: Combining runs \nsum of cpu time of last step: 52m24s\nINFO: finish refine \nrefine 1000000 --treshold=0.9\nNo need for second refine due to stability of cross-section\nINFO: Combining Events \nINFO: fail to reach target 1000000 \n\u001b[1;34mfailed to generate enough events. Please follow one of the following suggestions to fix the issue:\u001b[0m\n\u001b[1;34m  - set in the run_card.dat 'sde_strategy' to 2\u001b[0m\n\u001b[1;34m  - set in the run_card.dat  'hard_survey' to 1 or 2.\u001b[0m\n\u001b[1;34m  - reduce the number of requested events (if set too high)\u001b[0m\n\u001b[1;34m  - check that you do not have -integrable- singularity in your amplitude.\u001b[0m\n\u001b[1;34m  - regenerate your process directory by selecting another gauge (in particular try FD gauge).\u001b[0m\ncombination of events done in 46.028289556503296 s \n  === Results Summary for run: run_11 tag: tag_1 ===\n\n     Cross-section :   1.434 +- 0.0007889 pb\n     Nb of events :  39810\n \nstore_events\nINFO: Storing parton level results \nINFO: End Parton \nreweight -from_cards\ndecay_events -from_cards\nINFO: \u001b[92mRunning Pythia8 [arXiv:1410.3012]\u001b[0m \nSplitting .lhe event file for PY8 parallelization...\nSubmitting Pythia8 jobs...\nPythia8 shower jobs: 1 Idle, 19 Running, 0 Done [5 seconds]\nPythia8 shower jobs: 0 Idle, 19 Running, 1 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 18 Running, 2 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 17 Running, 3 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 16 Running, 4 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 15 Running, 5 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 14 Running, 6 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 13 Running, 7 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 12 Running, 8 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 11 Running, 9 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 10 Running, 10 Done [6 seconds]\nPythia8 shower jobs: 0 Idle, 9 Running, 11 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 8 Running, 12 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 7 Running, 13 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 6 Running, 14 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 5 Running, 15 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 4 Running, 16 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 3 Running, 17 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 2 Running, 18 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 1 Running, 19 Done [7 seconds]\nPythia8 shower jobs: 0 Idle, 0 Running, 20 Done [7 seconds]\nMerging results from the split PY8 runs...\n\u001b[1;34mWARNING: Install gnuplot to be able to view the plots generated at :\n    \u001b[0m\nINFO: Pythia8 shower finished after 28 seconds. \nINFO: prepare delphes run \nINFO: Running Delphes \nINFO: If you are interested in lhco output. please run root2lhco converter. \nINFO:  or edit bin/internal/run_delphes3 to run the converter automatically. \nINFO: delphes done \n  === Results Summary for run: run_11 tag: tag_1 ===\n\n     Cross-section :   1.434 +- 0.0007889 pb\n     Nb of events :  39810\n \nINFO: storing files of previous run \nINFO: Storing Pythia8 files of previous run \nINFO: Done \nINFO: Failed to collect scale/PDF variation for scan summary from run_11. Setting individual variations to zero. \n\u001b[1mINFO: write scan results in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/scan_run_[01-11].txt \u001b[0m\nquit\nINFO:  \nmore information in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/index.html\nquit\n",
+              "survey_profile": "default"
+            },
+            "madspin": {
+              "enabled": false
+            },
+            "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+            "model": "gQGC_UFO",
+            "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+            "nevents": 1000000,
+            "operator": "o_5",
+            "outputs": [
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f0",
+                  "fraction": 0.077157,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_01/run_01.lhco",
+                  "loaded_lhco_event_count": 77157,
+                  "requested_event_count": 1000000,
+                  "status": "below_recovery_floor"
+                },
+                "cross_section_pb": 1.4346842522,
+                "label": "np_o_5_f0",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0.lhco",
+                "loaded_lhco_event_count": 77157,
+                "run_folder": "run_01",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_01/run_01_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_01/run_01.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f1",
+                  "fraction": 0.102087,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_02/run_02.lhco",
+                  "loaded_lhco_event_count": 102087,
+                  "requested_event_count": 1000000,
+                  "status": "accepted_with_warning"
+                },
+                "cross_section_pb": 1.4300485435999999,
+                "label": "np_o_5_f1",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1.lhco",
+                "loaded_lhco_event_count": 102087,
+                "run_folder": "run_02",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_02/run_02_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_02/run_02.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f2",
+                  "fraction": 0.123671,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_03/run_03.lhco",
+                  "loaded_lhco_event_count": 123671,
+                  "requested_event_count": 1000000,
+                  "status": "accepted_with_warning"
+                },
+                "cross_section_pb": 1.4523467294999999,
+                "label": "np_o_5_f2",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2.lhco",
+                "loaded_lhco_event_count": 123671,
+                "run_folder": "run_03",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_03/run_03_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_03/run_03.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f3",
+                  "fraction": 0.836301,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_04/run_04.lhco",
+                  "loaded_lhco_event_count": 836301,
+                  "requested_event_count": 1000000,
+                  "status": "accepted_with_warning"
+                },
+                "cross_section_pb": 1.4460227838000002,
+                "label": "np_o_5_f3",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3.lhco",
+                "loaded_lhco_event_count": 836301,
+                "run_folder": "run_04",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_04/run_04_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_04/run_04.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f4",
+                  "fraction": 0.07342,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_05/run_05.lhco",
+                  "loaded_lhco_event_count": 73420,
+                  "requested_event_count": 1000000,
+                  "status": "below_recovery_floor"
+                },
+                "cross_section_pb": 1.4442226856,
+                "label": "np_o_5_f4",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4.lhco",
+                "loaded_lhco_event_count": 73420,
+                "run_folder": "run_05",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_05/run_05_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_05/run_05.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f5",
+                  "fraction": 0.054981,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_06/run_06.lhco",
+                  "loaded_lhco_event_count": 54981,
+                  "requested_event_count": 1000000,
+                  "status": "below_recovery_floor"
+                },
+                "cross_section_pb": 1.4467955344,
+                "label": "np_o_5_f5",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5.lhco",
+                "loaded_lhco_event_count": 54981,
+                "run_folder": "run_06",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_06/run_06_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_06/run_06.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f6",
+                  "fraction": 0.126356,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_07/run_07.lhco",
+                  "loaded_lhco_event_count": 126356,
+                  "requested_event_count": 1000000,
+                  "status": "accepted_with_warning"
+                },
+                "cross_section_pb": 1.4486587580999999,
+                "label": "np_o_5_f6",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6.lhco",
+                "loaded_lhco_event_count": 126356,
+                "run_folder": "run_07",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_07/run_07_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_07/run_07.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f7",
+                  "fraction": 0.090195,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_08/run_08.lhco",
+                  "loaded_lhco_event_count": 90195,
+                  "requested_event_count": 1000000,
+                  "status": "below_recovery_floor"
+                },
+                "cross_section_pb": 1.4523181996999999,
+                "label": "np_o_5_f7",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7.lhco",
+                "loaded_lhco_event_count": 90195,
+                "run_folder": "run_08",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_08/run_08_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_08/run_08.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f8",
+                  "fraction": 0.233062,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_09/run_09.lhco",
+                  "loaded_lhco_event_count": 233062,
+                  "requested_event_count": 1000000,
+                  "status": "accepted_with_warning"
+                },
+                "cross_section_pb": 1.4496970618,
+                "label": "np_o_5_f8",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8.lhco",
+                "loaded_lhco_event_count": 233062,
+                "run_folder": "run_09",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_09/run_09_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_09/run_09.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f9",
+                  "fraction": 1.0,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_10/run_10.lhco",
+                  "loaded_lhco_event_count": 1000000,
+                  "requested_event_count": 1000000,
+                  "status": "ok"
+                },
+                "cross_section_pb": 1.4391285511,
+                "label": "np_o_5_f9",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9.lhco",
+                "loaded_lhco_event_count": 1000000,
+                "run_folder": "run_10",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_10/run_10_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_10/run_10.lhco",
+                "zero_cross_section_check": null
+              },
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f10",
+                  "fraction": 0.03981,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/run_11.lhco",
+                  "loaded_lhco_event_count": 39810,
+                  "requested_event_count": 1000000,
+                  "status": "below_recovery_floor"
+                },
+                "cross_section_pb": 1.4342502054,
+                "label": "np_o_5_f10",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10.lhco",
+                "loaded_lhco_event_count": 39810,
+                "run_folder": "run_11",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/run_11_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/run_11.lhco",
+                "zero_cross_section_check": null
+              }
+            ],
+            "polarization": null,
+            "process": "mu+ mu- > vl vl~ j j",
+            "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01",
+            "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01",
+            "process_mode": "scan",
+            "process_validation": null,
+            "removed_large_intermediates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/tag_1_pythia8_events.hepmc.gz",
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SCAN_E10_L10000_20260905_113517_01/Events/run_11/tag_1_delphes_events.root"
+            ],
+            "run_folders": [
+              "run_01",
+              "run_02",
+              "run_03",
+              "run_04",
+              "run_05",
+              "run_06",
+              "run_07",
+              "run_08",
+              "run_09",
+              "run_10",
+              "run_11"
+            ],
+            "run_label": "E10_L10000",
+            "scan_expression": "[-5.2e-14 + 0.2 * 5.2e-14 * n for n in range(11)]",
+            "schema_version": "1.0",
+            "status": "completed",
+            "survey_profile": "default",
+            "target_coefficient": {
+              "index": 5
+            },
+            "weighted_order": 8
+          }
+        },
+        {
+          "attempt_index": 1,
+          "survey_profile": "sde2_hs0",
+          "status": "completed",
+          "source_kind": "single_point_topup_reused",
+          "scan_label": "f0",
+          "coefficient": -5.2e-14,
+          "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/mg5_result.json",
+          "result": {
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "available_coefficients": {
+              "1": 1e-12,
+              "2": 1e-12,
+              "3": 1e-12,
+              "4": 1e-12,
+              "5": 1e-12,
+              "6": 1e-12,
+              "7": 1e-12,
+              "8": 1e-12
+            },
+            "c_scan": 5.2e-14,
+            "cleanup_candidates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "coefficient_block": "anoinputs",
+            "coefficient_mode": "explicit",
+            "copied_delphes_card": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Cards/delphes_card.dat",
+            "create_process": {
+              "diagram_count_max": 175,
+              "diagram_count_total": 638,
+              "diagram_counts": {
+                "count_max": 175,
+                "count_total": 638,
+                "counts": [
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  3,
+                  20,
+                  2,
+                  2,
+                  20,
+                  20,
+                  2,
+                  2,
+                  20,
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  175,
+                  175,
+                  113
+                ],
+                "source": "mg5_create_stdout_regex"
+              },
+              "mg5_steps": {
+                "delphes": null,
+                "madgraph": {
+                  "duration_sec": 5.45,
+                  "end": 1789543345.253319,
+                  "start": 1789543339.802148
+                },
+                "pythia8": null
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_WEIGHTED_01.txt",
+              "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_WEIGHTED_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_WEIGHTED.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_WEIGHTED.stdout.log",
+              "stdout_tail": "GHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g @1 \nINFO: Combined process mu+ mu- > vt vt~ g g WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nINFO: Creating files in directory P1_mupmum_vlvlgg \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 12 subprocesses (113 diagrams) in 0.064 s\nWrote files for 321 helas calls in 0.181 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 13 routines in  1.992 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+              "weighted_attempts": [
+                {
+                  "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_WEIGHTED_01.txt",
+                  "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_WEIGHTED_01.txt",
+                  "status": "success",
+                  "weighted_keyword": "WEIGHTED",
+                  "weighted_order": 8
+                }
+              ],
+              "weighted_keyword": "WEIGHTED",
+              "weighted_order": 8
+            },
+            "created_process": true,
+            "delphes_card": "delphes_card_MuonColliderDet.tcl",
+            "detector_simulation": "Delphes",
+            "ebeam1": 5000.0,
+            "ebeam2": 5000.0,
+            "event_generator": "MadGraph5",
+            "launch": {
+              "mg5_steps": {
+                "delphes": {
+                  "duration_sec": 6881.97,
+                  "end": 1789551469.688407,
+                  "start": 1789544587.7231705
+                },
+                "madgraph": {
+                  "duration_sec": 566.32,
+                  "end": 1789543911.6455665,
+                  "start": 1789543345.327163
+                },
+                "pythia8": {
+                  "duration_sec": 676.08,
+                  "end": 1789544587.7231705,
+                  "start": 1789543911.6455665
+                }
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_sde2_hs0_01.txt",
+              "order_filename": "order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_sde2_hs0_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_sde2_hs0.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\nstty: 'standard input': Inappropriate ioctl for device\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01_sde2_hs0.stdout.log",
+              "stdout_tail": "ted: 255 [  4m 11s  ] \nINFO:  Idle: 121,  Running: 8,  Completed: 259 [  4m 14s  ] \nINFO:  Idle: 118,  Running: 8,  Completed: 262 [  4m 18s  ] \nINFO:  Idle: 110,  Running: 8,  Completed: 270 [  4m 21s  ] \nINFO:  Idle: 106,  Running: 8,  Completed: 274 [  4m 28s  ] \nINFO:  Idle: 102,  Running: 8,  Completed: 278 [  4m 31s  ] \nINFO:  Idle: 100,  Running: 8,  Completed: 280 [  4m 34s  ] \nINFO:  Idle: 93,  Running: 8,  Completed: 287 [  4m 39s  ] \nINFO:  Idle: 88,  Running: 8,  Completed: 292 [  4m 42s  ] \nINFO:  Idle: 87,  Running: 8,  Completed: 293 [  4m 45s  ] \nINFO:  Idle: 83,  Running: 8,  Completed: 297 [  4m 50s  ] \nINFO:  Idle: 80,  Running: 8,  Completed: 300 [  4m 53s  ] \nINFO:  Idle: 75,  Running: 8,  Completed: 305 [  4m 56s  ] \nINFO:  Idle: 73,  Running: 8,  Completed: 307 [  5m 2s  ] \nINFO:  Idle: 68,  Running: 8,  Completed: 312 [  5m 6s  ] \nINFO:  Idle: 64,  Running: 8,  Completed: 316 [  5m 12s  ] \nINFO:  Idle: 57,  Running: 8,  Completed: 323 [  5m 15s  ] \nINFO:  Idle: 54,  Running: 8,  Completed: 326 [  5m 19s  ] \nINFO:  Idle: 49,  Running: 8,  Completed: 331 [  5m 22s  ] \nINFO:  Idle: 43,  Running: 8,  Completed: 337 [  5m 25s  ] \nINFO:  Idle: 38,  Running: 8,  Completed: 342 [  5m 28s  ] \nINFO:  Idle: 35,  Running: 8,  Completed: 345 [  5m 33s  ] \nINFO:  Idle: 31,  Running: 8,  Completed: 349 [  5m 36s  ] \nINFO:  Idle: 27,  Running: 8,  Completed: 353 [  5m 41s  ] \nINFO:  Idle: 21,  Running: 8,  Completed: 359 [  5m 44s  ] \nINFO:  Idle: 16,  Running: 8,  Completed: 364 [  5m 49s  ] \nINFO:  Idle: 14,  Running: 8,  Completed: 366 [  5m 53s  ] \nINFO:  Idle: 9,  Running: 8,  Completed: 371 [  5m 56s  ] \nINFO:  Idle: 5,  Running: 8,  Completed: 375 [  6m 3s  ] \nINFO:  Idle: 1,  Running: 8,  Completed: 379 [  6m 6s  ] \nINFO:  Idle: 0,  Running: 4,  Completed: 384 [  6m 10s  ] \nINFO:  Idle: 0,  Running: 3,  Completed: 385 [  6m 21s  ] \nINFO:  Idle: 0,  Running: 2,  Completed: 386 [  6m 55s  ] \nINFO:  Idle: 0,  Running: 1,  Completed: 387 [  7m 52s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 388 [  7m 55s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 388 [  7m 55s  ] \nINFO: Combining runs \nsum of cpu time of last step: 31m21s\nINFO: finish refine \nrefine 1000000 --treshold=0.9\nNo need for second refine due to stability of cross-section\nINFO: Combining Events \ncombination of events done in 68.82005548477173 s \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.454 +- 0.0004408 pb\n     Nb of events :  1000000\n \nstore_events\nINFO: Storing parton level results \nINFO: End Parton \nreweight -from_cards\ndecay_events -from_cards\nINFO: \u001b[92mRunning Pythia8 [arXiv:1410.3012]\u001b[0m \nSplitting .lhe event file for PY8 parallelization...\nSubmitting Pythia8 jobs...\nPythia8 shower jobs: 1 Idle, 7 Running, 0 Done [2m03s]\nPythia8 shower jobs: 0 Idle, 7 Running, 1 Done [4m45s]\nPythia8 shower jobs: 0 Idle, 6 Running, 2 Done [4m46s]\nPythia8 shower jobs: 0 Idle, 5 Running, 3 Done [4m46s]\nPythia8 shower jobs: 0 Idle, 4 Running, 4 Done [4m46s]\nPythia8 shower jobs: 0 Idle, 3 Running, 5 Done [4m46s]\nPythia8 shower jobs: 0 Idle, 2 Running, 6 Done [4m46s]\nPythia8 shower jobs: 0 Idle, 1 Running, 7 Done [4m46s]\nPythia8 shower jobs: 0 Idle, 0 Running, 8 Done [4m47s]\nMerging results from the split PY8 runs...\n\u001b[1;34mWARNING: Install gnuplot to be able to view the plots generated at :\n    \u001b[0m\nINFO: Pythia8 shower finished after 11m15s. \nINFO: prepare delphes run \nINFO: Running Delphes \nINFO: If you are interested in lhco output. please run root2lhco converter. \nINFO:  or edit bin/internal/run_delphes3 to run the converter automatically. \nINFO: delphes done \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.454 +- 0.0004408 pb\n     Nb of events :  1000000\n \nINFO: storing files of previous run \nINFO: Storing Pythia8 files of previous run \nINFO: Done \nquit\nINFO:  \nmore information in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/index.html\nquit\n",
+              "survey_profile": "sde2_hs0"
+            },
+            "madspin": {
+              "enabled": false
+            },
+            "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+            "model": "gQGC_UFO",
+            "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+            "nevents": 1000000,
+            "operator": "o_5",
+            "outputs": [
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/np_o_5_f0_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f0",
+                  "fraction": 1.0,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Events/run_01/run_01.lhco",
+                  "loaded_lhco_event_count": 1000000,
+                  "requested_event_count": 1000000,
+                  "status": "ok"
+                },
+                "cross_section_pb": 1.4544527345,
+                "label": "np_o_5_f0",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/np_o_5_f0.lhco",
+                "loaded_lhco_event_count": 1000000,
+                "run_folder": "run_01",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Events/run_01/run_01_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Events/run_01/run_01.lhco",
+                "zero_cross_section_check": null
+              }
+            ],
+            "polarization": null,
+            "process": "mu+ mu- > vl vl~ j j",
+            "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01",
+            "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01",
+            "process_mode": "sm_np_point",
+            "process_validation": null,
+            "removed_large_intermediates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_152219_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "run_folders": [
+              "run_01"
+            ],
+            "run_label": "E10_L10000",
+            "scan_expression": null,
+            "schema_version": "1.0",
+            "status": "completed",
+            "survey_profile": "sde2_hs0",
+            "target_coefficient": {
+              "index": 5,
+              "value": -5.2e-14
+            },
+            "weighted_order": 8
+          }
+        },
+        {
+          "attempt_index": 2,
+          "survey_profile": "sde2_hs0",
+          "status": "completed",
+          "source_kind": "single_point_topup_reused",
+          "scan_label": "f4",
+          "coefficient": -1.0399999999999999e-14,
+          "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/mg5_result.json",
+          "result": {
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "available_coefficients": {
+              "1": 1e-12,
+              "2": 1e-12,
+              "3": 1e-12,
+              "4": 1e-12,
+              "5": 1e-12,
+              "6": 1e-12,
+              "7": 1e-12,
+              "8": 1e-12
+            },
+            "c_scan": 5.2e-14,
+            "cleanup_candidates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "coefficient_block": "anoinputs",
+            "coefficient_mode": "explicit",
+            "copied_delphes_card": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Cards/delphes_card.dat",
+            "create_process": {
+              "diagram_count_max": 175,
+              "diagram_count_total": 638,
+              "diagram_counts": {
+                "count_max": 175,
+                "count_total": 638,
+                "counts": [
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  3,
+                  20,
+                  2,
+                  2,
+                  20,
+                  20,
+                  2,
+                  2,
+                  20,
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  175,
+                  175,
+                  113
+                ],
+                "source": "mg5_create_stdout_regex"
+              },
+              "mg5_steps": {
+                "delphes": null,
+                "madgraph": {
+                  "duration_sec": 10.06,
+                  "end": 1789551497.9966438,
+                  "start": 1789551487.9404876
+                },
+                "pythia8": null
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_WEIGHTED_01.txt",
+              "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_WEIGHTED_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_WEIGHTED.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_WEIGHTED.stdout.log",
+              "stdout_tail": "GHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g @1 \nINFO: Combined process mu+ mu- > vt vt~ g g WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nINFO: Creating files in directory P1_mupmum_vlvlgg \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 12 subprocesses (113 diagrams) in 0.065 s\nWrote files for 321 helas calls in 0.236 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 13 routines in  1.972 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+              "weighted_attempts": [
+                {
+                  "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_WEIGHTED_01.txt",
+                  "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_WEIGHTED_01.txt",
+                  "status": "success",
+                  "weighted_keyword": "WEIGHTED",
+                  "weighted_order": 8
+                }
+              ],
+              "weighted_keyword": "WEIGHTED",
+              "weighted_order": 8
+            },
+            "created_process": true,
+            "delphes_card": "delphes_card_MuonColliderDet.tcl",
+            "detector_simulation": "Delphes",
+            "ebeam1": 5000.0,
+            "ebeam2": 5000.0,
+            "event_generator": "MadGraph5",
+            "launch": {
+              "mg5_steps": {
+                "delphes": {
+                  "duration_sec": 6232.43,
+                  "end": 1789558955.8739,
+                  "start": 1789552723.4446359
+                },
+                "madgraph": {
+                  "duration_sec": 570.86,
+                  "end": 1789552068.9467893,
+                  "start": 1789551498.085929
+                },
+                "pythia8": {
+                  "duration_sec": 654.5,
+                  "end": 1789552723.4446359,
+                  "start": 1789552068.9467893
+                }
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_sde2_hs0_01.txt",
+              "order_filename": "order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_sde2_hs0_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_sde2_hs0.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\nstty: 'standard input': Inappropriate ioctl for device\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01_sde2_hs0.stdout.log",
+              "stdout_tail": "leted: 254 [  4m 11s  ] \nINFO:  Idle: 117,  Running: 8,  Completed: 259 [  4m 16s  ] \nINFO:  Idle: 114,  Running: 8,  Completed: 262 [  4m 19s  ] \nINFO:  Idle: 106,  Running: 8,  Completed: 270 [  4m 22s  ] \nINFO:  Idle: 102,  Running: 8,  Completed: 274 [  4m 29s  ] \nINFO:  Idle: 98,  Running: 8,  Completed: 278 [  4m 32s  ] \nINFO:  Idle: 96,  Running: 8,  Completed: 280 [  4m 35s  ] \nINFO:  Idle: 91,  Running: 8,  Completed: 285 [  4m 39s  ] \nINFO:  Idle: 84,  Running: 8,  Completed: 292 [  4m 42s  ] \nINFO:  Idle: 83,  Running: 8,  Completed: 293 [  4m 47s  ] \nINFO:  Idle: 79,  Running: 8,  Completed: 297 [  4m 51s  ] \nINFO:  Idle: 76,  Running: 8,  Completed: 300 [  4m 54s  ] \nINFO:  Idle: 71,  Running: 8,  Completed: 305 [  4m 57s  ] \nINFO:  Idle: 69,  Running: 8,  Completed: 307 [  5m 5s  ] \nINFO:  Idle: 64,  Running: 8,  Completed: 312 [  5m 8s  ] \nINFO:  Idle: 61,  Running: 8,  Completed: 315 [  5m 11s  ] \nINFO:  Idle: 59,  Running: 8,  Completed: 317 [  5m 14s  ] \nINFO:  Idle: 53,  Running: 8,  Completed: 323 [  5m 17s  ] \nINFO:  Idle: 49,  Running: 8,  Completed: 327 [  5m 22s  ] \nINFO:  Idle: 41,  Running: 8,  Completed: 335 [  5m 25s  ] \nINFO:  Idle: 37,  Running: 8,  Completed: 339 [  5m 29s  ] \nINFO:  Idle: 31,  Running: 8,  Completed: 345 [  5m 34s  ] \nINFO:  Idle: 27,  Running: 8,  Completed: 349 [  5m 39s  ] \nINFO:  Idle: 22,  Running: 8,  Completed: 354 [  5m 42s  ] \nINFO:  Idle: 17,  Running: 8,  Completed: 359 [  5m 46s  ] \nINFO:  Idle: 12,  Running: 8,  Completed: 364 [  5m 50s  ] \nINFO:  Idle: 10,  Running: 8,  Completed: 366 [  5m 54s  ] \nINFO:  Idle: 5,  Running: 8,  Completed: 371 [  5m 58s  ] \nINFO:  Idle: 1,  Running: 8,  Completed: 375 [  6m 4s  ] \nINFO:  Idle: 0,  Running: 6,  Completed: 378 [  6m 8s  ] \nINFO:  Idle: 0,  Running: 4,  Completed: 380 [  6m 11s  ] \nINFO:  Idle: 0,  Running: 3,  Completed: 381 [  6m 23s  ] \nINFO:  Idle: 0,  Running: 2,  Completed: 382 [  6m 57s  ] \nINFO:  Idle: 0,  Running: 1,  Completed: 383 [  7m 54s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 384 [  7m 58s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 384 [  7m 58s  ] \nINFO: Combining runs \nsum of cpu time of last step: 31m28s\nINFO: finish refine \nrefine 1000000 --treshold=0.9\nNo need for second refine due to stability of cross-section\nINFO: Combining Events \ncombination of events done in 64.11829471588135 s \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.452 +- 0.0004406 pb\n     Nb of events :  1000000\n \nstore_events\nINFO: Storing parton level results \nINFO: End Parton \nreweight -from_cards\ndecay_events -from_cards\nINFO: \u001b[92mRunning Pythia8 [arXiv:1410.3012]\u001b[0m \nSplitting .lhe event file for PY8 parallelization...\nSubmitting Pythia8 jobs...\nPythia8 shower jobs: 1 Idle, 7 Running, 0 Done [2m02s]\nPythia8 shower jobs: 0 Idle, 7 Running, 1 Done [4m29s]\nPythia8 shower jobs: 0 Idle, 6 Running, 2 Done [4m30s]\nPythia8 shower jobs: 0 Idle, 5 Running, 3 Done [4m30s]\nPythia8 shower jobs: 0 Idle, 4 Running, 4 Done [4m31s]\nPythia8 shower jobs: 0 Idle, 3 Running, 5 Done [4m31s]\nPythia8 shower jobs: 0 Idle, 2 Running, 6 Done [4m31s]\nPythia8 shower jobs: 0 Idle, 1 Running, 7 Done [4m31s]\nPythia8 shower jobs: 0 Idle, 0 Running, 8 Done [4m32s]\nMerging results from the split PY8 runs...\n\u001b[1;34mWARNING: Install gnuplot to be able to view the plots generated at :\n    \u001b[0m\nINFO: Pythia8 shower finished after 10m54s. \nINFO: prepare delphes run \nINFO: Running Delphes \nINFO: If you are interested in lhco output. please run root2lhco converter. \nINFO:  or edit bin/internal/run_delphes3 to run the converter automatically. \nINFO: delphes done \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.452 +- 0.0004406 pb\n     Nb of events :  1000000\n \nINFO: storing files of previous run \nINFO: Storing Pythia8 files of previous run \nINFO: Done \nquit\nINFO:  \nmore information in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/index.html\nquit\n",
+              "survey_profile": "sde2_hs0"
+            },
+            "madspin": {
+              "enabled": false
+            },
+            "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+            "model": "gQGC_UFO",
+            "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+            "nevents": 1000000,
+            "operator": "o_5",
+            "outputs": [
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/np_o_5_f4_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f4",
+                  "fraction": 1.0,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Events/run_01/run_01.lhco",
+                  "loaded_lhco_event_count": 1000000,
+                  "requested_event_count": 1000000,
+                  "status": "ok"
+                },
+                "cross_section_pb": 1.4516815087600001,
+                "label": "np_o_5_f4",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/np_o_5_f4.lhco",
+                "loaded_lhco_event_count": 1000000,
+                "run_folder": "run_01",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Events/run_01/run_01_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Events/run_01/run_01.lhco",
+                "zero_cross_section_check": null
+              }
+            ],
+            "polarization": null,
+            "process": "mu+ mu- > vl vl~ j j",
+            "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01",
+            "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01",
+            "process_mode": "sm_np_point",
+            "process_validation": null,
+            "removed_large_intermediates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_173807_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "run_folders": [
+              "run_01"
+            ],
+            "run_label": "E10_L10000",
+            "scan_expression": null,
+            "schema_version": "1.0",
+            "status": "completed",
+            "survey_profile": "sde2_hs0",
+            "target_coefficient": {
+              "index": 5,
+              "value": -1.0399999999999999e-14
+            },
+            "weighted_order": 8
+          }
+        },
+        {
+          "attempt_index": 3,
+          "survey_profile": "sde2_hs1",
+          "status": "completed",
+          "source_kind": "single_point_topup_reused",
+          "scan_label": "f5",
+          "coefficient": 0.0,
+          "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/mg5_result.json",
+          "result": {
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "available_coefficients": {
+              "1": 1e-12,
+              "2": 1e-12,
+              "3": 1e-12,
+              "4": 1e-12,
+              "5": 1e-12,
+              "6": 1e-12,
+              "7": 1e-12,
+              "8": 1e-12
+            },
+            "c_scan": 5.2e-14,
+            "cleanup_candidates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "coefficient_block": "anoinputs",
+            "coefficient_mode": "explicit",
+            "copied_delphes_card": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Cards/delphes_card.dat",
+            "create_process": {
+              "diagram_count_max": 175,
+              "diagram_count_total": 638,
+              "diagram_counts": {
+                "count_max": 175,
+                "count_total": 638,
+                "counts": [
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  3,
+                  20,
+                  2,
+                  2,
+                  20,
+                  20,
+                  2,
+                  2,
+                  20,
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  175,
+                  175,
+                  113
+                ],
+                "source": "mg5_create_stdout_regex"
+              },
+              "mg5_steps": {
+                "delphes": null,
+                "madgraph": {
+                  "duration_sec": 5.42,
+                  "end": 1789560913.9593863,
+                  "start": 1789560908.539254
+                },
+                "pythia8": null
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_WEIGHTED_01.txt",
+              "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_WEIGHTED_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_WEIGHTED.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_WEIGHTED.stdout.log",
+              "stdout_tail": "GHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g @1 \nINFO: Combined process mu+ mu- > vt vt~ g g WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nINFO: Creating files in directory P1_mupmum_vlvlgg \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 12 subprocesses (113 diagrams) in 0.077 s\nWrote files for 321 helas calls in 0.200 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 13 routines in  2.157 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+              "weighted_attempts": [
+                {
+                  "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_WEIGHTED_01.txt",
+                  "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_WEIGHTED_01.txt",
+                  "status": "success",
+                  "weighted_keyword": "WEIGHTED",
+                  "weighted_order": 8
+                }
+              ],
+              "weighted_keyword": "WEIGHTED",
+              "weighted_order": 8
+            },
+            "created_process": true,
+            "delphes_card": "delphes_card_MuonColliderDet.tcl",
+            "detector_simulation": "Delphes",
+            "ebeam1": 5000.0,
+            "ebeam2": 5000.0,
+            "event_generator": "MadGraph5",
+            "launch": {
+              "mg5_steps": {
+                "delphes": {
+                  "duration_sec": 6162.76,
+                  "end": 1789568083.4560397,
+                  "start": 1789561920.697227
+                },
+                "madgraph": {
+                  "duration_sec": 308.11,
+                  "end": 1789561222.1162007,
+                  "start": 1789560914.0088115
+                },
+                "pythia8": {
+                  "duration_sec": 698.58,
+                  "end": 1789561920.697227,
+                  "start": 1789561222.1162007
+                }
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_sde2_hs1_01.txt",
+              "order_filename": "order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_sde2_hs1_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_sde2_hs1.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\nstty: 'standard input': Inappropriate ioctl for device\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01_sde2_hs1.stdout.log",
+              "stdout_tail": "e: 231,  Running: 8,  Completed: 157 [  1m 7s  ] \nINFO:  Idle: 223,  Running: 8,  Completed: 165 [  1m 11s  ] \nINFO:  Idle: 219,  Running: 8,  Completed: 169 [  1m 14s  ] \nINFO:  Idle: 215,  Running: 8,  Completed: 173 [  1m 17s  ] \nINFO:  Idle: 204,  Running: 8,  Completed: 184 [  1m 20s  ] \nINFO:  Idle: 198,  Running: 8,  Completed: 190 [  1m 24s  ] \nINFO:  Idle: 191,  Running: 8,  Completed: 197 [  1m 27s  ] \nINFO:  Idle: 180,  Running: 8,  Completed: 208 [  1m 30s  ] \nINFO:  Idle: 174,  Running: 8,  Completed: 214 [  1m 34s  ] \nINFO:  Idle: 162,  Running: 8,  Completed: 226 [  1m 37s  ] \nINFO:  Idle: 156,  Running: 8,  Completed: 232 [  1m 41s  ] \nINFO:  Idle: 149,  Running: 8,  Completed: 239 [  1m 45s  ] \nINFO:  Idle: 140,  Running: 8,  Completed: 248 [  1m 48s  ] \nINFO:  Idle: 130,  Running: 8,  Completed: 258 [  1m 51s  ] \nINFO:  Idle: 124,  Running: 8,  Completed: 264 [  1m 55s  ] \nINFO:  Idle: 120,  Running: 8,  Completed: 268 [  1m 58s  ] \nINFO:  Idle: 108,  Running: 8,  Completed: 280 [  2m 1s  ] \nINFO:  Idle: 100,  Running: 8,  Completed: 288 [  2m 4s  ] \nINFO:  Idle: 93,  Running: 8,  Completed: 295 [  2m 7s  ] \nINFO:  Idle: 80,  Running: 8,  Completed: 308 [  2m 11s  ] \nINFO:  Idle: 75,  Running: 8,  Completed: 313 [  2m 15s  ] \nINFO:  Idle: 63,  Running: 8,  Completed: 325 [  2m 18s  ] \nINFO:  Idle: 54,  Running: 8,  Completed: 334 [  2m 21s  ] \nINFO:  Idle: 48,  Running: 8,  Completed: 340 [  2m 24s  ] \nINFO:  Idle: 36,  Running: 8,  Completed: 352 [  2m 28s  ] \nINFO:  Idle: 29,  Running: 8,  Completed: 359 [  2m 32s  ] \nINFO:  Idle: 23,  Running: 8,  Completed: 365 [  2m 35s  ] \nINFO:  Idle: 14,  Running: 8,  Completed: 374 [  2m 38s  ] \nINFO:  Idle: 3,  Running: 8,  Completed: 385 [  2m 42s  ] \nINFO:  Idle: 0,  Running: 4,  Completed: 392 [  2m 45s  ] \nINFO:  Idle: 0,  Running: 2,  Completed: 394 [  2m 48s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 396 [  3m 18s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 396 [  3m 18s  ] \nINFO: Combining runs \nsum of cpu time of last step: 25m11s\nINFO: finish refine \nrefine 1000000 --treshold=0.9\nNo need for second refine due to stability of cross-section\nINFO: Combining Events \n\u001b[1;34m2  channel P1_mupmum_vlvlgg/G2.XXX has no events.lhe file. (no points passed cuts). No P1_mupmum_vlvlgg/G2 with events detected\u001b[0m\ncombination of events done in 70.371572971344 s \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.455 +- 0.0004273 pb\n     Nb of events :  1000000\n \nstore_events\nINFO: Storing parton level results \nINFO: End Parton \nreweight -from_cards\ndecay_events -from_cards\nINFO: \u001b[92mRunning Pythia8 [arXiv:1410.3012]\u001b[0m \nSplitting .lhe event file for PY8 parallelization...\nSubmitting Pythia8 jobs...\nPythia8 shower jobs: 1 Idle, 7 Running, 0 Done [2m03s]\nPythia8 shower jobs: 0 Idle, 7 Running, 1 Done [4m12s]\nPythia8 shower jobs: 0 Idle, 6 Running, 2 Done [4m20s]\nPythia8 shower jobs: 0 Idle, 5 Running, 3 Done [4m21s]\nPythia8 shower jobs: 0 Idle, 4 Running, 4 Done [4m21s]\nPythia8 shower jobs: 0 Idle, 3 Running, 5 Done [4m21s]\nPythia8 shower jobs: 0 Idle, 2 Running, 6 Done [4m22s]\nPythia8 shower jobs: 0 Idle, 1 Running, 7 Done [4m23s]\nPythia8 shower jobs: 0 Idle, 0 Running, 8 Done [4m23s]\nMerging results from the split PY8 runs...\n\u001b[1;34mWARNING: Install gnuplot to be able to view the plots generated at :\n    \u001b[0m\nINFO: Pythia8 shower finished after 11m38s. \nINFO: prepare delphes run \nINFO: Running Delphes \nINFO: If you are interested in lhco output. please run root2lhco converter. \nINFO:  or edit bin/internal/run_delphes3 to run the converter automatically. \nINFO: delphes done \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.455 +- 0.0004273 pb\n     Nb of events :  1000000\n \nINFO: storing files of previous run \nINFO: Storing Pythia8 files of previous run \nINFO: Done \nquit\nINFO:  \nmore information in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/index.html\nquit\n",
+              "survey_profile": "sde2_hs1"
+            },
+            "madspin": {
+              "enabled": false
+            },
+            "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+            "model": "gQGC_UFO",
+            "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+            "nevents": 1000000,
+            "operator": "o_5",
+            "outputs": [
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/np_o_5_f5_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f5",
+                  "fraction": 1.0,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Events/run_01/run_01.lhco",
+                  "loaded_lhco_event_count": 1000000,
+                  "requested_event_count": 1000000,
+                  "status": "ok"
+                },
+                "cross_section_pb": 1.4554967924,
+                "label": "np_o_5_f5",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/np_o_5_f5.lhco",
+                "loaded_lhco_event_count": 1000000,
+                "run_folder": "run_01",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Events/run_01/run_01_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Events/run_01/run_01.lhco",
+                "zero_cross_section_check": null
+              }
+            ],
+            "polarization": null,
+            "process": "mu+ mu- > vl vl~ j j",
+            "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01",
+            "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01",
+            "process_mode": "sm_np_point",
+            "process_validation": null,
+            "removed_large_intermediates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_201508_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "run_folders": [
+              "run_01"
+            ],
+            "run_label": "E10_L10000",
+            "scan_expression": null,
+            "schema_version": "1.0",
+            "status": "completed",
+            "survey_profile": "sde2_hs1",
+            "target_coefficient": {
+              "index": 5,
+              "value": 0.0
+            },
+            "weighted_order": 8
+          }
+        },
+        {
+          "attempt_index": 4,
+          "survey_profile": "sde2_hs0",
+          "status": "completed",
+          "source_kind": "single_point_topup_reused",
+          "scan_label": "f7",
+          "coefficient": 2.0800000000000004e-14,
+          "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/mg5_result.json",
+          "result": {
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "available_coefficients": {
+              "1": 1e-12,
+              "2": 1e-12,
+              "3": 1e-12,
+              "4": 1e-12,
+              "5": 1e-12,
+              "6": 1e-12,
+              "7": 1e-12,
+              "8": 1e-12
+            },
+            "c_scan": 5.2e-14,
+            "cleanup_candidates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "coefficient_block": "anoinputs",
+            "coefficient_mode": "explicit",
+            "copied_delphes_card": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Cards/delphes_card.dat",
+            "create_process": {
+              "diagram_count_max": 175,
+              "diagram_count_total": 638,
+              "diagram_counts": {
+                "count_max": 175,
+                "count_total": 638,
+                "counts": [
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  3,
+                  20,
+                  2,
+                  2,
+                  20,
+                  20,
+                  2,
+                  2,
+                  20,
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  175,
+                  175,
+                  113
+                ],
+                "source": "mg5_create_stdout_regex"
+              },
+              "mg5_steps": {
+                "delphes": null,
+                "madgraph": {
+                  "duration_sec": 6.67,
+                  "end": 1789568108.4409678,
+                  "start": 1789568101.7747998
+                },
+                "pythia8": null
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_WEIGHTED_01.txt",
+              "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_WEIGHTED_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_WEIGHTED.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_WEIGHTED.stdout.log",
+              "stdout_tail": "GHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g @1 \nINFO: Combined process mu+ mu- > vt vt~ g g WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nINFO: Creating files in directory P1_mupmum_vlvlgg \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 12 subprocesses (113 diagrams) in 0.069 s\nWrote files for 321 helas calls in 0.244 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 13 routines in  2.068 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+              "weighted_attempts": [
+                {
+                  "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_WEIGHTED_01.txt",
+                  "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_WEIGHTED_01.txt",
+                  "status": "success",
+                  "weighted_keyword": "WEIGHTED",
+                  "weighted_order": 8
+                }
+              ],
+              "weighted_keyword": "WEIGHTED",
+              "weighted_order": 8
+            },
+            "created_process": true,
+            "delphes_card": "delphes_card_MuonColliderDet.tcl",
+            "detector_simulation": "Delphes",
+            "ebeam1": 5000.0,
+            "ebeam2": 5000.0,
+            "event_generator": "MadGraph5",
+            "launch": {
+              "mg5_steps": {
+                "delphes": {
+                  "duration_sec": 6341.14,
+                  "end": 1789575657.2483053,
+                  "start": 1789569316.1071115
+                },
+                "madgraph": {
+                  "duration_sec": 576.56,
+                  "end": 1789568685.088414,
+                  "start": 1789568108.530828
+                },
+                "pythia8": {
+                  "duration_sec": 631.02,
+                  "end": 1789569316.1071115,
+                  "start": 1789568685.088414
+                }
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_sde2_hs0_01.txt",
+              "order_filename": "order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_sde2_hs0_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_sde2_hs0.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\nstty: 'standard input': Inappropriate ioctl for device\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01_sde2_hs0.stdout.log",
+              "stdout_tail": "pleted: 259 [  4m 15s  ] \nINFO:  Idle: 114,  Running: 8,  Completed: 262 [  4m 19s  ] \nINFO:  Idle: 106,  Running: 8,  Completed: 270 [  4m 22s  ] \nINFO:  Idle: 102,  Running: 8,  Completed: 274 [  4m 29s  ] \nINFO:  Idle: 98,  Running: 8,  Completed: 278 [  4m 32s  ] \nINFO:  Idle: 95,  Running: 8,  Completed: 281 [  4m 35s  ] \nINFO:  Idle: 90,  Running: 8,  Completed: 286 [  4m 39s  ] \nINFO:  Idle: 84,  Running: 8,  Completed: 292 [  4m 42s  ] \nINFO:  Idle: 83,  Running: 8,  Completed: 293 [  4m 46s  ] \nINFO:  Idle: 80,  Running: 8,  Completed: 296 [  4m 49s  ] \nINFO:  Idle: 76,  Running: 8,  Completed: 300 [  4m 54s  ] \nINFO:  Idle: 71,  Running: 8,  Completed: 305 [  4m 57s  ] \nINFO:  Idle: 69,  Running: 8,  Completed: 307 [  5m 4s  ] \nINFO:  Idle: 63,  Running: 8,  Completed: 313 [  5m 8s  ] \nINFO:  Idle: 61,  Running: 8,  Completed: 315 [  5m 11s  ] \nINFO:  Idle: 58,  Running: 8,  Completed: 318 [  5m 14s  ] \nINFO:  Idle: 53,  Running: 8,  Completed: 323 [  5m 17s  ] \nINFO:  Idle: 50,  Running: 8,  Completed: 326 [  5m 20s  ] \nINFO:  Idle: 45,  Running: 8,  Completed: 331 [  5m 23s  ] \nINFO:  Idle: 38,  Running: 8,  Completed: 338 [  5m 27s  ] \nINFO:  Idle: 35,  Running: 8,  Completed: 341 [  5m 30s  ] \nINFO:  Idle: 31,  Running: 8,  Completed: 345 [  5m 33s  ] \nINFO:  Idle: 28,  Running: 8,  Completed: 348 [  5m 36s  ] \nINFO:  Idle: 25,  Running: 8,  Completed: 351 [  5m 39s  ] \nINFO:  Idle: 22,  Running: 8,  Completed: 354 [  5m 43s  ] \nINFO:  Idle: 18,  Running: 8,  Completed: 358 [  5m 46s  ] \nINFO:  Idle: 12,  Running: 8,  Completed: 364 [  5m 50s  ] \nINFO:  Idle: 10,  Running: 8,  Completed: 366 [  5m 54s  ] \nINFO:  Idle: 5,  Running: 8,  Completed: 371 [  5m 57s  ] \nINFO:  Idle: 1,  Running: 8,  Completed: 375 [  6m 3s  ] \nINFO:  Idle: 0,  Running: 7,  Completed: 377 [  6m 7s  ] \nINFO:  Idle: 0,  Running: 3,  Completed: 381 [  6m 23s  ] \nINFO:  Idle: 0,  Running: 2,  Completed: 382 [  6m 58s  ] \nINFO:  Idle: 0,  Running: 1,  Completed: 383 [  7m 53s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 384 [  7m 57s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 384 [  7m 57s  ] \nINFO: Combining runs \nsum of cpu time of last step: 31m29s\nINFO: finish refine \nrefine 1000000 --treshold=0.9\nNo need for second refine due to stability of cross-section\nINFO: Combining Events \ncombination of events done in 75.1729907989502 s \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.452 +- 0.0004407 pb\n     Nb of events :  1000000\n \nstore_events\nINFO: Storing parton level results \nINFO: End Parton \nreweight -from_cards\ndecay_events -from_cards\nINFO: \u001b[92mRunning Pythia8 [arXiv:1410.3012]\u001b[0m \nSplitting .lhe event file for PY8 parallelization...\nSubmitting Pythia8 jobs...\nPythia8 shower jobs: 1 Idle, 7 Running, 0 Done [2m02s]\nPythia8 shower jobs: 0 Idle, 7 Running, 1 Done [4m12s]\nPythia8 shower jobs: 0 Idle, 6 Running, 2 Done [4m13s]\nPythia8 shower jobs: 0 Idle, 5 Running, 3 Done [4m19s]\nPythia8 shower jobs: 0 Idle, 4 Running, 4 Done [4m20s]\nPythia8 shower jobs: 0 Idle, 3 Running, 5 Done [4m21s]\nPythia8 shower jobs: 0 Idle, 2 Running, 6 Done [4m23s]\nPythia8 shower jobs: 0 Idle, 1 Running, 7 Done [4m23s]\nPythia8 shower jobs: 0 Idle, 0 Running, 8 Done [4m27s]\nMerging results from the split PY8 runs...\n\u001b[1;34mWARNING: Install gnuplot to be able to view the plots generated at :\n    \u001b[0m\nINFO: Pythia8 shower finished after 10m30s. \nINFO: prepare delphes run \nINFO: Running Delphes \nINFO: If you are interested in lhco output. please run root2lhco converter. \nINFO:  or edit bin/internal/run_delphes3 to run the converter automatically. \nINFO: delphes done \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.452 +- 0.0004407 pb\n     Nb of events :  1000000\n \nINFO: storing files of previous run \nINFO: Storing Pythia8 files of previous run \nINFO: Done \nquit\nINFO:  \nmore information in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/index.html\nquit\n",
+              "survey_profile": "sde2_hs0"
+            },
+            "madspin": {
+              "enabled": false
+            },
+            "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+            "model": "gQGC_UFO",
+            "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+            "nevents": 1000000,
+            "operator": "o_5",
+            "outputs": [
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/np_o_5_f7_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f7",
+                  "fraction": 1.0,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Events/run_01/run_01.lhco",
+                  "loaded_lhco_event_count": 1000000,
+                  "requested_event_count": 1000000,
+                  "status": "ok"
+                },
+                "cross_section_pb": 1.4520213747000001,
+                "label": "np_o_5_f7",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/np_o_5_f7.lhco",
+                "loaded_lhco_event_count": 1000000,
+                "run_folder": "run_01",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Events/run_01/run_01_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Events/run_01/run_01.lhco",
+                "zero_cross_section_check": null
+              }
+            ],
+            "polarization": null,
+            "process": "mu+ mu- > vl vl~ j j",
+            "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01",
+            "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01",
+            "process_mode": "sm_np_point",
+            "process_validation": null,
+            "removed_large_intermediates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260916_221501_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "run_folders": [
+              "run_01"
+            ],
+            "run_label": "E10_L10000",
+            "scan_expression": null,
+            "schema_version": "1.0",
+            "status": "completed",
+            "survey_profile": "sde2_hs0",
+            "target_coefficient": {
+              "index": 5,
+              "value": 2.0800000000000004e-14
+            },
+            "weighted_order": 8
+          }
+        },
+        {
+          "attempt_index": 5,
+          "survey_profile": "sde2_hs0",
+          "status": "completed",
+          "source_kind": "single_point_topup_reused",
+          "scan_label": "f10",
+          "coefficient": 5.2e-14,
+          "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/mg5_result.json",
+          "result": {
+            "analysis_event_format": "LHCO_from_Delphes_ROOT",
+            "available_coefficients": {
+              "1": 1e-12,
+              "2": 1e-12,
+              "3": 1e-12,
+              "4": 1e-12,
+              "5": 1e-12,
+              "6": 1e-12,
+              "7": 1e-12,
+              "8": 1e-12
+            },
+            "c_scan": 5.2e-14,
+            "cleanup_candidates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "coefficient_block": "anoinputs",
+            "coefficient_mode": "explicit",
+            "copied_delphes_card": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Cards/delphes_card.dat",
+            "create_process": {
+              "diagram_count_max": 175,
+              "diagram_count_total": 638,
+              "diagram_counts": {
+                "count_max": 175,
+                "count_total": 638,
+                "counts": [
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  3,
+                  20,
+                  2,
+                  2,
+                  20,
+                  20,
+                  2,
+                  2,
+                  20,
+                  2,
+                  10,
+                  10,
+                  10,
+                  10,
+                  175,
+                  175,
+                  113
+                ],
+                "source": "mg5_create_stdout_regex"
+              },
+              "mg5_steps": {
+                "delphes": null,
+                "madgraph": {
+                  "duration_sec": 5.44,
+                  "end": 1789575681.72612,
+                  "start": 1789575676.2880952
+                },
+                "pythia8": null
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_WEIGHTED_01.txt",
+              "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_WEIGHTED_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_WEIGHTED.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_WEIGHTED.stdout.log",
+              "stdout_tail": "GHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g @1 \nINFO: Combined process mu+ mu- > vt vt~ g g WEIGHTED<=8 @1 with process mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nINFO: Creating files in directory P1_mupmum_vlvlgg \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g WEIGHTED<=8 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g WEIGHTED<=8 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 12 subprocesses (113 diagrams) in 0.066 s\nWrote files for 321 helas calls in 0.181 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 13 routines in  2.115 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+              "weighted_attempts": [
+                {
+                  "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_WEIGHTED_01.txt",
+                  "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_WEIGHTED_01.txt",
+                  "status": "success",
+                  "weighted_keyword": "WEIGHTED",
+                  "weighted_order": 8
+                }
+              ],
+              "weighted_keyword": "WEIGHTED",
+              "weighted_order": 8
+            },
+            "created_process": true,
+            "delphes_card": "delphes_card_MuonColliderDet.tcl",
+            "detector_simulation": "Delphes",
+            "ebeam1": 5000.0,
+            "ebeam2": 5000.0,
+            "event_generator": "MadGraph5",
+            "launch": {
+              "mg5_steps": {
+                "delphes": {
+                  "duration_sec": 6954.08,
+                  "end": 1789583882.366472,
+                  "start": 1789576928.2839372
+                },
+                "madgraph": {
+                  "duration_sec": 574.94,
+                  "end": 1789576256.6793382,
+                  "start": 1789575681.7399893
+                },
+                "pythia8": {
+                  "duration_sec": 671.6,
+                  "end": 1789576928.2839372,
+                  "start": 1789576256.6793382
+                }
+              },
+              "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_sde2_hs0_01.txt",
+              "order_filename": "order_launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_sde2_hs0_01.txt",
+              "returncode": 0,
+              "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_sde2_hs0.stderr.log",
+              "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\nstty: 'standard input': Inappropriate ioctl for device\n",
+              "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/launch_mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01_sde2_hs0.stdout.log",
+              "stdout_tail": "pleted: 259 [  4m 18s  ] \nINFO:  Idle: 114,  Running: 8,  Completed: 266 [  4m 21s  ] \nINFO:  Idle: 106,  Running: 8,  Completed: 274 [  4m 30s  ] \nINFO:  Idle: 101,  Running: 8,  Completed: 279 [  4m 33s  ] \nINFO:  Idle: 98,  Running: 8,  Completed: 282 [  4m 36s  ] \nINFO:  Idle: 93,  Running: 8,  Completed: 287 [  4m 40s  ] \nINFO:  Idle: 88,  Running: 8,  Completed: 292 [  4m 43s  ] \nINFO:  Idle: 87,  Running: 8,  Completed: 293 [  4m 47s  ] \nINFO:  Idle: 84,  Running: 8,  Completed: 296 [  4m 50s  ] \nINFO:  Idle: 80,  Running: 8,  Completed: 300 [  4m 54s  ] \nINFO:  Idle: 74,  Running: 8,  Completed: 306 [  4m 58s  ] \nINFO:  Idle: 73,  Running: 8,  Completed: 307 [  5m 4s  ] \nINFO:  Idle: 68,  Running: 8,  Completed: 312 [  5m 7s  ] \nINFO:  Idle: 65,  Running: 8,  Completed: 315 [  5m 11s  ] \nINFO:  Idle: 62,  Running: 8,  Completed: 318 [  5m 14s  ] \nINFO:  Idle: 57,  Running: 8,  Completed: 323 [  5m 18s  ] \nINFO:  Idle: 54,  Running: 8,  Completed: 326 [  5m 21s  ] \nINFO:  Idle: 49,  Running: 8,  Completed: 331 [  5m 24s  ] \nINFO:  Idle: 42,  Running: 8,  Completed: 338 [  5m 28s  ] \nINFO:  Idle: 37,  Running: 8,  Completed: 343 [  5m 31s  ] \nINFO:  Idle: 35,  Running: 8,  Completed: 345 [  5m 34s  ] \nINFO:  Idle: 31,  Running: 8,  Completed: 349 [  5m 38s  ] \nINFO:  Idle: 28,  Running: 8,  Completed: 352 [  5m 41s  ] \nINFO:  Idle: 24,  Running: 8,  Completed: 356 [  5m 45s  ] \nINFO:  Idle: 17,  Running: 8,  Completed: 363 [  5m 48s  ] \nINFO:  Idle: 15,  Running: 8,  Completed: 365 [  5m 51s  ] \nINFO:  Idle: 14,  Running: 8,  Completed: 366 [  5m 55s  ] \nINFO:  Idle: 9,  Running: 8,  Completed: 371 [  5m 58s  ] \nINFO:  Idle: 5,  Running: 8,  Completed: 375 [  6m 5s  ] \nINFO:  Idle: 1,  Running: 8,  Completed: 379 [  6m 8s  ] \nINFO:  Idle: 0,  Running: 4,  Completed: 384 [  6m 11s  ] \nINFO:  Idle: 0,  Running: 3,  Completed: 385 [  6m 23s  ] \nINFO:  Idle: 0,  Running: 2,  Completed: 386 [  6m 56s  ] \nINFO:  Idle: 0,  Running: 1,  Completed: 387 [  7m 54s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 388 [  7m 57s  ] \nINFO:  Idle: 0,  Running: 0,  Completed: 388 [  7m 57s  ] \nINFO: Combining runs \nsum of cpu time of last step: 31m30s\nINFO: finish refine \nrefine 1000000 --treshold=0.9\nNo need for second refine due to stability of cross-section\nINFO: Combining Events \ncombination of events done in 75.52059936523438 s \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.454 +- 0.0004408 pb\n     Nb of events :  1000000\n \nstore_events\nINFO: Storing parton level results \nINFO: End Parton \nreweight -from_cards\ndecay_events -from_cards\nINFO: \u001b[92mRunning Pythia8 [arXiv:1410.3012]\u001b[0m \nSplitting .lhe event file for PY8 parallelization...\nSubmitting Pythia8 jobs...\nPythia8 shower jobs: 1 Idle, 7 Running, 0 Done [2m02s]\nPythia8 shower jobs: 0 Idle, 7 Running, 1 Done [4m21s]\nPythia8 shower jobs: 0 Idle, 6 Running, 2 Done [4m42s]\nPythia8 shower jobs: 0 Idle, 5 Running, 3 Done [4m42s]\nPythia8 shower jobs: 0 Idle, 4 Running, 4 Done [4m43s]\nPythia8 shower jobs: 0 Idle, 3 Running, 5 Done [4m43s]\nPythia8 shower jobs: 0 Idle, 2 Running, 6 Done [4m43s]\nPythia8 shower jobs: 0 Idle, 1 Running, 7 Done [4m43s]\nPythia8 shower jobs: 0 Idle, 0 Running, 8 Done [4m44s]\nMerging results from the split PY8 runs...\n\u001b[1;34mWARNING: Install gnuplot to be able to view the plots generated at :\n    \u001b[0m\nINFO: Pythia8 shower finished after 11m11s. \nINFO: prepare delphes run \nINFO: Running Delphes \nINFO: If you are interested in lhco output. please run root2lhco converter. \nINFO:  or edit bin/internal/run_delphes3 to run the converter automatically. \nINFO: delphes done \n  === Results Summary for run: run_01 tag: tag_1 ===\n\n     Cross-section :   1.454 +- 0.0004408 pb\n     Nb of events :  1000000\n \nINFO: storing files of previous run \nINFO: Storing Pythia8 files of previous run \nINFO: Done \nquit\nINFO:  \nmore information in /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/index.html\nquit\n",
+              "survey_profile": "sde2_hs0"
+            },
+            "madspin": {
+              "enabled": false
+            },
+            "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+            "model": "gQGC_UFO",
+            "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+            "nevents": 1000000,
+            "operator": "o_5",
+            "outputs": [
+              {
+                "banner_missing": false,
+                "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/np_o_5_f10_banner.txt",
+                "count_record": {
+                  "count_context": "mg5_output",
+                  "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount()",
+                  "dataset_id": "np_o_5_f10",
+                  "fraction": 1.0,
+                  "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Events/run_01/run_01.lhco",
+                  "loaded_lhco_event_count": 1000000,
+                  "requested_event_count": 1000000,
+                  "status": "ok"
+                },
+                "cross_section_pb": 1.4544527345,
+                "label": "np_o_5_f10",
+                "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/np_o_5_f10.lhco",
+                "loaded_lhco_event_count": 1000000,
+                "run_folder": "run_01",
+                "source_banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Events/run_01/run_01_tag_1_banner.txt",
+                "source_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Events/run_01/run_01.lhco",
+                "zero_cross_section_check": null
+              }
+            ],
+            "polarization": null,
+            "process": "mu+ mu- > vl vl~ j j",
+            "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01",
+            "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01",
+            "process_mode": "sm_np_point",
+            "process_validation": null,
+            "removed_large_intermediates": [
+              "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SMNPPOINT_E10_L10000_20260917_002116_01/Events/run_01/tag_1_pythia8_events.hepmc.gz"
+            ],
+            "run_folders": [
+              "run_01"
+            ],
+            "run_label": "E10_L10000",
+            "scan_expression": null,
+            "schema_version": "1.0",
+            "status": "completed",
+            "survey_profile": "sde2_hs0",
+            "target_coefficient": {
+              "index": 5,
+              "value": 5.2e-14
+            },
+            "weighted_order": 8
+          }
+        }
+      ],
+      "merged_outputs": [
+        {
+          "label": "np_o_5_f0",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0_merge.json",
+          "loaded_lhco_event_count": 1077157,
+          "requested_event_count": 1000000,
+          "fraction": 1.077157,
+          "merged_cross_section_pb": 1.4530367136331985,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0_banner.txt",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/np_o_5_f0_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f0.lhco",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f0/np_o_5_f0.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f1",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1_merge.json",
+          "loaded_lhco_event_count": 102087,
+          "requested_event_count": 1000000,
+          "fraction": 0.102087,
+          "merged_cross_section_pb": 1.4300485435999999,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f1.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f2",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2_merge.json",
+          "loaded_lhco_event_count": 123671,
+          "requested_event_count": 1000000,
+          "fraction": 0.123671,
+          "merged_cross_section_pb": 1.4523467294999999,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f2.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f3",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3_merge.json",
+          "loaded_lhco_event_count": 836301,
+          "requested_event_count": 1000000,
+          "fraction": 0.836301,
+          "merged_cross_section_pb": 1.4460227838000002,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f3.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f4",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4_merge.json",
+          "loaded_lhco_event_count": 1073420,
+          "requested_event_count": 1000000,
+          "fraction": 1.07342,
+          "merged_cross_section_pb": 1.451171338652859,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4_banner.txt",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/np_o_5_f4_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f4.lhco",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/np_o_5_f4.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f5",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_merge.json",
+          "loaded_lhco_event_count": 1054981,
+          "requested_event_count": 1000000,
+          "fraction": 1.054981,
+          "merged_cross_section_pb": 1.4550433208530262,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_banner.txt",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/np_o_5_f5_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5.lhco",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f5/np_o_5_f5.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f6",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6_merge.json",
+          "loaded_lhco_event_count": 126356,
+          "requested_event_count": 1000000,
+          "fraction": 0.126356,
+          "merged_cross_section_pb": 1.4486587580999999,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f6.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f7",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7_merge.json",
+          "loaded_lhco_event_count": 1090195,
+          "requested_event_count": 1000000,
+          "fraction": 1.090195,
+          "merged_cross_section_pb": 1.4520459318946992,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7_banner.txt",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/np_o_5_f7_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f7.lhco",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f7/np_o_5_f7.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f8",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8_merge.json",
+          "loaded_lhco_event_count": 233062,
+          "requested_event_count": 1000000,
+          "fraction": 0.233062,
+          "merged_cross_section_pb": 1.4496970618,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f8.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f9",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9_merge.json",
+          "loaded_lhco_event_count": 1000000,
+          "requested_event_count": 1000000,
+          "fraction": 1.0,
+          "merged_cross_section_pb": 1.4391285511,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f9.lhco"
+          ]
+        },
+        {
+          "label": "np_o_5_f10",
+          "status": "merged",
+          "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10.lhco",
+          "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10_banner.txt",
+          "merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10_merge.json",
+          "loaded_lhco_event_count": 1039810,
+          "requested_event_count": 1000000,
+          "fraction": 1.03981,
+          "merged_cross_section_pb": 1.453679263689495,
+          "source_banners_retained": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10_banner.txt",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/np_o_5_f10_banner.txt"
+          ],
+          "source_lhco_paths": [
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f10.lhco",
+            "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f10/np_o_5_f10.lhco"
+          ]
+        }
+      ],
+      "final_loaded_counts": {
+        "f0": 1077157,
+        "f1": 102087,
+        "f2": 123671,
+        "f3": 836301,
+        "f4": 1073420,
+        "f5": 1054981,
+        "f6": 126356,
+        "f7": 1090195,
+        "f8": 233062,
+        "f9": 1000000,
+        "f10": 1039810
+      },
+      "threshold_fraction": 0.1,
+      "threshold_reached": true,
+      "warnings": [],
+      "status": "accepted",
+      "custom_recovery": "sequential single-point top-ups (sm_np_point at the exact scan coefficient) merged with salvaged/default sources per label, replacing full rescan attempts after repeated VM memory instability; nevents stays at the locked nev_scan per run"
+    }
+  },
+  "missing_units": [],
+  "incomplete_units": [],
+  "status": "accepted"
+}

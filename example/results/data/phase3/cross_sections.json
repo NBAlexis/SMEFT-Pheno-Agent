@@ -1,0 +1,50 @@
+{
+  "gQGC_UFO:FgT0": {
+    "sigma": 7.95946,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 1
+  },
+  "gQGC_UFO:FgT1": {
+    "sigma": 3.438523,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 2
+  },
+  "gQGC_UFO:FgT2": {
+    "sigma": 1.061042,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 3
+  },
+  "gQGC_UFO:FgT3": {
+    "sigma": 1.023344,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 4
+  },
+  "gQGC_UFO:FgT4": {
+    "sigma": 1.067185,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 5
+  },
+  "gQGC_UFO:FgT5": {
+    "sigma": 0.6120164,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 6
+  },
+  "gQGC_UFO:FgT6": {
+    "sigma": 0.1324557,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 7
+  },
+  "gQGC_UFO:FgT7": {
+    "sigma": 0.1748264,
+    "c_default": 1e-12,
+    "model": "gQGC_UFO",
+    "global_idx": 8
+  }
+}

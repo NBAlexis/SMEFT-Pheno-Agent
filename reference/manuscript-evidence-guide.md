@@ -4,6 +4,13 @@ Build `results/data/phase10/manuscript_evidence.json` before writing prose. This
 the source of truth for the manuscript. If a value is unavailable, record `null` and a
 `missing_reason`; do not fill it with guesses.
 
+Evidence is not only a collection of numbers. During Phase 10, use the evidence
+to build `manuscript_blueprint.json`: each central result must identify what was
+observed, what interpretation is justified by the evidence, what comparison or
+context is relevant, and what limitation remains. Keep these statements in the
+blueprint separate from the raw evidence values so that prose does not silently
+turn an observation into an unsupported physical explanation.
+
 ## Evidence Schema
 
 Required top-level keys:

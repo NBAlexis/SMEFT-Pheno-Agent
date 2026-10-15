@@ -3907,6 +3907,79 @@ def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = Non
         "canonical_item_count": len(required_items),
     })
 
+    blueprint_rel = os.path.join("data", "phase10", "manuscript_blueprint.json")
+    blueprint_path = os.path.join(root, blueprint_rel)
+    blueprint_required = [
+        "research_question",
+        "main_contribution",
+        "scope_and_boundaries",
+        "section_plan",
+        "result_ledger",
+        "applicability_review",
+    ]
+    blueprint_errors: List[str] = []
+    blueprint: Dict[str, Any] = {}
+    if not os.path.exists(blueprint_path):
+        blueprint_errors.append("manuscript_blueprint.json is missing")
+    else:
+        try:
+            blueprint = _load_json(blueprint_path)
+            if not isinstance(blueprint, dict):
+                blueprint_errors.append("blueprint must be a JSON object")
+            else:
+                for key in blueprint_required:
+                    if key not in blueprint:
+                        blueprint_errors.append(f"blueprint missing required key: {key}")
+                if not isinstance(blueprint.get("research_question"), str) or not blueprint.get("research_question", "").strip():
+                    blueprint_errors.append("blueprint research_question must be non-empty")
+                if not isinstance(blueprint.get("main_contribution"), str) or not blueprint.get("main_contribution", "").strip():
+                    blueprint_errors.append("blueprint main_contribution must be non-empty")
+                for key in ("scope_and_boundaries", "section_plan", "result_ledger", "applicability_review"):
+                    if key in blueprint and not isinstance(blueprint.get(key), list):
+                        blueprint_errors.append(f"blueprint {key} must be a list")
+                if isinstance(blueprint.get("section_plan"), list) and not blueprint.get("section_plan"):
+                    blueprint_errors.append("blueprint section_plan must not be empty")
+                if isinstance(blueprint.get("section_plan"), list):
+                    for index, item in enumerate(blueprint["section_plan"]):
+                        if not isinstance(item, dict):
+                            blueprint_errors.append(f"blueprint section_plan[{index}] is not an object")
+                            continue
+                        for key in ("section", "purpose", "claims", "evidence_paths", "interpretation_to_write", "limitations_to_state"):
+                            if key not in item or item.get(key) in (None, "", []):
+                                blueprint_errors.append(f"blueprint section_plan[{index}] missing {key}")
+                if isinstance(blueprint.get("applicability_review"), list):
+                    if not blueprint["applicability_review"]:
+                        blueprint_errors.append("blueprint applicability_review must not be empty")
+                    for index, item in enumerate(blueprint["applicability_review"]):
+                        if not isinstance(item, dict):
+                            blueprint_errors.append(f"blueprint applicability_review[{index}] is not an object")
+                            continue
+                        for key in ("topic", "status", "reason"):
+                            if key not in item or item.get(key) in (None, ""):
+                                blueprint_errors.append(f"blueprint applicability_review[{index}] missing {key}")
+                if isinstance(blueprint.get("result_ledger"), list):
+                    if not blueprint["result_ledger"]:
+                        blueprint_errors.append("blueprint result_ledger must not be empty")
+                    for index, item in enumerate(blueprint["result_ledger"]):
+                        if not isinstance(item, dict):
+                            blueprint_errors.append(f"blueprint result_ledger[{index}] is not an object")
+                            continue
+                        for key in ("result", "observation", "interpretation", "comparison_or_context", "limitation", "evidence_paths"):
+                            if key not in item or item.get(key) in (None, "", []):
+                                blueprint_errors.append(f"blueprint result_ledger[{index}] missing {key}")
+        except Exception as exc:
+            blueprint_errors.append(f"could not parse manuscript_blueprint.json: {exc}")
+    checks.append({
+        "rel_path": blueprint_rel,
+        "severity": "abort",
+        "source": "phase10_blueprint_schema",
+        "path": blueprint_path,
+        "ok": not blueprint_errors,
+        "errors": blueprint_errors,
+        "section_count": len(blueprint.get("section_plan", [])) if isinstance(blueprint, dict) else 0,
+        "result_count": len(blueprint.get("result_ledger", [])) if isinstance(blueprint, dict) else 0,
+    })
+
     draft_glob = os.path.join(root, "data", "phase10", "manuscript_draft_v1.*")
     drafts = [path for path in glob.glob(draft_glob) if os.path.getsize(path) > 0]
     checks.append({
@@ -4072,6 +4145,40 @@ def _phase10_manuscript_checks(root: str, required_ids_json: Optional[str] = Non
                 "major_issue_count": len(major_issues) if isinstance(major_issues, list) else "non_list",
                 "required_content_complete": required_content_complete,
                 "issues_remaining_consistent": remaining_consistent,
+            })
+            quality_required = [
+                "question_and_contribution",
+                "claim_evidence_alignment",
+                "result_interpretation",
+                "quality_and_robustness",
+                "scope_and_limitations",
+            ]
+            quality_review = validation.get("quality_review")
+            quality_errors: List[str] = []
+            # New manuscripts must carry the semantic review. Keep old synthetic
+            # audit fixtures readable when no blueprint is present; the frozen
+            # Phase 10 contract separately requires the blueprint for real runs.
+            if os.path.exists(blueprint_path):
+                if not isinstance(quality_review, dict):
+                    quality_errors.append("quality_review must be an object when manuscript_blueprint.json is present")
+                else:
+                    for key in quality_required:
+                        record = quality_review.get(key)
+                        if not isinstance(record, dict):
+                            quality_errors.append(f"quality_review missing object: {key}")
+                            continue
+                        status_value = record.get("status")
+                        if status_value not in {"pass", "not_applicable", "not_implemented"}:
+                            quality_errors.append(f"quality_review {key} has invalid status {status_value!r}")
+                        if status_value != "pass" and not str(record.get("note", "")).strip():
+                            quality_errors.append(f"quality_review {key} needs a non-empty note when status is {status_value!r}")
+            checks.append({
+                "rel_path": validation_rel + ":quality_review",
+                "severity": "abort",
+                "source": "phase10_quality_review",
+                "path": validation_path,
+                "ok": not quality_errors,
+                "errors": quality_errors,
             })
         except Exception as exc:
             checks.append({

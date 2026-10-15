@@ -1,0 +1,58 @@
+{
+  "gQGC_UFO": {
+    "has_feynman_diagrams": true,
+    "create_np_result_json": "results/data/phase3/gQGC_UFO_create_np_result.json",
+    "coefficient_count": 8,
+    "tested_count": 8,
+    "coefficients": {
+      "FgT0": {
+        "c_default": 1e-12,
+        "sigma": 7.95946,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT0_result.json",
+        "global_idx": 1
+      },
+      "FgT1": {
+        "c_default": 1e-12,
+        "sigma": 3.438523,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT1_result.json",
+        "global_idx": 2
+      },
+      "FgT2": {
+        "c_default": 1e-12,
+        "sigma": 1.061042,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT2_result.json",
+        "global_idx": 3
+      },
+      "FgT3": {
+        "c_default": 1e-12,
+        "sigma": 1.023344,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT3_result.json",
+        "global_idx": 4
+      },
+      "FgT4": {
+        "c_default": 1e-12,
+        "sigma": 1.067185,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT4_result.json",
+        "global_idx": 5
+      },
+      "FgT5": {
+        "c_default": 1e-12,
+        "sigma": 0.6120164,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT5_result.json",
+        "global_idx": 6
+      },
+      "FgT6": {
+        "c_default": 1e-12,
+        "sigma": 0.1324557,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT6_result.json",
+        "global_idx": 7
+      },
+      "FgT7": {
+        "c_default": 1e-12,
+        "sigma": 0.1748264,
+        "result_json": "results/data/phase3/gQGC_UFO_FgT7_result.json",
+        "global_idx": 8
+      }
+    }
+  }
+}

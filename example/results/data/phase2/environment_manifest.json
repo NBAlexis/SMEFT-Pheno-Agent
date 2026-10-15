@@ -1,0 +1,93 @@
+{
+  "phase": 2,
+  "generated_at": "2026-09-04T08:27:37.928726+00:00",
+  "execution": {
+    "mode": "wsl2",
+    "ssh_target": null,
+    "ssh_port": null,
+    "wsl_distro": "Ubuntu-24.04"
+  },
+  "platform": {
+    "hostname": "GYC",
+    "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]",
+    "driver_python_executable": "/usr/bin/python3"
+  },
+  "madgraph": {
+    "path": "/home/gyc/work/MG5_aMC_v3_7_1",
+    "binary": "/home/gyc/work/MG5_aMC_v3_7_1/bin/mg5_aMC",
+    "version": "",
+    "probe_command": [
+      "/home/gyc/work/MG5_aMC_v3_7_1/bin/mg5_aMC",
+      "--version"
+    ],
+    "probe_returncode": 2
+  },
+  "cutexperiment": {
+    "path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+    "git_commit": "5e4c7fa",
+    "probe_command": [
+      "git",
+      "-C",
+      "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+      "rev-parse",
+      "--short",
+      "HEAD"
+    ],
+    "probe_returncode": 0
+  },
+  "delphes_card": {
+    "config_value": "delphes_card_MuonColliderDet.tcl",
+    "resolved_path": "/home/gyc/work/MG5_aMC_v3_7_1/Delphes/cards/delphes_card_MuonColliderDet.tcl"
+  },
+  "models": [
+    {
+      "name": "gQGC_UFO",
+      "path": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+      "exists_on_target": true
+    }
+  ],
+  "venv": {
+    "path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/venv",
+    "python_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/venv/bin/python",
+    "python_version": "Python 3.12.3",
+    "package_versions": "{'numpy': '2.5.2', 'scipy': '1.18.1', 'scikit-learn': '1.9.0', 'joblib': '1.6.0', 'matplotlib': '3.11.1'}",
+    "package_probe_command": [
+      "/mnt/e/SMEFT-Pheno-Agent-GLM-test/venv/bin/python",
+      "-c",
+      "import importlib.metadata as m; print({p: m.version(p) for p in ['numpy','scipy','scikit-learn','joblib','matplotlib']})"
+    ],
+    "package_probe_returncode": 0
+  },
+  "locked_event_count_mode": {
+    "debug": false,
+    "event_counts_locked": true,
+    "locked_event_counts": {
+      "nev_phase3": 10000,
+      "nev_phase4": 10000,
+      "nev_sm": 500000,
+      "nev_np": 100000,
+      "nev_scan": 1000000
+    }
+  },
+  "research_objective_sha256": "6361aeb293971a17eb85971e6a4282ce5fa8c9c3e9e30c5ecc45e774f0efe2a1",
+  "deliverables_template_sha256": "aa3691f95c3c92286c7e66689d5130877dbac2def7198ce30596a766294ba5f6",
+  "contract_verification": {
+    "command": "research_contract.py verify",
+    "status": "ok",
+    "paths": [
+      "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/run_config.json",
+      "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/research_contract.json",
+      "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/deliverables_contract.json",
+      "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/contract_lock.json"
+    ]
+  },
+  "run_directories": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/plots",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/algorithms",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders"
+  ],
+  "single_run_mode": true
+}

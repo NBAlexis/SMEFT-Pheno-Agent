@@ -1,0 +1,62 @@
+{
+  "draft_path": "results/manuscript/manuscript.tex",
+  "passes": [
+    {
+      "pass": 1,
+      "description": "Initial draft review against manuscript-checklist.md",
+      "missing_items": [
+        "data.public_csv_score_paths",
+        "data.actual_lhco_counts (requested counts not separated from loaded)",
+        "scan.bounds_all_ops (explicit per-operator range statement)",
+        "fits.fixed_intercept (observed-events convention statement)",
+        "fits.fit_quality_note (no retained diagnostics statement)"
+      ],
+      "repair_actions": [
+        "Added data-availability paragraph listing phase7/phase8 CSV and score paths",
+        "Stated locked requested counts (500k SM / 100k NP / 1M per scan point) alongside loaded counts",
+        "Added explicit [-c_scan,+c_scan] range statement with values",
+        "Added observed-events convention (7292/9334763, no additional rounds) and no-retained-diagnostics statement"
+      ],
+      "remaining_missing_items": []
+    },
+    {
+      "pass": 2,
+      "description": "Recompile and checklist fill (31 required IDs)",
+      "missing_items": [
+        "datasets.tex column declaration mismatch (6 declared vs 7 used) blocked clean compile"
+      ],
+      "repair_actions": [
+        "Fixed render_manuscript_tables.py column spec and regenerated all six tables",
+        "Recompiled manuscript.pdf (0 errors, 0 undefined references)",
+        "Filled manuscript_checklist.json and manuscript_trace_map.json for all 31 required IDs"
+      ],
+      "remaining_missing_items": []
+    },
+    {
+      "pass": 3,
+      "description": "Final verification: numeric consistency, figures, deliverable copies",
+      "missing_items": [],
+      "repair_actions": [
+        "Verified all tables are programmatically rendered from manuscript_evidence.json (no hand-typed numbers)",
+        "Spot-checked constraint table values against data/phase9/constraint_table.json and fit coefficients against csfit_o_*_mlp.json",
+        "Verified all referenced figure PDFs exist under results/plots/",
+        "Copied manuscript.tex and manuscript.pdf to results/ root as the final deliverables"
+      ],
+      "remaining_missing_items": []
+    },
+    {
+      "pass": 4,
+      "description": "Draft v2 publication-quality revision (user-requested, writing-only; no recomputation)",
+      "missing_items": [],
+      "repair_actions": [
+        "All seven tables re-rendered from manuscript_evidence.json with booktabs rules and typeset scientific notation; scan-row post-cut cross-section ranges filled; new features table; operators table gains the pure-NP cross-section column",
+        "Abstract/Introduction/Conclusions rewritten (structure guide, physics-first framing, outlook); isolation-forest score-orientation discussion normalised",
+        "Toolchain facts corrected: no parton densities (muon beams), LHAPDF citation removed, jet cuts ptj>20 GeV / dRjj>0.4 and no MLM merging stated",
+        "New content: illustrative TikZ Feynman figure; Sec. 6 interpretation (interference signs, sensitivity hierarchy, FgT2 f=0 anomaly disclosure); uncertainty and replay-reproducibility subsections citing the frozen comparison report; appendix with GB/IF fit figures",
+        "Bibliography converted to BibTeX/natbib (18 entries); Cowan et al. 2011 added for the Asimov significance; constraints table values verified bit-exact against phase9/constraint_table.json (number_source_map.json)",
+        "Recompiled: 13 pages, 0 errors, 0 undefined references, 0 overfull boxes; visual page-by-page inspection 13/13 pass"
+      ],
+      "remaining_missing_items": []
+    }
+  ]
+}

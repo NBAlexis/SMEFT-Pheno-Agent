@@ -1,0 +1,28 @@
+{
+  "lhcos": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_2_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_3_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_4_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_6_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f5.lhco",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_8_f5.lhco"
+  ],
+  "banners": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_2_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_3_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_4_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_6_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_8_f5_banner.txt"
+  ],
+  "shared_lhco": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase8/shared_f5.lhco",
+  "merge_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase8/shared_f5_merge.json",
+  "shared_csv": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase8/csv/shared_f5.csv",
+  "cutexperiment_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+  "nev_scan": 1000000,
+  "process_name": "mu+ mu- > vl vl~ j j"
+}

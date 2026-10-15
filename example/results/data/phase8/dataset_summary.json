@@ -1,0 +1,1459 @@
+{
+  "datasets": [
+    {
+      "dataset_id": "sm",
+      "loaded_lhco_event_count": 549272,
+      "surviving_final_state_event_count": 450284,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4501259231926447,
+      "final_state_cut_cross_section_pb": 1.1887889810492376,
+      "cross_section_source": "data/phase5/sm_result.json",
+      "public_csv_path": "data/phase7/sm.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_sm_scores.csv",
+        "data/phase7/scores/isolation_forest_sm_scores.csv",
+        "data/phase7/scores/mlp_sm_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 100000,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.002874404,
+      "final_state_cut_cross_section_pb": 0.002874404,
+      "cross_section_source": "data/phase5/o_1_result.json",
+      "public_csv_path": "data/phase7/np_o_1.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_1_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_1_scores.csv",
+        "data/phase7/scores/mlp_np_o_1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 99584,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.0029007099999999995,
+      "final_state_cut_cross_section_pb": 0.0028886430463999995,
+      "cross_section_source": "data/phase5/o_2_result.json",
+      "public_csv_path": "data/phase7/np_o_2.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_2_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_2_scores.csv",
+        "data/phase7/scores/mlp_np_o_2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 99901,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.002871007,
+      "final_state_cut_cross_section_pb": 0.0028681647030700005,
+      "cross_section_source": "data/phase5/o_3_result.json",
+      "public_csv_path": "data/phase7/np_o_3.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_3_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_3_scores.csv",
+        "data/phase7/scores/mlp_np_o_3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 99628,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.00288686,
+      "final_state_cut_cross_section_pb": 0.0028761208808000004,
+      "cross_section_source": "data/phase5/o_4_result.json",
+      "public_csv_path": "data/phase7/np_o_4.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_4_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_4_scores.csv",
+        "data/phase7/scores/mlp_np_o_4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 99999,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.0028848000000000003,
+      "final_state_cut_cross_section_pb": 0.002884771152,
+      "cross_section_source": "data/phase5/o_5_result.json",
+      "public_csv_path": "data/phase7/np_o_5.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_5_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_5_scores.csv",
+        "data/phase7/scores/mlp_np_o_5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 98975,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.002912,
+      "final_state_cut_cross_section_pb": 0.002882152,
+      "cross_section_source": "data/phase5/o_6_result.json",
+      "public_csv_path": "data/phase7/np_o_6.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_6_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_6_scores.csv",
+        "data/phase7/scores/mlp_np_o_6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 99603,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.002982125,
+      "final_state_cut_cross_section_pb": 0.00297028596375,
+      "cross_section_source": "data/phase5/o_7_result.json",
+      "public_csv_path": "data/phase7/np_o_7.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_7_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_7_scores.csv",
+        "data/phase7/scores/mlp_np_o_7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8",
+      "loaded_lhco_event_count": 100000,
+      "surviving_final_state_event_count": 99155,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 0.0029568759999999998,
+      "final_state_cut_cross_section_pb": 0.0029318903978,
+      "cross_section_source": "data/phase5/o_8_result.json",
+      "public_csv_path": "data/phase7/np_o_8.csv",
+      "score_csv_paths": [
+        "data/phase7/scores/gradient_boosting_np_o_8_scores.csv",
+        "data/phase7/scores/isolation_forest_np_o_8_scores.csv",
+        "data/phase7/scores/mlp_np_o_8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f0",
+      "loaded_lhco_event_count": 4077289,
+      "surviving_final_state_event_count": 3345565,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4540316936486477,
+      "final_state_cut_cross_section_pb": 1.1930862745225168,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f1",
+      "loaded_lhco_event_count": 4102633,
+      "surviving_final_state_event_count": 3364248,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4528767589048568,
+      "final_state_cut_cross_section_pb": 1.191390438869903,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f2",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 820897,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552477771,
+      "final_state_cut_cross_section_pb": 1.1946085344780588,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f3",
+      "loaded_lhco_event_count": 4005936,
+      "surviving_final_state_event_count": 3286659,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4521798547570632,
+      "final_state_cut_cross_section_pb": 1.1914369049470572,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f4",
+      "loaded_lhco_event_count": 4073619,
+      "surviving_final_state_event_count": 3340513,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4515477885428314,
+      "final_state_cut_cross_section_pb": 1.1903210039398824,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f5",
+      "loaded_lhco_event_count": 4054970,
+      "surviving_final_state_event_count": 3324445,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4522564749248374,
+      "final_state_cut_cross_section_pb": 1.19062453650249,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f6",
+      "loaded_lhco_event_count": 2059608,
+      "surviving_final_state_event_count": 1687387,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4544105324748473,
+      "final_state_cut_cross_section_pb": 1.1915633582512475,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f7",
+      "loaded_lhco_event_count": 3089786,
+      "surviving_final_state_event_count": 2534348,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4554125682258339,
+      "final_state_cut_cross_section_pb": 1.193779093910713,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f8",
+      "loaded_lhco_event_count": 3233240,
+      "surviving_final_state_event_count": 2651705,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552074371464017,
+      "final_state_cut_cross_section_pb": 1.1934718230376649,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f9",
+      "loaded_lhco_event_count": 4000000,
+      "surviving_final_state_event_count": 3280931,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4507199906250001,
+      "final_state_cut_cross_section_pb": 1.189928047390318,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_1_f10",
+      "loaded_lhco_event_count": 3039371,
+      "surviving_final_state_event_count": 2494512,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4541446853480338,
+      "final_state_cut_cross_section_pb": 1.19346449227057,
+      "cross_section_source": "data/phase6/o_1_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_1_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_1_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_1_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_1_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f0",
+      "loaded_lhco_event_count": 1077371,
+      "surviving_final_state_event_count": 883116,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4567197525227942,
+      "final_state_cut_cross_section_pb": 1.1940664088498019,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f1",
+      "loaded_lhco_event_count": 1102309,
+      "surviving_final_state_event_count": 904047,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4513064358155614,
+      "final_state_cut_cross_section_pb": 1.1902735343535713,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f2",
+      "loaded_lhco_event_count": 1124038,
+      "surviving_final_state_event_count": 922333,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4549292376602543,
+      "final_state_cut_cross_section_pb": 1.1938468704428988,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f3",
+      "loaded_lhco_event_count": 1651384,
+      "surviving_final_state_event_count": 1353457,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4497615944054503,
+      "final_state_cut_cross_section_pb": 1.1882093918066408,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f4",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 820833,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4516824625,
+      "final_state_cut_cross_section_pb": 1.1915888707412625,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f5",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 820357,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4523315219000001,
+      "final_state_cut_cross_section_pb": 1.1914303303113183,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f6",
+      "loaded_lhco_event_count": 1126540,
+      "surviving_final_state_event_count": 922995,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539268871886875,
+      "final_state_cut_cross_section_pb": 1.1912291150254075,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f7",
+      "loaded_lhco_event_count": 1090088,
+      "surviving_final_state_event_count": 893799,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.455244776607954,
+      "final_state_cut_cross_section_pb": 1.1932030497422343,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f8",
+      "loaded_lhco_event_count": 1233271,
+      "surviving_final_state_event_count": 1010923,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.454510317642107,
+      "final_state_cut_cross_section_pb": 1.192274799165562,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f9",
+      "loaded_lhco_event_count": 2000000,
+      "surviving_final_state_event_count": 1640015,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4468595034500003,
+      "final_state_cut_cross_section_pb": 1.186435644275276,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_2_f10",
+      "loaded_lhco_event_count": 1039772,
+      "surviving_final_state_event_count": 852327,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4574981800915323,
+      "final_state_cut_cross_section_pb": 1.1947475517160258,
+      "cross_section_source": "data/phase6/o_2_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_2_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_2_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_2_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_2_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f0",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 821286,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4544113845,
+      "final_state_cut_cross_section_pb": 1.1944877083304668,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f1",
+      "loaded_lhco_event_count": 1101880,
+      "surviving_final_state_event_count": 904258,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.451303963423538,
+      "final_state_cut_cross_section_pb": 1.1910128320302045,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f2",
+      "loaded_lhco_event_count": 1124007,
+      "surviving_final_state_event_count": 922148,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.454926331611712,
+      "final_state_cut_cross_section_pb": 1.193637946065351,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f3",
+      "loaded_lhco_event_count": 782516,
+      "surviving_final_state_event_count": 641728,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539026380000002,
+      "final_state_cut_cross_section_pb": 1.1923207091975936,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f4",
+      "loaded_lhco_event_count": 1073710,
+      "surviving_final_state_event_count": 880603,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453043457432305,
+      "final_state_cut_cross_section_pb": 1.1917132444936342,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f5",
+      "loaded_lhco_event_count": 1054886,
+      "surviving_final_state_event_count": 864770,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4578177728219717,
+      "final_state_cut_cross_section_pb": 1.195083710849567,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f6",
+      "loaded_lhco_event_count": 1126481,
+      "surviving_final_state_event_count": 924066,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539246812756048,
+      "final_state_cut_cross_section_pb": 1.1926720153536747,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f7",
+      "loaded_lhco_event_count": 1107242,
+      "surviving_final_state_event_count": 907956,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552001351621549,
+      "final_state_cut_cross_section_pb": 1.1932871891793206,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f8",
+      "loaded_lhco_event_count": 1233300,
+      "surviving_final_state_event_count": 1011425,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4545013567875131,
+      "final_state_cut_cross_section_pb": 1.192831456084335,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f9",
+      "loaded_lhco_event_count": 2000000,
+      "surviving_final_state_event_count": 1641026,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4468495179500003,
+      "final_state_cut_cross_section_pb": 1.1871588385217084,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_3_f10",
+      "loaded_lhco_event_count": 1039544,
+      "surviving_final_state_event_count": 853676,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4536442222459556,
+      "final_state_cut_cross_section_pb": 1.193736085312443,
+      "cross_section_source": "data/phase6/o_3_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_3_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_3_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_3_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_3_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f0",
+      "loaded_lhco_event_count": 1077326,
+      "surviving_final_state_event_count": 883766,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4529971965222015,
+      "final_state_cut_cross_section_pb": 1.1919414554012806,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f1",
+      "loaded_lhco_event_count": 1102125,
+      "surviving_final_state_event_count": 904246,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4513053815921744,
+      "final_state_cut_cross_section_pb": 1.1907334341233502,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f2",
+      "loaded_lhco_event_count": 1124156,
+      "surviving_final_state_event_count": 921957,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4549277148833952,
+      "final_state_cut_cross_section_pb": 1.1932336715106715,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f3",
+      "loaded_lhco_event_count": 1652421,
+      "surviving_final_state_event_count": 1354773,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4497496552459856,
+      "final_state_cut_cross_section_pb": 1.188608526329894,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f4",
+      "loaded_lhco_event_count": 1073875,
+      "surviving_final_state_event_count": 880358,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453043435828402,
+      "final_state_cut_cross_section_pb": 1.1911986153686605,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f5",
+      "loaded_lhco_event_count": 1054886,
+      "surviving_final_state_event_count": 864783,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4520434829934974,
+      "final_state_cut_cross_section_pb": 1.1903679822782423,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f6",
+      "loaded_lhco_event_count": 1126398,
+      "surviving_final_state_event_count": 923308,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539267373213822,
+      "final_state_cut_cross_section_pb": 1.1917831778667316,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f7",
+      "loaded_lhco_event_count": 1090182,
+      "surviving_final_state_event_count": 893411,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552434911662897,
+      "final_state_cut_cross_section_pb": 1.1925811861564088,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f8",
+      "loaded_lhco_event_count": 233135,
+      "surviving_final_state_event_count": 191381,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4496836707999998,
+      "final_state_cut_cross_section_pb": 1.190048300775837,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f9",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 819802,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4391173681,
+      "final_state_cut_cross_section_pb": 1.179791296603116,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_4_f10",
+      "loaded_lhco_event_count": 1039763,
+      "surviving_final_state_event_count": 853595,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4536415952207244,
+      "final_state_cut_cross_section_pb": 1.1933692557558158,
+      "cross_section_source": "data/phase6/o_4_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_4_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_4_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_4_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_4_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f0",
+      "loaded_lhco_event_count": 1077157,
+      "surviving_final_state_event_count": 883974,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4530367136331985,
+      "final_state_cut_cross_section_pb": 1.192441469439639,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f1",
+      "loaded_lhco_event_count": 102087,
+      "surviving_final_state_event_count": 83812,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4300485435999999,
+      "final_state_cut_cross_section_pb": 1.1740498646860342,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f2",
+      "loaded_lhco_event_count": 123671,
+      "surviving_final_state_event_count": 101317,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4523467294999999,
+      "final_state_cut_cross_section_pb": 1.1898295768025768,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f3",
+      "loaded_lhco_event_count": 836301,
+      "surviving_final_state_event_count": 685441,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4460227838000002,
+      "final_state_cut_cross_section_pb": 1.1851753172011703,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f4",
+      "loaded_lhco_event_count": 1073420,
+      "surviving_final_state_event_count": 880612,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.451171338652859,
+      "final_state_cut_cross_section_pb": 1.1905115377706503,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f5",
+      "loaded_lhco_event_count": 1054981,
+      "surviving_final_state_event_count": 864281,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4550433208530262,
+      "final_state_cut_cross_section_pb": 1.1920274359350305,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f6",
+      "loaded_lhco_event_count": 126356,
+      "surviving_final_state_event_count": 103280,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4486587580999999,
+      "final_state_cut_cross_section_pb": 1.18409475241831,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f7",
+      "loaded_lhco_event_count": 1090195,
+      "surviving_final_state_event_count": 894282,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4520459318946992,
+      "final_state_cut_cross_section_pb": 1.1911066736378864,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f8",
+      "loaded_lhco_event_count": 233062,
+      "surviving_final_state_event_count": 190883,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4496970618,
+      "final_state_cut_cross_section_pb": 1.1873343756063597,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f9",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 820367,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4391285511,
+      "final_state_cut_cross_section_pb": 1.1806135720802535,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_5_f10",
+      "loaded_lhco_event_count": 1039810,
+      "surviving_final_state_event_count": 853189,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453679263689495,
+      "final_state_cut_cross_section_pb": 1.192778639662993,
+      "cross_section_source": "data/phase6/o_5_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_5_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_5_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_5_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_5_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f0",
+      "loaded_lhco_event_count": 1077282,
+      "surviving_final_state_event_count": 883920,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453060995123582,
+      "final_state_cut_cross_section_pb": 1.192250195222455,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f1",
+      "loaded_lhco_event_count": 1102880,
+      "surviving_final_state_event_count": 904956,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4513237257737996,
+      "final_state_cut_cross_section_pb": 1.1908676497727357,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f2",
+      "loaded_lhco_event_count": 1123922,
+      "surviving_final_state_event_count": 922400,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4549320528740668,
+      "final_state_cut_cross_section_pb": 1.1940591300562131,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f3",
+      "loaded_lhco_event_count": 1653459,
+      "surviving_final_state_event_count": 1356487,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4497535874014615,
+      "final_state_cut_cross_section_pb": 1.1893684055748865,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f4",
+      "loaded_lhco_event_count": 1073448,
+      "surviving_final_state_event_count": 879721,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453048402009745,
+      "final_state_cut_cross_section_pb": 1.1908142669830442,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f5",
+      "loaded_lhco_event_count": 1055104,
+      "surviving_final_state_event_count": 865390,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4520423986901554,
+      "final_state_cut_cross_section_pb": 1.1909565041952959,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f6",
+      "loaded_lhco_event_count": 1126471,
+      "surviving_final_state_event_count": 923585,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539285909598219,
+      "final_state_cut_cross_section_pb": 1.1920649867432247,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f7",
+      "loaded_lhco_event_count": 1107032,
+      "surviving_final_state_event_count": 907420,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552045415985022,
+      "final_state_cut_cross_section_pb": 1.1928125881973717,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f8",
+      "loaded_lhco_event_count": 232985,
+      "surviving_final_state_event_count": 190913,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4497066758000001,
+      "final_state_cut_cross_section_pb": 1.187921327969635,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f9",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 820527,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4391453731000001,
+      "final_state_cut_cross_section_pb": 1.1808576355536238,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_6_f10",
+      "loaded_lhco_event_count": 1039854,
+      "surviving_final_state_event_count": 852965,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.45370228783986,
+      "final_state_cut_cross_section_pb": 1.1924339108637618,
+      "cross_section_source": "data/phase6/o_6_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_6_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_6_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_6_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_6_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f0",
+      "loaded_lhco_event_count": 1077309,
+      "surviving_final_state_event_count": 884275,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453123961503406,
+      "final_state_cut_cross_section_pb": 1.1927508180646633,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f1",
+      "loaded_lhco_event_count": 1102491,
+      "surviving_final_state_event_count": 904612,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4513737918639513,
+      "final_state_cut_cross_section_pb": 1.1908760693789182,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f2",
+      "loaded_lhco_event_count": 1123759,
+      "surviving_final_state_event_count": 922546,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4549601503127259,
+      "final_state_cut_cross_section_pb": 1.194444419871524,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f3",
+      "loaded_lhco_event_count": 1627983,
+      "surviving_final_state_event_count": 1334060,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4498033278520552,
+      "final_state_cut_cross_section_pb": 1.1880496464363035,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f4",
+      "loaded_lhco_event_count": 1073633,
+      "surviving_final_state_event_count": 879930,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4530487299087027,
+      "final_state_cut_cross_section_pb": 1.1908922033027718,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f5",
+      "loaded_lhco_event_count": 1054909,
+      "surviving_final_state_event_count": 865237,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4520433685733742,
+      "final_state_cut_cross_section_pb": 1.190966849362666,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f6",
+      "loaded_lhco_event_count": 1126418,
+      "surviving_final_state_event_count": 922618,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453931491782663,
+      "final_state_cut_cross_section_pb": 1.190875292374178,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f7",
+      "loaded_lhco_event_count": 1090014,
+      "surviving_final_state_event_count": 893484,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552618162368822,
+      "final_state_cut_cross_section_pb": 1.192877475535722,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f8",
+      "loaded_lhco_event_count": 233201,
+      "surviving_final_state_event_count": 191142,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4497342988,
+      "final_state_cut_cross_section_pb": 1.1882672601799715,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f9",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 820267,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4391865581,
+      "final_state_cut_cross_section_pb": 1.1805172404530127,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_7_f10",
+      "loaded_lhco_event_count": 1040173,
+      "surviving_final_state_event_count": 853855,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4537592712851815,
+      "final_state_cut_cross_section_pb": 1.1933588187572728,
+      "cross_section_source": "data/phase6/o_7_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_7_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_7_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_7_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_7_f10_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f0",
+      "loaded_lhco_event_count": 1077166,
+      "surviving_final_state_event_count": 884077,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4531014400237283,
+      "final_state_cut_cross_section_pb": 1.1926235712897155,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f0.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f0_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f0_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f0_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f1",
+      "loaded_lhco_event_count": 1102369,
+      "surviving_final_state_event_count": 903864,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4513596922090768,
+      "final_state_cut_cross_section_pb": 1.1900114905615677,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f1.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f1_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f1_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f1_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f2",
+      "loaded_lhco_event_count": 1124001,
+      "surviving_final_state_event_count": 921870,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4549455462069933,
+      "final_state_cut_cross_section_pb": 1.1933002289871992,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f2.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f2_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f2_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f2_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f3",
+      "loaded_lhco_event_count": 779380,
+      "surviving_final_state_event_count": 638928,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539138949,
+      "final_state_cut_cross_section_pb": 1.191904202110225,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f3.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f3_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f3_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f3_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f4",
+      "loaded_lhco_event_count": 1073653,
+      "surviving_final_state_event_count": 880263,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.453048702003456,
+      "final_state_cut_cross_section_pb": 1.1913206683832376,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f4.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f4_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f4_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f4_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f5",
+      "loaded_lhco_event_count": 1054986,
+      "surviving_final_state_event_count": 865501,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4520429855510106,
+      "final_state_cut_cross_section_pb": 1.1912429700843286,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f5.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f5_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f5_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f5_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f6",
+      "loaded_lhco_event_count": 1126441,
+      "surviving_final_state_event_count": 923590,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4539297047235422,
+      "final_state_cut_cross_section_pb": 1.1921041013116678,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f6.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f6_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f6_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f6_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f7",
+      "loaded_lhco_event_count": 1106828,
+      "surviving_final_state_event_count": 907597,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4552098576262136,
+      "final_state_cut_cross_section_pb": 1.1932695063297807,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f7.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f7_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f7_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f7_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f8",
+      "loaded_lhco_event_count": 233036,
+      "surviving_final_state_event_count": 191128,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4497221108000002,
+      "final_state_cut_cross_section_pb": 1.189011515787185,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f8.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f8_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f8_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f8_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f9",
+      "loaded_lhco_event_count": 1000000,
+      "surviving_final_state_event_count": 819915,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4391690851,
+      "final_state_cut_cross_section_pb": 1.1799963204097665,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f9.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f9_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f9_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f9_scores.csv"
+      ]
+    },
+    {
+      "dataset_id": "np_o_8_f10",
+      "loaded_lhco_event_count": 1039468,
+      "surviving_final_state_event_count": 852934,
+      "final_state_cut": "N_j >= 2",
+      "raw_cross_section_pb": 1.4537492475329141,
+      "final_state_cut_cross_section_pb": 1.1928718928290611,
+      "cross_section_source": "data/phase6/o_8_scan_result.json",
+      "public_csv_path": "data/phase8/csv/np_o_8_f10.csv",
+      "score_csv_paths": [
+        "data/phase8/scores/gradient_boosting/np_o_8_f10_scores.csv",
+        "data/phase8/scores/isolation_forest/np_o_8_f10_scores.csv",
+        "data/phase8/scores/mlp/np_o_8_f10_scores.csv"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "collected_at": "2026-09-04T08:20:00Z",
+  "execution": {
+    "mode": "wsl2",
+    "ssh_target": null,
+    "ssh_port": null,
+    "wsl_distro": "Ubuntu-24.04"
+  },
+  "madgraph_path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "workdir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test",
+  "process": "mu+ mu- > vl vl~ j j",
+  "collider_type": "mumu",
+  "process_validation": {
+    "status": "ok",
+    "initial": ["mu+", "mu-"],
+    "final": ["vl", "vl~", "j", "j"]
+  },
+  "madspin": {"enabled": false},
+  "models": ["gQGC_UFO"],
+  "energy": [10.0],
+  "luminosity": [10000.0],
+  "ebeam_electron": null,
+  "ebeam_proton": null,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+  "debug": false,
+  "algorithms": null,
+  "polarization": null,
+  "analysis_notes": {
+    "focused_operators": [],
+    "manuscript_preferences": [],
+    "additional_requirements": [
+      {
+        "id": "requirement_1",
+        "text": "After the replay script is generated at the end of the workflow (Phase 11 package, Phase 12 audit), run it once and save the replay results in a newly created separate folder, so they can be compared against the original deliverables for validation.",
+        "applies_to_phases": ["11", "12"]
+      }
+    ]
+  },
+  "auto_installed_mg5": false,
+  "event_counts_locked": true,
+  "locked_event_counts": {
+    "nev_phase3": 10000,
+    "nev_phase4": 10000,
+    "nev_sm": 500000,
+    "nev_np": 100000,
+    "nev_scan": 1000000
+  },
+  "run_configurations": [
+    {
+      "energy": 10.0,
+      "luminosity": 10000.0,
+      "ebeam1": 5000.0,
+      "ebeam2": 5000.0,
+      "run_dir": "E10_L10000"
+    }
+  ]
+}

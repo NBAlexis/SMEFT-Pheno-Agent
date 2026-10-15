@@ -1,0 +1,61 @@
+{
+  "toolchain": [
+    "MadGraph5_aMC@NLO",
+    "UFO",
+    "Delphes",
+    "Pythia 8",
+    "LHAPDF",
+    "MLAnalysis / CutExperiment"
+  ],
+  "foundational": [
+    "F-SMEFT-1",
+    "F-AQGC-1",
+    "F-AQGC-2",
+    "F-VBS-1",
+    "F-MLHEP-1",
+    "F-MLHEP-2",
+    "F-IF-1",
+    "F-SKLEARN-1"
+  ],
+  "comparison_citations": [
+    "P16",
+    "P22",
+    "P29"
+  ],
+  "section_usage": {
+    "Introduction": [
+      "F-SMEFT-1",
+      "F-AQGC-1",
+      "F-AQGC-2",
+      "F-VBS-1",
+      "F-MLHEP-1",
+      "P16",
+      "P22"
+    ],
+    "Theoretical Framework": [
+      "F-AQGC-2",
+      "UFO"
+    ],
+    "Event Generation and Data Preparation": [
+      "MadGraph5_aMC@NLO",
+      "Pythia 8",
+      "Delphes",
+      "LHAPDF",
+      "UFO"
+    ],
+    "Machine Learning Methodology": [
+      "F-MLHEP-2",
+      "F-IF-1",
+      "F-SKLEARN-1",
+      "P16",
+      "P29"
+    ],
+    "Event Selection Optimization": [],
+    "Numerical Results and Expected Constraints": [],
+    "Conclusions": []
+  },
+  "notes": {
+    "FeynRules": "Not cited: the gQGC_UFO model was used as provided; FeynRules was not executed in this workflow.",
+    "no_result_comparison": "No prior constraint on the FgT0-FgT7 coefficients in mu+ mu- -> vl vl~ j j at a 10 TeV muon collider exists in the reference list, so the results section makes no numeric comparison with prior bounds."
+  }
+}

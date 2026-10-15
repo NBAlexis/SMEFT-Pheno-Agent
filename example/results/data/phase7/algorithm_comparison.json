@@ -1,0 +1,52 @@
+{
+  "anchor": {
+    "gradient_boosting": {
+      "auc": 0.99978512875,
+      "algorithm_path": "results/algorithms/anchor_gradient_boosting.pkl",
+      "score_definition": "s(x)=P_NP(x)=predict_proba[:,1] on the standard-scaled pipeline"
+    },
+    "isolation_forest": {
+      "auc": 0.0018760799999999896,
+      "algorithm_path": "results/algorithms/anchor_isolation_forest.pkl",
+      "score_definition": "s(x)=minmax(-score_samples(x)) on the standard-scaled pipeline"
+    },
+    "mlp": {
+      "auc": 0.999942335,
+      "algorithm_path": "results/algorithms/anchor_mlp.pkl",
+      "score_definition": "s(x)=P_NP(x)=predict_proba[:,1] on the standard-scaled pipeline"
+    }
+  },
+  "algorithm_pool": [
+    "gradient_boosting",
+    "random_forest",
+    "extra_trees",
+    "ada_boost",
+    "logistic_regression",
+    "mlp",
+    "svc_rbf",
+    "svc_poly",
+    "knn",
+    "isolation_forest"
+  ],
+  "scale_infeasible_excluded_from_selection": [
+    "knn",
+    "svc_poly",
+    "svc_rbf"
+  ],
+  "selection_exclusion_reason": "kernel/kNN scoring scales as O(n_rows x n_train); the locked nev_scan=1e6 scan grid needs ~88M scored rows and would be computationally infeasible; excluded from random selection",
+  "algorithm_selection_seed": 1309979143112009501,
+  "split_seed": 1822385700,
+  "implementation_seeds": {
+    "gradient_boosting": 101892764,
+    "isolation_forest": 966508472,
+    "mlp": 420566154
+  },
+  "train_cap_seed": 1841556182,
+  "train_caps": {
+    "gradient_boosting": null,
+    "isolation_forest": null,
+    "mlp": null
+  },
+  "anchor_operator": "o_1",
+  "anchor_model": "gQGC_UFO"
+}

@@ -1,0 +1,21 @@
+{
+  "scope": "compact numerical replay, not repeated LLM training sessions",
+  "runs": 6,
+  "platforms": [
+    "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "Windows-11-10.0.26200-SP0"
+  ],
+  "python_versions": [
+    "3.12.3",
+    "3.14.4"
+  ],
+  "all_pass": true,
+  "numerical_payloads_exactly_equal": false,
+  "max_cross_platform_endpoint_relative_difference": 9.088017941694184e-16,
+  "intervals_per_run": 24,
+  "fit_coefficients_per_run": 16,
+  "relative_tolerance_against_recorded_outputs": 1e-08,
+  "new_llm_decisions": false,
+  "classifier_retrained": false,
+  "events_regenerated": false
+}

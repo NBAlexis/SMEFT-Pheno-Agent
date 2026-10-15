@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "expected_artifact_entries": 1599,
+  "warnings": [],
+  "original_audit_sha256": "453ef5a3affabe57835fb88a8412c2530a5b6b65178954fb18d78a02f77fe483",
+  "scope": "Historical internal consistency audit; not physical correctness or exact replay."
+}

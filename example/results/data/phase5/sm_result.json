@@ -1,0 +1,51 @@
+{
+  "analysis_event_format": "LHCO_from_Delphes_ROOT",
+  "cutexperiment_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "detector_simulation": "Delphes",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
+  "event_generator": "MadGraph5",
+  "log_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/logs",
+  "madspin": {
+    "enabled": false
+  },
+  "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "model": "gQGC_UFO",
+  "nevents": 500000,
+  "output_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5",
+  "output_label": "sm",
+  "outputs": [
+    {
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm_banner.txt",
+      "cross_section_pb": 1.4501259231926447,
+      "label": "sm",
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm.lhco",
+      "loaded_lhco_event_count": 549272,
+      "recovery_merge_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm_merge.json",
+      "source_banner_paths": [
+        "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm_banner.txt",
+        "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/recovery_attempts/sm/attempt_1_sde2_hs0/sm_banner.txt"
+      ],
+      "source_lhco_paths": [
+        "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm.lhco",
+        "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/recovery_attempts/sm/attempt_1_sde2_hs0/sm.lhco"
+      ]
+    }
+  ],
+  "process": "mu+ mu- > vl vl~ j j",
+  "process_mode": "pure_sm",
+  "recovery_attempt_result_jsons": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm_result.json",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/recovery_attempts/sm/attempt_1_sde2_hs0/mg5_result.json"
+  ],
+  "recovery_metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/event_count_recovery.json",
+  "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase5/sm_result.json",
+  "result_kind": "event_count_recovery_summary",
+  "run_folders": [
+    "run_01",
+    "run_01"
+  ],
+  "run_label": "E10_L10000",
+  "status": "completed"
+}

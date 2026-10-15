@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-13",
+  "unittest_count": 110,
+  "unittest_status": "PASS",
+  "external_tools": {
+    "wsl_distro": "Ubuntu-24.04",
+    "madgraph": "/home/gyc/work/MG5_aMC_v3_7_1",
+    "cutexperiment": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment"
+  },
+  "skill_quick_validator": "PASS",
+  "frozen_replay_shell_syntax": "PASS",
+  "frozen_replay_python_compile": "PASS",
+  "frozen_replay_identity_preflight": "PASS",
+  "identity_preflight_report": "frozen_preflight_final/replay_logs/toolchain_identity.json",
+  "full_execution_after_frozen_replay_correction": false,
+  "independently_provisioned_toolchain_test": false,
+  "two_llm_host_repeated_training_test": false,
+  "scope": "Revision implementation checks; compact numerical execution reports are separate."
+}

@@ -1,0 +1,89 @@
+{
+  "analysis_event_format": null,
+  "available_coefficients": {
+    "1": 1e-12,
+    "2": 1e-12,
+    "3": 1e-12,
+    "4": 1e-12,
+    "5": 1e-12,
+    "6": 1e-12,
+    "7": 1e-12,
+    "8": 1e-12
+  },
+  "c_scan": null,
+  "cleanup_candidates": [],
+  "coefficient_block": "anoinputs",
+  "coefficient_mode": null,
+  "copied_delphes_card": null,
+  "create_process": {
+    "diagram_count_max": 7,
+    "diagram_count_total": 26,
+    "diagram_counts": {
+      "count_max": 7,
+      "count_total": 26,
+      "counts": [
+        2,
+        3,
+        2,
+        7,
+        7,
+        5
+      ],
+      "source": "mg5_create_stdout_regex"
+    },
+    "mg5_steps": {
+      "delphes": null,
+      "madgraph": {
+        "duration_sec": 6.85,
+        "end": 1788510546.1669693,
+        "start": 1788510539.314784
+      },
+      "pythia8": null
+    },
+    "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01_01.txt",
+    "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01_01.txt",
+    "returncode": 0,
+    "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase3/logs/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01.stderr.log",
+    "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+    "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase3/logs/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01.stdout.log",
+    "stdout_tail": "process: mu+ mu- > vm vt~ d s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vm vt~ s d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vm vt~ s s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ g g NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ u u~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ u c~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ c u~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ c c~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ d d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ d s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ s d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt ve~ s s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ g g NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ u u~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ u c~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ c u~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ c c~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ d d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ d s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ s d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vm~ s s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ g g NP>0 @1  \nINFO: Process has 2 diagrams \nINFO: Trying process: mu+ mu- > vt vt~ u u~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ u c~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ c u~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ c c~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ d d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ d s~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ s d~ NP>0 @1  \nINFO: Trying process: mu+ mu- > vt vt~ s s~ NP>0 @1  \n3 processes with 7 diagrams generated in 0.166 s\nTotal: 3 processes with 7 diagrams\noutput mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01\nINFO: initialize a new directory: mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01 \nINFO: remove old information in mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01 \nINFO: Organizing processes into subprocess groups \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ g g NP>0 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ g g NP>0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ g g NP>0 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ g g NP>0 @1 \nINFO: Combined process mu+ mu- > vt vt~ g g NP>0 @1 with process mu+ mu- > ve ve~ g g NP>0 @1 \nINFO: Creating files in directory P1_mupmum_vlvlgg \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ g g NP>0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ g g NP>0 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlgg \nGenerated helas calls for 2 subprocesses (5 diagrams) in 0.006 s\nWrote files for 25 helas calls in 0.070 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 11 routines in  1.392 s\nsave configuration file to /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01 done.\nType \"launch\" to generate events from this process, or see\n/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01/README\nRun \"open index.html\" to see more information about this process.\nquit\nChecking if MG5 is up-to-date... (takes up to 5s)\nNew Version of MG5 available! Do you want to update your current version? [\u001b[4mn\u001b[0m, y][60s to answer] \n>Update bypassed.\nThe next check for a new version will be performed in 7 days\nIn order to change this delay. Enter the command:\nset auto_update X\nPutting X to zero will prevent this check at anytime.\nYou can upgrade your version at any time by typing:\ninstall update\n",
+    "weighted_attempts": [
+      {
+        "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01_01.txt",
+        "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01_01.txt",
+        "status": "success",
+        "weighted_keyword": null,
+        "weighted_order": null
+      }
+    ],
+    "weighted_keyword": null,
+    "weighted_order": null
+  },
+  "created_process": true,
+  "delphes_card": null,
+  "detector_simulation": null,
+  "ebeam1": null,
+  "ebeam2": null,
+  "event_generator": "MadGraph5",
+  "madspin": {
+    "enabled": false
+  },
+  "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "model": "gQGC_UFO",
+  "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+  "operator": null,
+  "outputs": [],
+  "polarization": null,
+  "process": "mu+ mu- > vl vl~ j j",
+  "process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01",
+  "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_20260904_162859_01",
+  "process_mode": "create_np",
+  "process_validation": null,
+  "run_label": null,
+  "scan_expression": null,
+  "schema_version": "1.0",
+  "status": "completed",
+  "survey_profile": "default",
+  "target_coefficient": null,
+  "weighted_order": null
+}

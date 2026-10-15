@@ -1,0 +1,226 @@
+{
+  "o_1": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 1,
+    "c_scan": 1.9e-14,
+    "scan_expression": "[-1.9e-14 + 0.2 * 1.9e-14 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_1_result.json",
+      "weighted_order_json": "results/data/phase6/o_1_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_2": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 2,
+    "c_scan": 2.9e-14,
+    "scan_expression": "[-2.9e-14 + 0.2 * 2.9e-14 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_2_result.json",
+      "weighted_order_json": "results/data/phase6/o_2_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_3": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 3,
+    "c_scan": 5.2e-14,
+    "scan_expression": "[-5.2e-14 + 0.2 * 5.2e-14 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_3_result.json",
+      "weighted_order_json": "results/data/phase6/o_3_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_4": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 4,
+    "c_scan": 5.3e-14,
+    "scan_expression": "[-5.3e-14 + 0.2 * 5.3e-14 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_4_result.json",
+      "weighted_order_json": "results/data/phase6/o_4_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_5": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 5,
+    "c_scan": 5.2e-14,
+    "scan_expression": "[-5.2e-14 + 0.2 * 5.2e-14 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_5_result.json",
+      "weighted_order_json": "results/data/phase6/o_5_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_6": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 6,
+    "c_scan": 6.9e-14,
+    "scan_expression": "[-6.9e-14 + 0.2 * 6.9e-14 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_6_result.json",
+      "weighted_order_json": "results/data/phase6/o_6_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_7": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 7,
+    "c_scan": 1.5e-13,
+    "scan_expression": "[-1.5e-13 + 0.2 * 1.5e-13 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_7_result.json",
+      "weighted_order_json": "results/data/phase6/o_7_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  },
+  "o_8": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 8,
+    "c_scan": 1.3e-13,
+    "scan_expression": "[-1.3e-13 + 0.2 * 1.3e-13 * n for n in range(11)]",
+    "point_count": 11,
+    "labels": [
+      "f0",
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10"
+    ],
+    "weighted_order_guard": {
+      "max_weighted_order": 8,
+      "status": "pass",
+      "sm_result_json": "results/data/phase4/sm_baseline_result.json",
+      "np_result_json": "results/data/phase5/np_o_8_result.json",
+      "weighted_order_json": "results/data/phase6/o_8_weighted_order.json",
+      "runner_selected_keyword": "WEIGHTED"
+    }
+  }
+}

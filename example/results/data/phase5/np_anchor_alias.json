@@ -1,0 +1,9 @@
+{
+  "alias_for": "o_1",
+  "source_lhco_path": "results/data/phase5/np_o_1.lhco",
+  "source_banner_path": "results/data/phase5/np_o_1_banner.txt",
+  "alias_lhco_path": "results/data/phase5/np_anchor.lhco",
+  "alias_banner_path": "results/data/phase5/np_anchor_banner.txt",
+  "loaded_lhco_event_count": 100000,
+  "verified_with": "CutExperiment LoadLHCOlympics GetEventCount"
+}

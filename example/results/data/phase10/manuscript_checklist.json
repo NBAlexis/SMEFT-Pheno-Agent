@@ -1,0 +1,222 @@
+{
+  "draft_path": "results/manuscript/manuscript.tex",
+  "items": [
+    {
+      "id": "structure.logical_sections",
+      "status": "present",
+      "evidence_path": "results/manuscript/manuscript.tex",
+      "manuscript_location": "Sections 1-7 + Appendix A",
+      "note": "Intro, theory, generation, ML, selection, results (3 subsections incl. reproducibility), conclusions, appendix."
+    },
+    {
+      "id": "physics.process_setup",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#run",
+      "manuscript_location": "Abstract; Secs. 1, 3",
+      "note": "Process, 10 TeV, 10/ab, MuonColliderDet card, tool versions in Sec. 3."
+    },
+    {
+      "id": "physics.debug_status",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#run.debug_mode",
+      "manuscript_location": "Abstract (last sentence)",
+      "note": "debug=false; full production-scale event samples."
+    },
+    {
+      "id": "physics.model_anchor",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#model_description",
+      "manuscript_location": "Sec. 2, Table 1",
+      "note": "v2 adds pure-NP cross-section column at default coefficient."
+    },
+    {
+      "id": "figures.feynman_diagrams",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#missing_reasons",
+      "manuscript_location": "Sec. 3, Fig. 1",
+      "note": "Revision v2 adds author-drawn illustrative TikZ VBS/dim-8 topologies (labeled illustrative); the workflow itself produced no diagram deliverable (evidence missing_reasons retained)."
+    },
+    {
+      "id": "scan.bounds_all_ops",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#model_description.claimed_operators",
+      "manuscript_location": "Sec. 2 after Eq. (1); Table 1",
+      "note": "Range [-c_scan,+c_scan] per operator with values."
+    },
+    {
+      "id": "data.actual_lhco_counts",
+      "status": "present",
+      "evidence_path": "results/data/phase8/dataset_summary.json",
+      "manuscript_location": "Sec. 3; Table 3",
+      "note": "Requested (500k/100k/1M) and loaded counts stated; banners never used."
+    },
+    {
+      "id": "data.final_state_cut",
+      "status": "present",
+      "evidence_path": "results/data/phase7/feature_schema.json#final_state_cut",
+      "manuscript_location": "Sec. 3; Table 3 header",
+      "note": "N_j >= 2 exact."
+    },
+    {
+      "id": "data.dataset_table",
+      "status": "present",
+      "evidence_path": "results/data/phase8/dataset_summary.json",
+      "manuscript_location": "Table 3",
+      "note": "Scan-row cut-cross-section ranges filled in v2."
+    },
+    {
+      "id": "data.numeric_source_consistency",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json",
+      "manuscript_location": "Tables 3, 5, 6, 7",
+      "note": "All tables rendered programmatically from evidence JSON (render_manuscript_tables_v2.py); cross-checked bit-exact against phase9 constraint_table.json and phase8 csfit files (.smeft-skill/project/number_source_map.json, 8/8 PASS)."
+    },
+    {
+      "id": "data.selection_denominators",
+      "status": "present",
+      "evidence_path": "results/data/phase8/shared_f5_background.json",
+      "manuscript_location": "Sec. 5 Eq. (2); Table 5",
+      "note": "N_pass over 9,334,763 surviving pool events; sigma0 = sigma_pool * N_pass / 11,384,722 loaded."
+    },
+    {
+      "id": "data.public_csv_score_paths",
+      "status": "present",
+      "evidence_path": "results/data/phase10/manuscript_evidence.json#datasets",
+      "manuscript_location": "Sec. 3 data-availability paragraph",
+      "note": "phase7/phase8 CSV and score paths."
+    },
+    {
+      "id": "features.table_units_order",
+      "status": "present",
+      "evidence_path": "results/data/phase7/feature_schema.json",
+      "manuscript_location": "Sec. 4; Table 4",
+      "note": "Dedicated ordered feature table with units (new in v2)."
+    },
+    {
+      "id": "features.preprocessing",
+      "status": "present",
+      "evidence_path": "results/data/phase7/feature_schema.json#preprocessing",
+      "manuscript_location": "Sec. 4 second paragraph",
+      "note": "StandardScaler fitted on anchor SM/NP split, applied to all samples."
+    },
+    {
+      "id": "ml.algorithm_descriptions",
+      "status": "present",
+      "evidence_path": "results/data/phase7/algorithm_descriptions.json",
+      "manuscript_location": "Sec. 4 itemize",
+      "note": "v2 adds algorithm-pool draw context, exclusions, and all recorded seeds."
+    },
+    {
+      "id": "ml.algorithm_pseudocode",
+      "status": "present",
+      "evidence_path": "results/data/phase7/algorithm_descriptions.json",
+      "manuscript_location": "Sec. 4 pseudocode block",
+      "note": "Common training pseudocode covering all three algorithms."
+    },
+    {
+      "id": "ml.score_definitions",
+      "status": "present",
+      "evidence_path": "results/data/phase7/algorithm_comparison.json",
+      "manuscript_location": "Sec. 4 itemize",
+      "note": "s(x) with range and higher=more-NP-like for each algorithm."
+    },
+    {
+      "id": "ml.score_histograms_all_np",
+      "status": "present",
+      "evidence_path": "results/plots/score_dist_all_pure_np_*.pdf",
+      "manuscript_location": "Fig. 3",
+      "note": "All claimed operators, three algorithms."
+    },
+    {
+      "id": "ml.anchor_roc",
+      "status": "present",
+      "evidence_path": "results/plots/roc_anchor.pdf",
+      "manuscript_location": "Fig. 2",
+      "note": ""
+    },
+    {
+      "id": "selection.single_strategy",
+      "status": "present",
+      "evidence_path": "results/data/phase9/algorithm_selection.json",
+      "manuscript_location": "Sec. 5; Sec. 6",
+      "note": "anchor_operator_only scope, MLP t*=0.98 applied to all operators."
+    },
+    {
+      "id": "selection.threshold_optimization",
+      "status": "present",
+      "evidence_path": "results/data/phase8/threshold_optimization.json",
+      "manuscript_location": "Sec. 5; Table 5",
+      "note": "0.00-1.00 step 0.02; per-algorithm t*."
+    },
+    {
+      "id": "selection.anchor_s2_vs_threshold",
+      "status": "present",
+      "evidence_path": "results/plots/anchor_s2_constraint_range_vs_threshold.pdf",
+      "manuscript_location": "Fig. 5",
+      "note": ""
+    },
+    {
+      "id": "fits.scan_fit_plots_all_ops",
+      "status": "present",
+      "evidence_path": "results/plots/csfit_plot_o_*_mlp.pdf",
+      "manuscript_location": "Fig. 6 (MLP); Figs. 7-8 (GB/IF, Appendix A)",
+      "note": "Non-selected algorithm fits added as appendix figures in v2."
+    },
+    {
+      "id": "fits.fixed_intercept",
+      "status": "present",
+      "evidence_path": "results/data/phase8/csfit_o_1_mlp.json",
+      "manuscript_location": "Sec. 6 Eq. (3) and following paragraph",
+      "note": "Intercept fixed; observed-events convention stated."
+    },
+    {
+      "id": "fits.numeric_coefficients",
+      "status": "present",
+      "evidence_path": "results/data/phase8/csfit_o_*_mlp.json",
+      "manuscript_location": "Table 6",
+      "note": "pb per coefficient (squared) units in header."
+    },
+    {
+      "id": "fits.coefficient_table_all_ops",
+      "status": "present",
+      "evidence_path": "results/data/phase8/csfit_o_*_mlp.json",
+      "manuscript_location": "Table 6",
+      "note": ""
+    },
+    {
+      "id": "constraints.significance_formula",
+      "status": "present",
+      "evidence_path": "reference/significance-reference.md",
+      "manuscript_location": "Sec. 6 Eq. (4)",
+      "note": "Cowan et al. (2011) cited for the Asimov formula in v2."
+    },
+    {
+      "id": "constraints.real_roots",
+      "status": "present",
+      "evidence_path": "reference/significance-reference.md",
+      "manuscript_location": "Sec. 6 after Eq. (4)",
+      "note": "Smallest positive / largest negative real root; complex discarded."
+    },
+    {
+      "id": "constraints.final_s235_table",
+      "status": "present",
+      "evidence_path": "results/data/phase9/constraint_table.json",
+      "manuscript_location": "Table 7",
+      "note": "All 8 operators x S=2,3,5."
+    },
+    {
+      "id": "constraints.algorithm_bar",
+      "status": "present",
+      "evidence_path": "results/plots/anchor_s2_algorithm_constraint_bar.pdf",
+      "manuscript_location": "Fig. 4",
+      "note": ""
+    },
+    {
+      "id": "citations.required_references",
+      "status": "present",
+      "evidence_path": "results/data/phase10/literature_plan.json",
+      "manuscript_location": "Bibliography (18 entries, BibTeX/natbib)",
+      "note": "v2: LHAPDF removed (structureless muon beams, no PDFs used), Cowan2011 added; toolchain citations limited to tools actually used."
+    }
+  ]
+}

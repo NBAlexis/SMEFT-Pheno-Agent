@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.0",
+  "scope": "frozen_analysis",
+  "anchor_operator": "o_1",
+  "feature_schema_sha256": "a40001bb77f8e88cf2c8bf2ecb141225a86329f03279774b31b09fc9a7881cee",
+  "algorithm_pool": [
+    "gradient_boosting",
+    "random_forest",
+    "extra_trees",
+    "ada_boost",
+    "logistic_regression",
+    "mlp",
+    "svc_rbf",
+    "svc_poly",
+    "knn",
+    "isolation_forest"
+  ],
+  "excluded_before_draw": [
+    "knn",
+    "svc_poly",
+    "svc_rbf"
+  ],
+  "exclusion_reason": "kernel/kNN scoring scales as O(n_rows x n_train); the locked nev_scan=1e6 scan grid needs ~88M scored rows and would be computationally infeasible; excluded from random selection",
+  "algorithm_selection_seed": 1309979143112009501,
+  "trained_algorithms": [
+    "gradient_boosting",
+    "isolation_forest",
+    "mlp"
+  ],
+  "split_seed": 1822385700,
+  "implementation_seeds": {
+    "gradient_boosting": 101892764,
+    "isolation_forest": 966508472,
+    "mlp": 420566154
+  },
+  "train_cap_seed": 1841556182,
+  "train_caps": {
+    "gradient_boosting": null,
+    "isolation_forest": null,
+    "mlp": null
+  },
+  "algorithm_descriptions": {
+    "gradient_boosting": {
+      "implementation": "sklearn.pipeline.Pipeline(StandardScaler, GradientBoostingClassifier)",
+      "hyperparameters": {
+        "ccp_alpha": 0.0,
+        "criterion": "deprecated",
+        "init": null,
+        "learning_rate": 0.1,
+        "loss": "log_loss",
+        "max_depth": 3,
+        "max_features": null,
+        "max_leaf_nodes": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "n_estimators": 100,
+        "n_iter_no_change": null,
+        "random_state": 101892764,
+        "subsample": 1.0,
+        "tol": 0.0001,
+        "validation_fraction": 0.1,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "train_test_split": {
+        "test_size": 0.2,
+        "random_state": 1822385700,
+        "stratify": true
+      },
+      "random_seed": 101892764,
+      "train_cap": null,
+      "score_definition": "s(x)=P_NP(x)=predict_proba[:,1] on the standard-scaled pipeline",
+      "pseudocode": "fit staged decision trees on scaled features to label 0=SM,1=NP; score = predict_proba[:,1]"
+    },
+    "isolation_forest": {
+      "implementation": "sklearn.pipeline.Pipeline(StandardScaler, IsolationForest)",
+      "hyperparameters": {
+        "bootstrap": false,
+        "contamination": "auto",
+        "max_features": 1.0,
+        "max_samples": "auto",
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "random_state": 966508472,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "train_test_split": {
+        "test_size": 0.2,
+        "random_state": 1822385700,
+        "stratify": true
+      },
+      "random_seed": 966508472,
+      "train_cap": null,
+      "score_definition": "s(x)=minmax(-score_samples(x)) on the standard-scaled pipeline",
+      "pseudocode": "fit isolation trees on the training sample; score = minmax(-score_samples)"
+    },
+    "mlp": {
+      "implementation": "sklearn.pipeline.Pipeline(StandardScaler, MLPClassifier)",
+      "hyperparameters": {
+        "activation": "relu",
+        "alpha": 0.0001,
+        "batch_size": "auto",
+        "beta_1": 0.9,
+        "beta_2": 0.999,
+        "early_stopping": false,
+        "epsilon": 1e-08,
+        "hidden_layer_sizes": [
+          64,
+          32
+        ],
+        "learning_rate": "constant",
+        "learning_rate_init": 0.001,
+        "max_fun": 15000,
+        "max_iter": 300,
+        "momentum": 0.9,
+        "n_iter_no_change": 10,
+        "nesterovs_momentum": true,
+        "power_t": 0.5,
+        "random_state": 420566154,
+        "shuffle": true,
+        "solver": "adam",
+        "tol": 0.0001,
+        "validation_fraction": 0.1,
+        "verbose": false,
+        "warm_start": false
+      },
+      "train_test_split": {
+        "test_size": 0.2,
+        "random_state": 1822385700,
+        "stratify": true
+      },
+      "random_seed": 420566154,
+      "train_cap": null,
+      "score_definition": "s(x)=P_NP(x)=predict_proba[:,1] on the standard-scaled pipeline",
+      "pseudocode": "train a multilayer perceptron with logistic output on scaled features; score = output-layer P(NP)"
+    }
+  },
+  "not_sampled": [
+    "random_forest",
+    "extra_trees",
+    "ada_boost",
+    "logistic_regression"
+  ],
+  "production_algorithm": "mlp",
+  "threshold": 0.98,
+  "selection_scope": "anchor_operator_only",
+  "selection_criterion": "narrowest_anchor_S2_constraint_width"
+}

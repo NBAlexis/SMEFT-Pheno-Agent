@@ -1,0 +1,105 @@
+{
+  "features": [
+    {
+      "index": 1,
+      "code_name": "E_j1",
+      "paper_symbol": "E_{j,1}",
+      "unit": "GeV",
+      "physical_definition": "energy of the leading jet",
+      "particle_assignment": "leading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 1,
+      "code_name": "px_j1",
+      "paper_symbol": "p_{x,j1}",
+      "unit": "GeV",
+      "physical_definition": "x momentum of the leading jet",
+      "particle_assignment": "leading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 1,
+      "code_name": "py_j1",
+      "paper_symbol": "p_{y,j1}",
+      "unit": "GeV",
+      "physical_definition": "y momentum of the leading jet",
+      "particle_assignment": "leading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 1,
+      "code_name": "pz_j1",
+      "paper_symbol": "p_{z,j1}",
+      "unit": "GeV",
+      "physical_definition": "z momentum of the leading jet",
+      "particle_assignment": "leading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 5,
+      "code_name": "E_j2",
+      "paper_symbol": "E_{j,2}",
+      "unit": "GeV",
+      "physical_definition": "energy of the subleading jet",
+      "particle_assignment": "subleading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 5,
+      "code_name": "px_j2",
+      "paper_symbol": "p_{x,j2}",
+      "unit": "GeV",
+      "physical_definition": "x momentum of the subleading jet",
+      "particle_assignment": "subleading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 5,
+      "code_name": "py_j2",
+      "paper_symbol": "p_{y,j2}",
+      "unit": "GeV",
+      "physical_definition": "y momentum of the subleading jet",
+      "particle_assignment": "subleading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 5,
+      "code_name": "pz_j2",
+      "paper_symbol": "p_{z,j2}",
+      "unit": "GeV",
+      "physical_definition": "z momentum of the subleading jet",
+      "particle_assignment": "subleading jet",
+      "ordering_rule": "jets sorted by energy descending"
+    },
+    {
+      "index": 9,
+      "code_name": "miss_px",
+      "paper_symbol": "p_x^{miss}",
+      "unit": "GeV",
+      "physical_definition": "missing momentum x component = negative sum of visible px",
+      "particle_assignment": "all visible objects",
+      "ordering_rule": "derived from full event"
+    },
+    {
+      "index": 9,
+      "code_name": "miss_py",
+      "paper_symbol": "p_y^{miss}",
+      "unit": "GeV",
+      "physical_definition": "missing momentum y component = negative sum of visible py",
+      "particle_assignment": "all visible objects",
+      "ordering_rule": "derived from full event"
+    }
+  ],
+  "final_state_cut": "N_j >= 2",
+  "preprocessing": {
+    "standardization": "standard_scaler",
+    "fit_sample": "anchor SM/NP training split",
+    "applied_to": [
+      "SM",
+      "pure NP",
+      "scan samples"
+    ],
+    "implementation": "sklearn Pipeline(StandardScaler, classifier) saved per algorithm"
+  }
+}

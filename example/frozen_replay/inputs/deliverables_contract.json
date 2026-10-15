@@ -1,0 +1,1051 @@
+{
+  "contract_kind": "automated-smeft-ml-pheno-frozen-deliverables",
+  "research_objective_sha256": "6361aeb293971a17eb85971e6a4282ce5fa8c9c3e9e30c5ecc45e774f0efe2a1",
+  "schema_version": "1.0",
+  "template": {
+    "acceptance_field_definitions": {
+      "json_type": "Required top-level JSON type: object or array",
+      "min_data_rows": "Minimum number of non-empty CSV data rows",
+      "min_items": "Minimum number of entries in a top-level JSON array",
+      "min_properties": "Minimum number of keys in a top-level JSON object",
+      "required_columns": "Column names that must exist in a CSV header",
+      "required_keys": "Keys that must exist in a top-level JSON object",
+      "required_values": "Top-level JSON keys whose values must equal the declared values"
+    },
+    "contract_kind": "automated-smeft-ml-pheno-deliverables",
+    "cross_file_acceptance_rules": [
+      {
+        "id": "phase3.complete_coefficient_loop",
+        "phase": "3",
+        "requirements": [
+          "model_status top-level keys equal run_config models",
+          "every numerical runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the locked per-run minimum event count",
+          "diagram-producing models have positive coefficient_count",
+          "tested_count and coefficient record count equal coefficient_count",
+          "every coefficient has c_default, sigma, and result_json",
+          "every positive coefficient maps to operator_claims and the distinct mapped keys equal all claims",
+          "operator_claims keys are ordered consecutively o_1 through o_N and every record has model, anoinput_idx, and name",
+          "anchor.json equals the o_1 claim",
+          "cross_sections keys equal model:coefficient_name for every coefficient record"
+        ]
+      },
+      {
+        "id": "phase4.mg5_delphes_lhco_and_event_minimum",
+        "phase": "4",
+        "requirements": [
+          "the SM baseline runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and nev_phase4 as the per-run minimum"
+        ]
+      },
+      {
+        "id": "phase5.mg5_delphes_lhco_and_event_minimum",
+        "phase": "5",
+        "requirements": [
+          "the SM and every pure-NP runner result prove MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the applicable locked per-run minimum"
+        ]
+      },
+      {
+        "id": "phase6.complete_scan_matrix",
+        "phase": "6",
+        "requirements": [
+          "scan_manifest keys equal Phase 3 claimed operators",
+          "every numerical scan runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the locked per-run minimum event count",
+          "every operator has point_count 11 and labels f0 through f10 in order",
+          "every operator has positive numeric c_scan and non-empty scan_expression"
+        ]
+      },
+      {
+        "id": "phase7.complete_algorithm_set",
+        "phase": "7",
+        "requirements": [
+          "algorithm_comparison anchor contains every user-configured algorithm when provided",
+          "algorithm_comparison anchor contains at least three algorithms and at least one has AUC above 0.5",
+          "algorithm descriptions, score files, model files, and validation records use the same keys"
+        ]
+      },
+      {
+        "id": "phase8.numerical_content",
+        "phase": "8",
+        "requirements": [
+          "threshold_optimization anchor keys equal Phase 7 algorithm keys",
+          "every additional anchor f5 numerical runner result proves MadGraph5 generation, Delphes simulation, Delphes-ROOT-to-LHCO conversion, and the locked per-run minimum event count",
+          "each threshold scan contains exactly 51 entries; unavailable numerical values are null only for a documented zero-event status",
+          "the initial shared f5 sources cover every claimed operator; repeated sources are allowed only when Phase 6 recovery metadata proves that they contributed to the accepted sample",
+          "every operator-algorithm fit uses the shared f5 background value",
+          "csfit_sm equals sigma0_after_cut_pb and csfit_np is non-negative"
+        ]
+      },
+      {
+        "id": "phase9.numerical_content",
+        "phase": "9",
+        "requirements": [
+          "selected algorithm is a Phase 7 anchor algorithm",
+          "strategies usable under the selected debug mode are compared only by expected S2 coefficient-constraint interval width; AUC is never a final selection criterion",
+          "the selected threshold minimizes the applicable S2 coefficient-constraint interval width among evaluated candidates usable under the selected debug mode",
+          "constraint keys equal Phase 3 claimed operators",
+          "every operator has finite negative-to-positive S2, S3, and S5 intervals"
+        ]
+      },
+      {
+        "id": "phase10.analysis_notes_trace",
+        "phase": "10",
+        "requirements": [
+          "focused operators and manuscript preferences equal run_config analysis_notes",
+          "every preference and additional requirement has applied or not_applicable status and evidence"
+        ]
+      },
+      {
+        "id": "phase11.replay_package_static_checks",
+        "phase": "11",
+        "requirements": [
+          "manifest phase order is 2 through 9",
+          "every resolved Phase 2-9 output has exactly one producing step",
+          "production inputs exclude original Phase 3-9 results",
+          "all packaged source inputs and referenced code match their declared SHA-256 values"
+        ]
+      }
+    ],
+    "path_base": "run_root",
+    "phase10_required_manuscript_items": [
+      {
+        "id": "structure.logical_sections",
+        "required_content": "scientific-paper section logic"
+      },
+      {
+        "id": "physics.process_setup",
+        "required_content": "process, collider, beams, luminosity, detector, tool versions"
+      },
+      {
+        "id": "physics.debug_status",
+        "required_content": "debug setting and, when true, an explicit reduced-event workflow-test limitation"
+      },
+      {
+        "id": "physics.model_anchor",
+        "required_content": "UFO model, operators, anchor operator"
+      },
+      {
+        "id": "figures.feynman_diagrams",
+        "required_content": "SM/NP diagrams or documented missing reasons"
+      },
+      {
+        "id": "scan.bounds_all_ops",
+        "required_content": "scan lower/upper bounds for every claimed operator"
+      },
+      {
+        "id": "data.actual_lhco_counts",
+        "required_content": "requested and actual loaded LHCO event counts"
+      },
+      {
+        "id": "data.final_state_cut",
+        "required_content": "exact final-state particle-number cut"
+      },
+      {
+        "id": "data.dataset_table",
+        "required_content": "loaded/cut counts, raw/cut cross-sections, units, cuts"
+      },
+      {
+        "id": "data.numeric_source_consistency",
+        "required_content": "manuscript numeric event counts, cross-sections, fit coefficients, and constraints checked against upstream evidence files"
+      },
+      {
+        "id": "data.selection_denominators",
+        "required_content": "threshold counts and efficiency denominators"
+      },
+      {
+        "id": "data.public_csv_score_paths",
+        "required_content": "public CSV and score CSV paths"
+      },
+      {
+        "id": "features.table_units_order",
+        "required_content": "ordered feature table with units"
+      },
+      {
+        "id": "features.preprocessing",
+        "required_content": "preprocessing/standardization and fit sample"
+      },
+      {
+        "id": "ml.algorithm_descriptions",
+        "required_content": "self-contained algorithm descriptions"
+      },
+      {
+        "id": "ml.algorithm_pseudocode",
+        "required_content": "pseudocode for every trained algorithm"
+      },
+      {
+        "id": "ml.score_definitions",
+        "required_content": "mathematical score definitions and direction"
+      },
+      {
+        "id": "ml.score_histograms_all_np",
+        "required_content": "SM and all pure-NP score histograms"
+      },
+      {
+        "id": "ml.anchor_roc",
+        "required_content": "anchor SM-vs-NP ROC plot"
+      },
+      {
+        "id": "selection.single_strategy",
+        "required_content": "recorded selection scope and the strategy used for every operator"
+      },
+      {
+        "id": "selection.threshold_optimization",
+        "required_content": "threshold scan and selected threshold"
+      },
+      {
+        "id": "selection.anchor_s2_vs_threshold",
+        "required_content": "anchor S_stat=2 range versus threshold"
+      },
+      {
+        "id": "fits.scan_fit_plots_all_ops",
+        "required_content": "SM+NP points versus fits for all claimed operators"
+      },
+      {
+        "id": "fits.fixed_intercept",
+        "required_content": "fixed f=0 selected cross-section statement"
+      },
+      {
+        "id": "fits.numeric_coefficients",
+        "required_content": "numeric fit coefficients with units"
+      },
+      {
+        "id": "fits.coefficient_table_all_ops",
+        "required_content": "fit coefficient table for all claimed operators"
+      },
+      {
+        "id": "constraints.significance_formula",
+        "required_content": "correct formula and units"
+      },
+      {
+        "id": "constraints.real_roots",
+        "required_content": "real-root bound convention"
+      },
+      {
+        "id": "constraints.final_s235_table",
+        "required_content": "final S_stat=2,3,5 table for all claimed operators"
+      },
+      {
+        "id": "constraints.algorithm_bar",
+        "required_content": "anchor S_stat=2 algorithm-comparison bar plot"
+      },
+      {
+        "id": "citations.required_references",
+        "required_content": "toolchain and relevant theory/ML citations"
+      }
+    ],
+    "rules": [
+      {
+        "id": "global.contracts",
+        "items": [
+          {
+            "json_type": "object",
+            "path": "run_config.json",
+            "required_keys": [
+              "version",
+              "process",
+              "models",
+              "run_configurations",
+              "locked_event_counts"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "research_contract.json",
+            "required_keys": [
+              "objective",
+              "objective_sha256",
+              "deliverables_template_sha256"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "deliverables_contract.json",
+            "required_keys": [
+              "template",
+              "template_sha256",
+              "research_objective_sha256"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "contract_lock.json",
+            "required_keys": [
+              "research_contract_sha256",
+              "deliverables_contract_sha256",
+              "template_sha256"
+            ],
+            "type": "json"
+          }
+        ],
+        "phase": "1",
+        "scope": "global_results",
+        "selector": "fixed"
+      },
+      {
+        "id": "phase2.environment",
+        "items": [
+          {
+            "path": "workflow.log",
+            "type": "jsonl"
+          },
+          {
+            "path": "data/phase2/environment_manifest.json",
+            "type": "json"
+          }
+        ],
+        "phase": "2",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "id": "phase3.fixed",
+        "items": [
+          {
+            "json_type": "object",
+            "path": "data/phase3/operator_claims.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase3/cross_sections.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "min_properties": 1,
+            "path": "data/phase3/model_status.json",
+            "type": "json"
+          },
+          {
+            "condition": "at_least_one_claimed_operator",
+            "json_type": "object",
+            "path": "data/phase3/anchor.json",
+            "required_keys": [
+              "global_idx",
+              "model",
+              "anoinput_idx",
+              "name"
+            ],
+            "type": "json"
+          }
+        ],
+        "phase": "3",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "id": "phase3.runner-results",
+        "items": [
+          {
+            "path": "{phase3_runner_result}",
+            "type": "json"
+          }
+        ],
+        "phase": "3",
+        "scope": "run_root",
+        "selector": "phase3_runner_result"
+      },
+      {
+        "condition": "no_claimed_operator",
+        "id": "phase3.zero-report",
+        "items": [
+          {
+            "path": "data/phase3/phase3_report.txt",
+            "type": "text"
+          }
+        ],
+        "phase": "3",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase4.ranges",
+        "items": [
+          {
+            "path": "data/phase4/sm_baseline.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase4/sm_baseline_result.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase4/coefficient_ranges.json",
+            "type": "json"
+          }
+        ],
+        "phase": "4",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase5.fixed",
+        "items": [
+          {
+            "path": "data/phase5/sm.lhco",
+            "type": "lhco"
+          },
+          {
+            "path": "data/phase5/sm_banner.txt",
+            "type": "text"
+          },
+          {
+            "path": "data/phase5/sm_result.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase5/np_anchor.lhco",
+            "type": "lhco"
+          },
+          {
+            "path": "data/phase5/np_anchor_banner.txt",
+            "type": "text"
+          },
+          {
+            "path": "data/phase5/np_anchor_alias.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase5/event_count_recovery.json",
+            "type": "json"
+          }
+        ],
+        "phase": "5",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase5.per-operator",
+        "items": [
+          {
+            "path": "data/phase5/np_{operator}.lhco",
+            "type": "lhco"
+          },
+          {
+            "path": "data/phase5/np_{operator}_banner.txt",
+            "type": "text"
+          },
+          {
+            "path": "data/phase5/np_{operator}_result.json",
+            "type": "json"
+          }
+        ],
+        "phase": "5",
+        "scope": "run_root",
+        "selector": "operator"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase6.fixed",
+        "items": [
+          {
+            "json_type": "object",
+            "min_properties": 1,
+            "path": "data/phase6/scan_manifest.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase6/phase6_progress.json",
+            "required_keys": [
+              "operators"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "data/phase6/event_count_recovery.json",
+            "type": "json"
+          }
+        ],
+        "phase": "6",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase6.per-operator",
+        "items": [
+          {
+            "path": "data/phase6/np_{operator}_scan_result.json",
+            "type": "json"
+          }
+        ],
+        "phase": "6",
+        "scope": "run_root",
+        "selector": "operator"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase6.per-scan-point",
+        "items": [
+          {
+            "path": "data/phase6/np_{operator}_{scan_label}.lhco",
+            "type": "lhco"
+          },
+          {
+            "path": "data/phase6/np_{operator}_{scan_label}_banner.txt",
+            "type": "text"
+          }
+        ],
+        "phase": "6",
+        "scope": "run_root",
+        "selector": "operator_scan_label"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase7.fixed",
+        "items": [
+          {
+            "path": "data/phase7/sm.csv",
+            "type": "csv"
+          },
+          {
+            "path": "data/phase7/np_anchor.csv",
+            "type": "csv"
+          },
+          {
+            "path": "data/phase7/event_counts.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase7/feature_schema.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase7/algorithm_comparison.json",
+            "required_keys": [
+              "anchor"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "min_properties": 1,
+            "path": "data/phase7/algorithm_descriptions.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase7/phase7_validation.json",
+            "required_keys": [
+              "status",
+              "checks"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "algorithms/compute_scores.py",
+            "type": "python"
+          },
+          {
+            "path": "plots/roc_anchor.pdf",
+            "type": "pdf"
+          }
+        ],
+        "phase": "7",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase7.per-operator",
+        "items": [
+          {
+            "path": "data/phase7/np_{operator}.csv",
+            "type": "csv"
+          }
+        ],
+        "phase": "7",
+        "scope": "run_root",
+        "selector": "operator"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase7.per-algorithm",
+        "items": [
+          {
+            "path": "algorithms/anchor_{algorithm}.pkl",
+            "type": "model"
+          },
+          {
+            "path": "data/phase7/scores/{algorithm}_sm_scores.csv",
+            "required_columns": [
+              "event_index",
+              "score",
+              "label",
+              "source_csv"
+            ],
+            "type": "csv"
+          },
+          {
+            "path": "plots/score_dist_all_pure_np_{algorithm}.pdf",
+            "type": "pdf"
+          }
+        ],
+        "phase": "7",
+        "scope": "run_root",
+        "selector": "algorithm"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase7.per-operator-algorithm",
+        "items": [
+          {
+            "path": "data/phase7/scores/{algorithm}_np_{operator}_scores.csv",
+            "required_columns": [
+              "event_index",
+              "score",
+              "label",
+              "source_csv"
+            ],
+            "type": "csv"
+          }
+        ],
+        "phase": "7",
+        "scope": "run_root",
+        "selector": "operator_algorithm"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase8.fixed",
+        "items": [
+          {
+            "json_type": "object",
+            "path": "data/phase8/shared_f5_background.json",
+            "required_keys": [
+              "schema_version",
+              "source_operators",
+              "anchor_operator",
+              "initial_f5_sources",
+              "additional_anchor_f5_sources",
+              "additional_anchor_f5_rounds",
+              "loaded_lhco_event_count",
+              "surviving_final_state_event_count",
+              "merged_cross_section_pb",
+              "cross_section_rule",
+              "algorithms"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "data/phase8/shared_f5.lhco",
+            "type": "lhco"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase8/shared_f5_merge.json",
+            "required_keys": [
+              "output_lhco_path",
+              "merged_loaded_lhco_event_count",
+              "source_count_sum",
+              "merged_cross_section_pb",
+              "cross_section_rule",
+              "source_records"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "data/phase8/csv/shared_f5.csv",
+            "type": "csv"
+          },
+          {
+            "path": "data/phase8/scan_event_counts.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase8/threshold_optimization.json",
+            "required_keys": [
+              "anchor",
+              "numerical_validation"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "min_properties": 1,
+            "path": "data/phase8/dataset_summary.json",
+            "type": "json"
+          },
+          {
+            "path": "plots/threshold_comparison.pdf",
+            "type": "pdf"
+          },
+          {
+            "path": "plots/anchor_s2_constraint_range_vs_threshold.pdf",
+            "type": "pdf"
+          }
+        ],
+        "phase": "8",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase8.per-scan-point",
+        "items": [
+          {
+            "path": "data/phase8/csv/np_{operator}_{scan_label}.csv",
+            "type": "csv"
+          }
+        ],
+        "phase": "8",
+        "scope": "run_root",
+        "selector": "operator_scan_label"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase8.per-score",
+        "items": [
+          {
+            "path": "data/phase8/scores/{algorithm}/np_{operator}_{scan_label}_scores.csv",
+            "required_columns": [
+              "event_index",
+              "score",
+              "source_csv"
+            ],
+            "type": "csv"
+          }
+        ],
+        "phase": "8",
+        "scope": "run_root",
+        "selector": "operator_scan_label_algorithm"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase8.shared-f5-score",
+        "items": [
+          {
+            "path": "data/phase8/scores/{algorithm}/shared_f5_scores.csv",
+            "required_columns": [
+              "event_index",
+              "score",
+              "source_csv"
+            ],
+            "type": "csv"
+          }
+        ],
+        "phase": "8",
+        "scope": "run_root",
+        "selector": "algorithm"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase8.per-fit",
+        "items": [
+          {
+            "json_type": "object",
+            "path": "data/phase8/csfit_{operator}_{algorithm}.json",
+            "required_keys": [
+              "fit_intercept_fixed",
+              "f0_label",
+              "sigma0_after_cut_pb",
+              "csfit_sm",
+              "csfit_int",
+              "csfit_np",
+              "fit_model"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "plots/csfit_plot_{operator}_{algorithm}.pdf",
+            "type": "pdf"
+          }
+        ],
+        "phase": "8",
+        "scope": "run_root",
+        "selector": "operator_algorithm"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase9.constraints",
+        "items": [
+          {
+            "json_type": "object",
+            "path": "data/phase9/algorithm_selection.json",
+            "required_keys": [
+              "anchor_operator",
+              "selected_algorithm",
+              "selected_threshold",
+              "selection_criterion",
+              "selection_scope",
+              "selection_rationale",
+              "selection_evidence",
+              "source_threshold_optimization_entry"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase9/constraint_table.json",
+            "required_keys": [
+              "selection_scope",
+              "anchor_operator",
+              "selected_algorithm",
+              "constraints",
+              "numerical_validation"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "data/phase9/constraint_table.csv",
+            "required_columns": [
+              "operator",
+              "selected_algorithm",
+              "selected_threshold",
+              "S2_lower",
+              "S2_upper",
+              "S3_lower",
+              "S3_upper",
+              "S5_lower",
+              "S5_upper"
+            ],
+            "type": "csv"
+          },
+          {
+            "path": "plots/anchor_s2_algorithm_constraint_bar.pdf",
+            "type": "pdf"
+          }
+        ],
+        "phase": "9",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase10.fixed",
+        "items": [
+          {
+            "path": "data/phase10/manuscript_build_environment.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/collider_energy.json",
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "data/phase10/manuscript_evidence.json",
+            "required_keys": [
+              "analysis_notes_trace",
+              "figures"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/reference_paper_plan.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/literature_plan.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/manuscript_checklist.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/manuscript_trace_map.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/manuscript_completeness_passes.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/manuscript_validation.json",
+            "type": "json"
+          },
+          {
+            "path": "data/phase10/manuscript_draft_v1.*",
+            "type": "glob"
+          },
+          {
+            "condition": "feynman_diagram_directory_required",
+            "path": "data/feynman_diagrams",
+            "type": "directory"
+          }
+        ],
+        "phase": "10",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator_and_pdf_required",
+        "id": "phase10.pdf",
+        "items": [
+          {
+            "path": "manuscript.pdf",
+            "type": "pdf"
+          },
+          {
+            "path": "manuscript.tex",
+            "type": "text"
+          }
+        ],
+        "phase": "10",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator_and_not_pdf_required",
+        "id": "phase10.html",
+        "items": [
+          {
+            "path": "manuscript.html",
+            "type": "html"
+          }
+        ],
+        "phase": "10",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "cleanup.archive",
+        "items": [
+          {
+            "path": "mg5_processes/cleanup_log.json",
+            "type": "json"
+          },
+          {
+            "path": "mg5_processes",
+            "type": "nonempty_directory"
+          },
+          {
+            "path": "orders",
+            "type": "nonempty_directory"
+          }
+        ],
+        "phase": "cleanup",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase11.replay",
+        "items": [
+          {
+            "path": "replay/replay.sh",
+            "type": "executable"
+          },
+          {
+            "json_type": "object",
+            "path": "replay/replay_manifest.json",
+            "required_keys": [
+              "schema_version",
+              "entrypoint",
+              "phase_order",
+              "default_output",
+              "source_inputs",
+              "external_dependencies",
+              "package_sha256",
+              "algorithm_lock",
+              "steps",
+              "report"
+            ],
+            "type": "json"
+          },
+          {
+            "path": "replay/data_files_report.md",
+            "type": "markdown"
+          },
+          {
+            "path": "replay/run_config.json",
+            "type": "json"
+          },
+          {
+            "path": "replay/research_contract.json",
+            "type": "json"
+          },
+          {
+            "path": "replay/deliverables_contract.json",
+            "type": "json"
+          },
+          {
+            "path": "replay/contract_lock.json",
+            "type": "json"
+          }
+        ],
+        "phase": "11",
+        "scope": "run_root",
+        "selector": "fixed"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase11.referenced-files",
+        "items": [
+          {
+            "path": "{replay_file}",
+            "type": "file"
+          }
+        ],
+        "phase": "11",
+        "scope": "run_root",
+        "selector": "replay_file"
+      },
+      {
+        "condition": "at_least_one_claimed_operator",
+        "id": "phase12.audit",
+        "items": [
+          {
+            "json_type": "object",
+            "path": "deliverables_resolved.json",
+            "required_keys": [
+              "status",
+              "resolved",
+              "pending_rules",
+              "run_root",
+              "results_dir"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "audit_expected_outputs.json",
+            "required_keys": [
+              "status",
+              "checks",
+              "failures",
+              "warnings"
+            ],
+            "type": "json"
+          },
+          {
+            "json_type": "object",
+            "path": "audit_report.json",
+            "required_keys": [
+              "status",
+              "checks",
+              "abort_reasons",
+              "warnings"
+            ],
+            "type": "json"
+          }
+        ],
+        "phase": "12",
+        "scope": "run_root",
+        "selector": "fixed"
+      }
+    ],
+    "run_root_rule": {
+      "multi_run": "results/{run_dir}",
+      "single_run": "results"
+    },
+    "schema_version": "1.0",
+    "selectors": {
+      "algorithm": "data/phase7/algorithm_comparison.json anchor keys",
+      "manuscript_format": "data/phase10/manuscript_build_environment.json pdf_required",
+      "operator": "data/phase3/operator_claims.json object keys",
+      "phase3_runner_result": "result_json paths referenced by data/phase3/model_status.json",
+      "replay_file": "drivers/helpers referenced by replay/replay_manifest.json",
+      "scan_label": "data/phase6/scan_manifest.json labels for each operator"
+    }
+  },
+  "template_sha256": "aa3691f95c3c92286c7e66689d5130877dbac2def7198ce30596a766294ba5f6"
+}

@@ -1,0 +1,47 @@
+{
+  "requested_event_count": 1000000,
+  "attempt_root": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/recovery_attempts/o_1",
+  "merged_output_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6",
+  "metadata_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/event_count_recovery_o_1.json",
+  "recovery_unit": "o_1",
+  "required_units": [
+    "o_1"
+  ],
+  "recovery_profiles": [
+    "sde2_hs0",
+    "sde2_hs1",
+    "sde2_hs2",
+    "sde2_hs2",
+    "sde2_hs2",
+    "sde2_hs2",
+    "sde2_hs2",
+    "sde2_hs2",
+    "sde2_hs2"
+  ],
+  "base_mg5_config": {
+    "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+    "model": "gQGC_UFO",
+    "process": "mu+ mu- > vl vl~ j j",
+    "madspin": {
+      "enabled": false
+    },
+    "process_mode": "scan",
+    "operator": "o_1",
+    "target_coefficient": {
+      "index": 1
+    },
+    "c_scan": 1.9e-14,
+    "weighted_order": 8,
+    "run_label": "E10_L10000",
+    "ebeam1": 5000.0,
+    "ebeam2": 5000.0,
+    "nevents": 1000000,
+    "delphes_card": "delphes_card_MuonColliderDet.tcl",
+    "cutexperiment_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+    "output_prefix": "np_o_1",
+    "output_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6",
+    "log_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/logs",
+    "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_scan_result.json"
+  },
+  "initial_result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_salvaged_initial.json"
+}

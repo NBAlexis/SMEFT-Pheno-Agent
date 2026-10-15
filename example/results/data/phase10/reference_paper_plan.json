@@ -1,0 +1,23 @@
+{
+  "style_references": [
+    "P27"
+  ],
+  "method_references": [
+    "P16",
+    "P27",
+    "P34"
+  ],
+  "result_comparison_references": [],
+  "papers_to_cite": [
+    "P16",
+    "P22",
+    "P29"
+  ],
+  "notes": {
+    "P27": "Section organization, dataset-table detail level, and anomaly-detection framing for a muon-collider aQGC study; primary structural reference (style only, not cited).",
+    "P16": "Isolation Forest aQGC selection: direct method-family comparison; this study trains IF alongside supervised classifiers and discusses it in the methodology and related work.",
+    "P34": "Supervised-classifier event-selection strategy context at muon colliders (SVM/QSVM family); method framing only, not cited.",
+    "P22": "Muon-collider aQGC process motivation cited in the introduction.",
+    "P29": "MLAnalysis framework: this workflow uses its CutExperiment development branch for LHCO handling and feature extraction; cited as toolchain."
+  }
+}

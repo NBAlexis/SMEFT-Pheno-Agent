@@ -1,0 +1,25 @@
+{
+  "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "model": "gQGC_UFO",
+  "process": "mu+ mu- > vl vl~ j j",
+  "madspin": {
+    "enabled": false
+  },
+  "process_mode": "scan",
+  "operator": "o_2",
+  "target_coefficient": {
+    "index": 2
+  },
+  "c_scan": 2.9e-14,
+  "weighted_order": 8,
+  "run_label": "E10_L10000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
+  "nevents": 1000000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+  "output_prefix": "np_o_2",
+  "output_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6",
+  "log_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/logs",
+  "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/o_2_scan_result.json"
+}

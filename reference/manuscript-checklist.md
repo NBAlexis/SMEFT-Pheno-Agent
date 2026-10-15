@@ -47,6 +47,9 @@ Use every `required_items[].id` from that file in both
 
 ## Physics Setup
 
+- A paper blueprint/argument map links the research question, contribution,
+  section claims, evidence paths, interpretations, and limitations.
+
 - The manuscript is organized as a scientific paper with clear sections whose
   logical order covers: motivation/background, theory/model, event generation
   and data preparation, ML methodology, event-selection optimization,
@@ -129,6 +132,18 @@ Use every `required_items[].id` from that file in both
 - Fit quality or residual information is included if Phase 8 produced it;
   otherwise the manuscript states that no fit-quality diagnostic was retained.
 - The anchor-operator `S_stat = 2` algorithm-comparison bar plot is included.
+
+## Interpretation and scope
+
+- The paper explains what the main numerical results mean, not only what their
+  values are. At minimum this covers the selected strategy, fitted coefficient
+  dependence, and final intervals.
+- Applicable quality or robustness observations are reported. If a possible
+  analysis was not applicable or was not implemented, the paper gives the
+  evidence-based reason and the resulting limitation instead of silently
+  omitting it.
+- Claims are bounded by the actual process, model, samples, selection scope,
+  significance convention, and debug/statistics-only status.
 
 ## Constraints and Citations
 

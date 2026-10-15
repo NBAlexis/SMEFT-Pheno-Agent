@@ -1,0 +1,30 @@
+{
+  "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "model": "gQGC_UFO",
+  "process": "mu+ mu- > vl vl~ j j",
+  "madspin": {
+    "enabled": false
+  },
+  "process_mode": "sm_np_point",
+  "operator": "o_5",
+  "target_coefficient": {
+    "index": 5,
+    "value": -1.0399999999999999e-14
+  },
+  "coefficient_mode": "explicit",
+  "c_scan": 5.2e-14,
+  "scan_label": "f4",
+  "weighted_order": 8,
+  "survey_profile": "sde2_hs0",
+  "nb_core": 8,
+  "run_label": "E10_L10000",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
+  "nevents": 1000000,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "cutexperiment_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/CutExperiment",
+  "output_label": "np_o_5_f4",
+  "output_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4",
+  "log_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4",
+  "result_json": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/point_runs/np_o_5_f4/mg5_result.json"
+}

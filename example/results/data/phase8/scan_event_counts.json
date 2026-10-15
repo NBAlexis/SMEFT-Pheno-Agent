@@ -1,0 +1,794 @@
+{
+  "o_1_f0": {
+    "operator": "o_1",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 4077289,
+    "surviving_final_state_event_count": 3345565,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f0.csv"
+  },
+  "o_1_f1": {
+    "operator": "o_1",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 4102633,
+    "surviving_final_state_event_count": 3364248,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f1.csv"
+  },
+  "o_1_f2": {
+    "operator": "o_1",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 820897,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f2.csv"
+  },
+  "o_1_f3": {
+    "operator": "o_1",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 4005936,
+    "surviving_final_state_event_count": 3286659,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f3.csv"
+  },
+  "o_1_f4": {
+    "operator": "o_1",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 4073619,
+    "surviving_final_state_event_count": 3340513,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f4.csv"
+  },
+  "o_1_f5": {
+    "operator": "o_1",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 4054970,
+    "surviving_final_state_event_count": 3324445,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f5.csv"
+  },
+  "o_1_f6": {
+    "operator": "o_1",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 2059608,
+    "surviving_final_state_event_count": 1687387,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f6.csv"
+  },
+  "o_1_f7": {
+    "operator": "o_1",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 3089786,
+    "surviving_final_state_event_count": 2534348,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f7.csv"
+  },
+  "o_1_f8": {
+    "operator": "o_1",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 3233240,
+    "surviving_final_state_event_count": 2651705,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f8.csv"
+  },
+  "o_1_f9": {
+    "operator": "o_1",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 4000000,
+    "surviving_final_state_event_count": 3280931,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f9.csv"
+  },
+  "o_1_f10": {
+    "operator": "o_1",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 3039371,
+    "surviving_final_state_event_count": 2494512,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_1_f10.csv"
+  },
+  "o_2_f0": {
+    "operator": "o_2",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1077371,
+    "surviving_final_state_event_count": 883116,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f0.csv"
+  },
+  "o_2_f1": {
+    "operator": "o_2",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1102309,
+    "surviving_final_state_event_count": 904047,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f1.csv"
+  },
+  "o_2_f2": {
+    "operator": "o_2",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1124038,
+    "surviving_final_state_event_count": 922333,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f2.csv"
+  },
+  "o_2_f3": {
+    "operator": "o_2",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1651384,
+    "surviving_final_state_event_count": 1353457,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f3.csv"
+  },
+  "o_2_f4": {
+    "operator": "o_2",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 820833,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f4.csv"
+  },
+  "o_2_f5": {
+    "operator": "o_2",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 820357,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f5.csv"
+  },
+  "o_2_f6": {
+    "operator": "o_2",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1126540,
+    "surviving_final_state_event_count": 922995,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f6.csv"
+  },
+  "o_2_f7": {
+    "operator": "o_2",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1090088,
+    "surviving_final_state_event_count": 893799,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f7.csv"
+  },
+  "o_2_f8": {
+    "operator": "o_2",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1233271,
+    "surviving_final_state_event_count": 1010923,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f8.csv"
+  },
+  "o_2_f9": {
+    "operator": "o_2",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 2000000,
+    "surviving_final_state_event_count": 1640015,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f9.csv"
+  },
+  "o_2_f10": {
+    "operator": "o_2",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1039772,
+    "surviving_final_state_event_count": 852327,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_2_f10.csv"
+  },
+  "o_3_f0": {
+    "operator": "o_3",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 821286,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f0.csv"
+  },
+  "o_3_f1": {
+    "operator": "o_3",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1101880,
+    "surviving_final_state_event_count": 904258,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f1.csv"
+  },
+  "o_3_f2": {
+    "operator": "o_3",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1124007,
+    "surviving_final_state_event_count": 922148,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f2.csv"
+  },
+  "o_3_f3": {
+    "operator": "o_3",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 782516,
+    "surviving_final_state_event_count": 641728,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f3.csv"
+  },
+  "o_3_f4": {
+    "operator": "o_3",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1073710,
+    "surviving_final_state_event_count": 880603,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f4.csv"
+  },
+  "o_3_f5": {
+    "operator": "o_3",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1054886,
+    "surviving_final_state_event_count": 864770,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f5.csv"
+  },
+  "o_3_f6": {
+    "operator": "o_3",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1126481,
+    "surviving_final_state_event_count": 924066,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f6.csv"
+  },
+  "o_3_f7": {
+    "operator": "o_3",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1107242,
+    "surviving_final_state_event_count": 907956,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f7.csv"
+  },
+  "o_3_f8": {
+    "operator": "o_3",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1233300,
+    "surviving_final_state_event_count": 1011425,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f8.csv"
+  },
+  "o_3_f9": {
+    "operator": "o_3",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 2000000,
+    "surviving_final_state_event_count": 1641026,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f9.csv"
+  },
+  "o_3_f10": {
+    "operator": "o_3",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1039544,
+    "surviving_final_state_event_count": 853676,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_3_f10.csv"
+  },
+  "o_4_f0": {
+    "operator": "o_4",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1077326,
+    "surviving_final_state_event_count": 883766,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f0.csv"
+  },
+  "o_4_f1": {
+    "operator": "o_4",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1102125,
+    "surviving_final_state_event_count": 904246,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f1.csv"
+  },
+  "o_4_f2": {
+    "operator": "o_4",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1124156,
+    "surviving_final_state_event_count": 921957,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f2.csv"
+  },
+  "o_4_f3": {
+    "operator": "o_4",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1652421,
+    "surviving_final_state_event_count": 1354773,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f3.csv"
+  },
+  "o_4_f4": {
+    "operator": "o_4",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1073875,
+    "surviving_final_state_event_count": 880358,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f4.csv"
+  },
+  "o_4_f5": {
+    "operator": "o_4",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1054886,
+    "surviving_final_state_event_count": 864783,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f5.csv"
+  },
+  "o_4_f6": {
+    "operator": "o_4",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1126398,
+    "surviving_final_state_event_count": 923308,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f6.csv"
+  },
+  "o_4_f7": {
+    "operator": "o_4",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1090182,
+    "surviving_final_state_event_count": 893411,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f7.csv"
+  },
+  "o_4_f8": {
+    "operator": "o_4",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 233135,
+    "surviving_final_state_event_count": 191381,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f8.csv"
+  },
+  "o_4_f9": {
+    "operator": "o_4",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 819802,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f9.csv"
+  },
+  "o_4_f10": {
+    "operator": "o_4",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1039763,
+    "surviving_final_state_event_count": 853595,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_4_f10.csv"
+  },
+  "o_5_f0": {
+    "operator": "o_5",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1077157,
+    "surviving_final_state_event_count": 883974,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f0.csv"
+  },
+  "o_5_f1": {
+    "operator": "o_5",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 102087,
+    "surviving_final_state_event_count": 83812,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f1.csv"
+  },
+  "o_5_f2": {
+    "operator": "o_5",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 123671,
+    "surviving_final_state_event_count": 101317,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f2.csv"
+  },
+  "o_5_f3": {
+    "operator": "o_5",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 836301,
+    "surviving_final_state_event_count": 685441,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f3.csv"
+  },
+  "o_5_f4": {
+    "operator": "o_5",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1073420,
+    "surviving_final_state_event_count": 880612,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f4.csv"
+  },
+  "o_5_f5": {
+    "operator": "o_5",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1054981,
+    "surviving_final_state_event_count": 864281,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f5.csv"
+  },
+  "o_5_f6": {
+    "operator": "o_5",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 126356,
+    "surviving_final_state_event_count": 103280,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f6.csv"
+  },
+  "o_5_f7": {
+    "operator": "o_5",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1090195,
+    "surviving_final_state_event_count": 894282,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f7.csv"
+  },
+  "o_5_f8": {
+    "operator": "o_5",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 233062,
+    "surviving_final_state_event_count": 190883,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f8.csv"
+  },
+  "o_5_f9": {
+    "operator": "o_5",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 820367,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f9.csv"
+  },
+  "o_5_f10": {
+    "operator": "o_5",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1039810,
+    "surviving_final_state_event_count": 853189,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_5_f10.csv"
+  },
+  "o_6_f0": {
+    "operator": "o_6",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1077282,
+    "surviving_final_state_event_count": 883920,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f0.csv"
+  },
+  "o_6_f1": {
+    "operator": "o_6",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1102880,
+    "surviving_final_state_event_count": 904956,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f1.csv"
+  },
+  "o_6_f2": {
+    "operator": "o_6",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1123922,
+    "surviving_final_state_event_count": 922400,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f2.csv"
+  },
+  "o_6_f3": {
+    "operator": "o_6",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1653459,
+    "surviving_final_state_event_count": 1356487,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f3.csv"
+  },
+  "o_6_f4": {
+    "operator": "o_6",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1073448,
+    "surviving_final_state_event_count": 879721,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f4.csv"
+  },
+  "o_6_f5": {
+    "operator": "o_6",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1055104,
+    "surviving_final_state_event_count": 865390,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f5.csv"
+  },
+  "o_6_f6": {
+    "operator": "o_6",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1126471,
+    "surviving_final_state_event_count": 923585,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f6.csv"
+  },
+  "o_6_f7": {
+    "operator": "o_6",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1107032,
+    "surviving_final_state_event_count": 907420,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f7.csv"
+  },
+  "o_6_f8": {
+    "operator": "o_6",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 232985,
+    "surviving_final_state_event_count": 190913,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f8.csv"
+  },
+  "o_6_f9": {
+    "operator": "o_6",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 820527,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f9.csv"
+  },
+  "o_6_f10": {
+    "operator": "o_6",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1039854,
+    "surviving_final_state_event_count": 852965,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_6_f10.csv"
+  },
+  "o_7_f0": {
+    "operator": "o_7",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1077309,
+    "surviving_final_state_event_count": 884275,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f0.csv"
+  },
+  "o_7_f1": {
+    "operator": "o_7",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1102491,
+    "surviving_final_state_event_count": 904612,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f1.csv"
+  },
+  "o_7_f2": {
+    "operator": "o_7",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1123759,
+    "surviving_final_state_event_count": 922546,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f2.csv"
+  },
+  "o_7_f3": {
+    "operator": "o_7",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1627983,
+    "surviving_final_state_event_count": 1334060,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f3.csv"
+  },
+  "o_7_f4": {
+    "operator": "o_7",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1073633,
+    "surviving_final_state_event_count": 879930,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f4.csv"
+  },
+  "o_7_f5": {
+    "operator": "o_7",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1054909,
+    "surviving_final_state_event_count": 865237,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f5.csv"
+  },
+  "o_7_f6": {
+    "operator": "o_7",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1126418,
+    "surviving_final_state_event_count": 922618,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f6.csv"
+  },
+  "o_7_f7": {
+    "operator": "o_7",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1090014,
+    "surviving_final_state_event_count": 893484,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f7.csv"
+  },
+  "o_7_f8": {
+    "operator": "o_7",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 233201,
+    "surviving_final_state_event_count": 191142,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f8.csv"
+  },
+  "o_7_f9": {
+    "operator": "o_7",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 820267,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f9.csv"
+  },
+  "o_7_f10": {
+    "operator": "o_7",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1040173,
+    "surviving_final_state_event_count": 853855,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_7_f10.csv"
+  },
+  "o_8_f0": {
+    "operator": "o_8",
+    "point": "f0",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1077166,
+    "surviving_final_state_event_count": 884077,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f0.csv"
+  },
+  "o_8_f1": {
+    "operator": "o_8",
+    "point": "f1",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1102369,
+    "surviving_final_state_event_count": 903864,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f1.csv"
+  },
+  "o_8_f2": {
+    "operator": "o_8",
+    "point": "f2",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1124001,
+    "surviving_final_state_event_count": 921870,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f2.csv"
+  },
+  "o_8_f3": {
+    "operator": "o_8",
+    "point": "f3",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 779380,
+    "surviving_final_state_event_count": 638928,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f3.csv"
+  },
+  "o_8_f4": {
+    "operator": "o_8",
+    "point": "f4",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1073653,
+    "surviving_final_state_event_count": 880263,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f4.csv"
+  },
+  "o_8_f5": {
+    "operator": "o_8",
+    "point": "f5",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1054986,
+    "surviving_final_state_event_count": 865501,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f5.csv"
+  },
+  "o_8_f6": {
+    "operator": "o_8",
+    "point": "f6",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1126441,
+    "surviving_final_state_event_count": 923590,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f6.csv"
+  },
+  "o_8_f7": {
+    "operator": "o_8",
+    "point": "f7",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1106828,
+    "surviving_final_state_event_count": 907597,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f7.csv"
+  },
+  "o_8_f8": {
+    "operator": "o_8",
+    "point": "f8",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 233036,
+    "surviving_final_state_event_count": 191128,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f8.csv"
+  },
+  "o_8_f9": {
+    "operator": "o_8",
+    "point": "f9",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1000000,
+    "surviving_final_state_event_count": 819915,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f9.csv"
+  },
+  "o_8_f10": {
+    "operator": "o_8",
+    "point": "f10",
+    "requested_event_count": 1000000,
+    "loaded_lhco_event_count": 1039468,
+    "surviving_final_state_event_count": 852934,
+    "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner",
+    "public_csv_path": "data/phase8/csv/np_o_8_f10.csv"
+  }
+}

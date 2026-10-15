@@ -1,0 +1,11 @@
+{
+  "cs_sm": 1.4462787446157281,
+  "n_scan": 1000000,
+  "L_prime": 691429.6457186039,
+  "anchor_model": "gQGC_UFO",
+  "significance_formula": "asimov",
+  "range_scope": "per_operator",
+  "recovered": true,
+  "loaded_lhco_event_count": 10122,
+  "recovery_attempts": 2
+}

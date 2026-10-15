@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "source_operators": [
+    "o_1",
+    "o_2",
+    "o_3",
+    "o_4",
+    "o_5",
+    "o_6",
+    "o_7",
+    "o_8"
+  ],
+  "anchor_operator": "o_1",
+  "initial_f5_sources": [
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_1",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_1_f5.lhco",
+      "banner_path": "data/phase6/np_o_1_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_1_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_2",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_2_f5.lhco",
+      "banner_path": "data/phase6/np_o_2_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_2_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_3",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_3_f5.lhco",
+      "banner_path": "data/phase6/np_o_3_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_3_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_4",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_4_f5.lhco",
+      "banner_path": "data/phase6/np_o_4_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_4_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_5",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_5_f5.lhco",
+      "banner_path": "data/phase6/np_o_5_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_5_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_6",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_6_f5.lhco",
+      "banner_path": "data/phase6/np_o_6_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_6_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_7",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_7_f5.lhco",
+      "banner_path": "data/phase6/np_o_7_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_7_scan_result.json"
+    },
+    {
+      "source_kind": "direct_phase6_scan",
+      "operator": "o_8",
+      "model": "gQGC_UFO",
+      "scan_label": "f5",
+      "lhco_path": "data/phase6/np_o_8_f5.lhco",
+      "banner_path": "data/phase6/np_o_8_f5_banner.txt",
+      "runner_result_json": "data/phase6/np_o_8_scan_result.json"
+    }
+  ],
+  "additional_anchor_f5_rounds": 0,
+  "additional_anchor_f5_sources": [],
+  "loaded_lhco_event_count": 11384722,
+  "surviving_final_state_event_count": 9334763,
+  "merged_cross_section_pb": 1.4532026657884842,
+  "cross_section_rule": "banner_arithmetic_mean",
+  "algorithms": {
+    "gradient_boosting": {
+      "status": "accepted",
+      "threshold": 0.98,
+      "passing_event_count": 10220,
+      "effective_passing_event_count": 10220.0,
+      "convention": "observed_events",
+      "sigma0_after_cut_pb": 0.0013045317438896012
+    },
+    "isolation_forest": {
+      "status": "accepted",
+      "threshold": 0.0,
+      "passing_event_count": 9334763,
+      "effective_passing_event_count": 9334763.0,
+      "convention": "observed_events",
+      "sigma0_after_cut_pb": 1.1915356805465875
+    },
+    "mlp": {
+      "status": "accepted",
+      "threshold": 0.98,
+      "passing_event_count": 7292,
+      "effective_passing_event_count": 7292.0,
+      "convention": "observed_events",
+      "sigma0_after_cut_pb": 0.0009307872286147723
+    }
+  }
+}

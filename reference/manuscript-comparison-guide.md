@@ -25,6 +25,13 @@ comparison references.
   "method_references": ["P16", "P34"],
   "result_comparison_references": [],
   "papers_to_cite": [],
+  "quality_dimensions": {
+    "analysis_context": "P27",
+    "dataset_and_sample_detail": "P27",
+    "algorithm_explanation": ["P16", "P34"],
+    "fit_and_constraint_presentation": "P27",
+    "discussion_and_limitations": "P32"
+  },
   "notes": {
     "P27": "Use section organization and dataset-detail level as a writing reference."
   }
@@ -50,9 +57,18 @@ also add it to `literature_plan.json` under `comparison_citations`.
 
 - Use reference papers to calibrate scientific completeness: section structure,
   dataset tables, feature definitions, algorithm descriptions, fit tables, and
-  constraint presentation.
+  constraint presentation, result interpretation, and limitations.
+- Before drafting, record in `quality_dimensions` which structural lesson from a
+  reference paper is being adopted. This is a writing-quality aid, not a request
+  to copy that paper's physics or to cite it automatically.
 - Do not cite a reference paper merely because it was used as a style reference.
 - Cite a reference paper only for an explicit scientific comparison, prior result,
   or method claim in the final text.
 - If the current process, collider, or algorithm does not match any listed paper,
   use the closest paper only for format/style expectations, not for physics claims.
+
+The comparison plan may also record **quality dimensions**, meaning the aspects
+of article presentation used to calibrate depth: analysis context, dataset
+detail, algorithm explanation, fit/constraint presentation, and
+discussion/limitations. These are writing dimensions, not additional scientific
+deliverables and not automatic citation requirements.

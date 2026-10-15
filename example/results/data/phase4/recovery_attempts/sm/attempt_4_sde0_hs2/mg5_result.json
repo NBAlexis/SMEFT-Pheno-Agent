@@ -1,0 +1,110 @@
+{
+  "analysis_event_format": "LHCO_from_Delphes_ROOT",
+  "available_coefficients": {
+    "1": 1e-12,
+    "2": 1e-12,
+    "3": 1e-12,
+    "4": 1e-12,
+    "5": 1e-12,
+    "6": 1e-12,
+    "7": 1e-12,
+    "8": 1e-12
+  },
+  "broken_cleanup_removed_files": [],
+  "broken_process_dir": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01_broken_20260904_185246",
+  "c_scan": null,
+  "cleanup_candidates": [],
+  "coefficient_block": "anoinputs",
+  "coefficient_mode": null,
+  "copied_delphes_card": "/home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01/Cards/delphes_card.dat",
+  "create_process": {
+    "diagram_count_max": 168,
+    "diagram_count_total": 612,
+    "diagram_counts": {
+      "count_max": 168,
+      "count_total": 612,
+      "counts": [
+        10,
+        10,
+        10,
+        10,
+        20,
+        2,
+        2,
+        20,
+        20,
+        2,
+        2,
+        20,
+        10,
+        10,
+        10,
+        10,
+        168,
+        168,
+        108
+      ],
+      "source": "mg5_create_stdout_regex"
+    },
+    "mg5_steps": {
+      "delphes": null,
+      "madgraph": {
+        "duration_sec": 2.77,
+        "end": 1788519164.9912224,
+        "start": 1788519162.2218883
+      },
+      "pythia8": null
+    },
+    "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01_01.txt",
+    "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01_01.txt",
+    "returncode": 0,
+    "stderr_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase4/logs/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01.stderr.log",
+    "stderr_tail": "WARNING:root:\u001b[91mpython3.12+ support: For reweighting feature, please use 3.6.X release.\u001b[0m\n",
+    "stdout_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase4/logs/create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01.stdout.log",
+    "stdout_tail": "ess groups \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u u~ NP=0 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u u~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c c~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c c~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d d~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d d~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s s~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s s~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ u u~ NP=0 @1 \nINFO: Processing color information for process: mu+ mu- > ve ve~ u u~ NP=0 @1 \nINFO: Combined process mu+ mu- > ve ve~ c c~ NP=0 @1 with process mu+ mu- > ve ve~ u u~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > ve ve~ d d~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > ve ve~ d d~ NP=0 @1 \nINFO: Combined process mu+ mu- > ve ve~ s s~ NP=0 @1 with process mu+ mu- > ve ve~ d d~ NP=0 @1 \nINFO: Combined process mu+ mu- > vt vt~ u u~ NP=0 @1 with process mu+ mu- > ve ve~ u u~ NP=0 @1 \nINFO: Combined process mu+ mu- > vt vt~ c c~ NP=0 @1 with process mu+ mu- > ve ve~ u u~ NP=0 @1 \nINFO: Combined process mu+ mu- > vt vt~ d d~ NP=0 @1 with process mu+ mu- > ve ve~ d d~ NP=0 @1 \nINFO: Combined process mu+ mu- > vt vt~ s s~ NP=0 @1 with process mu+ mu- > ve ve~ d d~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ u c~ NP=0 @1 \nINFO: Processing color information for process: mu+ mu- > vm vm~ u c~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ c u~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ c u~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ d s~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ d s~ NP=0 @1 \nINFO: Generating Helas calls for process: mu+ mu- > vm vm~ s d~ NP=0 @1 \nINFO: Reusing existing color information for process: mu+ mu- > vm vm~ s d~ NP=0 @1 \nINFO: Creating files in directory P1_mupmum_vlvlqq \n\u001b[1mINFO: Some T-channel width have been set to zero [new since 2.8.0]\n if you want to keep this width please set \"zerowidth_tchannel\" to False \u001b[0m\nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u u~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c c~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d d~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s s~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ u u~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > ve ve~ d d~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ u c~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ c u~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ d s~ NP=0 @1 \nINFO: Generating Feynman diagrams for Process: mu+ mu- > vm vm~ s d~ NP=0 @1 \nINFO: Finding symmetric diagrams for subprocess group mupmum_vlvlqq \nGenerated helas calls for 10 subprocesses (108 diagrams) in 0.064 s\nWrote files for 296 helas calls in 0.148 s\nALOHA: aloha starts to compute helicity amplitudes\nALOHA: aloha creates 5 routines in  0.658 s\nsave configuration file to /home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01/Cards/me5_configuration.txt\nINFO: Use Fortran compiler gfortran \nINFO: Use c++ compiler g++ \nINFO: Generate web pages \nOutput to directory /home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01 done.\nType \"launch\" to generate events from this process, or see\n/home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01/README\nRun \"open index.html\" to see more information about this process.\nquit\n",
+    "weighted_attempts": [
+      {
+        "order_file_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/orders/order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01_01.txt",
+        "order_filename": "order_create_mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01_01.txt",
+        "status": "success",
+        "weighted_keyword": null,
+        "weighted_order": null
+      }
+    ],
+    "weighted_keyword": null,
+    "weighted_order": null
+  },
+  "created_process": true,
+  "delphes_card": "delphes_card_MuonColliderDet.tcl",
+  "detector_simulation": "Delphes",
+  "ebeam1": 5000.0,
+  "ebeam2": 5000.0,
+  "error": "RuntimeError: No new run folders created in /home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01/Events",
+  "event_generator": "MadGraph5",
+  "failure_evidence_preserved": true,
+  "failure_log_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase4/logs/failed_launch.log",
+  "failure_stage": "launch",
+  "madspin": {
+    "enabled": false
+  },
+  "mg5path": "/home/gyc/work/MG5_aMC_v3_7_1",
+  "model": "gQGC_UFO",
+  "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+  "nevents": 10000,
+  "operator": null,
+  "outputs": [],
+  "polarization": null,
+  "process": "mu+ mu- > vl vl~ j j",
+  "process_dir": "/home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01",
+  "process_folder": "mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01",
+  "process_mode": "pure_sm",
+  "process_validation": null,
+  "run_label": "E10_L10000",
+  "scan_expression": null,
+  "schema_version": "1.0",
+  "status": "failed",
+  "survey_profile": "sde0_hs2",
+  "target_coefficient": null,
+  "traceback": "Traceback (most recent call last):\n  File \"/mnt/e/SMEFT-Pheno-Agent-GLM-test/.smeft-skill/scripts/run_mg5_config.py\", line 770, in run_from_config\n    launch_result, new_runs = _launch_process(cfg, process_folder, parsed)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/e/SMEFT-Pheno-Agent-GLM-test/.smeft-skill/scripts/run_mg5_config.py\", line 622, in _launch_process\n    raise RuntimeError(f\"No new run folders created in {events_dir}\")\nRuntimeError: No new run folders created in /home/gyc/work/MG5_aMC_v3_7_1/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_185242_01/Events\n",
+  "weighted_order": null
+}

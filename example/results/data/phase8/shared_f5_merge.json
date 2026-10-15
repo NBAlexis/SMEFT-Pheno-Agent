@@ -1,0 +1,126 @@
+{
+  "output_lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase8/shared_f5.lhco",
+  "requested_event_count": 1000000,
+  "merged_loaded_lhco_event_count": 11384722,
+  "count_source": "CutExperiment per-source GetEventCount; merged verified by streaming event-header count",
+  "source_count_sum": 11384722,
+  "source_banners_retained": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_2_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_3_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_4_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_6_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f5_banner.txt",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_8_f5_banner.txt"
+  ],
+  "source_records": [
+    {
+      "index": 0,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_1_f5_banner.txt",
+      "loaded_lhco_event_count": 4054970,
+      "cross_section_pb": 1.4522564749248374,
+      "count_record": {
+        "dataset_id": "source_0",
+        "loaded_lhco_event_count": 4054970,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 1,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_2_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_2_f5_banner.txt",
+      "loaded_lhco_event_count": 1000000,
+      "cross_section_pb": 1.4523315219000001,
+      "count_record": {
+        "dataset_id": "source_1",
+        "loaded_lhco_event_count": 1000000,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 2,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_3_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_3_f5_banner.txt",
+      "loaded_lhco_event_count": 1054886,
+      "cross_section_pb": 1.4578177728219717,
+      "count_record": {
+        "dataset_id": "source_2",
+        "loaded_lhco_event_count": 1054886,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 3,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_4_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_4_f5_banner.txt",
+      "loaded_lhco_event_count": 1054886,
+      "cross_section_pb": 1.4520434829934974,
+      "count_record": {
+        "dataset_id": "source_3",
+        "loaded_lhco_event_count": 1054886,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 4,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_5_f5_banner.txt",
+      "loaded_lhco_event_count": 1054981,
+      "cross_section_pb": 1.4550433208530262,
+      "count_record": {
+        "dataset_id": "source_4",
+        "loaded_lhco_event_count": 1054981,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 5,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_6_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_6_f5_banner.txt",
+      "loaded_lhco_event_count": 1055104,
+      "cross_section_pb": 1.4520423986901554,
+      "count_record": {
+        "dataset_id": "source_5",
+        "loaded_lhco_event_count": 1055104,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 6,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_7_f5_banner.txt",
+      "loaded_lhco_event_count": 1054909,
+      "cross_section_pb": 1.4520433685733742,
+      "count_record": {
+        "dataset_id": "source_6",
+        "loaded_lhco_event_count": 1054909,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    },
+    {
+      "index": 7,
+      "lhco_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_8_f5.lhco",
+      "banner_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/data/phase6/np_o_8_f5_banner.txt",
+      "loaded_lhco_event_count": 1054986,
+      "cross_section_pb": 1.4520429855510106,
+      "count_record": {
+        "dataset_id": "source_7",
+        "loaded_lhco_event_count": 1054986,
+        "count_context": "mg5_output",
+        "count_source": "CutExperiment LoadLHCOlympics(...).GetEventCount(); not banner"
+      }
+    }
+  ],
+  "merged_cross_section_pb": 1.4532026657884842,
+  "cross_section_rule": "banner_arithmetic_mean",
+  "merge_implementation": "streaming_concatenation (memory-safe equivalent of scripts/merge_lhco.py AddEventSet merge)"
+}

@@ -2,7 +2,9 @@
 
 Write a self-contained paper. The reader should understand the physics process,
 dataset construction, ML method, event selection, fit, and constraints without
-reading the workflow logs.
+reading the workflow logs. The paper must also explain the scientific question,
+what the results mean, and the limits of the conclusions; a list of phase
+outputs is not sufficient.
 
 ## Abstract
 
@@ -24,7 +26,17 @@ Establish the research question:
 Use citations selected by `literature_plan.json`. Do not claim aQGC/nTGC/SMEFT
 relationships more strongly than the model evidence supports.
 
-## Theoretical Framework
+The introduction must state the concrete process and analysis question early.
+It should explain what this study adds beyond a generic statement that machine
+learning was used.
+
+## Physics context and theoretical framework
+
+Before technical implementation details, introduce the studied process, collider
+and beam assumptions, reconstructed topology, luminosity, detector setup, and
+how the active UFO parameters/operators enter the process at the evidence level
+available. State the relation to earlier work only when supported by a selected
+citation or by an explicit comparison record.
 
 Describe the model at the highest supported evidence level:
 
@@ -118,6 +130,11 @@ When discussing constraint intervals, state that the upper bound is the smallest
 positive real root and the lower bound is the largest negative real root of the
 significance equation. Do not present complex roots as physical constraints.
 
+Do not present tables and plots without interpretation. Explain the dominant
+patterns across operators or algorithms, distinguish a numerical observation
+from a physical explanation, and state when the available evidence cannot
+decide between explanations.
+
 For significance thresholds, larger S generally requires a larger coefficient
 deviation to reach discovery/evidence. Do not enforce a monotonicity rule that
 contradicts the actual significance definition.
@@ -125,4 +142,5 @@ contradicts the actual significance definition.
 ## Conclusions
 
 Summarize the anchor algorithm, main constraints, and practical interpretation.
-Do not introduce new numbers, figures, or unsupported comparison claims.
+State the scope and the most important limitation(s). Do not introduce new
+numbers, figures, or unsupported comparison claims.

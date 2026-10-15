@@ -1,0 +1,45 @@
+{
+  "diagram_count": 23,
+  "hierarchies": {
+    "NP": 2,
+    "QCD": 1,
+    "QED": 2
+  },
+  "max_diagram_count": 20,
+  "max_diagram_examples": [
+    {
+      "matrix_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_190441_01/SubProcesses/P1_mupmum_vlvlqq/matrix1.ps",
+      "orders": {
+        "NP": 0,
+        "QCD": 0,
+        "QED": 4
+      },
+      "weighted": 8
+    },
+    {
+      "matrix_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_190441_01/SubProcesses/P1_mupmum_vlvlqq/matrix1.ps",
+      "orders": {
+        "NP": 0,
+        "QCD": 0,
+        "QED": 4
+      },
+      "weighted": 8
+    },
+    {
+      "matrix_path": "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_190441_01/SubProcesses/P1_mupmum_vlvlqq/matrix1.ps",
+      "orders": {
+        "NP": 0,
+        "QCD": 0,
+        "QED": 4
+      },
+      "weighted": 8
+    }
+  ],
+  "max_weighted_order": 8,
+  "model_dir": "/home/gyc/work/MG5_aMC_v3_7_1/models/gQGC_UFO",
+  "process_dirs": [
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_SM_E10_L10000_20260904_190441_01",
+    "/mnt/e/SMEFT-Pheno-Agent-GLM-test/results/mg5_processes/mup_mum_to_vl_vl_j_j_gQGC_UFO_NP_E10_L10000_20260904_192823_01_broken_20260905_083724"
+  ],
+  "schema_version": "1.0"
+}

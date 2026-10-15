@@ -1,0 +1,109 @@
+{
+  "significant_digits": 2,
+  "operators": {
+    "o_1": {
+      "range": [
+        -1.9e-14,
+        1.9e-14
+      ],
+      "c_scan": 1.9e-14,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 1,
+      "name": "FgT0",
+      "cs_np": 7.95946,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_2": {
+      "range": [
+        -2.9e-14,
+        2.9e-14
+      ],
+      "c_scan": 2.9e-14,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 2,
+      "name": "FgT1",
+      "cs_np": 3.438523,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_3": {
+      "range": [
+        -5.2e-14,
+        5.2e-14
+      ],
+      "c_scan": 5.2e-14,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 3,
+      "name": "FgT2",
+      "cs_np": 1.061042,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_4": {
+      "range": [
+        -5.3e-14,
+        5.3e-14
+      ],
+      "c_scan": 5.3e-14,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 4,
+      "name": "FgT3",
+      "cs_np": 1.023344,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_5": {
+      "range": [
+        -5.2e-14,
+        5.2e-14
+      ],
+      "c_scan": 5.2e-14,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 5,
+      "name": "FgT4",
+      "cs_np": 1.067185,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_6": {
+      "range": [
+        -6.9e-14,
+        6.9e-14
+      ],
+      "c_scan": 6.9e-14,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 6,
+      "name": "FgT5",
+      "cs_np": 0.6120164,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_7": {
+      "range": [
+        -1.5e-13,
+        1.5e-13
+      ],
+      "c_scan": 1.5e-13,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 7,
+      "name": "FgT6",
+      "cs_np": 0.1324557,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    },
+    "o_8": {
+      "range": [
+        -1.3e-13,
+        1.3e-13
+      ],
+      "c_scan": 1.3e-13,
+      "model": "gQGC_UFO",
+      "anoinput_idx": 8,
+      "name": "FgT7",
+      "cs_np": 0.1748264,
+      "c_default": 1e-12,
+      "range_estimate": "operator_default_quadratic_np_approximation"
+    }
+  }
+}

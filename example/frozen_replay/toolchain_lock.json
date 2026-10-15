@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "mode": "run_resolved_replay_frozen",
+  "madgraph_version": "3.7.1",
+  "madgraph_version_source": "Recorded installation VERSION file; original --version probe returned code 2.",
+  "cutexperiment_commit": "5e4c7fa8f485a556569a5cf8d3f1b1accd9ec867",
+  "python_version": "3.12.3",
+  "packages": {
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.0",
+    "joblib": "1.6.0",
+    "matplotlib": "3.11.1"
+  },
+  "detector_card": "delphes_card_MuonColliderDet.tcl",
+  "runtime": "GLM/ZCode; Ubuntu-24.04 under WSL2",
+  "original_environment_manifest": "results/data/phase2/environment_manifest.json",
+  "note": "Exact source manifests are archived unchanged. Installed-tool fingerprints are supplementary and must not be confused with observations from the historical probe.",
+  "madgraph_version_file_sha256": "f44deabeaa4759ef2f9ed9f4a71b465fc2f6469b2d5d76f9ac5f88f73e67ca37",
+  "detector_card_sha256": "5b36e7642e2fadf26dca32af6232692bb77f796b974d29cbc1b136f31abddba5",
+  "capture_date": "2026-10-13"
+}

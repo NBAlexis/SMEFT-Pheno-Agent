@@ -1,0 +1,42 @@
+{
+  "o_1": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 1,
+    "name": "FgT0"
+  },
+  "o_2": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 2,
+    "name": "FgT1"
+  },
+  "o_3": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 3,
+    "name": "FgT2"
+  },
+  "o_4": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 4,
+    "name": "FgT3"
+  },
+  "o_5": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 5,
+    "name": "FgT4"
+  },
+  "o_6": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 6,
+    "name": "FgT5"
+  },
+  "o_7": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 7,
+    "name": "FgT6"
+  },
+  "o_8": {
+    "model": "gQGC_UFO",
+    "anoinput_idx": 8,
+    "name": "FgT7"
+  }
+}
